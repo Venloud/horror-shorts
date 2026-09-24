@@ -1,0 +1,40 @@
+{
+  "channel_name": "Night Files",
+
+  "llm_models": ["gemini-2.5-flash", "gemini-2.5-flash-lite"],
+
+  "subgenres": [
+    "paranormal encounter in an ordinary home",
+    "creepypasta-style urban legend",
+    "cursed or haunted object",
+    "'rules' horror (a list of strange rules at a job or place)",
+    "lost in the deep woods",
+    "liminal space / place that shouldn't exist",
+    "something wrong with a family member or neighbor",
+    "late-night job gone wrong (night shift, security guard, gas station)",
+    "sleep paralysis / something in the bedroom",
+    "road trip / empty highway at night",
+    "phone call, text, or voicemail from someone who shouldn't be able to call",
+    "found footage / old tape or camera roll"
+  ],
+
+  "voice": "am_michael",
+  "voice_speed": 0.95,
+  "voice_lang": "a",
+
+  "caption_font": "Anton",
+  "caption_font_file": "assets/fonts/Anton-Regular.ttf",
+  "caption_fallback_font": "DejaVu Sans",
+  "caption_size": 96,
+  "caption_highlight": "#FFD84D",
+  "caption_words_per_group": 3,
+
+  "music_volume": 0.14,
+  "sting_volume": 0.55,
+
+  "image_style": "cinematic horror film still, dark, grainy 35mm film, low light, heavy shadows, fog, muted desaturated colors, eerie atmosphere, realistic, vertical composition, no text, no watermark, no gore",
+
+  "tiktok_mode": "draft",
+  "direct_privacy": "SELF_ONLY",
+  "tiktok_ai_label": true
+}
