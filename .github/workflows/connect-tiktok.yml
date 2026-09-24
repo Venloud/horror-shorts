@@ -1,0 +1,32 @@
+name: Connect TikTok (one time)
+
+on:
+  workflow_dispatch:
+    inputs:
+      auth_code:
+        description: "Paste the full URL you landed on after approving TikTok (or just the code)"
+        required: true
+
+jobs:
+  connect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -q requests
+      - name: Exchange code for token
+        env:
+          AUTH_CODE_OR_URL: ${{ inputs.auth_code }}
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+          TIKTOK_REDIRECT_URI: ${{ secrets.TIKTOK_REDIRECT_URI }}
+        run: python pipeline/connect_tiktok.py
+      - name: Save token as a repo secret
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          gh secret set TIKTOK_REFRESH_TOKEN --repo "${{ github.repository }}" < .new_refresh_token
+          rm -f .new_refresh_token
+          echo "TikTok connected. You can run 'Daily horror video' now."
