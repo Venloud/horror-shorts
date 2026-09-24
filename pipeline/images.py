@@ -18,7 +18,7 @@ def _cloudflare(prompt: str, seed: int) -> bytes:
     token = env("CLOUDFLARE_API_TOKEN")
     r = requests.post(CF_URL.format(acct=acct), timeout=120,
                       headers={"Authorization": f"Bearer {token}"},
-                      json={"prompt": prompt[:2000], "steps": 8, "seed": seed})
+                      json={"prompt": prompt[:2000], "steps": 8})
     if r.status_code != 200:
         raise RuntimeError(f"Cloudflare HTTP {r.status_code}: {r.text[:300]}")
     data = r.json()
