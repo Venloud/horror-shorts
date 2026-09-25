@@ -65,6 +65,7 @@ jobs:
           TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          POLLINATIONS_KEY: ${{ secrets.POLLINATIONS_KEY }}
         run: cd pipeline && python main.py ${{ inputs.no_upload && '--no-upload' || '' }}
 
       - name: Save new TikTok token if TikTok rotated it
