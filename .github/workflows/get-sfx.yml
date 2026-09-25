@@ -1,0 +1,44 @@
+name: Download sound effects (one time)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sfx:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download real recordings (CC0, BigSoundBank)
+        run: |
+          mkdir -p assets/sfx
+          rm -f assets/sfx/*.mp3
+          python3 - <<'PY'
+          import json, subprocess
+          src = json.load(open("data/sfx_sources.json"))
+          failed = []
+          for name, info in src.items():
+              if name.startswith("_"):
+                  continue
+              url = f"https://bigsoundbank.com/UPLOAD/mp3/{info['id']}.mp3"
+              out = f"assets/sfx/{name}.mp3"
+              r = subprocess.run(["curl", "-fsSL", "-A", "Mozilla/5.0", "-o", out, url])
+              ok = r.returncode == 0 and open(out, "rb").read(3) in (b"ID3", b"\xff\xfb", b"\xff\xf3", b"\xff\xf2")
+              print(("OK   " if ok else "FAIL ") + name + "  <- " + url)
+              if not ok:
+                  failed.append(name)
+                  subprocess.run(["rm", "-f", out])
+          if failed:
+              print("Failed:", failed)
+          PY
+          ls -la assets/sfx
+      - name: Save to repo
+        run: |
+          git config user.name "horror-bot"
+          git config user.email "horror-bot@users.noreply.github.com"
+          git add -A assets/sfx
+          git diff --cached --quiet || git commit -m "Add real sound effects (CC0)"
+          git pull --rebase
+          git push
