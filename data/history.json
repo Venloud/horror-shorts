@@ -12,5 +12,19 @@
       "status": "SEND_TO_USER_INBOX",
       "mode": "draft"
     }
+  },
+  {
+    "date": "2026-09-25_0228",
+    "title": "The Mysterious Disappearance of Jim Thompson",
+    "premise": "An American businessman who revitalised the Thai silk industry vanished during a walk in Malaysia's Cameron Highlands in 1967.",
+    "subgenre": "real unsolved mystery",
+    "mode": "mystery",
+    "case": "Disappearance of Jim Thompson",
+    "seconds": 69.0,
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7689296665102632991",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    }
   }
 ]
