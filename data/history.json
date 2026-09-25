@@ -40,5 +40,20 @@
       "status": "SEND_TO_USER_INBOX",
       "mode": "draft"
     }
+  },
+  {
+    "date": "2026-09-25_0637",
+    "title": "Platform Four",
+    "premise": "A security guard working at a sealed underground terminal is forbidden from looking inside the phantom train that stops every morning at 3:15 AM.",
+    "subgenre": "'rules' horror (a list of strange rules at a job or place)",
+    "mode": "fiction",
+    "case": null,
+    "seconds": 71.0,
+    "tiktok": {
+      "publish_id": "v_pub_file~v2-1.7689359811137439774",
+      "status": "PUBLISH_COMPLETE",
+      "mode": "direct",
+      "privacy": "SELF_ONLY"
+    }
   }
 ]
