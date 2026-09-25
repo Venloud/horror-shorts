@@ -10,7 +10,7 @@ from PIL import Image
 
 from common import CONFIG, env, log
 
-_STATE = {"cf_out": False}
+_STATE = {"cf_out": False, "hf_out": False}
 HF_URL = "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell"
 CF_URL = "https://api.cloudflare.com/client/v4/accounts/{acct}/ai/run/@cf/black-forest-labs/flux-1-schnell"
 
@@ -38,6 +38,8 @@ def _huggingface(prompt: str, seed: int) -> bytes:
     token = env("HF_TOKEN", required=False)
     if not token:
         raise RuntimeError("no HF_TOKEN secret")
+    if _STATE["hf_out"]:
+        raise RuntimeError("Hugging Face credits used up for this run")
     import io
     from huggingface_hub import InferenceClient
     client = InferenceClient(provider="auto", api_key=token, timeout=180)
@@ -100,7 +102,8 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
         prompt = f"{raw_prompt}. {style}"
         path = outdir / f"scene_{i:02d}{shot}.png"
         ok = False
-        providers = ([_cloudflare] if use_cf and not _STATE["cf_out"] else []) + [_huggingface, _pollinations]
+        providers = (([_cloudflare] if use_cf and not _STATE["cf_out"] else [])
+                     + ([] if _STATE["hf_out"] else [_huggingface]) + [_pollinations])
         for provider in providers:
             for attempt in range(2):
                 try:
@@ -109,7 +112,9 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
                     break
                 except Exception as e:  # noqa: BLE001
                     log(f"Image {i}{shot} via {provider.__name__} failed: {str(e)[:150]}")
-                    if (provider is _cloudflare and _STATE["cf_out"]) or any(
+                    if provider is _huggingface and ("402" in str(e) or "Payment Required" in str(e)):
+                        _STATE["hf_out"] = True  # out of free credit: skip it for the rest of this run
+                    if (provider is _cloudflare and _STATE["cf_out"]) or _STATE["hf_out"] and provider is _huggingface or any(
                             k in str(e) for k in ("no HF_TOKEN", "410", "401", "403", "deprecated")):
                         break  # no point retrying this provider
             if ok:
