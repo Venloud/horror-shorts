@@ -10,6 +10,8 @@ from PIL import Image
 
 from common import CONFIG, env, log
 
+_STATE = {"cf_out": False}
+HF_URL = "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell"
 CF_URL = "https://api.cloudflare.com/client/v4/accounts/{acct}/ai/run/@cf/black-forest-labs/flux-1-schnell"
 
 
@@ -18,7 +20,10 @@ def _cloudflare(prompt: str, seed: int) -> bytes:
     token = env("CLOUDFLARE_API_TOKEN")
     r = requests.post(CF_URL.format(acct=acct), timeout=120,
                       headers={"Authorization": f"Bearer {token}"},
-                      json={"prompt": prompt[:2000], "steps": 8})
+                      json={"prompt": prompt[:2000], "steps": int(CONFIG.get("image_steps", 4))})
+    if r.status_code == 429 or "daily free allocation" in r.text:
+        _STATE["cf_out"] = True
+        raise RuntimeError("Cloudflare daily free limit used up (resets 00:00 UTC)")
     if r.status_code != 200:
         raise RuntimeError(f"Cloudflare HTTP {r.status_code}: {r.text[:300]}")
     data = r.json()
@@ -26,6 +31,19 @@ def _cloudflare(prompt: str, seed: int) -> bytes:
     if not img_b64:
         raise RuntimeError(f"Cloudflare returned no image: {str(data)[:300]}")
     return base64.b64decode(img_b64)
+
+
+def _huggingface(prompt: str, seed: int) -> bytes:
+    """Free backup: Hugging Face Inference (FLUX.1 schnell), needs HF_TOKEN."""
+    token = env("HF_TOKEN", required=False)
+    if not token:
+        raise RuntimeError("no HF_TOKEN secret")
+    r = requests.post(HF_URL, timeout=180, headers={"Authorization": f"Bearer {token}", "Accept": "image/png"},
+                      json={"inputs": prompt[:1500],
+                            "parameters": {"width": 768, "height": 1344, "num_inference_steps": 4, "seed": seed}})
+    if r.status_code != 200 or not r.headers.get("content-type", "").startswith("image"):
+        raise RuntimeError(f"Hugging Face HTTP {r.status_code}: {r.text[:200]}")
+    return r.content
 
 
 def _pollinations(prompt: str, seed: int) -> bytes:
@@ -74,7 +92,7 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
         prompt = f"{raw_prompt}. {style}"
         path = outdir / f"scene_{i:02d}{shot}.png"
         ok = False
-        providers = ([_cloudflare] if use_cf else []) + [_pollinations]
+        providers = ([_cloudflare] if use_cf and not _STATE["cf_out"] else []) + [_huggingface, _pollinations]
         for provider in providers:
             for attempt in range(2):
                 try:
@@ -83,6 +101,8 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
                     break
                 except Exception as e:  # noqa: BLE001
                     log(f"Image {i}{shot} via {provider.__name__} failed: {str(e)[:150]}")
+                    if (provider is _cloudflare and _STATE["cf_out"]) or "no HF_TOKEN" in str(e):
+                        break  # no point retrying this provider
             if ok:
                 break
         log(f"Image {i}{shot}: {'ok' if ok else 'FAILED'}")
