@@ -34,25 +34,33 @@ def _cloudflare(prompt: str, seed: int) -> bytes:
 
 
 def _huggingface(prompt: str, seed: int) -> bytes:
-    """Free backup: Hugging Face Inference (FLUX.1 schnell), needs HF_TOKEN."""
+    """Free backup: Hugging Face Inference Providers (FLUX.1 schnell, provider picked automatically). Needs HF_TOKEN."""
     token = env("HF_TOKEN", required=False)
     if not token:
         raise RuntimeError("no HF_TOKEN secret")
-    r = requests.post(HF_URL, timeout=180, headers={"Authorization": f"Bearer {token}", "Accept": "image/png"},
-                      json={"inputs": prompt[:1500],
-                            "parameters": {"width": 768, "height": 1344, "num_inference_steps": 4, "seed": seed}})
-    if r.status_code != 200 or not r.headers.get("content-type", "").startswith("image"):
-        raise RuntimeError(f"Hugging Face HTTP {r.status_code}: {r.text[:200]}")
-    return r.content
+    import io
+    from huggingface_hub import InferenceClient
+    client = InferenceClient(provider="auto", api_key=token, timeout=180)
+    image = client.text_to_image(prompt[:1500], model="black-forest-labs/FLUX.1-schnell",
+                                 width=768, height=1344, num_inference_steps=4, seed=seed)
+    buf = io.BytesIO()
+    image.convert("RGB").save(buf, "PNG")
+    return buf.getvalue()
 
 
 def _pollinations(prompt: str, seed: int) -> bytes:
-    url = ("https://image.pollinations.ai/prompt/" + urllib.parse.quote(prompt[:1500])
-           + f"?width=1080&height=1920&seed={seed}&nologo=true&model=flux")
-    r = requests.get(url, timeout=180)
+    """Backup: Pollinations (new gen.pollinations.ai API, free key from enter.pollinations.ai)."""
+    key = env("POLLINATIONS_KEY", required=False)
+    q = urllib.parse.quote(prompt[:1500])
+    if key:
+        url = f"https://gen.pollinations.ai/image/{q}?width=1080&height=1920&seed={seed}&model=flux&nologo=true"
+        r = requests.get(url, timeout=180, headers={"Authorization": f"Bearer {key}"})
+    else:  # old keyless endpoint, may be retired
+        url = f"https://image.pollinations.ai/prompt/{q}?width=1080&height=1920&seed={seed}&nologo=true&model=flux"
+        r = requests.get(url, timeout=180)
     if r.status_code != 200 or not r.headers.get("content-type", "").startswith("image"):
-        raise RuntimeError(f"Pollinations HTTP {r.status_code}")
-    # Pollinations stamps a small logo in the bottom corner: crop the bottom 7% off.
+        raise RuntimeError(f"Pollinations HTTP {r.status_code}: {r.text[:150] if not r.headers.get('content-type','').startswith('image') else ''}")
+    # crop the bottom 7% in case a logo is stamped there
     import io
     with Image.open(io.BytesIO(r.content)) as im:
         im = im.convert("RGB")
@@ -101,7 +109,8 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
                     break
                 except Exception as e:  # noqa: BLE001
                     log(f"Image {i}{shot} via {provider.__name__} failed: {str(e)[:150]}")
-                    if (provider is _cloudflare and _STATE["cf_out"]) or "no HF_TOKEN" in str(e):
+                    if (provider is _cloudflare and _STATE["cf_out"]) or any(
+                            k in str(e) for k in ("no HF_TOKEN", "410", "401", "403", "deprecated")):
                         break  # no point retrying this provider
             if ok:
                 break
