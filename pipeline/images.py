@@ -55,40 +55,49 @@ def _save_valid(raw: bytes, path: Path) -> None:
     tmp.unlink(missing_ok=True)
 
 
-def generate_images(story: dict, outdir: Path) -> list[Path]:
+def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
+    """Two images per scene (shot A = first half, shot B = second half). Returns [[a, b], ...]."""
     outdir.mkdir(parents=True, exist_ok=True)
     style = CONFIG["image_style"]
     base_seed = random.randint(1, 2_000_000_000)
     use_cf = bool(env("CLOUDFLARE_API_TOKEN", required=False))
-    paths: list[Path | None] = []
 
+    jobs = []  # (scene index, shot letter, prompt)
     for i, scene in enumerate(story["scenes"]):
-        prompt = f"{scene['image_prompt']}. {style}"
-        path = outdir / f"scene_{i:02d}.png"
+        jobs.append((i, "a", scene["image_prompt"]))
+        second = scene.get("image_prompt_2") or ""
+        if second.strip():
+            jobs.append((i, "b", second))
+
+    results: dict[tuple[int, str], Path | None] = {}
+    for n, (i, shot, raw_prompt) in enumerate(jobs):
+        prompt = f"{raw_prompt}. {style}"
+        path = outdir / f"scene_{i:02d}{shot}.png"
         ok = False
         providers = ([_cloudflare] if use_cf else []) + [_pollinations]
         for provider in providers:
             for attempt in range(2):
                 try:
-                    _save_valid(provider(prompt, base_seed + i * 7 + attempt), path)
+                    _save_valid(provider(prompt, base_seed + n * 7 + attempt), path)
                     ok = True
                     break
                 except Exception as e:  # noqa: BLE001
-                    log(f"Image {i} via {provider.__name__} failed: {e}")
+                    log(f"Image {i}{shot} via {provider.__name__} failed: {str(e)[:150]}")
             if ok:
                 break
-        log(f"Image {i}: {'ok' if ok else 'FAILED'}")
-        paths.append(path if ok else None)
+        log(f"Image {i}{shot}: {'ok' if ok else 'FAILED'}")
+        results[(i, shot)] = path if ok else None
 
-    failed = sum(p is None for p in paths)
-    if failed > max(1, len(paths) // 4):
-        raise RuntimeError(f"{failed} of {len(paths)} images failed; not rendering a broken video.")
-    # Fill any gaps with the nearest good neighbour so timing stays intact.
-    good = [p for p in paths if p]
-    for i, p in enumerate(paths):
-        if p is None:
-            src = next((paths[j] for j in list(range(i - 1, -1, -1)) + list(range(i + 1, len(paths))) if paths[j]), good[0])
-            dst = outdir / f"scene_{i:02d}.png"
-            shutil.copy(src, dst)
-            paths[i] = dst
-    return paths  # type: ignore[return-value]
+    failed = sum(p is None for p in results.values())
+    if failed > max(2, len(jobs) // 4):
+        raise RuntimeError(f"{failed} of {len(jobs)} images failed; not rendering a broken video.")
+
+    good = [p for p in results.values() if p]
+    per_scene: list[list[Path]] = []
+    for i in range(len(story["scenes"])):
+        shots = [results.get((i, s)) for s in ("a", "b") if (i, s) in results]
+        shots = [p for p in shots if p]
+        if not shots:  # both failed: borrow the previous scene's last image
+            shots = [per_scene[-1][-1] if per_scene else good[0]]
+        per_scene.append(shots)
+    return per_scene

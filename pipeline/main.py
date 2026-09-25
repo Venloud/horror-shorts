@@ -32,8 +32,10 @@ def main() -> int:
 
         narration = narrate(story, workdir)
         images = generate_images(story, workdir / "images")
+        from render import END_CARD_DELAY, TAIL
         ass = build_ass(narration["words"], story.get("hook_overlay", ""),
-                        narration["duration"] + 1.8, workdir / "captions.ass")
+                        narration["duration"] + TAIL, workdir / "captions.ass",
+                        end_start=narration["duration"] + END_CARD_DELAY)
         video = render(story, images, narration, ass, workdir)
         quality_check(video)
         (workdir / "caption.txt").write_text(caption_text(story) + "\n\nPIN: " + story.get("pinned_comment", ""))

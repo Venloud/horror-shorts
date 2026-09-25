@@ -187,6 +187,8 @@ def _run_models(prompt: str, api_key: str, temperature: float) -> dict:
                 log(f"Story attempt failed: {str(e)[:200]}")
                 if "404" in str(e):
                     break  # model retired: skip straight to the next one
+                if "503" in str(e) and attempt >= 1:
+                    break  # model overloaded: don't wait, move to the next model
                 time.sleep(8 * (attempt + 1))
     raise RuntimeError("Could not write a story:\n" + "\n".join(errors))
 
@@ -194,7 +196,7 @@ def _run_models(prompt: str, api_key: str, temperature: float) -> dict:
 def sfx_names() -> str:
     """Available sounds with a description of each, so the AI picks ones that really match the scene."""
     from common import ROOT
-    have = {p.stem for p in (ROOT / "assets" / "sfx").glob("*.mp3")}
+    have = {p.stem for p in (ROOT / "assets" / "sfx").glob("*.mp3") if not p.stem.startswith("ui_")}
     try:
         info = json.loads((ROOT / "data" / "sfx_sources.json").read_text())
     except Exception:  # noqa: BLE001
@@ -203,7 +205,10 @@ def sfx_names() -> str:
     return "".join(lines) + "\n  - none: no sound effect" + (
         "\n  Only use a sound if it matches BOTH the action AND the place exactly "
         "(e.g. walking in a jungle = footsteps_mud or footsteps_leaves, never footsteps_wood). "
-        "If nothing matches exactly, use none.")
+        "If nothing matches exactly, use none."
+        "\n  You may add ONE ending to any sound to fit the space: _echo (big empty room, hallway, church, cave, "
+        "warehouse), _muffled (behind a wall or door, under a bed, underground), _distant (far away, outside). "
+        "Examples: footsteps_wood_echo, knocking_muffled, scream_woman_distant, gunshot_distant.")
 
 
 def write_story(history: list[dict]) -> dict:

@@ -38,7 +38,8 @@ HARD RULES
 - 170 to 210 words of narration total. 8 to 10 scenes. Each scene 1-3 sentences.
 
 IMAGE PROMPTS
-- One per scene: a painted illustration of the place, era, objects, or atmosphere of that moment. Match the real setting and time period.
+- A painted illustration of the place, era, objects, or atmosphere of that moment. Match the real setting and time period.
+- TWO images per scene: "image_prompt" shows the FIRST sentence of that scene, "image_prompt_2" shows the SECOND half. They must be different shots, like a film editor would cut: e.g. "I was 23, living alone in an old brick duplex" = shot 1: the young man in his room; shot 2: wide exterior of the old brick duplex at night. Mix close-ups, wide establishing shots of the location, objects, and over-the-shoulder views.
 - Never depict a real person's face. People appear only as distant silhouettes, from behind, or in shadow.
 - No text, no writing, no blood, no bodies.
 
@@ -87,7 +88,8 @@ HARD RULES
 - Third person, plain spoken English, short sentences. 170 to 210 words. 8 to 10 scenes, 1-3 sentences each.
 
 IMAGE PROMPTS
-- One painted illustration per scene showing the creature, the setting, the era, or the moment. The creature can be shown (it is folklore), but no gore.
+- Painted illustrations showing the creature, the setting, the era, or the moment. The creature can be shown (it is folklore), but no gore.
+- TWO images per scene: "image_prompt" shows the FIRST sentence of that scene, "image_prompt_2" shows the SECOND half. They must be different shots, like a film editor would cut: e.g. "I was 23, living alone in an old brick duplex" = shot 1: the young man in his room; shot 2: wide exterior of the old brick duplex at night. Mix close-ups, wide establishing shots of the location, objects, and over-the-shoulder views.
 - No text or writing in the image.
 
 SOUND EFFECTS

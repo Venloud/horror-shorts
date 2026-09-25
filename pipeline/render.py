@@ -1,5 +1,6 @@
 """Renders the final 1080x1920 video with FFmpeg: Ken Burns scenes, crossfades, grade, grain, captions, music."""
 import random
+import re
 from pathlib import Path
 
 from common import CONFIG, ROOT, log, media_duration, run
@@ -7,7 +8,8 @@ from captions import font_setup
 
 W, H, FPS = 1080, 1920, 30
 XFADE = 0.4      # transition length between scenes
-TAIL = 1.8       # seconds of picture/music after the last word
+TAIL = 3.4       # seconds after the last word (end card lives here)
+END_CARD_DELAY = 0.7  # end card appears this long after the last word
 
 MOTIONS = {
     "zoom_in":  ("1.0+0.14*on/{D}", "iw/2-(iw/zoom/2)", "ih/2-(ih/zoom/2)"),
@@ -37,19 +39,44 @@ def _scene_clip(img: Path, seconds: float, motion: str, out: Path) -> Path:
     return out
 
 
-def render(story: dict, images: list[Path], narration: dict, ass_path: Path, workdir: Path) -> Path:
+def _split_point(words: list[dict], scene: int, s_start: float, s_end: float) -> float | None:
+    """Where to cut from shot A to shot B inside a scene: a sentence end near the middle, else the middle word."""
+    if s_end - s_start < 3.0:
+        return None
+    sw = [w for w in words if w.get("scene") == scene]
+    if len(sw) < 4:
+        return None
+    mid = (s_start + s_end) / 2
+    lo, hi = s_start + 0.3 * (s_end - s_start), s_start + 0.75 * (s_end - s_start)
+    ends = [w["end"] + 0.05 for w in sw[:-1] if re.search(r"[.!?,;:\u2026]$", w["word"]) and lo <= w["end"] <= hi]
+    if ends:
+        return min(ends, key=lambda t: abs(t - mid))
+    return min((w["start"] for w in sw[1:]), key=lambda t: abs(t - mid))
+
+
+def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Path, workdir: Path) -> Path:
     total = narration["duration"] + TAIL
     starts = [0.0] + [st for st, _ in narration["scene_times"][1:]]
-    seg = [starts[i + 1] - starts[i] for i in range(len(starts) - 1)] + [total - starts[-1]]
 
-    # 1) One moving clip per scene (each clip is XFADE longer so crossfades don't eat time)
+    # Build the shot list: each scene is 1 or 2 shots
+    shot_imgs, shot_starts, scene_cut = [], [], []
+    for i, shots in enumerate(images):
+        s_start = starts[i]
+        s_end = starts[i + 1] if i + 1 < len(starts) else total
+        cut = _split_point(narration["words"], i, s_start, s_end) if len(shots) > 1 else None
+        shot_imgs.append(shots[0]); shot_starts.append(s_start); scene_cut.append(True)
+        if cut:
+            shot_imgs.append(shots[1]); shot_starts.append(cut); scene_cut.append(False)
+    seg = [shot_starts[k + 1] - shot_starts[k] for k in range(len(shot_starts) - 1)] + [total - shot_starts[-1]]
+
+    # 1) One moving clip per shot (each clip is XFADE longer so crossfades don't eat time)
     motions = list(MOTIONS)
     clips, last = [], None
-    for i, (img, s) in enumerate(zip(images, seg)):
+    for k, (img, s) in enumerate(zip(shot_imgs, seg)):
         m = random.choice([mm for mm in motions if mm != last]); last = m
-        length = s + (XFADE if i < len(images) - 1 else 0)
-        clips.append(_scene_clip(img, length, m, workdir / f"clip_{i:02d}.mp4"))
-        log(f"Clip {i}: {length:.1f}s {m}")
+        length = s + (XFADE if k < len(shot_imgs) - 1 else 0)
+        clips.append(_scene_clip(img, length, m, workdir / f"clip_{k:02d}.mp4"))
+        log(f"Shot {k}: {length:.1f}s {m}")
 
     # 2) Chain crossfades
     inputs, fc, prev = [], [], "[0:v]"
@@ -57,7 +84,7 @@ def render(story: dict, images: list[Path], narration: dict, ass_path: Path, wor
         inputs += ["-i", str(c)]
     for i in range(1, len(clips)):
         offset = sum(seg[:i])
-        trans = random.choice(["fadeblack", "fade", "fadeblack", "dissolve"])
+        trans = random.choice(["fadeblack", "fade", "fadeblack"]) if scene_cut[i] else random.choice(["fade", "dissolve"])
         label = f"[x{i}]"
         fc.append(f"{prev}[{i}:v]xfade=transition={trans}:duration={XFADE}:offset={offset:.3f}{label}")
         prev = label
@@ -72,13 +99,6 @@ def render(story: dict, images: list[Path], narration: dict, ass_path: Path, wor
     font, fontsdir = font_setup()
     ass_arg = str(ass_path).replace("\\", "/").replace(":", "\\:")
     ass_filter = f"ass='{ass_arg}'" + (f":fontsdir='{fontsdir}'" if fontsdir else "")
-    vchain = (
-        f"[0:v]eq=saturation=1.0:contrast=1.06:brightness=0.0:gamma=1.08,"
-        f"colorbalance=bs=0.05:bm=0.03:rh=-0.02,"
-        f"noise=alls=6:allf=t+u,vignette=PI/4.2,{ass_filter},"
-        f"fade=t=out:st={total - 1.0:.2f}:d=1.0,format=yuv420p[v]"
-    )
-
     music = _pick_file(ROOT / "assets" / "music")
     story["music_file"] = music.name if music else None
     sting = _pick_file(ROOT / "assets" / "stings")
@@ -116,24 +136,73 @@ def render(story: dict, images: list[Path], narration: dict, ass_path: Path, wor
     fx_len = float(CONFIG.get("sfx_max_seconds", 4.5))
     for si, scene in enumerate(story.get("scenes", [])):
         name = (scene.get("sfx") or "none").strip().lower().replace(" ", "_")
+        # Optional variants: <sound>_echo, <sound>_muffled, <sound>_distant
+        variant = ""
+        for v in ("_echo", "_muffled", "_distant"):
+            if name.endswith(v):
+                name, variant = name[: -len(v)], v
         fx = sfx_dir / f"{name}.mp3"
         if name == "none" or si == 0 or not fx.exists() or si >= len(starts):
             continue
+        vf = {
+            "_echo": "aecho=0.8:0.8:140|290|480:0.45|0.3|0.2,",               # big empty room / hallway
+            "_muffled": "lowpass=f=650,volume=1.6,",                            # behind a wall / door / under a blanket
+            "_distant": "lowpass=f=1400,aecho=0.8:0.6:260|520:0.3|0.2,volume=0.55,",  # far away
+        }.get(variant, "")
         at_ms = int((starts[si] + 0.25) * 1000)
         ins += ["-i", str(fx)]
         achain.append(
             f"[{idx}:a]aformat=sample_rates=48000:channel_layouts=stereo,"
             f"silenceremove=start_periods=1:start_threshold=-45dB,"  # start right on the sound
             f"atrim=0:{fx_len},afade=t=out:st={fx_len - 1.0}:d=1.0,"  # long recordings get cut + faded
-            f"loudnorm=I=-20:TP=-3,volume={fx_vol},adelay={at_ms}|{at_ms}[fx{si}]"
+            f"loudnorm=I=-20:TP=-3,{vf}volume={fx_vol},adelay={at_ms}|{at_ms}[fx{si}]"
         )
         mix.append(f"[fx{si}]")
         idx += 1
-        log(f"Sound effect '{name}' on scene {si}")
+        log(f"Sound effect '{name}{variant}' on scene {si}")
+    # Click on the end card's FOLLOW
+    click = ROOT / "assets" / "sfx" / "ui_click.mp3"
+    if click.exists():
+        c_ms = int((narration["duration"] + END_CARD_DELAY + 0.25) * 1000)
+        ins += ["-i", str(click)]
+        achain.append(
+            f"[{idx}:a]aformat=sample_rates=48000:channel_layouts=stereo,"
+            f"silenceremove=start_periods=1:start_threshold=-45dB,atrim=0:1.0,"
+            f"loudnorm=I=-18:TP=-3,volume={CONFIG.get('click_volume', 0.7)},adelay={c_ms}|{c_ms}[click]"
+        )
+        mix.append("[click]")
+        idx += 1
     achain.append(
         f"{''.join(mix)}amix=inputs={len(mix)}:normalize=0:duration=first,"
         f"apad,atrim=0:{total:.2f},loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000[a]"
     )
+
+    # Video: grade + grain, then mascot intro flash, corner logo, end card, then captions
+    end_start = narration["duration"] + END_CARD_DELAY
+    base = ("[0:v]eq=saturation=1.0:contrast=1.06:brightness=0.0:gamma=1.08,"
+            "colorbalance=bs=0.05:bm=0.03:rh=-0.02,noise=alls=6:allf=t+u,vignette=PI/4.2")
+    mascot = ROOT / "assets" / "mascot.png"
+    logo = ROOT / "assets" / "mascot_round.png"
+    vparts, cur = [], "[vb]"
+    vparts.append(f"{base}[vb]")
+    if CONFIG.get("mascot", True) and mascot.exists() and logo.exists():
+        ins += ["-loop", "1", "-framerate", str(FPS), "-t", f"{total:.2f}", "-i", str(mascot)]
+        m_idx = idx; idx += 1
+        ins += ["-loop", "1", "-framerate", str(FPS), "-t", f"{total:.2f}", "-i", str(logo)]
+        l_idx = idx; idx += 1
+        vparts.append(f"[{m_idx}:v]format=rgba,split=2[m1][m2]")
+        # 1) intro flash: full-width mascot over the first half-second, fading out (hook audio already playing)
+        vparts.append(f"[m1]scale={W}:{W},fade=t=out:st=0.45:d=0.35:alpha=1[intro]")
+        vparts.append(f"{cur}[intro]overlay=0:(H-h)/2:enable='lt(t,0.85)'[v1]"); cur = "[v1]"
+        # 2) small round logo in the top-left corner during the story
+        vparts.append(f"[{l_idx}:v]format=rgba,scale=150:150,colorchannelmixer=aa=0.92[logo]")
+        vparts.append(f"{cur}[logo]overlay=36:96:enable='between(t,0.85,{end_start:.2f})'[v2]"); cur = "[v2]"
+        # 3) end card: darken the last shot, mascot fades in (text comes from the captions file)
+        vparts.append(f"{cur}drawbox=x=0:y=0:w=iw:h=ih:color=black@0.72:t=fill:enable='gte(t,{end_start:.2f})'[v3]"); cur = "[v3]"
+        vparts.append(f"[m2]scale=640:640,fade=t=in:st={end_start:.2f}:d=0.4:alpha=1[endimg]")
+        vparts.append(f"{cur}[endimg]overlay=(W-w)/2:360:enable='gte(t,{end_start:.2f})'[v4]"); cur = "[v4]"
+    vparts.append(f"{cur}{ass_filter},fade=t=out:st={total - 0.6:.2f}:d=0.6,format=yuv420p[v]")
+    vchain = ";".join(vparts)
 
     out = workdir / "final.mp4"
     run(["ffmpeg", "-y", "-loglevel", "error", *ins,

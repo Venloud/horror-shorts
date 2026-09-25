@@ -46,7 +46,7 @@ def _groups(words: list[dict], max_words: int) -> list[list[dict]]:
     return groups
 
 
-def build_ass(words: list[dict], hook_text: str, total: float, out: Path) -> Path:
+def build_ass(words: list[dict], hook_text: str, total: float, out: Path, end_start: float | None = None) -> Path:
     font, _ = font_setup()
     size = int(CONFIG.get("caption_size", 96))
     if font != CONFIG["caption_font"]:
@@ -65,6 +65,7 @@ ScaledBorderAndShadow: yes
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 Style: Cap,{font},{size},{white},{white},{black},{_ass_color('#000000', '80')},-1,0,0,0,100,100,1,0,1,7,3,5,80,80,0,1
+Style: End,{font},{int(size * 1.05)},{white},{white},{black},{_ass_color('#000000', '60')},-1,0,0,0,100,100,1,0,1,6,2,8,60,60,1060,1
 Style: Hook,{font},{int(size * 1.15)},{white},{white},{black},{_ass_color('#000000', '40')},-1,0,0,0,100,100,1,0,3,24,0,8,70,70,260,1
 
 [Events]
@@ -77,6 +78,13 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         lines.append(
             f"Dialogue: 1,{_ts(0)},{_ts(min(4.0, total))},Hook,,0,0,0,,"
             f"{{\\fad(150,300)}}{_safe(hook_text)}"
+        )
+
+    if end_start is not None and end_start < total:
+        name = CONFIG.get("channel_name", "").upper()
+        lines.append(
+            f"Dialogue: 2,{_ts(end_start + 0.2)},{_ts(total)},End,,0,0,0,,"
+            f"{{\\fad(300,0)}}FOLLOW FOR MORE\\N{{\\c{hi}\\fscx80\\fscy80}}{_safe(name)}"
         )
 
     groups = _groups(words, int(CONFIG.get("caption_words_per_group", 3)))

@@ -74,6 +74,8 @@ def narrate(story: dict, outdir: Path) -> dict:
             chunk_words = _tokens_to_words(getattr(result, "tokens", None), t)
             if not chunk_words:
                 chunk_words = _proportional_words(getattr(result, "graphemes", text) or text, t, dur)
+            for w in chunk_words:
+                w["scene"] = i
             words.extend(chunk_words)
             pieces.append(audio)
             t += dur
