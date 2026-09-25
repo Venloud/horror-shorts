@@ -26,5 +26,19 @@
       "status": "SEND_TO_USER_INBOX",
       "mode": "draft"
     }
+  },
+  {
+    "date": "2026-09-25_0412",
+    "title": "The Legend of the Manananggal",
+    "premise": "A mythical creature from Philippine folklore separates its upper torso to hunt at night.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "case": "Manananggal",
+    "seconds": 76.6,
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7689323010515929119",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    }
   }
 ]
