@@ -42,6 +42,10 @@ IMAGE PROMPTS
 - Never depict a real person's face. People appear only as distant silhouettes, from behind, or in shadow.
 - No text, no writing, no blood, no bodies.
 
+SOUND EFFECTS
+- For each scene, set "sfx" to ONE sound from this list that fits that moment, or "none": {sfx_list}
+- Use sound effects on 2 to 4 scenes only. Never on the hook scene.
+
 OTHER FIELDS
 - title: the case name, 3-7 words.
 - premise: one-sentence summary of the case.
@@ -53,15 +57,60 @@ OTHER FIELDS
 """
 
 
-def _load_cases() -> list[str]:
-    return json.loads(CASES_FILE.read_text())
+LORE_FILE = ROOT / "data" / "lore.json"
+
+LORE_PROMPT = """You tell dark LEGENDS and FOLKLORE for a faceless TikTok channel called "{channel}".
+The video is read aloud by a calm, low narrator over dark painted images, with eerie music.
+
+TODAY'S LEGEND: {case}
+
+SOURCE (from Wikipedia). This is your ONLY source for facts about the legend:
+\"\"\"
+{facts}
+\"\"\"
+
+STRUCTURE (follow exactly). It must feel like a complete mini-story with a clear ending.
+1. SCENE 1 = HOOK, "did you know" style (1-2 sentences, max 25 words), using the creepiest detail of the legend. Patterns:
+   - "Did you know that in [place], people believed [creepy belief]?"
+   - "There's a creature in [culture] folklore that [creepy trait], and people still [what they do] today."
+   - "If you ever [situation] in [place], the old stories say you should never [action]."
+2. SCENE 2 = CONTEXT: where the legend comes from and how old it is.
+3. What the creature/legend is, what it does, its rules (how it hunts, what attracts it), with the eeriest details.
+4. The most famous story, sighting, or belief about it (framed as "people claimed", "the legend says").
+5. How people protected themselves, according to the legend.
+6. LAST SCENE = a chilling closing line that ties back to the hook and ends the video cleanly, e.g. "So next time you [situation]... maybe don't [action]."
+
+HARD RULES
+- Use only facts from the source. Present the legend as a legend ("the story goes", "people believed"), never as proven fact.
+- Respectful to the cultures these stories come from: no mocking, no stereotypes, and no treating anyone's religion as evil.
+- No gore, no harm to children, no sexual content.
+- Third person, plain spoken English, short sentences. 170 to 210 words. 8 to 10 scenes, 1-3 sentences each.
+
+IMAGE PROMPTS
+- One painted illustration per scene showing the creature, the setting, the era, or the moment. The creature can be shown (it is folklore), but no gore.
+- No text or writing in the image.
+
+SOUND EFFECTS
+- For each scene, set "sfx" to ONE sound from this list that fits, or "none": {sfx_list}
+- Use sound effects on 2 to 4 scenes only. Never on the hook scene.
+
+OTHER FIELDS
+- title: the legend name, 3-7 words.
+- premise: one-sentence summary.
+- hook_overlay: 3-6 word on-screen title, e.g. "The legend of the Wendigo".
+- twist_scene: 0-based index of the creepiest reveal.
+- caption: 1-2 short lines ending with a question for comments. Max 150 characters. May use 1 emoji.
+- hashtags: 5 hashtags without #, e.g. folklore, legends, creepy, plus 2 specific.
+- pinned_comment: a question that invites people to share their own local legends.
+"""
 
 
-def pick_case(history: list[dict]) -> str:
+def pick_case(history: list[dict], kind: str = "mystery") -> str:
+    file = LORE_FILE if kind == "lore" else CASES_FILE
     used = {h.get("case") for h in history if h.get("case")}
-    fresh = [c for c in _load_cases() if c not in used]
+    fresh = [c for c in json.loads(file.read_text()) if c not in used]
     if not fresh:
-        raise RuntimeError("All mystery cases in data/mysteries.json have been used. Add more titles.")
+        raise RuntimeError(f"All topics in {file.name} have been used. Add more titles.")
     return random.choice(fresh)
 
 
@@ -80,7 +129,8 @@ def fetch_facts(title: str, limit: int = 9000) -> str:
     return text[:limit]
 
 
-def build_prompt(channel: str, case: str) -> str:
+def build_prompt(channel: str, case: str, sfx_list: str = "none", kind: str = "mystery") -> tuple[str, str]:
     facts = fetch_facts(case)
-    log(f"Mystery case: {case} ({len(facts)} chars of source)")
-    return MYSTERY_PROMPT.format(channel=channel, case=case, facts=facts)
+    log(f"Topic: {case} ({len(facts)} chars of source)")
+    template = LORE_PROMPT if kind == "lore" else MYSTERY_PROMPT
+    return template.format(channel=channel, case=case, facts=facts, sfx_list=sfx_list), facts

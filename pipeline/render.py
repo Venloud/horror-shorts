@@ -73,7 +73,7 @@ def render(story: dict, images: list[Path], narration: dict, ass_path: Path, wor
     ass_arg = str(ass_path).replace("\\", "/").replace(":", "\\:")
     ass_filter = f"ass='{ass_arg}'" + (f":fontsdir='{fontsdir}'" if fontsdir else "")
     vchain = (
-        f"[0:v]eq=saturation=1.0:contrast=1.06:brightness=-0.02,"
+        f"[0:v]eq=saturation=1.0:contrast=1.06:brightness=0.0:gamma=1.08,"
         f"colorbalance=bs=0.05:bm=0.03:rh=-0.02,"
         f"noise=alls=6:allf=t+u,vignette=PI/4.2,{ass_filter},"
         f"fade=t=out:st={total - 1.0:.2f}:d=1.0,format=yuv420p[v]"
@@ -110,6 +110,26 @@ def render(story: dict, images: list[Path], narration: dict, ass_path: Path, wor
         )
         mix.append("[st]")
         idx += 1
+    # Scene sound effects (footsteps, knocking, door creak...) from assets/sfx/<name>.mp3
+    sfx_dir = ROOT / "assets" / "sfx"
+    fx_vol = CONFIG.get("sfx_volume", 0.6)
+    fx_len = float(CONFIG.get("sfx_max_seconds", 4.5))
+    for si, scene in enumerate(story.get("scenes", [])):
+        name = (scene.get("sfx") or "none").strip().lower().replace(" ", "_")
+        fx = sfx_dir / f"{name}.mp3"
+        if name == "none" or si == 0 or not fx.exists() or si >= len(starts):
+            continue
+        at_ms = int((starts[si] + 0.25) * 1000)
+        ins += ["-i", str(fx)]
+        achain.append(
+            f"[{idx}:a]aformat=sample_rates=48000:channel_layouts=stereo,"
+            f"silenceremove=start_periods=1:start_threshold=-45dB,"  # start right on the sound
+            f"atrim=0:{fx_len},afade=t=out:st={fx_len - 1.0}:d=1.0,"  # long recordings get cut + faded
+            f"loudnorm=I=-20:TP=-3,volume={fx_vol},adelay={at_ms}|{at_ms}[fx{si}]"
+        )
+        mix.append(f"[fx{si}]")
+        idx += 1
+        log(f"Sound effect '{name}' on scene {si}")
     achain.append(
         f"{''.join(mix)}amix=inputs={len(mix)}:normalize=0:duration=first,"
         f"apad,atrim=0:{total:.2f},loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000[a]"

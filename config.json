@@ -1,7 +1,7 @@
 {
   "channel_name": "Night Files",
 
-  "story_modes": ["fiction", "mystery"],
+  "story_modes": ["fiction", "mystery", "lore"],
 
   "llm_models": ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-flash-latest"],
 
@@ -21,7 +21,7 @@
   ],
 
   "voice": "am_michael",
-  "voice_speed": 0.95,
+  "voice_speed": 1.1,
   "voice_lang": "a",
 
   "caption_font": "Anton",
@@ -42,6 +42,8 @@
     "bk_grnde.mp3": "\ud83c\udfb5 Music: bk grnde by Kitty katzzz"
   },
   "sting_volume": 0.55,
+  "sfx_volume": 0.6,
+  "sfx_max_seconds": 4.5,
 
   "image_style": "dark comic book illustration, graphic novel art style, painterly digital painting, bold ink linework, rich moody colors (deep teal, crimson red, warm amber, purple night), dramatic cinematic lighting, strong shadows, eerie horror atmosphere, detailed background, stylized not photorealistic, vertical composition, no text, no speech bubbles, no watermark, no gore",
 

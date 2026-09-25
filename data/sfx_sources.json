@@ -1,0 +1,16 @@
+{
+  "_license": "All sounds from BigSoundBank.com, CC0 (public domain): free for commercial use, no attribution required.",
+  "footsteps":     {"id": "0181", "title": "Footsteps (barefoot on wooden stairs)"},
+  "floor_creak":   {"id": "0518", "title": "Floating floor squeaks"},
+  "knocking":      {"id": "0095", "title": "Door knock"},
+  "door_creak":    {"id": "0306", "title": "Long creaking door"},
+  "door_slam":     {"id": "0103", "title": "Door slamming #1"},
+  "breathing":     {"id": "2195", "title": "Man breathing"},
+  "heartbeat":     {"id": "0243", "title": "Heartbeat #1"},
+  "whispers":      {"id": "3255", "title": "Whisper #1"},
+  "thunder":       {"id": "3113", "title": "Thunder #2"},
+  "wind":          {"id": "0595", "title": "Wind"},
+  "phone_buzz":    {"id": "0022", "title": "Mobile phone vibrator #1"},
+  "radio_static":  {"id": "0310", "title": "Radio interference #1"},
+  "clock_ticking": {"id": "1567", "title": "Grandfather clock, ticking"}
+}
