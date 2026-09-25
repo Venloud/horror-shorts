@@ -190,13 +190,19 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
         m_idx = idx; idx += 1
         ins += ["-loop", "1", "-framerate", str(FPS), "-t", f"{total:.2f}", "-i", str(logo)]
         l_idx = idx; idx += 1
-        vparts.append(f"[{m_idx}:v]format=rgba,split=2[m1][m2]")
-        # 1) intro flash: full-width mascot over the first half-second, fading out (hook audio already playing)
-        vparts.append(f"[m1]scale={W}:{W},fade=t=out:st=0.45:d=0.35:alpha=1[intro]")
-        vparts.append(f"{cur}[intro]overlay=0:(H-h)/2:enable='lt(t,0.85)'[v1]"); cur = "[v1]"
+        if CONFIG.get("mascot_intro", False):
+            vparts.append(f"[{m_idx}:v]format=rgba,split=2[m1][m2]")
+        else:
+            vparts.append(f"[{m_idx}:v]format=rgba[m2]")
+        # 1) optional intro flash (off by default: the hook image must be on screen from frame one)
+        logo_from = 0.0
+        if CONFIG.get("mascot_intro", False):
+            vparts.append(f"[m1]scale={W}:{W},fade=t=out:st=0.45:d=0.35:alpha=1[intro]")
+            vparts.append(f"{cur}[intro]overlay=0:(H-h)/2:enable='lt(t,0.85)'[v1]"); cur = "[v1]"
+            logo_from = 0.85
         # 2) small round logo in the top-left corner during the story
         vparts.append(f"[{l_idx}:v]format=rgba,scale=150:150,colorchannelmixer=aa=0.92[logo]")
-        vparts.append(f"{cur}[logo]overlay=36:96:enable='between(t,0.85,{end_start:.2f})'[v2]"); cur = "[v2]"
+        vparts.append(f"{cur}[logo]overlay=36:96:enable='between(t,{logo_from:.2f},{end_start:.2f})'[v2]"); cur = "[v2]"
         # 3) end card: darken the last shot, mascot fades in (text comes from the captions file)
         vparts.append(f"{cur}drawbox=x=0:y=0:w=iw:h=ih:color=black@0.72:t=fill:enable='gte(t,{end_start:.2f})'[v3]"); cur = "[v3]"
         vparts.append(f"[m2]scale=640:640,fade=t=in:st={end_start:.2f}:d=0.4:alpha=1[endimg]")

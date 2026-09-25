@@ -22,10 +22,10 @@ SOURCE FACTS (from Wikipedia). This is your ONLY source. Everything you say must
 \"\"\"
 
 STRUCTURE (follow exactly)
-1. SCENE 1 = THE HOOK (spoken, 1-2 sentences, max 25 words): the single strangest true fact of the case, told so a scroller stops. Pattern ideas:
-   - "In [year], [number] people walked into [place]. None of them came back, and no one can explain why."
-   - "This is one of the strangest unsolved cases ever recorded."
-   - "[Strange fact]. To this day, nobody knows why."
+1. SCENE 1 = THE HOOK (1-2 sentences, MAX 18 words): open cold on the single most disturbing or impossible TRUE detail of the case, stated flat. The first 6 words must already be unsettling. Style examples (write new ones):
+   - "Nine hikers cut their tent open from the inside and ran into the snow barefoot."
+   - "A man boarded a plane with two hundred thousand dollars, then jumped out. He was never found."
+   Never open with generic lines like "This is one of the strangest cases ever" or "Have you ever heard of".
 2. SCENE 2 = CONTEXT: when and where it happened, and who was involved, in plain words.
 3. SCENES 3+ = what happened, in order, with the eeriest real details. Then the main theories, clearly framed as theories ("Some believe...", "Investigators suggested...").
 4. LAST SCENE = what remains unexplained, ending with a direct question to the viewer, e.g. "What do you think really happened?"
@@ -35,7 +35,7 @@ HARD RULES
 - Never state or imply that a named real person is guilty of anything the source doesn't establish. Theories must be labelled as theories.
 - Be respectful to victims and families. No graphic injury detail, no gore, no mocking.
 - Third person, past tense, plain spoken English. Short sentences. Calm, serious documentary tone.
-- 170 to 210 words of narration total. 8 to 10 scenes. Each scene 1-3 sentences.
+- 130 to 160 words of narration total (about 50 seconds). 7 to 9 scenes. Each scene 1-3 sentences.
 
 IMAGE PROMPTS
 - A painted illustration of the place, era, objects, or atmosphere of that moment. Match the real setting and time period.
@@ -50,7 +50,7 @@ SOUND EFFECTS
 OTHER FIELDS
 - title: the case name, 3-7 words.
 - premise: one-sentence summary of the case.
-- hook_overlay: 3-6 word on-screen title, e.g. "Still unsolved after 60 years".
+- hook_overlay: 2-5 word shocking on-screen text, e.g. "They cut the tent open", "Never found. Still unsolved."
 - twist_scene: 0-based index of the scene with the strangest reveal.
 - caption: 1-2 short lines ending with a question for comments. Max 150 characters. May use 1 emoji.
 - hashtags: 5 hashtags without #, e.g. unsolvedmysteries, truecrime, mystery, plus 2 specific to the case.
@@ -71,10 +71,10 @@ SOURCE (from Wikipedia). This is your ONLY source for facts about the legend:
 \"\"\"
 
 STRUCTURE (follow exactly). It must feel like a complete mini-story with a clear ending.
-1. SCENE 1 = HOOK, "did you know" style (1-2 sentences, max 25 words), using the creepiest detail of the legend. Patterns:
-   - "Did you know that in [place], people believed [creepy belief]?"
-   - "There's a creature in [culture] folklore that [creepy trait], and people still [what they do] today."
-   - "If you ever [situation] in [place], the old stories say you should never [action]."
+1. SCENE 1 = HOOK, "did you know" style (1-2 sentences, MAX 18 words), built on the single creepiest detail of the legend. The first 6 words must already be unsettling. Patterns:
+   - "Did you know [creepiest detail, stated plainly]?"
+   - "In [place], people still [strange protective habit]. Because of what [creature] does."
+   Never open with a vague line like "There is an old legend".
 2. SCENE 2 = CONTEXT: where the legend comes from and how old it is.
 3. What the creature/legend is, what it does, its rules (how it hunts, what attracts it), with the eeriest details.
 4. The most famous story, sighting, or belief about it (framed as "people claimed", "the legend says").
@@ -85,7 +85,7 @@ HARD RULES
 - Use only facts from the source. Present the legend as a legend ("the story goes", "people believed"), never as proven fact.
 - Respectful to the cultures these stories come from: no mocking, no stereotypes, and no treating anyone's religion as evil.
 - No gore, no harm to children, no sexual content.
-- Third person, plain spoken English, short sentences. 170 to 210 words. 8 to 10 scenes, 1-3 sentences each.
+- Third person, plain spoken English, short sentences. 130 to 160 words (about 50 seconds). 7 to 9 scenes, 1-3 sentences each.
 
 IMAGE PROMPTS
 - Painted illustrations showing the creature, the setting, the era, or the moment. The creature can be shown (it is folklore), but no gore.
@@ -99,7 +99,7 @@ SOUND EFFECTS
 OTHER FIELDS
 - title: the legend name, 3-7 words.
 - premise: one-sentence summary.
-- hook_overlay: 3-6 word on-screen title, e.g. "The legend of the Wendigo".
+- hook_overlay: 2-5 word shocking on-screen text, e.g. "It mimics your mother's voice".
 - twist_scene: 0-based index of the creepiest reveal.
 - caption: 1-2 short lines ending with a question for comments. Max 150 characters. May use 1 emoji.
 - hashtags: 5 hashtags without #, e.g. folklore, legends, creepy, plus 2 specific.

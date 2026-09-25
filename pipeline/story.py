@@ -45,12 +45,17 @@ SUBGENRE FOR TODAY: {subgenre}
 
 STRUCTURE (follow exactly). The story must be COMPLETE and LOGICAL, like a good campfire story.
 First, silently plan: (a) the threat and its ONE clear rule (what it is, what it wants, what triggers it), (b) the hook's promise, (c) the ending that pays off that promise. Then write.
-1. SCENE 1 = THE HOOK (spoken, 1-2 sentences, max 25 words): a strong promise that stops the scroll. Patterns:
-   - "If you ever [specific situation], don't [action]. I did, and [consequence hint]."
-   - "I worked [job] for [time], and there was one rule I was never allowed to break."
-   - "There's a reason I [strange habit] every night."
-   Never open mid-action. Never open with "So", "One night", or "This happened".
-2. SCENE 2 = CONTEXT (1-2 sentences): who I am, where I was, when. Grounded and ordinary.
+1. SCENE 1 = THE HOOK. This decides everything: most viewers swipe in the first 2 seconds.
+   - COLD OPEN: start at the most shocking, impossible, or disturbing moment of the story, then rewind. 1-2 sentences, MAX 18 words.
+   - The FIRST 6 WORDS must already be unsettling. No warm-up, no setup, no "I want to tell you about".
+   - Best formula: a normal statement + one detail that makes it impossible or terrifying. Examples of the STYLE (write new ones, never reuse these):
+     "My phone buzzed at 3 AM. It was a text from my own number: don't turn around."
+     "The babysitter called to ask when we'd be home. We didn't have a babysitter."
+     "I found forty photos of myself sleeping in a camera I'd never seen before."
+     "The man in the lake waved at me. The lake had been frozen for a month."
+   - It must create ONE burning question the viewer needs answered, and the ending must answer it.
+   - Never open with "So", "One night", "This happened", "Have you ever", "Let me tell you", or a rule list.
+2. SCENE 2 = REWIND + CONTEXT (1-2 sentences): jump back to how it started, e.g. "It started three weeks earlier." Who I am, where I was. Grounded and ordinary.
 3. RISING TENSION: the strange thing starts, then escalates step by step. Every detail must matter later.
 4. CLIMAX: the narrator faces the threat directly. Something happens.
 5. ENDING (last 1-2 scenes): what happened after, and a final chilling line.
@@ -64,8 +69,8 @@ HARD RULES
 - Pure fiction. No real people, real crimes, real victims, real brands, or real named towns/addresses.
 - TikTok-safe: tension and dread, not gore. No graphic violence, no self-harm, no suicide, nothing involving harm to children, no sexual content.
 - First person, past tense, plain spoken English like someone telling it at 2am. Short sentences. No fancy words.
-- 170 to 210 words of narration total. This is strict; count them.
-- 8 to 10 scenes total. Each scene is 1-3 sentences and gets one image.
+- 130 to 160 words of narration total (about 50 seconds). This is strict; count them. Every sentence must earn its place.
+- 7 to 9 scenes total. Each scene is 1-3 sentences and gets one image.
 
 IMAGE PROMPTS
 - Describe each painted frame: subject + setting + lighting + composition (camera angle / shot size).
@@ -82,7 +87,7 @@ SOUND EFFECTS
 OTHER FIELDS
 - title: 3-7 word internal title.
 - premise: one sentence summary (used to avoid repeating stories).
-- hook_overlay: 3-6 word on-screen title shown big during the hook, curiosity-driven, e.g. "The rule I broke" or "Never answer the second knock". No emojis.
+- hook_overlay: 2-5 word on-screen text shown big over the first seconds. It must be shocking on its own, not a title, e.g. "It texted from my phone", "We didn't have a babysitter", "He waved from under the ice". No emojis.
 - twist_scene: the 0-based index of the scene where the twist hits.
 - caption: TikTok caption, 1-2 short lines, ending with a question that makes people comment (e.g. "Would you have opened it?"). Max 150 characters. May use 1 emoji.
 - hashtags: 5 hashtags without the # symbol, mixing broad (scarystories, horrortok) and specific.
@@ -101,11 +106,11 @@ CHECKLIST
 2. Is it logical? The threat must follow one clear rule; no random events that are never explained; the viewer can retell the plot in one sentence.
 3. Is there a real ending? Climax, then what happened after, then a final chilling line. Not a cliffhanger that just stops.
 4. Does every scene move the story forward? Cut filler, keep the scariest concrete details.
-5. Is the hook strong enough to stop a scroller in 2 seconds?
+5. THE HOOK: would the first 6 words alone stop a scroller? Does scene 1 open on the most shocking moment and raise one burning question? If it is generic, slow, or explains too much, rewrite scene 1 and hook_overlay until it hits hard (max 18 words).
 6. Same rules as before: {rules}
 
 If something fails, rewrite those scenes (and image_prompt, image_prompt_2 and sfx to match; the two image prompts must be different shots matching the first and second half of the scene). Keep what already works.
-Keep {words} words total, the same number of scenes or 8-10, and keep sfx values from this list only: {sfx_list}
+Keep {words} words total, the same number of scenes or 7-9, and keep sfx values from this list only: {sfx_list}
 
 DRAFT:
 {draft}
@@ -116,7 +121,7 @@ def edit_story(story: dict, api_key: str, sfx_list: str, rules: str) -> dict:
     """Second pass: an editor checks logic, ending, and hook payoff, then rewrites."""
     draft = {k: story[k] for k in SCHEMA["required"] if k in story}
     prompt = EDITOR_PROMPT.format(draft=json.dumps(draft, ensure_ascii=False, indent=1),
-                                  sfx_list=sfx_list, rules=rules, words="170 to 210")
+                                  sfx_list=sfx_list, rules=rules, words="130 to 160")
     try:
         edited = _run_models(prompt, api_key, temperature=0.5)
         log("Editor pass: story revised")
@@ -158,7 +163,7 @@ def _validate(story: dict) -> None:
     if not 6 <= len(scenes) <= 12:
         raise ValueError(f"bad scene count {len(scenes)}")
     words = sum(len(s["narration"].split()) for s in scenes)
-    if not 140 <= words <= 250:
+    if not 105 <= words <= 200:
         raise ValueError(f"narration length {words} words out of range")
     if not 0 <= int(story.get("twist_scene", 0)) < len(scenes):
         story["twist_scene"] = max(0, len(scenes) - 2)
