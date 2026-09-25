@@ -34,7 +34,14 @@ def _pollinations(prompt: str, seed: int) -> bytes:
     r = requests.get(url, timeout=180)
     if r.status_code != 200 or not r.headers.get("content-type", "").startswith("image"):
         raise RuntimeError(f"Pollinations HTTP {r.status_code}")
-    return r.content
+    # Pollinations stamps a small logo in the bottom corner: crop the bottom 7% off.
+    import io
+    with Image.open(io.BytesIO(r.content)) as im:
+        im = im.convert("RGB")
+        im = im.crop((0, 0, im.width, int(im.height * 0.93)))
+        buf = io.BytesIO()
+        im.save(buf, "PNG")
+        return buf.getvalue()
 
 
 def _save_valid(raw: bytes, path: Path) -> None:

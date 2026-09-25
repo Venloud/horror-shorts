@@ -1,6 +1,7 @@
 """Writes an original scary story + scene breakdown + TikTok caption with Gemini."""
 import json
 import random
+import time
 from collections import Counter
 
 import requests
@@ -36,29 +37,39 @@ SCHEMA = {
 }
 
 PROMPT = """You write viral short-form horror stories for a faceless TikTok channel called "{channel}".
-The story is read aloud by a calm, low narrator over dark images. Write an ORIGINAL story.
+The story is read aloud by a calm, low narrator over dark painted images. Write an ORIGINAL story.
 
 SUBGENRE FOR TODAY: {subgenre}
+
+STRUCTURE (follow exactly)
+1. SCENE 1 = THE HOOK (spoken, 1-2 sentences, max 25 words). It must make a scroller stop in 2 seconds AND tell them what this story is about. Speak to the viewer or make a bold promise. Good patterns:
+   - "If you ever [specific situation], don't [action]. I did, and [consequence hint]."
+   - "I worked [job] for [time], and there was one rule I was never allowed to break."
+   - "This is the scariest thing that ever happened to me, and it started with [small ordinary detail]."
+   - "There's a reason I don't [ordinary thing] anymore."
+   Never open mid-action. Never open with "So", "One night", or "This happened".
+2. SCENE 2 = CONTEXT (1-2 sentences): who I am, where I was, when. Grounded and ordinary, e.g. "I was nineteen, working nights at a gas station off an empty highway."
+3. SCENES 3+ = the story: build tension with concrete details (sounds, small wrong things). Put a twist around 75% through.
+4. LAST SCENE = a chilling final line that lands hard or makes people replay. Do not explain the twist. No moral, no "and I never went back".
 
 HARD RULES
 - Pure fiction. No real people, real crimes, real victims, real brands, or real named towns/addresses.
 - TikTok-safe: tension and dread, not gore. No graphic violence, no self-harm, no suicide, nothing involving harm to children, no sexual content.
-- First person, past tense ("I"), plain spoken English like someone telling it at 2am. Short sentences. No fancy words.
-- 150 to 190 words of narration total. This is strict; count them.
-- Sentence 1 is the HOOK: it must make someone stop scrolling within 2 seconds. Start mid-situation with a specific, unsettling detail. Never start with "So", "One night", "This happened", or "I never believed".
-- Build tension with concrete details (sounds, small wrong things). Put a twist around 70-80% of the way through.
-- The LAST line must land hard: a chilling reveal or a line that makes people replay. Do not explain the twist. No moral, no "and I never went back".
-- Split the narration into 7 to 9 scenes. Each scene is 1-3 sentences, and each needs an image.
+- First person, past tense, plain spoken English like someone telling it at 2am. Short sentences. No fancy words.
+- 170 to 210 words of narration total. This is strict; count them.
+- 8 to 10 scenes total. Each scene is 1-3 sentences and gets one image.
 
 IMAGE PROMPTS
-- One per scene, describing a single still frame that matches that moment. Concrete subject + setting + lighting + camera angle.
-- Show places, objects, silhouettes, and shadows. Faces should be hidden, in shadow, blurred, or turned away. No text, signs, or writing in the image. No blood or gore.
-- Keep the same main setting and character look consistent across scenes (repeat key details like "the narrator, a man in a grey hoodie").
+- One per scene, describing a single painted frame for that moment: subject + setting + lighting + composition.
+- Dark oil-painting look, NOT a photo. Describe it like a painting ("painted scene of...").
+- Show places, objects, silhouettes, and shadows. Faces hidden, in shadow, or turned away. No text or writing in the image. No blood or gore.
+- Keep the setting and the main character's look consistent (repeat key details like "the narrator, a young man in a grey hoodie").
+- Scene 1's image must be the most striking, eerie image of the whole story (it is the thumbnail).
 
 OTHER FIELDS
 - title: 3-7 word internal title.
 - premise: one sentence summary (used to avoid repeating stories).
-- hook_overlay: 3-7 word on-screen text for the first seconds, curiosity-driven, e.g. "Never answer the second knock". No emojis.
+- hook_overlay: 3-6 word on-screen title shown big during the hook, curiosity-driven, e.g. "The rule I broke" or "Never answer the second knock". No emojis.
 - twist_scene: the 0-based index of the scene where the twist hits.
 - caption: TikTok caption, 1-2 short lines, ending with a question that makes people comment (e.g. "Would you have opened it?"). Max 150 characters. May use 1 emoji.
 - hashtags: 5 hashtags without the # symbol, mixing broad (scarystories, horrortok) and specific.
@@ -78,11 +89,11 @@ def pick_subgenre(history: list[dict]) -> str:
     return random.choice(fresh or subs)
 
 
-def _call_gemini(model: str, prompt: str, api_key: str) -> dict:
+def _call_gemini(model: str, prompt: str, api_key: str, temperature: float = 1.0) -> dict:
     body = {
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
         "generationConfig": {
-            "temperature": 1.0,
+            "temperature": temperature,
             "responseMimeType": "application/json",
             "responseSchema": SCHEMA,
         },
@@ -98,33 +109,66 @@ def _call_gemini(model: str, prompt: str, api_key: str) -> dict:
 
 def _validate(story: dict) -> None:
     scenes = story.get("scenes") or []
-    if not 5 <= len(scenes) <= 11:
+    if not 6 <= len(scenes) <= 12:
         raise ValueError(f"bad scene count {len(scenes)}")
     words = sum(len(s["narration"].split()) for s in scenes)
-    if not 110 <= words <= 240:
+    if not 140 <= words <= 250:
         raise ValueError(f"narration length {words} words out of range")
     if not 0 <= int(story.get("twist_scene", 0)) < len(scenes):
         story["twist_scene"] = max(0, len(scenes) - 2)
 
 
-def write_story(history: list[dict]) -> dict:
-    api_key = env("GEMINI_API_KEY")
-    subgenre = pick_subgenre(history)
-    recent = "\n".join(f"- {h['title']}: {h.get('premise', '')}" for h in history[-40:]) or "- (none yet)"
-    prompt = PROMPT.format(channel=CONFIG["channel_name"], subgenre=subgenre, recent=recent)
+def pick_mode(history: list[dict]) -> str:
+    """Rotate through the story modes in config (e.g. fiction, mystery, fiction, mystery...)."""
+    modes = CONFIG.get("story_modes", ["fiction"])
+    last = next((h.get("mode", "fiction") for h in reversed(history)), None)
+    if last in modes:
+        return modes[(modes.index(last) + 1) % len(modes)]
+    return modes[0]
 
+
+def _run_models(prompt: str, api_key: str, temperature: float) -> dict:
     errors = []
     for model in CONFIG["llm_models"]:
         for attempt in range(3):
             try:
-                story = _call_gemini(model, prompt, api_key)
+                story = _call_gemini(model, prompt, api_key, temperature)
                 _validate(story)
-                story["subgenre"] = subgenre
                 story["model"] = model
-                words = sum(len(s["narration"].split()) for s in story["scenes"])
-                log(f"Story '{story['title']}' ({words} words, {len(story['scenes'])} scenes) via {model}")
                 return story
             except Exception as e:  # noqa: BLE001
-                errors.append(f"{model}#{attempt + 1}: {e}")
-                log(f"Story attempt failed: {e}")
+                errors.append(f"{model}#{attempt + 1}: {str(e)[:300]}")
+                log(f"Story attempt failed: {str(e)[:200]}")
+                if "404" in str(e):
+                    break  # model retired: skip straight to the next one
+                time.sleep(8 * (attempt + 1))
     raise RuntimeError("Could not write a story:\n" + "\n".join(errors))
+
+
+def write_story(history: list[dict]) -> dict:
+    api_key = env("GEMINI_API_KEY")
+    mode = pick_mode(history)
+
+    if mode == "mystery":
+        import mystery
+        for _ in range(3):
+            case = mystery.pick_case(history)
+            try:
+                prompt = mystery.build_prompt(CONFIG["channel_name"], case)
+                story = _run_models(prompt, api_key, temperature=0.6)
+                story.update({"mode": "mystery", "case": case, "subgenre": "real unsolved mystery"})
+                log(f"Mystery '{story['title']}' ({len(story['scenes'])} scenes) via {story['model']}")
+                return story
+            except Exception as e:  # noqa: BLE001
+                log(f"Mystery mode failed ({e}); trying another case")
+                history = history + [{"case": case}]
+        log("Falling back to fiction today")
+
+    subgenre = pick_subgenre(history)
+    recent = "\n".join(f"- {h['title']}: {h.get('premise', '')}" for h in history[-40:] if h.get("title")) or "- (none yet)"
+    prompt = PROMPT.format(channel=CONFIG["channel_name"], subgenre=subgenre, recent=recent)
+    story = _run_models(prompt, api_key, temperature=1.0)
+    story.update({"mode": "fiction", "subgenre": subgenre})
+    words = sum(len(s["narration"].split()) for s in story["scenes"])
+    log(f"Story '{story['title']}' ({words} words, {len(story['scenes'])} scenes) via {story['model']}")
+    return story

@@ -53,6 +53,8 @@ def main() -> int:
             "title": story["title"],
             "premise": story.get("premise", ""),
             "subgenre": story.get("subgenre", ""),
+            "mode": story.get("mode", "fiction"),
+            "case": story.get("case"),
             "seconds": round(narration["duration"], 1),
             "tiktok": result,
         })

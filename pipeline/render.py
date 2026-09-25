@@ -73,13 +73,14 @@ def render(story: dict, images: list[Path], narration: dict, ass_path: Path, wor
     ass_arg = str(ass_path).replace("\\", "/").replace(":", "\\:")
     ass_filter = f"ass='{ass_arg}'" + (f":fontsdir='{fontsdir}'" if fontsdir else "")
     vchain = (
-        f"[0:v]eq=saturation=0.72:contrast=1.08:brightness=-0.035,"
+        f"[0:v]eq=saturation=1.0:contrast=1.06:brightness=-0.02,"
         f"colorbalance=bs=0.05:bm=0.03:rh=-0.02,"
-        f"noise=alls=9:allf=t+u,vignette=PI/4.2,{ass_filter},"
+        f"noise=alls=6:allf=t+u,vignette=PI/4.2,{ass_filter},"
         f"fade=t=out:st={total - 1.0:.2f}:d=1.0,format=yuv420p[v]"
     )
 
     music = _pick_file(ROOT / "assets" / "music")
+    story["music_file"] = music.name if music else None
     sting = _pick_file(ROOT / "assets" / "stings")
     ins = ["-i", str(joined), "-i", str(narration["path"])]
     achain = ["[1:a]aformat=sample_rates=48000:channel_layouts=stereo,asplit=2[narr][key]"]
@@ -87,9 +88,10 @@ def render(story: dict, images: list[Path], narration: dict, ass_path: Path, wor
     idx = 2
     if music:
         ins += ["-stream_loop", "-1", "-i", str(music)]
-        mv = CONFIG.get("music_volume", 0.14)
+        mv = CONFIG.get("track_volumes", {}).get(music.name, CONFIG.get("music_volume", 0.22))
         achain.append(
             f"[{idx}:a]aformat=sample_rates=48000:channel_layouts=stereo,atrim=0:{total:.2f},"
+            f"loudnorm=I=-18:TP=-2,"  # even out loud/quiet songs first
             f"volume={mv},afade=t=in:d=1.5,afade=t=out:st={total - 2.0:.2f}:d=2.0[mus]"
         )
         achain.append("[mus][key]sidechaincompress=threshold=0.04:ratio=5:attack=30:release=500[duck]")

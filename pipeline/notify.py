@@ -3,12 +3,14 @@ import os
 
 import requests
 
-from common import env, log
+from common import CONFIG, env, log
 
 
 def caption_text(story: dict) -> str:
     tags = " ".join("#" + t.lstrip("#").replace(" ", "") for t in story.get("hashtags", []))
-    return f"{story['caption'].strip()}\n\n{tags}".strip()
+    credit = CONFIG.get("music_credits", {}).get(story.get("music_file") or "", "")
+    credit = f"\n{credit}" if credit else ""
+    return f"{story['caption'].strip()}{credit}\n\n{tags}".strip()
 
 
 def notify(story: dict, result: dict | None, error: str | None = None) -> None:

@@ -65,7 +65,7 @@ ScaledBorderAndShadow: yes
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 Style: Cap,{font},{size},{white},{white},{black},{_ass_color('#000000', '80')},-1,0,0,0,100,100,1,0,1,7,3,5,80,80,0,1
-Style: Hook,{font},{int(size * 0.85)},{white},{white},{black},{_ass_color('#000000', '40')},-1,0,0,0,100,100,1,0,3,20,0,8,90,90,300,1
+Style: Hook,{font},{int(size * 1.15)},{white},{white},{black},{_ass_color('#000000', '40')},-1,0,0,0,100,100,1,0,3,24,0,8,70,70,260,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -75,7 +75,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 
     if hook_text:
         lines.append(
-            f"Dialogue: 1,{_ts(0)},{_ts(min(3.2, total))},Hook,,0,0,0,,"
+            f"Dialogue: 1,{_ts(0)},{_ts(min(4.0, total))},Hook,,0,0,0,,"
             f"{{\\fad(150,300)}}{_safe(hook_text)}"
         )
 

@@ -1,6 +1,8 @@
 {
   "channel_name": "Night Files",
 
+  "story_modes": ["fiction", "mystery"],
+
   "llm_models": ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-flash-latest"],
 
   "subgenres": [
@@ -29,10 +31,19 @@
   "caption_highlight": "#FFD84D",
   "caption_words_per_group": 3,
 
-  "music_volume": 0.14,
+  "music_volume": 0.22,
+  "track_volumes": {
+    "unsolved_mystery.mp3": 0.22,
+    "bk_grnde.mp3": 0.16,
+    "everything_in_its_right_place.mp3": 0.14,
+    "tonight_you_belong_to_me.mp3": 0.12
+  },
+  "music_credits": {
+    "bk_grnde.mp3": "\ud83c\udfb5 Music: bk grnde by Kitty katzzz"
+  },
   "sting_volume": 0.55,
 
-  "image_style": "cinematic horror film still, dark, grainy 35mm film, low light, heavy shadows, fog, muted desaturated colors, eerie atmosphere, realistic, vertical composition, no text, no watermark, no gore",
+  "image_style": "dark comic book illustration, graphic novel art style, painterly digital painting, bold ink linework, rich moody colors (deep teal, crimson red, warm amber, purple night), dramatic cinematic lighting, strong shadows, eerie horror atmosphere, detailed background, stylized not photorealistic, vertical composition, no text, no speech bubbles, no watermark, no gore",
 
   "tiktok_mode": "draft",
   "direct_privacy": "SELF_ONLY",
