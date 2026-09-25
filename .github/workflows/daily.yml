@@ -2,6 +2,7 @@ name: Daily horror video
 
 on:
   schedule:
+    # Twice a day, in UTC. 15:40 UTC = 11:40 AM New York, 00:40 UTC = 8:40 PM New York (daylight time).
     - cron: "40 15 * * *"
     - cron: "40 0 * * *"
   workflow_dispatch:
@@ -64,8 +65,39 @@ jobs:
           TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: cd pipeline && python main.py ${{ inputs.no_upload && '--no-upload' || '' }}
+
+      - name: Save new TikTok token if TikTok rotated it
+        if: always() && hashFiles('.new_refresh_token') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
-          cd pipeline
-          if [ "${{ inputs.no_upload }}" = "true" ]; then
-            python main.py --no-upload
+          if [ -n "$GH_TOKEN" ]; then
+            gh secret set TIKTOK_REFRESH_TOKEN --repo "${{ github.repository }}" < .new_refresh_token
+            echo "Refresh token updated."
           else
+            echo "::warning::TikTok gave a new refresh token but GH_PAT is not set, so it could not be saved."
+          fi
+          rm -f .new_refresh_token
+
+      - name: Save story history (prevents repeats)
+        if: success()
+        run: |
+          git config user.name "horror-bot"
+          git config user.email "horror-bot@users.noreply.github.com"
+          git add data/history.json
+          git diff --cached --quiet || git commit -m "Add story $(date -u +%F)"
+          git pull --rebase
+          git push
+
+      - name: Keep the video for download (7 days)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: video-${{ github.run_number }}
+          path: |
+            output/**/final.mp4
+            output/**/caption.txt
+            output/**/story.json
+          retention-days: 7
+          if-no-files-found: ignore
