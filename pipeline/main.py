@@ -46,7 +46,12 @@ def main() -> int:
         else:
             import tiktok
             if CONFIG.get("tiktok_mode") == "direct":
-                result = tiktok.post_direct(video, caption_text(story))
+                try:
+                    result = tiktok.post_direct(video, caption_text(story))
+                except Exception as e:  # noqa: BLE001
+                    log(f"Direct post failed ({str(e)[:300]}), sending it to drafts instead")
+                    result = tiktok.send_to_drafts(video)
+                    result["direct_error"] = str(e)[:300]
             else:
                 result = tiktok.send_to_drafts(video)
 
