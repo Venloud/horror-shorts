@@ -23,9 +23,10 @@ SCHEMA = {
                 "properties": {
                     "narration": {"type": "STRING"},
                     "image_prompt": {"type": "STRING"},
+                    "image_prompt_2": {"type": "STRING"},
                     "sfx": {"type": "STRING"},
                 },
-                "required": ["narration", "image_prompt", "sfx"],
+                "required": ["narration", "image_prompt", "image_prompt_2", "sfx"],
             },
         },
         "twist_scene": {"type": "INTEGER"},
@@ -67,7 +68,8 @@ HARD RULES
 - 8 to 10 scenes total. Each scene is 1-3 sentences and gets one image.
 
 IMAGE PROMPTS
-- One per scene, describing a single painted frame for that moment: subject + setting + lighting + composition.
+- Describe each painted frame: subject + setting + lighting + composition (camera angle / shot size).
+- TWO images per scene: "image_prompt" shows the FIRST sentence of that scene, "image_prompt_2" shows the SECOND half. They must be different shots, like a film editor would cut: e.g. "I was 23, living alone in an old brick duplex" = shot 1: the young man in his room; shot 2: wide exterior of the old brick duplex at night. Mix close-ups, wide establishing shots of the location, objects, and over-the-shoulder views.
 - Dark oil-painting look, NOT a photo. Describe it like a painting ("painted scene of...").
 - Show places, objects, silhouettes, and shadows. Faces hidden, in shadow, or turned away. No text or writing in the image. No blood or gore.
 - Keep the setting and the main character's look consistent (repeat key details like "the narrator, a young man in a grey hoodie").
@@ -102,7 +104,7 @@ CHECKLIST
 5. Is the hook strong enough to stop a scroller in 2 seconds?
 6. Same rules as before: {rules}
 
-If something fails, rewrite those scenes (and image prompts / sfx to match). Keep what already works.
+If something fails, rewrite those scenes (and image_prompt, image_prompt_2 and sfx to match; the two image prompts must be different shots matching the first and second half of the scene). Keep what already works.
 Keep {words} words total, the same number of scenes or 8-10, and keep sfx values from this list only: {sfx_list}
 
 DRAFT:
@@ -190,9 +192,18 @@ def _run_models(prompt: str, api_key: str, temperature: float) -> dict:
 
 
 def sfx_names() -> str:
+    """Available sounds with a description of each, so the AI picks ones that really match the scene."""
     from common import ROOT
-    names = sorted(p.stem for p in (ROOT / "assets" / "sfx").glob("*.mp3"))
-    return ", ".join(names + ["none"])
+    have = {p.stem for p in (ROOT / "assets" / "sfx").glob("*.mp3")}
+    try:
+        info = json.loads((ROOT / "data" / "sfx_sources.json").read_text())
+    except Exception:  # noqa: BLE001
+        info = {}
+    lines = [f"\n  - {n}: {info.get(n, {}).get('desc', n.replace('_', ' '))}" for n in sorted(have)]
+    return "".join(lines) + "\n  - none: no sound effect" + (
+        "\n  Only use a sound if it matches BOTH the action AND the place exactly "
+        "(e.g. walking in a jungle = footsteps_mud or footsteps_leaves, never footsteps_wood). "
+        "If nothing matches exactly, use none.")
 
 
 def write_story(history: list[dict]) -> dict:
