@@ -98,5 +98,24 @@
       "status": "SEND_TO_USER_INBOX",
       "mode": "draft"
     }
+  },
+  {
+    "date": "2026-09-26_0514",
+    "title": "The Kidnapping of Patty Hearst",
+    "premise": "An abducted newspaper heiress shocks the nation when she appears on bank surveillance cameras wielding a weapon alongside her captors.",
+    "subgenre": "true crime case file",
+    "mode": "case",
+    "case": "Patty Hearst",
+    "source": null,
+    "prompt_file": null,
+    "setting": "California, 1974 to 1975",
+    "threat": "The Symbionese Liberation Army, an armed domestic terrorist group",
+    "twist": "The kidnapped heiress appeared on bank security footage armed and actively participating in a heist with her captors.",
+    "seconds": 68.1,
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7689710301906356255",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    }
   }
 ]
