@@ -155,5 +155,24 @@
       "status": "SEND_TO_USER_INBOX",
       "mode": "draft"
     }
+  },
+  {
+    "date": "2026-09-26_2325",
+    "title": "The Stranger at the Diner",
+    "premise": "A stranger at a diner reveals intimate knowledge of a customer's home, leading to a terrifying discovery in the crawlspace.",
+    "subgenre": "a stranger who knows too much (Let's Not Meet style, no supernatural)",
+    "mode": "fiction",
+    "case": null,
+    "source": null,
+    "prompt_file": "fiction_reddit_thriller.txt",
+    "setting": "isolated rustic cabin and diner at dawn",
+    "threat": "an intruder living secretly in the home's crawlspace",
+    "twist": "the intruder wrote in his notebook that he left the diner before the narrator to wait for her at home",
+    "seconds": 53.7,
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7689991634502961183",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    }
   }
 ]
