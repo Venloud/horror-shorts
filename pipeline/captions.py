@@ -72,7 +72,7 @@ Style: Hook,{font},{int(size * 1.15)},{white},{white},{black},{_ass_color('#0000
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
     lines = []
-    cap_y = int(H * 0.66)
+    cap_y = int(H * (0.5 if int(CONFIG.get("caption_words_per_group", 3)) == 1 else 0.66))
 
     if hook_text:
         lines.append(
@@ -99,7 +99,9 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             parts = []
             for wj, other in enumerate(g):
                 txt = _safe(other["word"])
-                if wj == wi:
+                if wj == wi and len(g) == 1:  # one word at a time: white with a small pop
+                    parts.append(f"{{\\fscx115\\fscy115\\t(0,90,\\fscx100\\fscy100)}}{txt}")
+                elif wj == wi:
                     parts.append(f"{{\\c{hi}\\fscx112\\fscy112\\t(0,90,\\fscx100\\fscy100)}}{txt}{{\\c{white}}}")
                 else:
                     parts.append(txt)

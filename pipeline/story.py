@@ -39,7 +39,7 @@ SCHEMA = {
 }
 
 PROMPT = """You write viral short-form horror stories for a faceless TikTok channel called "{channel}".
-The story is read aloud by a calm, low narrator over dark painted images. Write an ORIGINAL story.
+The story is read aloud by a calm, low narrator over illustrated images. Write an ORIGINAL story.
 
 SUBGENRE FOR TODAY: {subgenre}
 
@@ -75,9 +75,12 @@ HARD RULES
 IMAGE PROMPTS
 - Describe each painted frame: subject + setting + lighting + composition (camera angle / shot size).
 - TWO images per scene: "image_prompt" shows the FIRST sentence of that scene, "image_prompt_2" shows the SECOND half. They must be different shots, like a film editor would cut: e.g. "I was 23, living alone in an old brick duplex" = shot 1: the young man in his room; shot 2: wide exterior of the old brick duplex at night. Mix close-ups, wide establishing shots of the location, objects, and over-the-shoulder views.
-- Dark oil-painting look, NOT a photo. Describe it like a painting ("painted scene of...").
-- Show places, objects, silhouettes, and shadows. Faces hidden, in shadow, or turned away. No text or writing in the image. No blood or gore.
-- Keep the setting and the main character's look consistent (repeat key details like "the narrator, a young man in a grey hoodie").
+- Illustrated storybook / animated-film look, NOT a photo. The characters are fictional, so show them clearly with EXPRESSIVE FACES (worry, fear, confusion, relief). Faces sell the emotion.
+- CHARACTER SHEET: before writing prompts, give every character one fixed look (age, hair, clothes, one prop), e.g. "the babysitter, a young woman with a dark brown ponytail and a green hoodie". Copy that exact description, word for word, into EVERY prompt where they appear, so they look the same in every shot.
+- Keep most shots in the same 1-3 locations (same living room, same hallway, same bedroom) described the same way each time, so it feels like one film.
+- Lighting tells the story: warm, cozy lamp light at the start; darker, colder and more shadowy as the tension rises; darkest at the climax.
+- Keep the threat mostly hidden until the climax: a shadow, a shape under the bed, a hand, eyes in the dark. Show it clearly at most once.
+- No text or writing in the image. No blood or gore. Nobody is ever shown hurt.
 - Scene 1's image must be the most striking, eerie image of the whole story (it is the thumbnail).
 
 SOUND EFFECTS
@@ -89,7 +92,7 @@ OTHER FIELDS
 - premise: one sentence summary (used to avoid repeating stories).
 - hook_overlay: 2-5 word on-screen text shown big over the first seconds. It must be shocking on its own, not a title, e.g. "It texted from my phone", "We didn't have a babysitter", "He waved from under the ice". No emojis.
 - twist_scene: the 0-based index of the scene where the twist hits.
-- caption: TikTok caption, 1-2 short lines, ending with a question that makes people comment (e.g. "Would you have opened it?"). Max 150 characters. May use 1 emoji.
+- caption: line 1 = a searchable story title that says what happens, the way people would type it into TikTok search, e.g. "The Babysitter Looked Under the Bed... and Found a Man". Line 2 = a question that makes people comment (e.g. "Would you have checked?"). Max 180 characters. May use 1 emoji.
 - hashtags: 5 hashtags without the # symbol, mixing broad (scarystories, horrortok) and specific.
 - pinned_comment: a short comment the creator can pin to start discussion.
 
@@ -244,7 +247,7 @@ def write_story(history: list[dict]) -> dict:
     recent = "\n".join(f"- {h['title']}: {h.get('premise', '')}" for h in history[-40:] if h.get("title")) or "- (none yet)"
     prompt = PROMPT.format(channel=CONFIG["channel_name"], subgenre=subgenre, recent=recent, sfx_list=sfx_list)
     story = _run_models(prompt, api_key, temperature=1.0)
-    rules = "pure fiction, TikTok-safe (no gore, self-harm, harm to children, sexual content), first person, plain spoken English, painted image prompts with hidden faces"
+    rules = "pure fiction, TikTok-safe (no gore, self-harm, harm to children, sexual content), first person, plain spoken English, illustrated image prompts with a consistent character sheet and expressive faces"
     story = edit_story(story, api_key, sfx_list, rules)
     story.update({"mode": "fiction", "subgenre": subgenre})
     words = sum(len(s["narration"].split()) for s in story["scenes"])
