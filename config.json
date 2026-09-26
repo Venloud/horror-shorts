@@ -29,7 +29,7 @@
   "caption_fallback_font": "DejaVu Sans",
   "caption_size": 96,
   "caption_highlight": "#FFD84D",
-  "caption_words_per_group": 3,
+  "caption_words_per_group": 1,
 
   "music_volume": 0.14,
   "track_volumes": {
@@ -45,7 +45,7 @@
   "sfx_volume": 0.32,
   "sfx_max_seconds": 4.5,
 
-  "image_style": "dark comic book illustration, graphic novel art style, painterly digital painting, bold ink linework, rich moody colors (deep teal, crimson red, warm amber, purple night), dramatic cinematic lighting, strong shadows, eerie horror atmosphere, detailed background, stylized not photorealistic, vertical composition, no text, no speech bubbles, no watermark, no gore",
+  "image_style": "detailed cartoon storybook illustration, semi-realistic comic art like a still from a modern animated film, clean bold linework, expressive faces, soft painterly shading, rich colors, warm cozy lamp light in calm moments turning darker and colder as the tension rises, cinematic composition, detailed background, vertical composition, no text, no speech bubbles, no watermark, no gore",
 
   "mascot_intro": false,
   "tiktok_mode": "draft",
