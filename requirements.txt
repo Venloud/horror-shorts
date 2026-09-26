@@ -4,3 +4,4 @@ numpy
 requests
 Pillow
 huggingface_hub>=0.30
+beautifulsoup4

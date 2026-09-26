@@ -1,7 +1,7 @@
 {
   "channel_name": "Night Files",
 
-  "story_modes": ["fiction", "mystery", "lore"],
+  "story_modes": ["fiction", "case", "mystery", "lore"],
 
   "llm_models": ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-flash-latest"],
 
@@ -45,7 +45,7 @@
   "sfx_volume": 0.32,
   "sfx_max_seconds": 4.5,
 
-  "image_style": "detailed cartoon storybook illustration, semi-realistic comic art like a still from a modern animated film, clean bold linework, expressive faces, soft painterly shading, rich colors, warm cozy lamp light in calm moments turning darker and colder as the tension rises, cinematic composition, detailed background, vertical composition, no text, no speech bubbles, no watermark, no gore",
+  "image_style": "2D illustrated art, NOT a photograph, not photorealistic, detailed cartoon storybook illustration, semi-realistic comic art like a still from a modern animated film, clean bold linework, expressive faces, soft painterly shading, rich colors, warm cozy lamp light in calm moments turning darker and colder as the tension rises, cinematic composition, detailed background, vertical composition, no text, no speech bubbles, no watermark, no gore",
 
   "mascot_intro": false,
   "tiktok_mode": "draft",
