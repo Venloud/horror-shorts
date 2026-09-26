@@ -117,5 +117,24 @@
       "status": "SEND_TO_USER_INBOX",
       "mode": "draft"
     }
+  },
+  {
+    "date": "2026-09-26_0529",
+    "title": "The Disappearance of Louis Le Prince",
+    "premise": "The pioneer of cinematography boarded a train in 1890 and vanished completely with his luggage.",
+    "subgenre": "real unsolved mystery",
+    "mode": "mystery",
+    "case": "Disappearance of Louis Le Prince",
+    "source": null,
+    "prompt_file": null,
+    "setting": null,
+    "threat": null,
+    "twist": null,
+    "seconds": 48.1,
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7689715384642979870",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    }
   }
 ]
