@@ -29,7 +29,7 @@ SCHEMA = {
                     "sfx": {"type": "STRING"},
                     "location": {"type": "STRING"},
                 },
-                "required": ["narration", "image_prompt", "image_prompt_2", "sfx"],
+                "required": ["narration", "image_prompt", "image_prompt_2", "image_prompt_3", "image_prompt_4", "sfx"],
             },
         },
         "characters": {"type": "ARRAY", "items": {"type": "OBJECT", "properties": {

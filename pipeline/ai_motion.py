@@ -85,6 +85,18 @@ def _video_path(result) -> str | None:
     return None
 
 
+def _connect(Client, space: str, token):
+    """gradio_client renamed its login argument over time (hf_token -> token); try both, then no login."""
+    for kw in ({"token": token}, {"hf_token": token}, {}):
+        if kw and not token:
+            continue
+        try:
+            return Client(space, verbose=False, **kw)
+        except TypeError:
+            continue
+    return Client(space)
+
+
 def animate(image: Path, shot_prompt: str, out: Path) -> Path | None:
     """Try each Space in turn. Returns the animated clip, or None to use the free 3D effect."""
     s = _settings()
@@ -104,7 +116,7 @@ def animate(image: Path, shot_prompt: str, out: Path) -> Path | None:
             log("AI animation: time budget used up, using the free 3D effect")
             break
         try:
-            client = Client(space, hf_token=token, verbose=False)
+            client = _connect(Client, space, token)
             info = client.view_api(return_format="dict", print_info=False)
             endpoint, params = _find_endpoint(info)
             if not endpoint:
