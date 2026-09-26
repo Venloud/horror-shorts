@@ -1,6 +1,8 @@
 {
   "channel_name": "Night Files",
 
+  "story_words": [170, 220],
+
   "story_modes": ["fiction", "case", "mystery", "lore"],
 
   "llm_models": ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-flash-latest"],
@@ -17,7 +19,12 @@
     "sleep paralysis / something in the bedroom",
     "road trip / empty highway at night",
     "phone call, text, or voicemail from someone who shouldn't be able to call",
-    "found footage / old tape or camera roll"
+    "found footage / old tape or camera roll",
+    "a stranger who knows too much (Let's Not Meet style, no supernatural)",
+    "someone has been living in my house",
+    "glitch in the matrix: a small impossible thing that keeps happening",
+    "online marketplace or app meetup that goes wrong",
+    "small town with a secret everyone keeps"
   ],
 
   "voice": "am_michael",
