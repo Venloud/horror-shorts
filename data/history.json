@@ -83,5 +83,20 @@
       "status": "SEND_TO_USER_INBOX",
       "mode": "draft"
     }
+  },
+  {
+    "date": "2026-09-26_0443",
+    "title": "The Backward Shadow",
+    "premise": "A solo hiker breaks the trail's only warning by turning around to confront the footsteps pacing him.",
+    "subgenre": "lost in the deep woods",
+    "mode": "fiction",
+    "case": null,
+    "source": null,
+    "seconds": 54.5,
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7689702113580009502",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    }
   }
 ]
