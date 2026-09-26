@@ -136,5 +136,24 @@
       "status": "SEND_TO_USER_INBOX",
       "mode": "draft"
     }
+  },
+  {
+    "date": "2026-09-26_2244",
+    "title": "The Romanian Legend of the Strigoi",
+    "premise": "Romanian folklore warns of the Strigoi, restless corpses that rise from the grave to terrorize their own living families.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "case": "Strigoi",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Carpathian Mountains and rural Romanian villages during foggy nights",
+    "threat": "The Strigoi, restless dead that leave their graves to prey upon their living descendants",
+    "twist": "The monster doesn't hunt strangers—it deliberately returns to consume its own family members.",
+    "seconds": 55.9,
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7689981465900189726",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    }
   }
 ]
