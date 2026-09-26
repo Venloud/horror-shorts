@@ -55,6 +55,8 @@ def main() -> int:
             else:
                 result = tiktok.send_to_drafts(video)
 
+        for sk in story.pop("_skipped", []):
+            history.append({"date": stamp, **sk})
         history.append({
             "date": stamp,
             "title": story["title"],
@@ -62,6 +64,7 @@ def main() -> int:
             "subgenre": story.get("subgenre", ""),
             "mode": story.get("mode", "fiction"),
             "case": story.get("case"),
+            "source": story.get("source"),
             "seconds": round(narration["duration"], 1),
             "tiktok": result,
         })

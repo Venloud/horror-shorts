@@ -83,6 +83,31 @@ def _save_valid(raw: bytes, path: Path) -> None:
     tmp.unlink(missing_ok=True)
 
 
+def _key(name: str) -> str:
+    n = name.lower().strip()
+    return n[4:] if n.startswith("the ") else n
+
+
+def build_prompt(story: dict, scene_i: int, shot: str, style: str) -> str:
+    """Style first, then the fixed location and character looks, then the shot itself,
+    so every image of a story shares the same people, places and art style."""
+    text = shot.lower()
+    parts = [style]
+    scene = story["scenes"][scene_i]
+    loc_name = _key(scene.get("location") or "")
+    for loc in story.get("locations") or []:
+        k = _key(loc.get("name", ""))
+        if k and (k == loc_name or k in text):
+            parts.append(f"Setting: {loc['look']}")
+            break
+    for ch in story.get("characters") or []:
+        k = _key(ch.get("name", ""))
+        if k and k in text:
+            parts.append(f"{ch['name']}: {ch['look']}")
+    parts.append(f"Shot: {shot}")
+    return ". ".join(p.strip().rstrip(".") for p in parts if p.strip())
+
+
 def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
     """Two images per scene (shot A = first half, shot B = second half). Returns [[a, b], ...]."""
     outdir.mkdir(parents=True, exist_ok=True)
@@ -99,7 +124,7 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
 
     results: dict[tuple[int, str], Path | None] = {}
     for n, (i, shot, raw_prompt) in enumerate(jobs):
-        prompt = f"{raw_prompt}. {style}"
+        prompt = build_prompt(story, i, raw_prompt, style)
         path = outdir / f"scene_{i:02d}{shot}.png"
         ok = False
         providers = (([_cloudflare] if use_cf and not _STATE["cf_out"] else [])

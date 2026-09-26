@@ -43,6 +43,9 @@ IMAGE PROMPTS
 - Never depict a real person's face. People appear only as distant silhouettes, from behind, or in shadow.
 - No text, no writing, no blood, no bodies.
 
+- CONSISTENCY: fill "locations" with the 1-3 key places (short "name" + fixed "look" matching the real place and era) and set each scene's "location". List recurring figures in "characters" (e.g. "the hijacker": "man in a dark business suit, thin black tie, sunglasses, seen only as a silhouette"). In image prompts, refer to them by that exact name; their look is added automatically.
+- POP CULTURE HOOK: if the source says a famous movie, TV show, video game, song or book was based on or inspired by this (for example, the Beast of Gevaudan appears in Teen Wolf), add ONE short line near the end that connects it, e.g. "Sound familiar? It's the same beast from Teen Wolf." Put that title in the caption and one hashtag. ONLY use references stated in the source. Never invent or guess one; if the source has none, skip this.
+
 SOUND EFFECTS
 - For each scene, set "sfx" to ONE sound from this list that fits that moment, or "none": {sfx_list}
 - Use sound effects on 2 to 4 scenes only. Never on the hook scene.
@@ -92,6 +95,9 @@ IMAGE PROMPTS
 - TWO images per scene: "image_prompt" shows the FIRST sentence of that scene, "image_prompt_2" shows the SECOND half. They must be different shots, like a film editor would cut: e.g. "I was 23, living alone in an old brick duplex" = shot 1: the young man in his room; shot 2: wide exterior of the old brick duplex at night. Mix close-ups, wide establishing shots of the location, objects, and over-the-shoulder views.
 - No text or writing in the image.
 
+- CONSISTENCY: fill "locations" with the 1-3 key places (short "name" + fixed "look" matching the real place and era) and set each scene's "location". List recurring figures in "characters" (e.g. "the hijacker": "man in a dark business suit, thin black tie, sunglasses, seen only as a silhouette"). In image prompts, refer to them by that exact name; their look is added automatically.
+- POP CULTURE HOOK: if the source says a famous movie, TV show, video game, song or book was based on or inspired by this (for example, the Beast of Gevaudan appears in Teen Wolf), add ONE short line near the end that connects it, e.g. "Sound familiar? It's the same beast from Teen Wolf." Put that title in the caption and one hashtag. ONLY use references stated in the source. Never invent or guess one; if the source has none, skip this.
+
 SOUND EFFECTS
 - For each scene, set "sfx" to ONE sound from this list that fits, or "none": {sfx_list}
 - Use sound effects on 2 to 4 scenes only. Never on the hook scene.
@@ -106,6 +112,72 @@ OTHER FIELDS
 - pinned_comment: a question that invites people to share their own local legends.
 """
 
+
+TRUE_PROMPT = """You retell REAL true stories (true crime, famous cases, strange true events) for a faceless TikTok channel called "{channel}".
+The video is read aloud by a calm, serious narrator over illustrated images, with tense music.
+
+TODAY'S STORY: {case}
+
+SOURCE. This is your ONLY source. Everything you say must come from this text:
+\"\"\"
+{facts}
+\"\"\"
+
+MAKE IT TIKTOK-SAFE (never refuse a normal crime story):
+- Tell dark stories safely: focus on the mystery, the investigation, the clues and how it ended. Say what happened in plain, non-graphic words ("she was killed", never how in detail). No gore, no cruelty described step by step.
+- ONLY if the core of the story is harm to a child, a sexual crime, or suicide, do not retell it as true. Instead set "title" to exactly INSPIRATION and keep every other field minimal; it will be turned into an original fictional story that leaves those parts out.
+- If the source is not a real story at all, set "title" to exactly SKIP.
+
+STRUCTURE (follow exactly)
+1. SCENE 1 = THE HOOK (1-2 sentences, MAX 18 words): open cold on the most gripping true detail, stated flat. The first 6 words must already grab. Style examples (write new ones):
+   - "In 1950, eleven men walked into the most secure vault in Boston and walked out with two million dollars."
+   - "The man paid for his plane ticket in cash. Two hours later, he parachuted into the dark with the ransom."
+2. SCENE 2 = CONTEXT: when, where, who, in plain words.
+3. WHAT HAPPENED: the key turns in order, with the most vivid real details.
+4. HOW IT ENDED: caught, solved, escaped, or still unknown. This must pay off the hook.
+5. LAST SCENE: one strong closing line, then a short question to the viewer.
+
+HARD RULES
+- TRUE FACTS ONLY. Never invent names, quotes, dates, numbers, dialogue or details. If unsure, leave it out.
+- Only call someone guilty if the source says they were convicted or confessed. Otherwise say "suspected" or "accused".
+- Respectful to victims and families. No graphic injury detail, no gore, no mocking.
+- Third person, past tense, plain spoken English, short sentences.
+- 130 to 160 words of narration total (about 50 seconds). 7 to 9 scenes, 1-3 sentences each.
+
+IMAGE PROMPTS
+- Illustrated scenes of the real place, era, objects and moments. Match the real setting and time period.
+- TWO images per scene: "image_prompt" shows the FIRST half of the scene, "image_prompt_2" the SECOND half, as different shots (close-up, wide establishing shot of the location, object detail, over-the-shoulder).
+- Never depict a real person's face: people appear as silhouettes, from behind, in shadow, or small in a wide shot.
+- Lighting gets darker and tenser as the story builds. No text, no writing, no blood, no bodies.
+
+- CONSISTENCY: fill "locations" with the 1-3 key places (short "name" + fixed "look" matching the real place and era) and set each scene's "location". List recurring figures in "characters" (e.g. "the hijacker": "man in a dark business suit, thin black tie, sunglasses, seen only as a silhouette"). In image prompts, refer to them by that exact name; their look is added automatically.
+- POP CULTURE HOOK: if the source says a famous movie, TV show, video game, song or book was based on or inspired by this (for example, the Beast of Gevaudan appears in Teen Wolf), add ONE short line near the end that connects it, e.g. "Sound familiar? It's the same beast from Teen Wolf." Put that title in the caption and one hashtag. ONLY use references stated in the source. Never invent or guess one; if the source has none, skip this.
+
+SOUND EFFECTS
+- For each scene, set "sfx" to ONE sound from this list that fits that moment, or "none": {sfx_list}
+- Use sound effects on 2 to 4 scenes only. Never on the hook scene.
+
+OTHER FIELDS
+- title: the case name, 3-7 words.
+- premise: one-sentence summary.
+- hook_overlay: 2-5 word shocking on-screen text, e.g. "The perfect crime. Almost."
+- twist_scene: 0-based index of the biggest turn.
+- caption: line 1 = a searchable title the way people type it into TikTok search (e.g. "The Brink's Robbery: The Perfect Crime That Almost Worked"). Line 2 = a question for comments. Max 180 characters. May use 1 emoji.
+- hashtags: 5 hashtags without #, e.g. truecrime, truestory, crimestory, plus 2 specific to the case.
+- pinned_comment: a question that starts a discussion.
+"""
+
+
+
+def _split_wiki(text: str, limit: int) -> str:
+    """Main article text plus a short 'In popular culture' section (used for pop-culture references)."""
+    pop = ""
+    m = re.search(r"\n==\s*(In popular culture|Popular culture|In fiction|Legacy|Cultural impact|In media)\s*==\n(.*?)(\n==[^=]|$)", text, re.S)
+    if m:
+        pop = m.group(2).strip()[:1500]
+    main = re.split(r"\n==\s*(See also|References|Notes|Further reading|External links|In popular culture|Popular culture|In fiction|In media)\s*==", text)[0]
+    main = main[: limit - len(pop) - 40]
+    return main + (f"\n\nIN POPULAR CULTURE:\n{pop}" if pop else "")
 
 def pick_case(history: list[dict], kind: str = "mystery") -> str:
     file = LORE_FILE if kind == "lore" else CASES_FILE
@@ -126,9 +198,7 @@ def fetch_facts(title: str, limit: int = 9000) -> str:
     text = next(iter(pages.values())).get("extract", "")
     if len(text) < 800:
         raise RuntimeError(f"Wikipedia article for '{title}' is missing or too short")
-    # Drop reference-style tail sections
-    text = re.split(r"\n==\s*(See also|References|Notes|Further reading|External links|In popular culture)\s*==", text)[0]
-    return text[:limit]
+    return _split_wiki(text, limit)
 
 
 def build_prompt(channel: str, case: str, sfx_list: str = "none", kind: str = "mystery") -> tuple[str, str]:

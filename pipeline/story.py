@@ -25,10 +25,15 @@ SCHEMA = {
                     "image_prompt": {"type": "STRING"},
                     "image_prompt_2": {"type": "STRING"},
                     "sfx": {"type": "STRING"},
+                    "location": {"type": "STRING"},
                 },
                 "required": ["narration", "image_prompt", "image_prompt_2", "sfx"],
             },
         },
+        "characters": {"type": "ARRAY", "items": {"type": "OBJECT", "properties": {
+            "name": {"type": "STRING"}, "look": {"type": "STRING"}}, "required": ["name", "look"]}},
+        "locations": {"type": "ARRAY", "items": {"type": "OBJECT", "properties": {
+            "name": {"type": "STRING"}, "look": {"type": "STRING"}}, "required": ["name", "look"]}},
         "twist_scene": {"type": "INTEGER"},
         "caption": {"type": "STRING"},
         "hashtags": {"type": "ARRAY", "items": {"type": "STRING"}},
@@ -76,8 +81,11 @@ IMAGE PROMPTS
 - Describe each painted frame: subject + setting + lighting + composition (camera angle / shot size).
 - TWO images per scene: "image_prompt" shows the FIRST sentence of that scene, "image_prompt_2" shows the SECOND half. They must be different shots, like a film editor would cut: e.g. "I was 23, living alone in an old brick duplex" = shot 1: the young man in his room; shot 2: wide exterior of the old brick duplex at night. Mix close-ups, wide establishing shots of the location, objects, and over-the-shoulder views.
 - Illustrated storybook / animated-film look, NOT a photo. The characters are fictional, so show them clearly with EXPRESSIVE FACES (worry, fear, confusion, relief). Faces sell the emotion.
-- CHARACTER SHEET: before writing prompts, give every character one fixed look (age, hair, clothes, one prop), e.g. "the babysitter, a young woman with a dark brown ponytail and a green hoodie". Copy that exact description, word for word, into EVERY prompt where they appear, so they look the same in every shot.
-- Keep most shots in the same 1-3 locations (same living room, same hallway, same bedroom) described the same way each time, so it feels like one film.
+- CONSISTENCY IS EVERYTHING: viewers must recognise the same people and the same rooms from shot to shot.
+  - "characters": list every character once with a short "name" (e.g. "the babysitter", "the boy") and a fixed "look" (age, face, hair, exact clothes and colors, one prop), e.g. "a young woman, early 20s, dark brown ponytail, green hoodie, blue jeans".
+  - "locations": list the 1-3 places the story happens with a short "name" (e.g. "the living room") and a fixed "look" (layout, furniture, colors, key objects), e.g. "cozy suburban living room, beige couch, old CRT TV on a wooden stand, tall lamp, staircase in the back".
+  - In every image prompt, refer to characters by their exact name ("the babysitter kneels beside the boy"). Their look is added automatically, so don't repeat it. Set each scene's "location" to one location name.
+  - Keep the same outfits and the same rooms for the whole story unless the story truly moves.
 - Lighting tells the story: warm, cozy lamp light at the start; darker, colder and more shadowy as the tension rises; darkest at the climax.
 - Keep the threat mostly hidden until the climax: a shadow, a shape under the bed, a hand, eyes in the dark. Show it clearly at most once.
 - No text or writing in the image. No blood or gore. Nobody is ever shown hurt.
@@ -112,7 +120,7 @@ CHECKLIST
 5. THE HOOK: would the first 6 words alone stop a scroller? Does scene 1 open on the most shocking moment and raise one burning question? If it is generic, slow, or explains too much, rewrite scene 1 and hook_overlay until it hits hard (max 18 words).
 6. Same rules as before: {rules}
 
-If something fails, rewrite those scenes (and image_prompt, image_prompt_2 and sfx to match; the two image prompts must be different shots matching the first and second half of the scene). Keep what already works.
+If something fails, rewrite those scenes (and image_prompt, image_prompt_2 and sfx to match; the two image prompts must be different shots matching the first and second half of the scene). Keep what already works. Keep the characters and locations lists and each scene's location.
 Keep {words} words total, the same number of scenes or 7-9, and keep sfx values from this list only: {sfx_list}
 
 DRAFT:
@@ -122,11 +130,14 @@ DRAFT:
 
 def edit_story(story: dict, api_key: str, sfx_list: str, rules: str) -> dict:
     """Second pass: an editor checks logic, ending, and hook payoff, then rewrites."""
-    draft = {k: story[k] for k in SCHEMA["required"] if k in story}
+    draft = {k: story[k] for k in SCHEMA["properties"] if k in story}
     prompt = EDITOR_PROMPT.format(draft=json.dumps(draft, ensure_ascii=False, indent=1),
                                   sfx_list=sfx_list, rules=rules, words="130 to 160")
     try:
         edited = _run_models(prompt, api_key, temperature=0.5)
+        for k in ("characters", "locations"):  # keep the character / location sheets if the editor dropped them
+            if story.get(k) and not edited.get(k):
+                edited[k] = story[k]
         log("Editor pass: story revised")
         return edited
     except Exception as e:  # noqa: BLE001
@@ -175,7 +186,7 @@ def _validate(story: dict) -> None:
 def pick_mode(history: list[dict]) -> str:
     """Rotate through the story modes in config (e.g. fiction, mystery, fiction, mystery...)."""
     modes = CONFIG.get("story_modes", ["fiction"])
-    last = next((h.get("mode", "fiction") for h in reversed(history)), None)
+    last = next((h.get("mode", "fiction") for h in reversed(history) if not h.get("skipped")), None)
     if last in modes:
         return modes[(modes.index(last) + 1) % len(modes)]
     return modes[0]
@@ -219,12 +230,88 @@ def sfx_names() -> str:
         "Examples: footsteps_wood_echo, knocking_muffled, scream_woman_distant, gunshot_distant.")
 
 
+class UseAsInspiration(Exception):
+    """The real story can't be told safely as-is, so it becomes inspiration for an original story."""
+    def __init__(self, facts: str):
+        super().__init__("too sensitive to retell as true; using it as inspiration instead")
+        self.facts = facts
+
+
+def _true_story(facts: str, name: str, api_key: str, sfx_list: str) -> dict:
+    """Fact-locked retelling of a real story; the model may refuse unsafe topics with title SKIP."""
+    import mystery
+    prompt = mystery.TRUE_PROMPT.format(channel=CONFIG["channel_name"], case=name, facts=facts, sfx_list=sfx_list)
+    story = _run_models(prompt, api_key, temperature=0.6)
+    flag = story.get("title", "").strip().upper()
+    if flag == "INSPIRATION":
+        raise UseAsInspiration(facts)
+    if flag == "SKIP":
+        raise RuntimeError("source is not a real story, skipping")
+    rules = ("ONLY facts from this source, never invent details; only call someone guilty if convicted or confessed; "
+             "respectful; no gore; third person; plain English; no real faces in images.\nSOURCE:\n" + facts[:6000])
+    story = edit_story(story, api_key, sfx_list, rules)
+    log(f"True story '{story['title']}' ({len(story['scenes'])} scenes) via {story['model']}")
+    return story
+
+
 def write_story(history: list[dict]) -> dict:
+    skipped: list[dict] = []
+    story = _write_story(history, skipped)
+    story["_skipped"] = skipped
+    return story
+
+
+def _write_story(history: list[dict], skipped: list[dict]) -> dict:
     api_key = env("GEMINI_API_KEY")
     mode = pick_mode(history)
     sfx_list = sfx_names()
+    import sources
+    inspiration = None
 
-    if mode in ("mystery", "lore"):
+    # 1) The creator's inbox (links / pasted stories) jumps the queue
+    item = None
+    try:
+        item = sources.next_inbox(history)
+    except Exception as e:  # noqa: BLE001
+        log(f"Inbox read failed: {str(e)[:150]}")
+    if item:
+        try:
+            text = sources.inbox_text(item)
+            log(f"Inbox item: {item['key']} ({item['kind']}, {len(text)} chars)")
+            if item["kind"] == "true":
+                try:
+                    story = _true_story(text, item["key"], api_key, sfx_list)
+                    story.update({"mode": "inbox-true", "source": item["key"], "subgenre": "true story"})
+                    return story
+                except UseAsInspiration:
+                    log("Too sensitive to retell as true: turning it into an original story instead")
+            inspiration = text
+        except Exception as e:  # noqa: BLE001
+            log(f"Inbox item {item['key']} failed ({str(e)[:200]}); skipping it")
+            history = history + [{"source": item["key"]}]
+            skipped.append({"source": item["key"], "skipped": True})
+            item = None
+
+    # 2) FBI case files
+    if mode == "case" and not inspiration:
+        for _ in range(3):
+            case = sources.next_case(history)
+            try:
+                story = _true_story(sources.case_facts(case), case["title"], api_key, sfx_list)
+                story.update({"mode": "case", "case": case["title"], "subgenre": "true crime case file"})
+                return story
+            except UseAsInspiration as e:
+                log(f"'{case['title']}' is too sensitive to retell: using it as inspiration for an original story")
+                skipped.append({"case": case["title"], "skipped": True})
+                inspiration = e.facts
+                break
+            except Exception as e:  # noqa: BLE001
+                log(f"Case mode failed ({str(e)[:200]}); trying another case")
+                history = history + [{"case": case["title"]}]
+                skipped.append({"case": case["title"], "skipped": True})
+        log("Falling back to fiction today")
+
+    if mode in ("mystery", "lore") and not inspiration:
         import mystery
         for _ in range(3):
             case = mystery.pick_case(history, mode)
@@ -246,10 +333,18 @@ def write_story(history: list[dict]) -> dict:
     subgenre = pick_subgenre(history)
     recent = "\n".join(f"- {h['title']}: {h.get('premise', '')}" for h in history[-40:] if h.get("title")) or "- (none yet)"
     prompt = PROMPT.format(channel=CONFIG["channel_name"], subgenre=subgenre, recent=recent, sfx_list=sfx_list)
+    if inspiration:
+        prompt += (
+            "\nINSPIRATION (from the creator). Take only the core idea and the feeling of this piece and write a NEW, "
+            "ORIGINAL story from it: new characters, new names, new setting details, your own twist and ending. "
+            "Never copy its sentences. Ignore the subgenre above if it doesn't fit.\n\"\"\"\n"
+            + inspiration[:6000] + "\n\"\"\"\n")
     story = _run_models(prompt, api_key, temperature=1.0)
     rules = "pure fiction, TikTok-safe (no gore, self-harm, harm to children, sexual content), first person, plain spoken English, illustrated image prompts with a consistent character sheet and expressive faces"
     story = edit_story(story, api_key, sfx_list, rules)
     story.update({"mode": "fiction", "subgenre": subgenre})
+    if inspiration and item:
+        story["source"] = item["key"]
     words = sum(len(s["narration"].split()) for s in story["scenes"])
     log(f"Story '{story['title']}' ({words} words, {len(story['scenes'])} scenes) via {story['model']}")
     return story
