@@ -1,0 +1,11 @@
+# NIGHT FILES INBOX - give the bot your own stories.
+# Add one link per line. The bot uses the oldest unused one on its next run (it jumps the queue).
+#
+#   true https://example.com/article      -> retells the REAL story, facts only
+#   fiction https://example.com/post      -> uses it as inspiration for a NEW original story
+#   https://example.com/article           -> same as "true"
+#
+# You can also paste a whole story into a new .txt file in this folder.
+# Start the file with a line that says TRUE or FICTION (no line = FICTION).
+# Lines starting with # are ignored. Each link is only used once.
+
