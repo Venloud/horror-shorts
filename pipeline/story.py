@@ -71,7 +71,7 @@ def edit_story(story: dict, api_key: str, sfx_list: str, rules: str) -> dict:
     """Second pass: an editor checks logic, ending, and hook payoff, then rewrites."""
     draft = {k: story[k] for k in SCHEMA["properties"] if k in story}
     prompt = EDITOR_PROMPT.format(draft=json.dumps(draft, ensure_ascii=False, indent=1),
-                                  sfx_list=sfx_list, rules=rules, words="145 to 175")
+                                  sfx_list=sfx_list, rules=rules, words="120 to 140")
     try:
         edited = _run_models(prompt, api_key, temperature=0.5)
         for k in ("characters", "locations"):  # keep the character / location sheets if the editor dropped them
@@ -126,7 +126,7 @@ def _validate(story: dict) -> None:
     if not 6 <= len(scenes) <= 14:
         raise ValueError(f"bad scene count {len(scenes)}")
     words = sum(len(s["narration"].split()) for s in scenes)
-    if not 105 <= words <= 320:
+    if not 90 <= words <= 320:
         raise ValueError(f"narration length {words} words out of range")
     if not 0 <= int(story.get("twist_scene", 0)) < len(scenes):
         story["twist_scene"] = max(0, len(scenes) - 2)
@@ -155,6 +155,8 @@ def _run_models(prompt: str, api_key: str, temperature: float) -> dict:
                 log(f"Story attempt failed: {str(e)[:200]}")
                 if "404" in str(e):
                     break  # model retired: skip straight to the next one
+                if "429" in str(e):
+                    break  # daily free quota used up for this model: go straight to the next one
                 if "BLOCKED" in str(e) and attempt >= 1:
                     break  # topic refused twice: try the next model once, then give up on this topic
                 if "503" in str(e) and attempt >= 1:
@@ -256,7 +258,7 @@ def _run_text(prompt: str, api_key: str, lo: int, hi: int) -> tuple[str, str]:
             except Exception as e:  # noqa: BLE001
                 errors.append(f"{model}#{attempt + 1}: {str(e)[:200]}")
                 log(f"Story attempt failed: {str(e)[:200]}")
-                if "404" in str(e) or ("BLOCKED" in str(e) and attempt >= 1) or ("503" in str(e) and attempt >= 1):
+                if "404" in str(e) or "429" in str(e) or ("BLOCKED" in str(e) and attempt >= 1) or ("503" in str(e) and attempt >= 1):
                     break
                 time.sleep(6 * (attempt + 1))
     raise RuntimeError("Could not write a story:\n" + "\n".join(errors))
@@ -278,7 +280,7 @@ def _creator_story(history: list[dict], api_key: str, sfx_list: str, inspiration
     prompt = file.read_text(encoding="utf-8").strip().replace("{subgenre}", subgenre) + f"""
 
 ## LENGTH
-The narration must be {lo} to {hi} words in total (about {round(hi / 3)} seconds read aloud). Count them.
+The narration must be {lo} to {hi} words in total (about {round(lo / 2.4)}-{round(hi / 2.4)} seconds read aloud). Count them.
 
 ## STORYTELLING NOTES
 - If the place matters to the story (a road, a bridge, a motel, a trail), open by naming the place and its warning, e.g. "If you ever drive down Old Mill Road at night, never stop at the bridge." The place can be invented. If the place doesn't matter, don't force it.

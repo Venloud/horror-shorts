@@ -225,7 +225,8 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
     run(["ffmpeg", "-y", "-loglevel", "error", *ins,
          "-filter_complex", vchain + ";" + ";".join(achain),
          "-map", "[v]", "-map", "[a]", "-t", f"{total:.2f}",
-         "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-profile:v", "high",
+         "-c:v", "libx264", "-preset", "medium", "-crf", "21", "-maxrate", "4500k", "-bufsize", "9000k",
+         "-profile:v", "high",
          "-pix_fmt", "yuv420p", "-r", str(FPS),
          "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", str(out)])
     log(f"Rendered {out.name} ({media_duration(out):.1f}s, {out.stat().st_size / 1e6:.1f} MB)")

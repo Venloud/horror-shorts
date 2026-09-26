@@ -1,7 +1,7 @@
 {
   "channel_name": "Night Files",
 
-  "story_words": [145, 175],
+  "story_words": [120, 140],
 
   "subgenre_prompts": {
     "'rules' horror (a list of strange rules at a job or place)": "fiction_creepy_job.txt",

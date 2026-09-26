@@ -35,7 +35,7 @@ HARD RULES
 - Never state or imply that a named real person is guilty of anything the source doesn't establish. Theories must be labelled as theories.
 - Be respectful to victims and families. No graphic injury detail, no gore, no mocking.
 - Third person, past tense, plain spoken English. Short sentences. Calm, serious documentary tone.
-- 145 to 175 words of narration total (about 50-60 seconds). 7 to 9 scenes. Each scene 1-3 sentences.
+- 120 to 140 words of narration total (about 50-60 seconds). 7 to 9 scenes. Each scene 1-3 sentences.
 
 IMAGE PROMPTS
 - A painted illustration of the place, era, objects, or atmosphere of that moment. Match the real setting and time period.
@@ -88,7 +88,7 @@ HARD RULES
 - Use only facts from the source. Present the legend as a legend ("the story goes", "people believed"), never as proven fact.
 - Respectful to the cultures these stories come from: no mocking, no stereotypes, and no treating anyone's religion as evil.
 - No gore, no harm to children, no sexual content.
-- Third person, plain spoken English, short sentences. 145 to 175 words (about 50-60 seconds). 7 to 9 scenes, 1-3 sentences each.
+- Third person, plain spoken English, short sentences. 120 to 140 words (about 50-60 seconds). 7 to 9 scenes, 1-3 sentences each.
 
 IMAGE PROMPTS
 - Painted illustrations showing the creature, the setting, the era, or the moment. The creature can be shown (it is folklore), but no gore.
@@ -142,7 +142,7 @@ HARD RULES
 - Only call someone guilty if the source says they were convicted or confessed. Otherwise say "suspected" or "accused".
 - Respectful to victims and families. No graphic injury detail, no gore, no mocking.
 - Third person, past tense, plain spoken English, short sentences.
-- 145 to 175 words of narration total (about 50-60 seconds). 7 to 9 scenes, 1-3 sentences each.
+- 120 to 140 words of narration total (about 50-60 seconds). 7 to 9 scenes, 1-3 sentences each.
 
 IMAGE PROMPTS
 - Illustrated scenes of the real place, era, objects and moments. Match the real setting and time period.
