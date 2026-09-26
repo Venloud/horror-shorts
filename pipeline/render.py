@@ -5,6 +5,8 @@ from pathlib import Path
 
 from common import CONFIG, ROOT, log, media_duration, run
 from captions import font_setup
+import ai_motion
+import effects
 
 W, H, FPS = 1080, 1920, 30
 XFADE = 0.4      # transition length between scenes
@@ -37,6 +39,17 @@ def _scene_clip(img: Path, seconds: float, motion: str, out: Path) -> Path:
     run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(img), "-vf", vf,
          "-frames:v", str(frames), "-c:v", "libx264", "-preset", "veryfast", "-crf", "14",
          "-r", str(FPS), str(out)])
+    return out
+
+
+def _fit_clip(src: Path, seconds: float, out: Path) -> Path:
+    """Fit an AI clip to the shot: fill 1080x1920, stretch up to 1.5x slower if short, then hold the last frame."""
+    have = media_duration(src)
+    slow = min(1.5, max(1.0, seconds / max(0.1, have)))
+    vf = (f"scale={W}:{H}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{H},"
+          f"setpts={slow:.3f}*PTS,fps={FPS},tpad=stop_mode=clone:stop_duration={seconds:.2f},setsar=1,format=yuv420p")
+    run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(src), "-vf", vf, "-an", "-t", f"{seconds:.3f}",
+         "-c:v", "libx264", "-preset", "veryfast", "-crf", "14", "-r", str(FPS), str(out)])
     return out
 
 
@@ -83,10 +96,37 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
     # 1) One moving clip per shot (each clip is XFADE longer so crossfades don't eat time)
     motions = list(MOTIONS)
     clips, last = [], None
+    depths: dict = {}
+    ai_cfg = CONFIG.get("ai_motion", {})
+    ai_shots = int(ai_cfg.get("max_shots", 1)) if ai_cfg.get("enabled", True) else 0
+    hook_shots = next((j for j in range(1, len(scene_cut)) if scene_cut[j]), len(scene_cut))
+    sc0 = (story.get("scenes") or [{}])[0]
+    hook_prompts = [sc0.get(k2, "") for k2 in ("image_prompt", "image_prompt_2", "image_prompt_3", "image_prompt_4")]
     for k, (img, s) in enumerate(zip(shot_imgs, seg)):
-        m = random.choice([mm for mm in motions if mm != last]); last = m
         length = s + (XFADE if k < len(shot_imgs) - 1 else 0)
-        clips.append(_scene_clip(img, length, m, workdir / f"clip_{k:02d}.mp4"))
+        out = workdir / f"clip_{k:02d}.mp4"
+        # Real AI animation on the hook (first shots of scene 1), if a free Space is available
+        if k < min(ai_shots, hook_shots):
+            ai = ai_motion.animate(img, hook_prompts[k] if k < len(hook_prompts) else "", workdir / f"ai_{k:02d}.mp4")
+            if ai:
+                try:
+                    clips.append(_fit_clip(ai, length, out))
+                    log(f"Shot {k}: {length:.1f}s AI animated")
+                    continue
+                except Exception as e:  # noqa: BLE001
+                    log(f"Shot {k}: AI clip unusable ({str(e)[:100]})")
+        if img not in depths:
+            depths[img] = effects.depth_map(img)
+        if depths[img] is not None:
+            m = random.choice([mm for mm in effects.PARALLAX_MOVES if mm != last]); last = m
+            try:
+                clips.append(effects.parallax_clip(img, depths[img], length, m, out))
+                log(f"Shot {k}: {length:.1f}s 3D {m}")
+                continue
+            except Exception as e:  # noqa: BLE001
+                log(f"Shot {k}: 3D failed ({str(e)[:100]}), using a normal zoom")
+        m = random.choice([mm for mm in motions if mm != last]); last = m
+        clips.append(_scene_clip(img, length, m, out))
         log(f"Shot {k}: {length:.1f}s {m}")
 
     # 2) Chain crossfades
@@ -196,6 +236,20 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
     logo = ROOT / "assets" / "mascot_round.png"
     vparts, cur = [], "[vb]"
     vparts.append(f"{base}[vb]")
+    # Free "alive" effects: camera shake on the twist, light flicker, drifting fog and dust
+    shake = effects.shake_expr(story, starts)
+    if shake:
+        vparts.append(f"{cur}scale={int(W * 1.04)}:{int(H * 1.04)},crop={W}:{H}:x='{shake[0]}':y='{shake[1]}'[vs]"); cur = "[vs]"
+    flick = effects.flicker_expr(story, starts, total)
+    if flick:
+        vparts.append(f"{cur}eq=brightness='{flick}':eval=frame[vf]"); cur = "[vf]"
+    tex = effects.make_textures(workdir)
+    if "fog" in tex:
+        ins += ["-loop", "1", "-framerate", str(FPS), "-t", f"{total:.2f}", "-i", str(tex["fog"])]
+        vparts.append(f"{cur}[{idx}:v]overlay=x='-mod(t*22,{W})':y=0:shortest=1[vfog]"); cur = "[vfog]"; idx += 1
+    if "dust" in tex:
+        ins += ["-loop", "1", "-framerate", str(FPS), "-t", f"{total:.2f}", "-i", str(tex["dust"])]
+        vparts.append(f"{cur}[{idx}:v]overlay=x='6*sin(t/3)':y='-mod(t*26,{H})':shortest=1[vdust]"); cur = "[vdust]"; idx += 1
     if CONFIG.get("mascot", True) and mascot.exists() and logo.exists():
         ins += ["-loop", "1", "-framerate", str(FPS), "-t", f"{total:.2f}", "-i", str(mascot)]
         m_idx = idx; idx += 1

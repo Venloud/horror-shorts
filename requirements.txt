@@ -5,3 +5,6 @@ requests
 Pillow
 huggingface_hub>=0.30
 beautifulsoup4
+opencv-python-headless
+transformers
+gradio_client
