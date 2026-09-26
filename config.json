@@ -1,7 +1,14 @@
 {
   "channel_name": "Night Files",
 
-  "story_words": [170, 220],
+  "story_words": [145, 175],
+
+  "subgenre_prompts": {
+    "'rules' horror (a list of strange rules at a job or place)": "fiction_creepy_job.txt",
+    "late-night job gone wrong (night shift, security guard, gas station)": "fiction_creepy_job.txt"
+  },
+
+  "shots_per_scene": 4,
 
   "story_modes": ["fiction", "case", "mystery", "lore"],
 

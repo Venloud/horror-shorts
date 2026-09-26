@@ -35,11 +35,11 @@ HARD RULES
 - Never state or imply that a named real person is guilty of anything the source doesn't establish. Theories must be labelled as theories.
 - Be respectful to victims and families. No graphic injury detail, no gore, no mocking.
 - Third person, past tense, plain spoken English. Short sentences. Calm, serious documentary tone.
-- 130 to 160 words of narration total (about 50 seconds). 7 to 9 scenes. Each scene 1-3 sentences.
+- 145 to 175 words of narration total (about 50-60 seconds). 7 to 9 scenes. Each scene 1-3 sentences.
 
 IMAGE PROMPTS
 - A painted illustration of the place, era, objects, or atmosphere of that moment. Match the real setting and time period.
-- TWO images per scene: "image_prompt" shows the FIRST sentence of that scene, "image_prompt_2" shows the SECOND half. They must be different shots, like a film editor would cut: e.g. "I was 23, living alone in an old brick duplex" = shot 1: the young man in his room; shot 2: wide exterior of the old brick duplex at night. Mix close-ups, wide establishing shots of the location, objects, and over-the-shoulder views.
+- FOUR images per scene, one for each quarter of the narration, and each shows EXACTLY what is being said at that moment (when the words say "the bridge", show the bridge; "the windshield", show the view through the windshield): "image_prompt" = first part, "image_prompt_2" = second, "image_prompt_3" = third, "image_prompt_4" = last part. Each is a different shot, like a fast film edit: mix wide establishing shots of the place, medium shots of people, close-ups of key objects and clues, and reaction shots. A short scene may use fewer (leave the extra ones empty).
 - Never depict a real person's face. People appear only as distant silhouettes, from behind, or in shadow.
 - No text, no writing, no blood, no bodies.
 
@@ -88,11 +88,11 @@ HARD RULES
 - Use only facts from the source. Present the legend as a legend ("the story goes", "people believed"), never as proven fact.
 - Respectful to the cultures these stories come from: no mocking, no stereotypes, and no treating anyone's religion as evil.
 - No gore, no harm to children, no sexual content.
-- Third person, plain spoken English, short sentences. 130 to 160 words (about 50 seconds). 7 to 9 scenes, 1-3 sentences each.
+- Third person, plain spoken English, short sentences. 145 to 175 words (about 50-60 seconds). 7 to 9 scenes, 1-3 sentences each.
 
 IMAGE PROMPTS
 - Painted illustrations showing the creature, the setting, the era, or the moment. The creature can be shown (it is folklore), but no gore.
-- TWO images per scene: "image_prompt" shows the FIRST sentence of that scene, "image_prompt_2" shows the SECOND half. They must be different shots, like a film editor would cut: e.g. "I was 23, living alone in an old brick duplex" = shot 1: the young man in his room; shot 2: wide exterior of the old brick duplex at night. Mix close-ups, wide establishing shots of the location, objects, and over-the-shoulder views.
+- FOUR images per scene, one for each quarter of the narration, and each shows EXACTLY what is being said at that moment (when the words say "the bridge", show the bridge; "the windshield", show the view through the windshield): "image_prompt" = first part, "image_prompt_2" = second, "image_prompt_3" = third, "image_prompt_4" = last part. Each is a different shot, like a fast film edit: mix wide establishing shots of the place, medium shots of people, close-ups of key objects and clues, and reaction shots. A short scene may use fewer (leave the extra ones empty).
 - No text or writing in the image.
 
 - CONSISTENCY: fill "locations" with the 1-3 key places (short "name" + fixed "look" matching the real place and era) and set each scene's "location". List recurring figures in "characters" (e.g. "the hijacker": "man in a dark business suit, thin black tie, sunglasses, seen only as a silhouette"). In image prompts, refer to them by that exact name; their look is added automatically.
@@ -142,11 +142,11 @@ HARD RULES
 - Only call someone guilty if the source says they were convicted or confessed. Otherwise say "suspected" or "accused".
 - Respectful to victims and families. No graphic injury detail, no gore, no mocking.
 - Third person, past tense, plain spoken English, short sentences.
-- 130 to 160 words of narration total (about 50 seconds). 7 to 9 scenes, 1-3 sentences each.
+- 145 to 175 words of narration total (about 50-60 seconds). 7 to 9 scenes, 1-3 sentences each.
 
 IMAGE PROMPTS
 - Illustrated scenes of the real place, era, objects and moments. Match the real setting and time period.
-- TWO images per scene: "image_prompt" shows the FIRST half of the scene, "image_prompt_2" the SECOND half, as different shots (close-up, wide establishing shot of the location, object detail, over-the-shoulder).
+- FOUR images per scene, one for each quarter of the narration, and each shows EXACTLY what is being said at that moment (when the words say "the bridge", show the bridge; "the windshield", show the view through the windshield): "image_prompt" = first part, "image_prompt_2" = second, "image_prompt_3" = third, "image_prompt_4" = last part. Each is a different shot, like a fast film edit: mix wide establishing shots of the place, medium shots of people, close-ups of key objects and clues, and reaction shots. A short scene may use fewer (leave the extra ones empty).
 - Never depict a real person's face: people appear as silhouettes, from behind, in shadow, or small in a wide shot.
 - Lighting gets darker and tenser as the story builds. No text, no writing, no blood, no bodies.
 

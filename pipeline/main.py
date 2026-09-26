@@ -66,6 +66,9 @@ def main() -> int:
             "case": story.get("case"),
             "source": story.get("source"),
             "prompt_file": story.get("prompt_file"),
+            "setting": story.get("setting"),
+            "threat": story.get("threat"),
+            "twist": story.get("twist"),
             "seconds": round(narration["duration"], 1),
             "tiktok": result,
         })

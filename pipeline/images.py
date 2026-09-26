@@ -105,11 +105,13 @@ def build_prompt(story: dict, scene_i: int, shot: str, style: str) -> str:
         if k and k in text:
             parts.append(f"{ch['name']}: {ch['look']}")
     parts.append(f"Shot: {shot}")
+    if any(k in text for k in ("from behind", "back of", "over-the-shoulder", "over the shoulder", "silhouette")):
+        parts.append("seen from behind, face not visible")
     return ". ".join(p.strip().rstrip(".") for p in parts if p.strip())
 
 
 def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
-    """Two images per scene (shot A = first half, shot B = second half). Returns [[a, b], ...]."""
+    """Up to four images per scene, one per part of the narration. Returns [[a, b, c, d], ...]."""
     outdir.mkdir(parents=True, exist_ok=True)
     style = CONFIG["image_style"]
     base_seed = random.randint(1, 2_000_000_000)
@@ -118,9 +120,11 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
     jobs = []  # (scene index, shot letter, prompt)
     for i, scene in enumerate(story["scenes"]):
         jobs.append((i, "a", scene["image_prompt"]))
-        second = scene.get("image_prompt_2") or ""
-        if second.strip():
-            jobs.append((i, "b", second))
+        extra_keys = (("image_prompt_2", "b"), ("image_prompt_3", "c"), ("image_prompt_4", "d"))
+        for key, letter in extra_keys[: max(0, int(CONFIG.get("shots_per_scene", 4)) - 1)]:
+            extra = scene.get(key) or ""
+            if extra.strip():
+                jobs.append((i, letter, extra))
 
     results: dict[tuple[int, str], Path | None] = {}
     for n, (i, shot, raw_prompt) in enumerate(jobs):
@@ -154,7 +158,7 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
     good = [p for p in results.values() if p]
     per_scene: list[list[Path]] = []
     for i in range(len(story["scenes"])):
-        shots = [results.get((i, s)) for s in ("a", "b") if (i, s) in results]
+        shots = [results.get((i, s)) for s in ("a", "b", "c", "d") if (i, s) in results]
         shots = [p for p in shots if p]
         if not shots:  # both failed: borrow the previous scene's last image
             shots = [per_scene[-1][-1] if per_scene else good[0]]

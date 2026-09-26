@@ -8,6 +8,7 @@ from captions import font_setup
 
 W, H, FPS = 1080, 1920, 30
 XFADE = 0.4      # transition length between scenes
+MIN_SHOT = 1.2   # shortest a single picture stays on screen (seconds)
 TAIL = 3.4       # seconds after the last word (end card lives here)
 END_CARD_DELAY = 0.7  # end card appears this long after the last word
 
@@ -39,34 +40,44 @@ def _scene_clip(img: Path, seconds: float, motion: str, out: Path) -> Path:
     return out
 
 
-def _split_point(words: list[dict], scene: int, s_start: float, s_end: float) -> float | None:
-    """Where to cut from shot A to shot B inside a scene: a sentence end near the middle, else the middle word."""
-    if s_end - s_start < 3.0:
-        return None
+def _split_points(words: list[dict], scene: int, s_start: float, s_end: float, n: int) -> list[float]:
+    """Where to cut between the n shots of a scene: phrase ends (punctuation) near equal divisions,
+    otherwise the nearest word start. Every shot lasts at least MIN_SHOT seconds."""
     sw = [w for w in words if w.get("scene") == scene]
-    if len(sw) < 4:
-        return None
-    mid = (s_start + s_end) / 2
-    lo, hi = s_start + 0.3 * (s_end - s_start), s_start + 0.75 * (s_end - s_start)
-    ends = [w["end"] + 0.05 for w in sw[:-1] if re.search(r"[.!?,;:\u2026]$", w["word"]) and lo <= w["end"] <= hi]
-    if ends:
-        return min(ends, key=lambda t: abs(t - mid))
-    return min((w["start"] for w in sw[1:]), key=lambda t: abs(t - mid))
+    dur = s_end - s_start
+    n = max(1, min(n, int(dur // MIN_SHOT), len(sw) // 2 or 1))
+    cuts: list[float] = []
+    for k in range(1, n):
+        target = s_start + dur * k / n
+        prev = cuts[-1] if cuts else s_start
+        window = dur / n * 0.35
+        ok = lambda t: t - prev >= MIN_SHOT and s_end - t >= MIN_SHOT * (n - k)
+        ends = [w["end"] + 0.05 for w in sw[:-1]
+                if re.search(r"[.!?,;:\u2026]$", w["word"]) and abs(w["end"] - target) <= window and ok(w["end"] + 0.05)]
+        starts = [w["start"] for w in sw[1:] if ok(w["start"])]
+        pick = min(ends, key=lambda t: abs(t - target)) if ends else (min(starts, key=lambda t: abs(t - target)) if starts else None)
+        if pick is None:
+            break
+        cuts.append(pick)
+    return cuts
 
 
 def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Path, workdir: Path) -> Path:
     total = narration["duration"] + TAIL
     starts = [0.0] + [st for st, _ in narration["scene_times"][1:]]
 
-    # Build the shot list: each scene is 1 or 2 shots
+    # Build the shot list: each scene is 1 to 4 shots
     shot_imgs, shot_starts, scene_cut = [], [], []
     for i, shots in enumerate(images):
         s_start = starts[i]
         s_end = starts[i + 1] if i + 1 < len(starts) else total
-        cut = _split_point(narration["words"], i, s_start, s_end) if len(shots) > 1 else None
+        cuts = _split_points(narration["words"], i, s_start, s_end, len(shots)) if len(shots) > 1 else []
         shot_imgs.append(shots[0]); shot_starts.append(s_start); scene_cut.append(True)
-        if cut:
-            shot_imgs.append(shots[1]); shot_starts.append(cut); scene_cut.append(False)
+        if 0 < len(cuts) < len(shots) - 1:  # not enough time for every picture: spread the ones we keep
+            keep = [round(j * (len(shots) - 1) / len(cuts)) for j in range(len(cuts) + 1)]
+            shots = [shots[j] for j in keep]
+        for j, cut in enumerate(cuts, start=1):
+            shot_imgs.append(shots[j]); shot_starts.append(cut); scene_cut.append(False)
     seg = [shot_starts[k + 1] - shot_starts[k] for k in range(len(shot_starts) - 1)] + [total - shot_starts[-1]]
 
     # 1) One moving clip per shot (each clip is XFADE longer so crossfades don't eat time)
