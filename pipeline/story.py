@@ -155,14 +155,13 @@ def pick_subgenre(history: list[dict]) -> str:
     return random.choice(fresh or subs)
 
 
-def _call_gemini(model: str, prompt: str, api_key: str, temperature: float = 1.0) -> dict:
+def _call_gemini(model: str, prompt: str, api_key: str, temperature: float = 1.0, as_json: bool = True):
+    gen = {"temperature": temperature}
+    if as_json:
+        gen.update({"responseMimeType": "application/json", "responseSchema": SCHEMA})
     body = {
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "temperature": temperature,
-            "responseMimeType": "application/json",
-            "responseSchema": SCHEMA,
-        },
+        "generationConfig": gen,
         # Horror and true crime trip the default filters; allow dark (non-explicit) themes.
         "safetySettings": [{"category": c, "threshold": "BLOCK_ONLY_HIGH"} for c in (
             "HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH",
@@ -180,16 +179,16 @@ def _call_gemini(model: str, prompt: str, api_key: str, temperature: float = 1.0
     parts = (cands[0].get("content") or {}).get("parts") or []
     if not parts:
         raise RuntimeError(f"BLOCKED: empty answer (finishReason {cands[0].get('finishReason')})")
-    text = parts[0]["text"]
-    return json.loads(text)
+    text = "".join(p.get("text", "") for p in parts)
+    return json.loads(text) if as_json else text.strip()
 
 
 def _validate(story: dict) -> None:
     scenes = story.get("scenes") or []
-    if not 6 <= len(scenes) <= 12:
+    if not 6 <= len(scenes) <= 14:
         raise ValueError(f"bad scene count {len(scenes)}")
     words = sum(len(s["narration"].split()) for s in scenes)
-    if not 105 <= words <= 200:
+    if not 105 <= words <= 320:
         raise ValueError(f"narration length {words} words out of range")
     if not 0 <= int(story.get("twist_scene", 0)) < len(scenes):
         story["twist_scene"] = max(0, len(scenes) - 2)
@@ -242,6 +241,87 @@ def sfx_names() -> str:
         "\n  You may add ONE ending to any sound to fit the space: _echo (big empty room, hallway, church, cave, "
         "warehouse), _muffled (behind a wall or door, under a bed, underground), _distant (far away, outside). "
         "Examples: footsteps_wood_echo, knocking_muffled, scream_woman_distant, gunshot_distant.")
+
+
+# ---------- the creator's own story instructions (prompts/fiction_*.txt) ----------
+
+SCENES_PROMPT = """You turn a finished horror narration script into a scene plan for a vertical TikTok video.
+
+SCRIPT:
+\"\"\"
+{script}
+\"\"\"
+
+SPLIT IT INTO SCENES
+- Split the script, in order, into 7 to 12 scenes of 1-3 sentences each, and put each part in "narration".
+- COPY THE WORDS EXACTLY. Do not rewrite, shorten, add or reorder anything. Only remove markdown symbols, headings and quotation marks around dialogue if they would sound odd read aloud.
+- Scene 1 must be the script's opening hook.
+
+"""
+
+
+def _prompt_files() -> list:
+    from common import ROOT
+    return sorted((ROOT / "prompts").glob("fiction*.txt"))
+
+
+def _image_rules() -> str:
+    """The image / sfx / caption rules from the built-in prompt, reused for the scene plan."""
+    start, end = PROMPT.index("IMAGE PROMPTS"), PROMPT.index("DO NOT REPEAT")
+    return PROMPT[start:end]
+
+
+def _run_text(prompt: str, api_key: str, lo: int, hi: int) -> tuple[str, str]:
+    errors = []
+    for model in CONFIG["llm_models"]:
+        for attempt in range(3):
+            try:
+                text = _call_gemini(model, prompt, api_key, 1.0, as_json=False)
+                n = len(text.split())
+                if not lo * 0.8 <= n <= hi * 1.3:
+                    raise ValueError(f"story length {n} words, wanted {lo}-{hi}")
+                return text, model
+            except Exception as e:  # noqa: BLE001
+                errors.append(f"{model}#{attempt + 1}: {str(e)[:200]}")
+                log(f"Story attempt failed: {str(e)[:200]}")
+                if "404" in str(e) or ("BLOCKED" in str(e) and attempt >= 1) or ("503" in str(e) and attempt >= 1):
+                    break
+                time.sleep(6 * (attempt + 1))
+    raise RuntimeError("Could not write a story:\n" + "\n".join(errors))
+
+
+def _creator_story(history: list[dict], api_key: str, sfx_list: str, inspiration: str | None) -> dict:
+    files = _prompt_files()
+    used = [h.get("prompt_file") for h in history if h.get("prompt_file")]
+    file = min(files, key=lambda f: (used.count(f.name), random.random()))  # rotate through the files
+    lo, hi = CONFIG.get("story_words", [170, 220])
+    recent = "\n".join(f"- {h['title']}: {h.get('premise', '')}" for h in history[-40:] if h.get("title")) or "- (none yet)"
+    subgenre = pick_subgenre(history)
+    prompt = file.read_text(encoding="utf-8").strip().replace("{subgenre}", subgenre) + f"""
+
+## LENGTH
+The narration must be {lo} to {hi} words in total (about {round(hi / 3)} seconds read aloud). Count them.
+
+## CHANNEL RULES
+- The main characters are adults.
+- TikTok-safe: dark and tense, but no gore, no sexual content, no self-harm or suicide, nothing involving harm to children.
+- No real people, real brands, or real named towns.
+
+## ALREADY USED (make something completely different)
+{recent}
+"""
+    if inspiration:
+        prompt += ("\n## INSPIRATION\nTake only the core idea and the feeling of this piece and write a NEW, ORIGINAL story "
+                   "from it: new characters, names, setting details, twist and ending. Never copy its sentences.\n\"\"\"\n"
+                   + inspiration[:6000] + "\n\"\"\"\n")
+    script, model = _run_text(prompt, api_key, lo, hi)
+    log(f"Script written with {file.name} via {model} ({len(script.split())} words)")
+
+    plan_prompt = SCENES_PROMPT.format(script=script) + _image_rules().format(sfx_list=sfx_list)
+    story = _run_models(plan_prompt, api_key, temperature=0.4)
+    story.update({"mode": "fiction", "subgenre": subgenre if "{subgenre}" in file.read_text(encoding="utf-8") else file.stem.replace("fiction_", "").replace("_", " "),
+                  "prompt_file": file.name, "script_model": model})
+    return story
 
 
 class UseAsInspiration(Exception):
@@ -343,6 +423,14 @@ def _write_story(history: list[dict], skipped: list[dict]) -> dict:
                 log(f"{mode} mode failed ({str(e)[:200]}); trying another topic")
                 history = history + [{"case": case}]
         log("Falling back to fiction today")
+
+    if _prompt_files():
+        story = _creator_story(history, api_key, sfx_list, inspiration)
+        if inspiration and item:
+            story["source"] = item["key"]
+        words = sum(len(s["narration"].split()) for s in story["scenes"])
+        log(f"Story '{story['title']}' ({words} words, {len(story['scenes'])} scenes) via {story['model']}")
+        return story
 
     subgenre = pick_subgenre(history)
     recent = "\n".join(f"- {h['title']}: {h.get('premise', '')}" for h in history[-40:] if h.get("title")) or "- (none yet)"
