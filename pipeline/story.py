@@ -55,7 +55,7 @@ First, silently plan: (a) the threat and its ONE clear rule (what it is, what it
    - The FIRST 6 WORDS must already be unsettling. No warm-up, no setup, no "I want to tell you about".
    - Best formula: a normal statement + one detail that makes it impossible or terrifying. Examples of the STYLE (write new ones, never reuse these):
      "My phone buzzed at 3 AM. It was a text from my own number: don't turn around."
-     "The babysitter called to ask when we'd be home. We didn't have a babysitter."
+     "My landlord texted to say he'd fixed the leak in my kitchen. I don't have a landlord."
      "I found forty photos of myself sleeping in a camera I'd never seen before."
      "The man in the lake waved at me. The lake had been frozen for a month."
    - It must create ONE burning question the viewer needs answered, and the ending must answer it.
@@ -72,6 +72,7 @@ First, silently plan: (a) the threat and its ONE clear rule (what it is, what it
 
 HARD RULES
 - Pure fiction. No real people, real crimes, real victims, real brands, or real named towns/addresses.
+- The main characters are adults.
 - TikTok-safe: tension and dread, not gore. No graphic violence, no self-harm, no suicide, nothing involving harm to children, no sexual content.
 - First person, past tense, plain spoken English like someone telling it at 2am. Short sentences. No fancy words.
 - 130 to 160 words of narration total (about 50 seconds). This is strict; count them. Every sentence must earn its place.
@@ -82,9 +83,9 @@ IMAGE PROMPTS
 - TWO images per scene: "image_prompt" shows the FIRST sentence of that scene, "image_prompt_2" shows the SECOND half. They must be different shots, like a film editor would cut: e.g. "I was 23, living alone in an old brick duplex" = shot 1: the young man in his room; shot 2: wide exterior of the old brick duplex at night. Mix close-ups, wide establishing shots of the location, objects, and over-the-shoulder views.
 - Illustrated storybook / animated-film look, NOT a photo. The characters are fictional, so show them clearly with EXPRESSIVE FACES (worry, fear, confusion, relief). Faces sell the emotion.
 - CONSISTENCY IS EVERYTHING: viewers must recognise the same people and the same rooms from shot to shot.
-  - "characters": list every character once with a short "name" (e.g. "the babysitter", "the boy") and a fixed "look" (age, face, hair, exact clothes and colors, one prop), e.g. "a young woman, early 20s, dark brown ponytail, green hoodie, blue jeans".
+  - "characters": list every character once with a short "name" (e.g. "the night guard", "the old neighbor") and a fixed "look" (age, face, hair, exact clothes and colors, one prop), e.g. "a young man, mid 20s, short black hair, grey work jacket, flashlight".
   - "locations": list the 1-3 places the story happens with a short "name" (e.g. "the living room") and a fixed "look" (layout, furniture, colors, key objects), e.g. "cozy suburban living room, beige couch, old CRT TV on a wooden stand, tall lamp, staircase in the back".
-  - In every image prompt, refer to characters by their exact name ("the babysitter kneels beside the boy"). Their look is added automatically, so don't repeat it. Set each scene's "location" to one location name.
+  - In every image prompt, refer to characters by their exact name ("the night guard shines his flashlight at the old neighbor"). Their look is added automatically, so don't repeat it. Set each scene's "location" to one location name.
   - Keep the same outfits and the same rooms for the whole story unless the story truly moves.
 - Lighting tells the story: warm, cozy lamp light at the start; darker, colder and more shadowy as the tension rises; darkest at the climax.
 - Keep the threat mostly hidden until the climax: a shadow, a shape under the bed, a hand, eyes in the dark. Show it clearly at most once.
@@ -98,9 +99,9 @@ SOUND EFFECTS
 OTHER FIELDS
 - title: 3-7 word internal title.
 - premise: one sentence summary (used to avoid repeating stories).
-- hook_overlay: 2-5 word on-screen text shown big over the first seconds. It must be shocking on its own, not a title, e.g. "It texted from my phone", "We didn't have a babysitter", "He waved from under the ice". No emojis.
+- hook_overlay: 2-5 word on-screen text shown big over the first seconds. It must be shocking on its own, not a title, e.g. "It texted from my phone", "I don't have a landlord", "He waved from under the ice". No emojis.
 - twist_scene: the 0-based index of the scene where the twist hits.
-- caption: line 1 = a searchable story title that says what happens, the way people would type it into TikTok search, e.g. "The Babysitter Looked Under the Bed... and Found a Man". Line 2 = a question that makes people comment (e.g. "Would you have checked?"). Max 180 characters. May use 1 emoji.
+- caption: line 1 = a searchable story title that says what happens, the way people would type it into TikTok search, e.g. "The Night Guard Checked the Cameras... and Saw Himself". Line 2 = a question that makes people comment (e.g. "Would you have checked?"). Max 180 characters. May use 1 emoji.
 - hashtags: 5 hashtags without the # symbol, mixing broad (scarystories, horrortok) and specific.
 - pinned_comment: a short comment the creator can pin to start discussion.
 
