@@ -162,13 +162,24 @@ def _call_gemini(model: str, prompt: str, api_key: str, temperature: float = 1.0
             "responseMimeType": "application/json",
             "responseSchema": SCHEMA,
         },
+        # Horror and true crime trip the default filters; allow dark (non-explicit) themes.
+        "safetySettings": [{"category": c, "threshold": "BLOCK_ONLY_HIGH"} for c in (
+            "HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH",
+            "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT")],
     }
     r = requests.post(GEMINI_URL.format(model=model), json=body, timeout=120,
                       headers={"x-goog-api-key": api_key})
     if r.status_code != 200:
         raise RuntimeError(f"{model} HTTP {r.status_code}: {r.text[:400]}")
     data = r.json()
-    text = data["candidates"][0]["content"]["parts"][0]["text"]
+    cands = data.get("candidates") or []
+    if not cands:
+        reason = (data.get("promptFeedback") or {}).get("blockReason", "no reason given")
+        raise RuntimeError(f"BLOCKED: Gemini refused this topic ({reason})")
+    parts = (cands[0].get("content") or {}).get("parts") or []
+    if not parts:
+        raise RuntimeError(f"BLOCKED: empty answer (finishReason {cands[0].get('finishReason')})")
+    text = parts[0]["text"]
     return json.loads(text)
 
 
@@ -206,6 +217,8 @@ def _run_models(prompt: str, api_key: str, temperature: float) -> dict:
                 log(f"Story attempt failed: {str(e)[:200]}")
                 if "404" in str(e):
                     break  # model retired: skip straight to the next one
+                if "BLOCKED" in str(e) and attempt >= 1:
+                    break  # topic refused twice: try the next model once, then give up on this topic
                 if "503" in str(e) and attempt >= 1:
                     break  # model overloaded: don't wait, move to the next model
                 time.sleep(8 * (attempt + 1))
