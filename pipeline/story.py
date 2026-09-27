@@ -403,12 +403,22 @@ The narration must be {lo} to {hi} words in total (about {round(lo / 2.4)}-{roun
     return story
 
 
-def plan_scenes(script: str, api_key: str, sfx_list: str) -> dict:
+REAL_STORY_IMAGES = """
+
+THIS SCRIPT IS A REAL STORY about real people. This overrides the face rules above: never depict a real person's
+face. People appear only as silhouettes against light, in deep shadow, or small in a wide shot. Prefer the real
+places, era details and objects (the museum, the empty wall, the frame, the newspaper headline without readable
+text). Match the real setting and time period."""
+
+
+def plan_scenes(script: str, api_key: str, sfx_list: str, real: bool = False) -> dict:
     """Step 2: split a finished script into scenes + image prompts + sounds + caption, without changing its words."""
     from common import ROOT
     plan = (ROOT / "prompts" / "scene_plan.txt").read_text(encoding="utf-8")
     plan = "\n".join(l for l in plan.splitlines() if not l.startswith("#"))
     plan_prompt = plan.replace("{script}", script).replace("{sfx_list}", sfx_list)
+    if real:
+        plan_prompt += REAL_STORY_IMAGES
     story = _run_models(plan_prompt, api_key, temperature=0.4)
     prompts = [sc.get(k, "") for sc in story["scenes"] for k in ("image_prompt", "image_prompt_2", "image_prompt_3", "image_prompt_4") if sc.get(k)]
     avg = sum(len(x.split()) for x in prompts) / max(1, len(prompts))
@@ -474,7 +484,7 @@ def _write_story(history: list[dict], skipped: list[dict]) -> dict:
             log(f"Inbox item: {item['key']} ({item['kind']}, {len(text)} chars)")
             if item["kind"] == "script":
                 log("Inbox SCRIPT: narrating it exactly as written, only adding visuals")
-                story = plan_scenes(text, api_key, sfx_list)
+                story = plan_scenes(text, api_key, sfx_list, real=item.get("real", False))
                 story.update({"mode": "inbox-script", "source": item["key"], "subgenre": "creator script"})
                 return story
             if item["kind"] == "true":

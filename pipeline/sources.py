@@ -3,8 +3,9 @@
 inbox/links.txt  one link per line.  "true <url>"    -> retell the real story, facts only
                                      "fiction <url>" -> use it as inspiration for an ORIGINAL story
                                      a bare url      -> treated as "true"
-inbox/*.txt      any other text file = a pasted story/article. First line "TRUE", "FICTION" or "SCRIPT"
-                 (default FICTION = inspiration only; SCRIPT = narrate these exact words, only add the visuals).
+inbox/*.txt      any other text file = a pasted story/article. First line "TRUE", "FICTION", "SCRIPT" or "TRUE SCRIPT"
+                 (default FICTION = inspiration only; SCRIPT = narrate these exact words, only add the visuals;
+                 TRUE SCRIPT = same, but it's a real story: real people are never shown with faces).
 Each item is used once (tracked in data/history.json). Inbox items jump the queue.
 """
 import json
@@ -123,12 +124,16 @@ def next_inbox(history: list[dict]) -> dict | None:
         lines = f.read_text(encoding="utf-8").strip().splitlines()
         if not lines:
             continue
-        kind = "fiction"
-        if lines[0].strip().upper() in ("TRUE", "FICTION", "SCRIPT"):
+        kind, real = "fiction", False
+        first = " ".join(lines[0].upper().split())
+        if first in ("TRUE SCRIPT", "SCRIPT TRUE"):
+            kind, real = "script", True
+            lines.pop(0)
+        elif first in ("TRUE", "FICTION", "SCRIPT"):
             kind = lines.pop(0).strip().lower()
         text = "\n".join(lines).strip()
         if len(text) > 200:
-            return {"key": f"inbox/{f.name}", "kind": kind, "text": text[:9000]}
+            return {"key": f"inbox/{f.name}", "kind": kind, "real": real, "text": text[:9000]}
     return None
 
 
