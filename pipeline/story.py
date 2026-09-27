@@ -194,10 +194,10 @@ def sfx_names() -> str:
 
 # Words that must appear in a scene's narration for its sound to be kept (base sound name -> clues).
 SFX_CLUES = {
-    "footsteps": ("step", "walk", "crunch", "pac", "running", "ran ", "stride", "heel"),
+    "footsteps": ("step", "walk", "crunch", "pac", "running", "ran ", "stride", "heel", "arriv", "hallway", "corridor", "stairs", "entered"),
     "breathing": ("breath", "breathing", "panting", "gasp"),
     "whispers": ("whisper", "murmur", "voice"), "knocking": ("knock",), "window_tap": ("tap", "window"),
-    "door": ("door",), "gate_creak": ("gate",), "floor_creak": ("creak", "floorboard"),
+    "door": ("door", "stormed", "burst in", "locked", "entered"), "gate_creak": ("gate",), "floor_creak": ("creak", "floorboard"),
     "phone": ("phone", "call", "ring", "text", "buzz", "voicemail"), "doorbell": ("doorbell", "bell"),
     "scream": ("scream", "shriek", "yell"), "heartbeat": ("heart", "pulse"), "clock_ticking": ("clock", "tick"),
     "keys_jingle": ("key",), "glass_break": ("glass", "shatter", "window"), "gunshot": ("gun", "shot", "fired"),

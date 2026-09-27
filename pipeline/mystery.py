@@ -40,10 +40,11 @@ HARD RULES
 IMAGE PROMPTS
 - A painted illustration of the place, era, objects, or atmosphere of that moment. Match the real setting and time period.
 - FOUR images per scene, one for each quarter of the narration, and each shows EXACTLY what is being said at that moment (when the words say "the bridge", show the bridge; "the windshield", show the view through the windshield): "image_prompt" = first part, "image_prompt_2" = second, "image_prompt_3" = third, "image_prompt_4" = last part. Each is a different shot, like a fast film edit: mix wide establishing shots of the place, medium shots of people, close-ups of key objects and clues, and reaction shots. A short scene may use fewer (leave the extra ones empty).
-- Never depict a real person's face. People appear only as distant silhouettes, from behind, or in shadow.
+- Never depict a real person's face. People appear only as distant silhouettes against light, in deep shadow, or small in a wide shot.
 - No text, no writing, no blood, no bodies.
 
 - No all-seeing eye, eye-in-a-triangle or Illuminati-style symbols in any image, UNLESS the story itself is about that topic (e.g. a video about the Illuminati or the eye on the dollar bill). Eyes in the dark are fine.
+- Keep every shot simple and drawable: one clear subject from a normal eye-level angle. Never ask for over-the-shoulder shots, people seen from behind, close-ups of hands or isolated body parts, or extreme low/high angles (the image AI twists bodies and puts faces on the back of heads). Prefer places, objects and wide shots.
 - CONSISTENCY: fill "locations" with the 1-3 key places (short "name" + fixed "look" matching the real place and era) and set each scene's "location". List recurring figures in "characters" (e.g. "the hijacker": "man in a dark business suit, thin black tie, sunglasses, seen only as a silhouette"). In image prompts, refer to them by that exact name; their look is added automatically.
 - POP CULTURE HOOK: if the source says a famous movie, TV show, video game, song or book was based on or inspired by this (for example, the Beast of Gevaudan appears in Teen Wolf), add ONE short line near the end that connects it, e.g. "Sound familiar? It's the same beast from Teen Wolf." Put that title in the caption and one hashtag. ONLY use references stated in the source. Never invent or guess one; if the source has none, skip this.
 
@@ -98,6 +99,7 @@ IMAGE PROMPTS
 - No text or writing in the image.
 
 - No all-seeing eye, eye-in-a-triangle or Illuminati-style symbols in any image, UNLESS the story itself is about that topic (e.g. a video about the Illuminati or the eye on the dollar bill). Eyes in the dark are fine.
+- Keep every shot simple and drawable: one clear subject from a normal eye-level angle. Never ask for over-the-shoulder shots, people seen from behind, close-ups of hands or isolated body parts, or extreme low/high angles (the image AI twists bodies and puts faces on the back of heads). Prefer places, objects and wide shots.
 - CONSISTENCY: fill "locations" with the 1-3 key places (short "name" + fixed "look" matching the real place and era) and set each scene's "location". List recurring figures in "characters" (e.g. "the hijacker": "man in a dark business suit, thin black tie, sunglasses, seen only as a silhouette"). In image prompts, refer to them by that exact name; their look is added automatically.
 - POP CULTURE HOOK: if the source says a famous movie, TV show, video game, song or book was based on or inspired by this (for example, the Beast of Gevaudan appears in Teen Wolf), add ONE short line near the end that connects it, e.g. "Sound familiar? It's the same beast from Teen Wolf." Put that title in the caption and one hashtag. ONLY use references stated in the source. Never invent or guess one; if the source has none, skip this.
 
@@ -150,10 +152,11 @@ HARD RULES
 IMAGE PROMPTS
 - Illustrated scenes of the real place, era, objects and moments. Match the real setting and time period.
 - FOUR images per scene, one for each quarter of the narration, and each shows EXACTLY what is being said at that moment (when the words say "the bridge", show the bridge; "the windshield", show the view through the windshield): "image_prompt" = first part, "image_prompt_2" = second, "image_prompt_3" = third, "image_prompt_4" = last part. Each is a different shot, like a fast film edit: mix wide establishing shots of the place, medium shots of people, close-ups of key objects and clues, and reaction shots. A short scene may use fewer (leave the extra ones empty).
-- Never depict a real person's face: people appear as silhouettes, from behind, in shadow, or small in a wide shot.
+- Never depict a real person's face: people appear as silhouettes against light, in deep shadow, or small in a wide shot.
 - Lighting gets darker and tenser as the story builds. No text, no writing, no blood, no bodies.
 
 - No all-seeing eye, eye-in-a-triangle or Illuminati-style symbols in any image, UNLESS the story itself is about that topic (e.g. a video about the Illuminati or the eye on the dollar bill). Eyes in the dark are fine.
+- Keep every shot simple and drawable: one clear subject from a normal eye-level angle. Never ask for over-the-shoulder shots, people seen from behind, close-ups of hands or isolated body parts, or extreme low/high angles (the image AI twists bodies and puts faces on the back of heads). Prefer places, objects and wide shots.
 - CONSISTENCY: fill "locations" with the 1-3 key places (short "name" + fixed "look" matching the real place and era) and set each scene's "location". List recurring figures in "characters" (e.g. "the hijacker": "man in a dark business suit, thin black tie, sunglasses, seen only as a silhouette"). In image prompts, refer to them by that exact name; their look is added automatically.
 - POP CULTURE HOOK: if the source says a famous movie, TV show, video game, song or book was based on or inspired by this (for example, the Beast of Gevaudan appears in Teen Wolf), add ONE short line near the end that connects it, e.g. "Sound familiar? It's the same beast from Teen Wolf." Put that title in the caption and one hashtag. ONLY use references stated in the source. Never invent or guess one; if the source has none, skip this.
 
