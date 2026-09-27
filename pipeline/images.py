@@ -23,10 +23,17 @@ def _cloudflare(prompt: str, seed: int) -> bytes:
         r = requests.post(CF_URL.format(acct=acct), timeout=120,
                           headers={"Authorization": f"Bearer {token}"},
                           json={"prompt": prompt[:2000], "steps": int(CONFIG.get("image_steps", 4))})
+        if r.status_code == 200:
+            break  # success: never scan the body, the base64 image can contain "4006" or anything else
         body = r.text[:300]
-        low = r.text.lower()
+        try:
+            errors = r.json().get("errors") or []
+        except ValueError:
+            errors = []
+        codes = {e.get("code") for e in errors if isinstance(e, dict)}
+        msgs = " ".join(str(e.get("message", "")) for e in errors if isinstance(e, dict)).lower()
         # Daily cap (error 4006, "daily free allocation of 10,000 neurons"): skip Cloudflare for the rest of the run.
-        if "daily free allocation" in low or "4006" in low or "neurons" in low:
+        if 4006 in codes or "daily free allocation" in msgs or "neurons" in msgs:
             _STATE["cf_out"] = True
             raise RuntimeError(f"Cloudflare daily free limit used up (resets 00:00 UTC): {body}")
         # Plain 429 = short "slow down" limit: wait and retry, keep Cloudflare for the next images.
