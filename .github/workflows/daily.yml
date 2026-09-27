@@ -22,7 +22,7 @@ concurrency:
 jobs:
   make-video:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -48,7 +48,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface
-          key: hf-kokoro-v1
+          key: hf-models-v2
 
       - name: Install Python packages
         run: |
