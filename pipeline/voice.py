@@ -9,7 +9,7 @@ from common import CONFIG, log
 
 SR = 24000
 SCENE_GAP = 0.35   # seconds of silence between scenes
-LEAD_IN = 0.10
+LEAD_IN = 0.0      # first word at 0.0 s: the hook must be heard instantly
 
 
 def _clean(text: str) -> str:
@@ -70,8 +70,15 @@ def narrate(story: dict, outdir: Path) -> dict:
                 continue
             audio = audio.detach().cpu().numpy() if hasattr(audio, "detach") else np.asarray(audio)
             audio = audio.astype(np.float32).flatten()
+            trim = 0.0
+            if not words and len(audio):  # very first chunk: cut the TTS's own leading silence
+                loud = np.flatnonzero(np.abs(audio) > 0.02 * (float(np.max(np.abs(audio))) or 1.0))
+                cut = max(0, int(loud[0]) - int(0.02 * SR)) if len(loud) else 0
+                audio, trim = audio[cut:], cut / SR
             dur = len(audio) / SR
-            chunk_words = _tokens_to_words(getattr(result, "tokens", None), t)
+            chunk_words = _tokens_to_words(getattr(result, "tokens", None), t - trim)
+            for w in chunk_words:
+                w["start"], w["end"] = max(0.0, w["start"]), max(0.05, w["end"])
             if not chunk_words:
                 chunk_words = _proportional_words(getattr(result, "graphemes", text) or text, t, dur)
             for w in chunk_words:

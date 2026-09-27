@@ -451,10 +451,11 @@ def _true_story(facts: str, name: str, api_key: str, sfx_list: str) -> dict:
         raise UseAsInspiration(facts)
     if flag == "SKIP":
         raise RuntimeError("source is not a real story, skipping")
-    rules = (f'scene 1 narration must start with the exact words "{TRUE_OPENER}"; '
+    rules = (f'scene 1 = the hook sentence, then the exact words "{TRUE_OPENER}"; '
              "ONLY facts from this source, never invent details; only call someone guilty if convicted or confessed; "
              "respectful; no gore; third person; plain English; no real faces in images.\nSOURCE:\n" + facts[:6000])
     story = edit_story(story, api_key, sfx_list, rules)
+    story = fix_hook(story, api_key, sfx_list, rules)
     log(f"True story '{story['title']}' ({len(story['scenes'])} scenes) via {story['model']}")
     return story
 
@@ -464,11 +465,68 @@ TRUE_MODES = ("case", "mystery", "inbox-true")  # real events; NOT lore (legends
 
 
 def with_true_opener(text: str) -> str:
-    """Prepend "This is a true story." unless the text already starts with it."""
-    text = text.strip()
-    if re.match(r"this is a true story\b", text, re.IGNORECASE):
-        return text
-    return f"{TRUE_OPENER} {text}"
+    """Put "This is a true story." right AFTER the hook sentence (never first: that's a slow opener)."""
+    text = re.sub(r"\s*this is a true story[.!]?\s*", " ", text.strip(), flags=re.IGNORECASE).strip()
+    end = re.search(r"[.!?…][\"”’)]?(?=\s+[A-Z\"“‘(]|\s*$)", text)
+    if not end:
+        return f"{text.rstrip(',;:')}. {TRUE_OPENER}".strip() if text else TRUE_OPENER
+    hook, rest = text[:end.end()], text[end.end():].strip()
+    return f"{hook} {TRUE_OPENER} {rest}".strip()
+
+
+MONTHS = ("january", "february", "march", "april", "may", "june", "july", "august", "september",
+          "october", "november", "december")
+# Countries, continents, US states and big regions: none of these may be in a hook's first 6 words.
+PLACES = """afghanistan albania algeria argentina armenia australia austria bangladesh belarus belgium bolivia
+bosnia brazil bulgaria cambodia cameroon canada chile china colombia congo croatia cuba cyprus czech denmark
+ecuador egypt england estonia ethiopia finland france germany ghana greece guatemala haiti honduras hungary
+iceland india indonesia iran iraq ireland israel italy jamaica japan kazakhstan kenya korea latvia lebanon
+libya lithuania malaysia mexico moldova mongolia morocco nepal netherlands holland nicaragua nigeria norway
+pakistan panama peru philippines poland portugal romania russia scotland serbia slovakia slovenia somalia
+spain sudan sweden switzerland syria taiwan thailand tunisia ukraine uruguay venezuela vietnam wales yemen
+zimbabwe africa asia europe america antarctica australia oceania siberia scandinavia transylvania balkans
+alabama alaska arizona arkansas california colorado connecticut delaware florida hawaii idaho illinois
+indiana iowa kansas kentucky louisiana maine maryland massachusetts michigan minnesota mississippi missouri
+montana nebraska nevada ohio oklahoma oregon pennsylvania tennessee texas utah vermont washington wisconsin
+wyoming paris london rome berlin moscow tokyo york boston chicago""".split()
+PLACE_PHRASES = ("new york", "new jersey", "new mexico", "new hampshire", "new zealand", "north carolina",
+                 "south carolina", "north dakota", "south dakota", "west virginia", "rhode island",
+                 "united states", "united kingdom", "south africa", "saudi arabia", "los angeles")
+
+
+def hook_problem(text: str) -> str | None:
+    """Why the first 6 words of a hook are a slow opener (a year, "In <month>", a place), or None if fine."""
+    text = re.sub(r"^\s*this is a true story[.!]?\s*", "", text or "", flags=re.IGNORECASE)
+    first = " ".join(text.split()[:6])
+    low = re.sub(r"[^a-z0-9\s-]", " ", first.lower())
+    if re.search(r"\b\d{4}s?\b", low):
+        return "has a year in it"
+    if re.search(r"\bin (" + "|".join(MONTHS) + r")\b", low):
+        return "opens with a month"
+    words = set(re.split(r"[\s-]+", low))
+    hit = next((p for p in PLACES if p in words), None) or next((p for p in PLACE_PHRASES if p in low), None)
+    if hit:
+        return f"names a place ({hit})"
+    return None
+
+
+def fix_hook(story: dict, api_key: str, sfx_list: str, rules: str, tries: int = 2) -> dict:
+    """If scene 1 opens slow (date, year, place), send it back to the editor for a new hook (max 2 tries)."""
+    for attempt in range(tries):
+        first = (story.get("scenes") or [{}])[0].get("narration", "")
+        problem = hook_problem(first)
+        if not problem:
+            return story
+        start = " ".join(first.split()[:6])
+        log(f"Hook starts '{start}...' which {problem}: rewriting it ({attempt + 1}/{tries})")
+        story = edit_story(story, api_key, sfx_list, rules + (
+            f"\nHOOK FIX (most important): scene 1 starts with \"{start}\", which {problem}. Viewers swipe away "
+            "in the first second. Rewrite scene 1 so its first words are the strangest or most shocking detail. "
+            "Never open with a date, a year, or a place name; move when/where into scene 2."))
+    first = (story.get("scenes") or [{}])[0].get("narration", "")
+    if hook_problem(first):
+        log(f"Hook still opens slow after {tries} rewrites, keeping it: '{' '.join(first.split()[:6])}...'")
+    return story
 
 
 def mark_true_story(story: dict) -> dict:
@@ -577,10 +635,11 @@ def _real_story(history: list[dict], mode: str, api_key: str, sfx_list: str) -> 
             try:
                 prompt, facts = mystery.build_prompt(CONFIG["channel_name"], case, sfx_list, mode)
                 story = _run_models(prompt, api_key, temperature=0.6)
-                rules = ((f'scene 1 narration must start with the exact words "{TRUE_OPENER}"; ' if mode == "mystery" else "")
+                rules = ((f'scene 1 = the hook sentence, then the exact words "{TRUE_OPENER}"; ' if mode == "mystery" else "")
                          + "ONLY facts from this source, never invent details; theories/legends clearly labelled; "
                          "no accusing real people; respectful; no gore; third person; plain English.\nSOURCE:\n" + facts[:6000])
                 story = edit_story(story, api_key, sfx_list, rules)
+                story = fix_hook(story, api_key, sfx_list, rules)
                 story.update({"mode": mode, "case": case,
                               "subgenre": "real unsolved mystery" if mode == "mystery" else "legend / folklore"})
                 log(f"{mode.title()} '{story['title']}' ({len(story['scenes'])} scenes) via {story['model']}")

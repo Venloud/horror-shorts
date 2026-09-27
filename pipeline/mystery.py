@@ -22,10 +22,11 @@ SOURCE FACTS (from Wikipedia). This is your ONLY source. Everything you say must
 \"\"\"
 
 STRUCTURE (follow exactly)
-1. SCENE 1 = THE HOOK. Its narration MUST start with the exact words "This is a true story." and then 1-2 sentences (MAX 18 words after that opener): the single most disturbing or impossible TRUE detail of the case, stated flat. The first 6 words after the opener must already be unsettling. Style examples of the part after the opener (write new ones):
+1. SCENE 1 = THE HOOK. Its FIRST sentence (MAX 18 words) is the single most disturbing or impossible TRUE detail of the case, stated flat; the first 6 words must already be unsettling. Right after that hook sentence, scene 1 continues with the exact words "This is a true story." Style examples of the hook sentence (write new ones):
    - "Nine hikers cut their tent open from the inside and ran into the snow barefoot."
    - "A man boarded a plane with two hundred thousand dollars, then jumped out. He was never found."
    Never open with generic lines like "This is one of the strangest cases ever" or "Have you ever heard of".
+   NEVER open with a date, a year, or a place name. Put when/where in scene 2. The first words must be the strangest or most shocking detail.
 2. SCENE 2 = CONTEXT: when and where it happened, and who was involved, in plain words.
 3. SCENES 3+ = what happened, in order, with the eeriest real details. Then the main theories, clearly framed as theories ("Some believe...", "Investigators suggested...").
 4. LAST SCENE = what remains unexplained, ending with a direct question to the viewer, e.g. "What do you think really happened?"
@@ -78,8 +79,9 @@ SOURCE (from Wikipedia). This is your ONLY source for facts about the legend:
 STRUCTURE (follow exactly). It must feel like a complete mini-story with a clear ending.
 1. SCENE 1 = HOOK, "did you know" style (1-2 sentences, MAX 18 words), built on the single creepiest detail of the legend. The first 6 words must already be unsettling. Patterns:
    - "Did you know [creepiest detail, stated plainly]?"
-   - "In [place], people still [strange protective habit]. Because of what [creature] does."
+   - "People still [strange protective habit]. Because of what [creature] does."
    Never open with a vague line like "There is an old legend".
+   NEVER open with a date, a year, or a place name. Put when/where in scene 2. The first words must be the strangest or most shocking detail.
 2. SCENE 2 = CONTEXT: where the legend comes from and how old it is.
 3. What the creature/legend is, what it does, its rules (how it hunts, what attracts it), with the eeriest details.
 4. The most famous story, sighting, or belief about it (framed as "people claimed", "the legend says").
@@ -134,9 +136,10 @@ MAKE IT TIKTOK-SAFE (never refuse a normal crime story):
 - If the source is not a real story at all, set "title" to exactly SKIP.
 
 STRUCTURE (follow exactly)
-1. SCENE 1 = THE HOOK. Its narration MUST start with the exact words "This is a true story." and then 1-2 sentences (MAX 18 words after that opener): the most gripping true detail, stated flat. The first 6 words after the opener must already grab. Style examples of the part after the opener (write new ones):
-   - "In 1950, eleven men walked into the most secure vault in Boston and walked out with two million dollars."
+1. SCENE 1 = THE HOOK. Its FIRST sentence (MAX 18 words) is the most gripping true detail, stated flat; the first 6 words must already grab. Right after that hook sentence, scene 1 continues with the exact words "This is a true story." Style examples of the hook sentence (write new ones):
+   - "Eleven men walked into the most secure vault in the city and walked out with two million dollars."
    - "The man paid for his plane ticket in cash. Two hours later, he parachuted into the dark with the ransom."
+   NEVER open with a date, a year, or a place name. Put when/where in scene 2. The first words must be the strangest or most shocking detail.
 2. SCENE 2 = CONTEXT: when, where, who, in plain words.
 3. WHAT HAPPENED: the key turns in order, with the most vivid real details.
 4. HOW IT ENDED: caught, solved, escaped, or still unknown. This must pay off the hook.

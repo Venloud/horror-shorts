@@ -42,10 +42,15 @@ so a new session can pick up without starting over.
      stories (`.txt`, first line TRUE/FICTION/SCRIPT/SCRIPT TRUE). Inbox items jump the queue and are used once.
    - **TRUE STORY rule**: modes `case`, `mystery`, `inbox-true` and inbox `SCRIPT TRUE` files are true stories
      (NOT `lore`: legends aren't true stories; NOT fiction). For those, `story["true_story"] = True` (saved in history),
-     scene 1 starts with "This is a true story." (prompt + editor rule, and the code prepends it if missing),
+     scene 1 = hook sentence, THEN "This is a true story." (never first: slow opener; code moves/inserts it),
      captions.py shows a red "TRUE STORY" badge above the hook for 0-3.5 s, and the TikTok caption starts "TRUE STORY:".
      Inbox `.txt` first lines: `TRUE`, `FICTION`, `SCRIPT` (exact words) or `SCRIPT TRUE` (exact words, true story,
      real people never shown with faces).
+   - **HOOK RULE**: never open with a date, a year or a place name (when/where goes in scene 2); the first words are
+     the strangest/most shocking detail. Analytics: "...of south-central France" (Gevaudan) and the Jim Thompson
+     opener lost most viewers at 0:01. `story.hook_problem()` checks scene 1's first 6 words (4-digit year,
+     "In <month>", country/state/region) and `fix_hook()` sends it back to the editor (max 2 tries).
+     voice.py trims leading silence so the first word is spoken at ~0.0 s. Success check: 40%+ viewers left at 0:07.
    - Real stories include a **pop-culture reference** only when the Wikipedia "In popular culture" section
      states it (e.g. Beast of Gevaudan -> Teen Wolf). Never invent references.
    - Anti-repeat: `data/history.json` stores title, premise, setting, threat, twist; the last 40 are
