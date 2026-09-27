@@ -24,7 +24,7 @@
     "spaces": ["multimodalart/wan2-1-fast", "DeepRat/LTX-Video-ZeroGPU-Optimized", "Lightricks/ltx-video-distilled", "Wan-AI/Wan2.1-I2V-480P"]
   },
 
-  "story_modes": ["fiction", "case", "mystery", "lore"],
+  "story_modes": ["lore", "mystery", "lore", "case"],
 
   "llm_models": ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-flash-latest"],
 

@@ -133,12 +133,11 @@ def _validate(story: dict) -> None:
 
 
 def pick_mode(history: list[dict]) -> str:
-    """Rotate through the story modes in config (e.g. fiction, mystery, fiction, mystery...)."""
-    modes = CONFIG.get("story_modes", ["fiction"])
-    last = next((h.get("mode", "fiction") for h in reversed(history) if not h.get("skipped")), None)
-    if last in modes:
-        return modes[(modes.index(last) + 1) % len(modes)]
-    return modes[0]
+    """Position-based rotation through config story_modes, so a mode can repeat (e.g. lore, mystery, lore, case)."""
+    modes = CONFIG.get("story_modes", ["lore"])
+    count = sum(1 for h in history if h.get("title") and not h.get("skipped")
+                and not str(h.get("mode", "")).startswith("inbox"))
+    return modes[count % len(modes)]
 
 
 def _run_models(prompt: str, api_key: str, temperature: float) -> dict:

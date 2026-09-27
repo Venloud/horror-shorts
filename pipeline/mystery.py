@@ -83,6 +83,7 @@ STRUCTURE (follow exactly). It must feel like a complete mini-story with a clear
 3. What the creature/legend is, what it does, its rules (how it hunts, what attracts it), with the eeriest details.
 4. The most famous story, sighting, or belief about it (framed as "people claimed", "the legend says").
 5. How people protected themselves, according to the legend.
+5b. Include ONE surprising real detail the viewer will want to repeat to a friend ("I didn't know that!").
 6. LAST SCENE = a chilling closing line that ties back to the hook and ends the video cleanly, e.g. "So next time you [situation]... maybe don't [action]."
 
 HARD RULES

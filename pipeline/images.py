@@ -11,7 +11,7 @@ from PIL import Image
 
 from common import CONFIG, env, log
 
-_STATE = {"cf_out": False, "hf_out": False}
+_STATE = {"cf_out": False, "hf_out": False, "pol_out": False}
 HF_URL = "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell"
 CF_URL = "https://api.cloudflare.com/client/v4/accounts/{acct}/ai/run/@cf/black-forest-labs/flux-1-schnell"
 
@@ -68,6 +68,8 @@ def _huggingface(prompt: str, seed: int) -> bytes:
 
 def _pollinations(prompt: str, seed: int) -> bytes:
     """Backup: Pollinations (new gen.pollinations.ai API, free key from enter.pollinations.ai)."""
+    if _STATE["pol_out"]:
+        raise RuntimeError("Pollinations balance used up for this run")
     key = env("POLLINATIONS_KEY", required=False)
     q = urllib.parse.quote(prompt[:1500])
     if key:
@@ -76,6 +78,9 @@ def _pollinations(prompt: str, seed: int) -> bytes:
     else:  # old keyless endpoint, may be retired
         url = f"https://image.pollinations.ai/prompt/{q}?width=1080&height=1920&seed={seed}&nologo=true&model=flux"
         r = requests.get(url, timeout=180)
+    if r.status_code == 402 or "insufficient balance" in r.text.lower():
+        _STATE["pol_out"] = True  # out of balance: skip it for the rest of this run
+        raise RuntimeError(f"Pollinations out of balance (402): {r.text[:150]}")
     if r.status_code != 200 or not r.headers.get("content-type", "").startswith("image"):
         raise RuntimeError(f"Pollinations HTTP {r.status_code}: {r.text[:150] if not r.headers.get('content-type','').startswith('image') else ''}")
     # crop the bottom 7% in case a logo is stamped there
@@ -142,13 +147,22 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
             if extra.strip():
                 jobs.append((i, letter, extra))
 
+    # Every scene's "a"/"b" shots first, extra cuts ("c"/"d") last: if quotas run out we lose cuts, not scenes.
+    jobs.sort(key=lambda j: (j[1] not in ("a", "b"), j[0], j[1]))
+
     results: dict[tuple[int, str], Path | None] = {}
     for n, (i, shot, raw_prompt) in enumerate(jobs):
+        if (_STATE["cf_out"] or not use_cf) and _STATE["hf_out"] and _STATE["pol_out"]:
+            log(f"All image services are out of quota: skipping {len(jobs) - n} remaining images")
+            for j, jshot, _ in jobs[n:]:
+                results[(j, jshot)] = None
+            break
         prompt = build_prompt(story, i, raw_prompt, style)
         path = outdir / f"scene_{i:02d}{shot}.png"
         ok = False
         providers = (([_cloudflare] if use_cf and not _STATE["cf_out"] else [])
-                     + ([] if _STATE["hf_out"] else [_huggingface]) + [_pollinations])
+                     + ([] if _STATE["hf_out"] else [_huggingface])
+                     + ([] if _STATE["pol_out"] else [_pollinations]))
         for provider in providers:
             for attempt in range(2):
                 try:
@@ -159,7 +173,8 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
                     log(f"Image {i}{shot} via {provider.__name__} failed: {str(e)[:150]}")
                     if provider is _huggingface and ("402" in str(e) or "Payment Required" in str(e)):
                         _STATE["hf_out"] = True  # out of free credit: skip it for the rest of this run
-                    if (provider is _cloudflare and _STATE["cf_out"]) or _STATE["hf_out"] and provider is _huggingface or any(
+                    if (provider is _cloudflare and _STATE["cf_out"]) or _STATE["hf_out"] and provider is _huggingface or (
+                            provider is _pollinations and _STATE["pol_out"]) or any(
                             k in str(e) for k in ("no HF_TOKEN", "410", "401", "403", "deprecated")):
                         break  # no point retrying this provider
             if ok:
@@ -168,8 +183,12 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
         results[(i, shot)] = path if ok else None
 
     failed = sum(p is None for p in results.values())
-    if failed > max(2, len(jobs) // 4):
-        raise RuntimeError(f"{failed} of {len(jobs)} images failed; not rendering a broken video.")
+    n_scenes = len(story["scenes"])
+    empty = sum(1 for i in range(n_scenes) if not any(results.get((i, s)) for s in ("a", "b", "c", "d")))
+    if failed:
+        log(f"Missing {failed} of {len(jobs)} images; {empty} of {n_scenes} scenes have no image at all")
+    if empty > max(1, n_scenes // 4):
+        raise RuntimeError(f"{empty} of {n_scenes} scenes have no image; not rendering a broken video.")
 
     good = [p for p in results.values() if p]
     per_scene: list[list[Path]] = []
