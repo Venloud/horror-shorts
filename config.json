@@ -1,6 +1,9 @@
 {
   "channel_name": "Night Files",
 
+  "story_min_score": 80,
+  "story_max_drafts": 3,
+
   "story_words": [120, 140],
 
   "subgenre_prompts": {
@@ -10,7 +13,7 @@
 
   "shots_per_scene": 4,
 
-  "effects": {"parallax": true, "fog": true, "fog_strength": 0.22, "dust": true, "flicker": true, "shake": true},
+  "effects": {"parallax": true, "fog": true, "fog_strength": 0.22, "dust": false, "flicker": true, "shake": true},
 
   "ai_motion": {
     "enabled": true,
@@ -70,7 +73,7 @@
   "sfx_volume": 0.32,
   "sfx_max_seconds": 4.5,
 
-  "image_style": "2D illustrated art, NOT a photograph, not photorealistic, detailed cartoon storybook illustration, semi-realistic comic art like a still from a modern animated film, clean bold linework, expressive faces, soft painterly shading, rich colors, warm cozy lamp light in calm moments turning darker and colder as the tension rises, cinematic composition, detailed background, vertical composition, no text, no speech bubbles, no watermark, no gore",
+  "image_style": "dark graphic novel horror illustration, painterly digital art, bold ink linework, semi-realistic adult proportions and faces, moody cinematic lighting, deep shadows, muted desaturated colors with warm lamp and moonlight highlights, eerie atmosphere, detailed background, vertical composition, NOT a photograph, not cute, not childlike, not Pixar or Disney style, no text, no speech bubbles, no watermark, no gore",
 
   "mascot_intro": false,
   "tiktok_mode": "draft",
