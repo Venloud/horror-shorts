@@ -10,7 +10,10 @@ def caption_text(story: dict) -> str:
     tags = " ".join("#" + t.lstrip("#").replace(" ", "") for t in story.get("hashtags", []))
     credit = CONFIG.get("music_credits", {}).get(story.get("music_file") or "", "")
     credit = f"\n{credit}" if credit else ""
-    return f"{story['caption'].strip()}{credit}\n\n{tags}".strip()
+    caption = story["caption"].strip()
+    if story.get("true_story") and not caption.upper().startswith("TRUE STORY"):
+        caption = f"TRUE STORY: {caption}"
+    return f"{caption}{credit}\n\n{tags}".strip()
 
 
 def notify(story: dict, result: dict | None, error: str | None = None) -> None:

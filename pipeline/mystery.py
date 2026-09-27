@@ -22,7 +22,7 @@ SOURCE FACTS (from Wikipedia). This is your ONLY source. Everything you say must
 \"\"\"
 
 STRUCTURE (follow exactly)
-1. SCENE 1 = THE HOOK (1-2 sentences, MAX 18 words): open cold on the single most disturbing or impossible TRUE detail of the case, stated flat. The first 6 words must already be unsettling. Style examples (write new ones):
+1. SCENE 1 = THE HOOK. Its narration MUST start with the exact words "This is a true story." and then 1-2 sentences (MAX 18 words after that opener): the single most disturbing or impossible TRUE detail of the case, stated flat. The first 6 words after the opener must already be unsettling. Style examples of the part after the opener (write new ones):
    - "Nine hikers cut their tent open from the inside and ran into the snow barefoot."
    - "A man boarded a plane with two hundred thousand dollars, then jumped out. He was never found."
    Never open with generic lines like "This is one of the strangest cases ever" or "Have you ever heard of".
@@ -134,7 +134,7 @@ MAKE IT TIKTOK-SAFE (never refuse a normal crime story):
 - If the source is not a real story at all, set "title" to exactly SKIP.
 
 STRUCTURE (follow exactly)
-1. SCENE 1 = THE HOOK (1-2 sentences, MAX 18 words): open cold on the most gripping true detail, stated flat. The first 6 words must already grab. Style examples (write new ones):
+1. SCENE 1 = THE HOOK. Its narration MUST start with the exact words "This is a true story." and then 1-2 sentences (MAX 18 words after that opener): the most gripping true detail, stated flat. The first 6 words after the opener must already grab. Style examples of the part after the opener (write new ones):
    - "In 1950, eleven men walked into the most secure vault in Boston and walked out with two million dollars."
    - "The man paid for his plane ticket in cash. Two hours later, he parachuted into the dark with the ransom."
 2. SCENE 2 = CONTEXT: when, where, who, in plain words.

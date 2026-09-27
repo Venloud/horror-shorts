@@ -39,7 +39,13 @@ so a new session can pick up without starting over.
    - `mystery`: real unsolved mysteries (`data/mysteries.json`, Wikipedia facts).
    - `lore`: legends/folklore with a "Did you know" hook (`data/lore.json`).
    - `inbox/`: the owner can drop links (`inbox/links.txt`: `true <url>` or `fiction <url>`) or pasted
-     stories (`.txt`, first line TRUE/FICTION). Inbox items jump the queue and are used once.
+     stories (`.txt`, first line TRUE/FICTION/SCRIPT/SCRIPT TRUE). Inbox items jump the queue and are used once.
+   - **TRUE STORY rule**: modes `case`, `mystery`, `inbox-true` and inbox `SCRIPT TRUE` files are true stories
+     (NOT `lore`: legends aren't true stories; NOT fiction). For those, `story["true_story"] = True` (saved in history),
+     scene 1 starts with "This is a true story." (prompt + editor rule, and the code prepends it if missing),
+     captions.py shows a red "TRUE STORY" badge above the hook for 0-3.5 s, and the TikTok caption starts "TRUE STORY:".
+     Inbox `.txt` first lines: `TRUE`, `FICTION`, `SCRIPT` (exact words) or `SCRIPT TRUE` (exact words, true story,
+     real people never shown with faces).
    - Real stories include a **pop-culture reference** only when the Wikipedia "In popular culture" section
      states it (e.g. Beast of Gevaudan -> Teen Wolf). Never invent references.
    - Anti-repeat: `data/history.json` stores title, premise, setting, threat, twist; the last 40 are

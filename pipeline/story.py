@@ -1,6 +1,7 @@
 """Writes an original scary story + scene breakdown + TikTok caption with Gemini."""
 import json
 import random
+import re
 import time
 from collections import Counter
 
@@ -450,16 +451,39 @@ def _true_story(facts: str, name: str, api_key: str, sfx_list: str) -> dict:
         raise UseAsInspiration(facts)
     if flag == "SKIP":
         raise RuntimeError("source is not a real story, skipping")
-    rules = ("ONLY facts from this source, never invent details; only call someone guilty if convicted or confessed; "
+    rules = (f'scene 1 narration must start with the exact words "{TRUE_OPENER}"; '
+             "ONLY facts from this source, never invent details; only call someone guilty if convicted or confessed; "
              "respectful; no gore; third person; plain English; no real faces in images.\nSOURCE:\n" + facts[:6000])
     story = edit_story(story, api_key, sfx_list, rules)
     log(f"True story '{story['title']}' ({len(story['scenes'])} scenes) via {story['model']}")
     return story
 
 
+TRUE_OPENER = "This is a true story."
+TRUE_MODES = ("case", "mystery", "inbox-true")  # real events; NOT lore (legends) and NOT fiction
+
+
+def with_true_opener(text: str) -> str:
+    """Prepend "This is a true story." unless the text already starts with it."""
+    text = text.strip()
+    if re.match(r"this is a true story\b", text, re.IGNORECASE):
+        return text
+    return f"{TRUE_OPENER} {text}"
+
+
+def mark_true_story(story: dict) -> dict:
+    """Flag real-event videos and make sure scene 1 opens with the true-story line (the editor may drop it)."""
+    if story.get("mode") in TRUE_MODES:
+        story["true_story"] = True
+    if story.get("true_story") and story.get("scenes"):
+        story["scenes"][0]["narration"] = with_true_opener(story["scenes"][0].get("narration", ""))
+    return story
+
+
 def write_story(history: list[dict]) -> dict:
     skipped: list[dict] = []
     story = _write_story(history, skipped)
+    mark_true_story(story)
     clean_sfx(story)
     story["_skipped"] = skipped
     return story
@@ -484,8 +508,11 @@ def _write_story(history: list[dict], skipped: list[dict]) -> dict:
             log(f"Inbox item: {item['key']} ({item['kind']}, {len(text)} chars)")
             if item["kind"] == "script":
                 log("Inbox SCRIPT: narrating it exactly as written, only adding visuals")
-                story = plan_scenes(text, api_key, sfx_list, real=item.get("real", False))
-                story.update({"mode": "inbox-script", "source": item["key"], "subgenre": "creator script"})
+                if item.get("true"):
+                    text = with_true_opener(text)
+                story = plan_scenes(text, api_key, sfx_list, real=item.get("true", False))
+                story.update({"mode": "inbox-script", "source": item["key"], "subgenre": "creator script",
+                              "true_story": bool(item.get("true"))})
                 return story
             if item["kind"] == "true":
                 try:
@@ -550,7 +577,8 @@ def _real_story(history: list[dict], mode: str, api_key: str, sfx_list: str) -> 
             try:
                 prompt, facts = mystery.build_prompt(CONFIG["channel_name"], case, sfx_list, mode)
                 story = _run_models(prompt, api_key, temperature=0.6)
-                rules = ("ONLY facts from this source, never invent details; theories/legends clearly labelled; "
+                rules = ((f'scene 1 narration must start with the exact words "{TRUE_OPENER}"; ' if mode == "mystery" else "")
+                         + "ONLY facts from this source, never invent details; theories/legends clearly labelled; "
                          "no accusing real people; respectful; no gore; third person; plain English.\nSOURCE:\n" + facts[:6000])
                 story = edit_story(story, api_key, sfx_list, rules)
                 story.update({"mode": mode, "case": case,

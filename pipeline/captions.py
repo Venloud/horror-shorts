@@ -46,7 +46,8 @@ def _groups(words: list[dict], max_words: int) -> list[list[dict]]:
     return groups
 
 
-def build_ass(words: list[dict], hook_text: str, total: float, out: Path, end_start: float | None = None) -> Path:
+def build_ass(words: list[dict], hook_text: str, total: float, out: Path, end_start: float | None = None,
+              badge: str | None = None) -> Path:
     font, _ = font_setup()
     size = int(CONFIG.get("caption_size", 96))
     if font != CONFIG["caption_font"]:
@@ -54,6 +55,11 @@ def build_ass(words: list[dict], hook_text: str, total: float, out: Path, end_st
     hi = _ass_color(CONFIG.get("caption_highlight", "#FFD84D"))
     white = _ass_color("#FFFFFF")
     black = _ass_color("#000000")
+    red = _ass_color(CONFIG.get("badge_color", "#D7263D"))
+    hook_size = int(size * 1.15)
+    badge_size = int(hook_size * 0.6)
+    # Badge sits just above the hook text (Hook style: top-aligned at MarginV 260): its box bottom ends ~25 px above.
+    badge_margin = 260 - (badge_size + 2 * 14) - 25
 
     header = f"""[Script Info]
 ScriptType: v4.00+
@@ -66,7 +72,8 @@ ScaledBorderAndShadow: yes
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 Style: Cap,{font},{size},{white},{white},{black},{_ass_color('#000000', '80')},-1,0,0,0,100,100,1,0,1,7,3,5,80,80,0,1
 Style: End,{font},{int(size * 1.05)},{white},{white},{black},{_ass_color('#000000', '60')},-1,0,0,0,100,100,1,0,1,6,2,8,60,60,1060,1
-Style: Hook,{font},{int(size * 1.15)},{white},{white},{black},{_ass_color('#000000', '40')},-1,0,0,0,100,100,1,0,3,24,0,8,70,70,260,1
+Style: Hook,{font},{hook_size},{white},{white},{black},{_ass_color('#000000', '40')},-1,0,0,0,100,100,1,0,3,24,0,8,70,70,260,1
+Style: Badge,{font},{badge_size},{white},{white},{red},{red},-1,0,0,0,100,100,3,0,3,14,0,8,70,70,{badge_margin},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -78,6 +85,12 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         lines.append(
             f"Dialogue: 1,{_ts(0)},{_ts(min(4.0, total))},Hook,,0,0,0,,"
             f"{{\\fad(150,300)}}{_safe(hook_text)}"
+        )
+
+    if badge:  # e.g. "TRUE STORY": white on a solid red box, above the hook, first 3.5 s
+        lines.append(
+            f"Dialogue: 3,{_ts(0)},{_ts(min(3.5, total))},Badge,,0,0,0,,"
+            f"{{\\fad(120,250)}}{_safe(badge)}"
         )
 
     if end_start is not None and end_start < total:

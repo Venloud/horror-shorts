@@ -35,7 +35,8 @@ def main() -> int:
         from render import END_CARD_DELAY, TAIL
         ass = build_ass(narration["words"], story.get("hook_overlay", ""),
                         narration["duration"] + TAIL, workdir / "captions.ass",
-                        end_start=narration["duration"] + END_CARD_DELAY)
+                        end_start=narration["duration"] + END_CARD_DELAY,
+                        badge="TRUE STORY" if story.get("true_story") else None)
         video = render(story, images, narration, ass, workdir)
         quality_check(video)
         (workdir / "caption.txt").write_text(caption_text(story) + "\n\nPIN: " + story.get("pinned_comment", ""))
@@ -63,6 +64,7 @@ def main() -> int:
             "premise": story.get("premise", ""),
             "subgenre": story.get("subgenre", ""),
             "mode": story.get("mode", "fiction"),
+            "true_story": bool(story.get("true_story")),
             "case": story.get("case"),
             "source": story.get("source"),
             "prompt_file": story.get("prompt_file"),
