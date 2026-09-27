@@ -8,6 +8,7 @@ them fail the shot uses the free 3D parallax instead. The video is never blocked
 """
 import json
 import os
+import re
 import shutil
 import time
 from pathlib import Path
@@ -15,10 +16,11 @@ from pathlib import Path
 from common import CONFIG, log, media_duration
 
 VIDEO_EXT = (".mp4", ".webm", ".mov", ".mkv", ".gif")
+QUOTA_RE = re.compile(r"\((\d+)s requested vs\. (-?\d+)s left\)")
 
 
 def _settings() -> dict:
-    s = {"enabled": True, "max_shots": 1, "seconds": 3, "timeout": 240, "total_budget": 420,
+    s = {"enabled": True, "max_shots": 1, "seconds": 2, "timeout": 240, "total_budget": 420,
          "spaces": ["multimodalart/wan2-1-fast", "DeepRat/LTX-Video-ZeroGPU-Optimized", "Lightricks/ltx-video-distilled"]}
     s.update(CONFIG.get("ai_motion", {}))
     return s
@@ -146,9 +148,16 @@ def animate(image: Path, shot_prompt: str, out: Path) -> Path | None:
         except Exception as e:  # noqa: BLE001
             msg = str(e)
             log(f"AI animation: {space} failed ({type(e).__name__}: {msg[:160]})")
-            # Only a clear "GPU quota used up" message stops the search (that quota is shared by every Space).
-            # A bare 429 / busy / rate-limit just means this Space is unavailable: try the next one.
-            if "quota" in msg.lower() and any(k in msg.lower() for k in ("gpu", "zerogpu", "exceeded", "used up")):
-                log("AI animation: free GPU minutes used up for today (shared by every Space), using the free 3D effect")
+            # The GPU quota is shared by every Space. "Xs requested vs. Ys left" only means THIS Space asks for
+            # too much: a cheaper Space may still fit. Stop only on the hard runs limit or when nothing is left.
+            m = QUOTA_RE.search(msg)
+            if m:
+                requested, left = int(m.group(1)), int(m.group(2))
+                log(f"AI animation: ZeroGPU quota: {space} requested {requested}s, {left}s left")
+                if left <= 0:
+                    log("AI animation: no free GPU time left today, using the free 3D effect")
+                    break
+            elif "runs limit" in msg.lower():
+                log("AI animation: ZeroGPU runs limit reached for today, using the free 3D effect")
                 break
     return None

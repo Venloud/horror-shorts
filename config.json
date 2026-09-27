@@ -18,10 +18,10 @@
   "ai_motion": {
     "enabled": true,
     "max_shots": 1,
-    "seconds": 3,
+    "seconds": 2,
     "timeout": 240,
     "total_budget": 420,
-    "spaces": ["multimodalart/wan2-1-fast", "linoyts/wan2-2-i2v-rCM", "DeepRat/LTX-Video-ZeroGPU-Optimized", "Lightricks/ltx-video-distilled"]
+    "spaces": ["Lightricks/ltx-video-distilled", "multimodalart/wan2-1-fast", "linoyts/wan2-2-i2v-rCM", "DeepRat/LTX-Video-ZeroGPU-Optimized"]
   },
 
   "story_modes": ["lore", "mystery", "lore", "case"],
