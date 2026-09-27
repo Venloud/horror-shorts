@@ -2,6 +2,7 @@
 import base64
 import random
 import shutil
+import time
 import urllib.parse
 from pathlib import Path
 
@@ -18,12 +19,27 @@ CF_URL = "https://api.cloudflare.com/client/v4/accounts/{acct}/ai/run/@cf/black-
 def _cloudflare(prompt: str, seed: int) -> bytes:
     acct = env("CLOUDFLARE_ACCOUNT_ID")
     token = env("CLOUDFLARE_API_TOKEN")
-    r = requests.post(CF_URL.format(acct=acct), timeout=120,
-                      headers={"Authorization": f"Bearer {token}"},
-                      json={"prompt": prompt[:2000], "steps": int(CONFIG.get("image_steps", 4))})
-    if r.status_code == 429 or "daily free allocation" in r.text:
-        _STATE["cf_out"] = True
-        raise RuntimeError("Cloudflare daily free limit used up (resets 00:00 UTC)")
+    for wait in (5, 15, 30, 0):
+        r = requests.post(CF_URL.format(acct=acct), timeout=120,
+                          headers={"Authorization": f"Bearer {token}"},
+                          json={"prompt": prompt[:2000], "steps": int(CONFIG.get("image_steps", 4))})
+        body = r.text[:300]
+        low = r.text.lower()
+        # Daily cap (error 4006, "daily free allocation of 10,000 neurons"): skip Cloudflare for the rest of the run.
+        if "daily free allocation" in low or "4006" in low or "neurons" in low:
+            _STATE["cf_out"] = True
+            raise RuntimeError(f"Cloudflare daily free limit used up (resets 00:00 UTC): {body}")
+        # Plain 429 = short "slow down" limit: wait and retry, keep Cloudflare for the next images.
+        if r.status_code != 429:
+            break
+        if not wait:
+            raise RuntimeError(f"Cloudflare rate limited (short-term, will keep using it): {body}")
+        try:
+            wait = min(60, max(wait, int(float(r.headers.get("Retry-After", wait)))))
+        except ValueError:
+            pass
+        log(f"Cloudflare rate limited, waiting {wait}s: {body}")
+        time.sleep(wait)
     if r.status_code != 200:
         raise RuntimeError(f"Cloudflare HTTP {r.status_code}: {r.text[:300]}")
     data = r.json()
