@@ -310,9 +310,13 @@ class StoryBelowBar(Exception):
     pass
 
 
+COLD_CASE_FILE = "fiction_cold_case.txt"
+
+
 def _prompt_files() -> list:
     from common import ROOT
-    return sorted((ROOT / "prompts").glob("fiction*.txt"))
+    # fiction_cold_case.txt is only for the "coldcase" mode, never picked for normal fiction
+    return sorted(p for p in (ROOT / "prompts").glob("fiction*.txt") if p.name != COLD_CASE_FILE)
 
 
 def _run_text(prompt: str, api_key: str, lo: int, hi: int) -> tuple[str, str]:
@@ -336,17 +340,22 @@ def _run_text(prompt: str, api_key: str, lo: int, hi: int) -> tuple[str, str]:
     raise RuntimeError("Could not write a story:\n" + "\n".join(errors))
 
 
-def _creator_story(history: list[dict], api_key: str, sfx_list: str, inspiration: str | None) -> dict:
-    files = _prompt_files()
-    if not files:
-        raise RuntimeError("No story instructions found: add a prompts/fiction_*.txt file")
-    subgenre = pick_subgenre(history)
-    # A subgenre can have its own instructions file (config "subgenre_prompts"); otherwise use a
-    # general file that contains {subgenre}; otherwise any file.
-    by_name = {f.name: f for f in files}
-    mapped = CONFIG.get("subgenre_prompts", {}).get(subgenre)
-    general = [f for f in files if "{subgenre}" in f.read_text(encoding="utf-8")]
-    file = by_name.get(mapped) or (random.choice(general) if general else random.choice(files))
+def _creator_story(history: list[dict], api_key: str, sfx_list: str, inspiration: str | None,
+                   cold_case: bool = False) -> dict:
+    from common import ROOT
+    if cold_case:  # original fake case file (fiction, never labelled true)
+        file, subgenre = ROOT / "prompts" / COLD_CASE_FILE, "cold case file (fiction)"
+    else:
+        files = _prompt_files()
+        if not files:
+            raise RuntimeError("No story instructions found: add a prompts/fiction_*.txt file")
+        subgenre = pick_subgenre(history)
+        # A subgenre can have its own instructions file (config "subgenre_prompts"); otherwise use a
+        # general file that contains {subgenre}; otherwise any file.
+        by_name = {f.name: f for f in files}
+        mapped = CONFIG.get("subgenre_prompts", {}).get(subgenre)
+        general = [f for f in files if "{subgenre}" in f.read_text(encoding="utf-8")]
+        file = by_name.get(mapped) or (random.choice(general) if general else random.choice(files))
     lo, hi = CONFIG.get("story_words", [170, 220])
     recent = recent_list(history)
     prompt = file.read_text(encoding="utf-8").strip().replace("{subgenre}", subgenre) + f"""
@@ -355,8 +364,7 @@ def _creator_story(history: list[dict], api_key: str, sfx_list: str, inspiration
 The narration must be {lo} to {hi} words in total (about {round(lo / 2.4)}-{round(hi / 2.4)} seconds read aloud). Count them.
 
 ## STORYTELLING NOTES
-- If the place matters to the story (a road, a bridge, a motel, a trail), open by naming the place and its warning, e.g. "If you ever drive down Old Mill Road at night, never stop at the bridge." The place can be invented. If the place doesn't matter, don't force it.
-- If the story builds up to a physical piece of proof (an object left behind, a photo, a mark), end on that proof so the viewer can see it. If it doesn't, don't force it.
+{{place_note}}- If the story builds up to a physical piece of proof (an object left behind, a photo, a mark), end on that proof so the viewer can see it. If it doesn't, don't force it.
 - Write so every sentence can be shown as a picture: concrete things (the car, the bridge, the jacket, the window), not feelings.
 
 ## CHANNEL RULES
@@ -367,6 +375,10 @@ The narration must be {lo} to {hi} words in total (about {round(lo / 2.4)}-{roun
 ## ALREADY USED (do not reuse the premise, setting, threat, or twist of any of these)
 {recent}
 """
+    prompt = prompt.replace("{place_note}", "" if cold_case else (
+        '- If the place matters to the story (a road, a bridge, a motel, a trail), open by naming the place and its '
+        'warning, e.g. "If you ever drive down Old Mill Road at night, never stop at the bridge." The place can be '
+        "invented. If the place doesn't matter, don't force it.\n"))
     if inspiration:
         prompt += ("\n## INSPIRATION\nTake only the core idea and the feeling of this piece and write a NEW, ORIGINAL story "
                    "from it: new characters, names, setting details, twist and ending. Never copy its sentences.\n\"\"\"\n"
@@ -385,6 +397,12 @@ The narration must be {lo} to {hi} words in total (about {round(lo / 2.4)}-{roun
             break
         log(f"Draft {attempt} ({file.name}, {len(script.split())} words): {score}/100. "
             f"What happened: {review.get('what_happened', '')[:140]}")
+        slow = hook_problem(script) if cold_case else None
+        if slow:  # cold case: a date/year/place opener fails the draft, whatever its score
+            log(f"Draft {attempt} hook {slow}: counting it as below the bar")
+            score = min(score, bar - 1)
+            review = {**review, "fixes": f"The first sentence {slow}. Open on the strangest detail; when/where go in "
+                                         f"scene 2. " + str(review.get("fixes", ""))}
         if best is None or score > best[0]:
             best = (score, script, model, review)
         if score >= bar:
@@ -399,7 +417,7 @@ The narration must be {lo} to {hi} words in total (about {round(lo / 2.4)}-{roun
     log(f"Story passed with {score}/100")
 
     story = plan_scenes(script, api_key, sfx_list)
-    story.update({"mode": "fiction", "subgenre": subgenre, "prompt_file": file.name, "script_model": model,
+    story.update({"mode": "coldcase" if cold_case else "fiction", "subgenre": subgenre, "prompt_file": file.name, "script_model": model,
                   "score": score, "what_happened": review.get("what_happened", "")})
     return story
 
@@ -533,6 +551,8 @@ def mark_true_story(story: dict) -> dict:
     """Flag real-event videos and make sure scene 1 opens with the true-story line (the editor may drop it)."""
     if story.get("mode") in TRUE_MODES:
         story["true_story"] = True
+    if story.get("mode") in ("coldcase", "fiction", "lore"):
+        story["true_story"] = False  # made-up stories and legends are never labelled true
     if story.get("true_story") and story.get("scenes"):
         story["scenes"][0]["narration"] = with_true_opener(story["scenes"][0].get("narration", ""))
     return story
@@ -604,6 +624,20 @@ def _write_story(history: list[dict], skipped: list[dict]) -> dict:
                 history = history + [{"case": case["title"]}]
                 skipped.append({"case": case["title"], "skipped": True})
         log("Falling back to fiction today")
+
+    # 3) Original fake case file (fiction; never gets the TRUE STORY label)
+    if mode == "coldcase" and not inspiration:
+        try:
+            story = _creator_story(history, api_key, sfx_list, None, cold_case=True)
+            words = sum(len(s["narration"].split()) for s in story["scenes"])
+            log(f"Cold case '{story['title']}' ({words} words, {len(story['scenes'])} scenes) via {story['model']}")
+            return story
+        except Exception as e:  # noqa: BLE001 (below the bar or failed): make a legend instead
+            log(f"Cold case failed ({str(e)[:200]}): making a legend video instead")
+            story = _real_story(history, "lore", api_key, sfx_list)
+            if story:
+                return story
+            raise RuntimeError("Cold case failed and no legend could be made") from e
 
     if mode in ("mystery", "lore") and not inspiration:
         story = _real_story(history, mode, api_key, sfx_list)

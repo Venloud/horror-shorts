@@ -24,7 +24,7 @@
     "spaces": ["Lightricks/ltx-video-distilled", "multimodalart/wan2-1-fast", "linoyts/wan2-2-i2v-rCM", "DeepRat/LTX-Video-ZeroGPU-Optimized"]
   },
 
-  "story_modes": ["lore", "mystery", "lore", "case"],
+  "story_modes": ["lore", "mystery", "lore", "case", "coldcase"],
 
   "llm_models": ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-flash-latest"],
 

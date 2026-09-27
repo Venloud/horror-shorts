@@ -13,6 +13,11 @@ def caption_text(story: dict) -> str:
     caption = story["caption"].strip()
     if story.get("true_story") and not caption.upper().startswith("TRUE STORY"):
         caption = f"TRUE STORY: {caption}"
+    if story.get("mode") == "coldcase":  # made-up case file: say so
+        if "fiction" not in caption.lower():
+            caption = f"{caption} (fictional story)"
+        if "#fiction" not in tags.lower():
+            tags = f"{tags} #fiction".strip()
     return f"{caption}{credit}\n\n{tags}".strip()
 
 

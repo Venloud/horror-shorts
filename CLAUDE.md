@@ -25,7 +25,7 @@ so a new session can pick up without starting over.
 1. **Story** (`story.py`, `mystery.py`, `sources.py`) with the Gemini API (free tier). Models in `config.json` `llm_models`,
    automatic fallback on 404/429/503/safety blocks. On 503 (overloaded) the FIRST model is retried up to 5 times
    (~2 min wait, `_run_models(patient=True)`) because the backup model writes much worse image prompts.
-   Modes rotate by position through `story_modes` (a mode can repeat), currently `[lore, mystery, lore, case]`;
+   Modes rotate by position through `story_modes` (a mode can repeat), currently `[lore, mystery, lore, case, coldcase]`;
    inbox runs don't count toward the rotation. Made-up fiction was dropped from the rotation on purpose: real
    legends with a pop-culture tie-in perform best (the Strigoi video got 232 views and 47% average watch time).
    Fiction is only the fallback when a mode fails (still behind the 80/100 quality gate).
@@ -33,6 +33,12 @@ so a new session can pick up without starting over.
      thriller/suspense/mystery). `fiction_creepy_job.txt` is his text verbatim; `fiction_reddit_thriller.txt` is a
      widened version with `{subgenre}`. `subgenre_prompts` in config maps subgenres to files.
      Step 2 turns the script into scenes with `prompts/scene_plan.txt` (images, sounds, caption) WITHOUT changing words.
+   - `coldcase` (IN THE ROTATION AS A TEST): ORIGINAL fake case files (`prompts/fiction_cold_case.txt`: invented
+     small town, missing adult, last sighting, evidence, suspects, one strange detail, twist that pays off the hook).
+     Uses the fiction score loop (min 80, max 3 drafts; a date/year/place first sentence fails the draft), falls back
+     to lore. Never gets the TRUE STORY badge/line/caption; caption gets "(fictional story)" + #fiction. Never copies
+     or resembles real cases or other creators' stories (e.g. the fake "Emily Carter case" is inspiration for the
+     FORMAT only). Compare its analytics with the real modes via `mode` in history.json.
    - `case`: real FBI / History.com cases from `data/cases.json` (fact-locked `TRUE_PROMPT`; FBI page first,
      Wikipedia fallback). Sensitive stories (harm to a child, sexual crime, suicide) are NOT skipped: they
      become inspiration for an original fictional story instead (owner's request: "make it safe").
