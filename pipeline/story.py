@@ -93,10 +93,10 @@ def pick_subgenre(history: list[dict]) -> str:
     return random.choice(fresh or subs)
 
 
-def _call_gemini(model: str, prompt: str, api_key: str, temperature: float = 1.0, as_json: bool = True):
+def _call_gemini(model: str, prompt: str, api_key: str, temperature: float = 1.0, as_json: bool = True, schema=None):
     gen = {"temperature": temperature}
     if as_json:
-        gen.update({"responseMimeType": "application/json", "responseSchema": SCHEMA})
+        gen.update({"responseMimeType": "application/json", "responseSchema": schema or SCHEMA})
     body = {
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
         "generationConfig": gen,
@@ -240,6 +240,68 @@ def recent_list(history: list[dict]) -> str:
     return "\n".join(lines) or "- (none yet)"
 
 
+# ---------- automatic quality gate for made-up stories (100-point formula) ----------
+
+SCORE_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {
+        "grab": {"type": "INTEGER"}, "curiosity_gap": {"type": "INTEGER"}, "relatable_setup": {"type": "INTEGER"},
+        "one_wrong_thing": {"type": "INTEGER"}, "pressure_loop": {"type": "INTEGER"}, "choice": {"type": "INTEGER"},
+        "reframe": {"type": "INTEGER"}, "payoff_clarity": {"type": "INTEGER"}, "final_image": {"type": "INTEGER"},
+        "what_happened": {"type": "STRING"},
+        "fixes": {"type": "STRING"},
+    },
+    "required": ["grab", "curiosity_gap", "relatable_setup", "one_wrong_thing", "pressure_loop", "choice",
+                 "reframe", "payoff_clarity", "final_image", "what_happened", "fixes"],
+}
+SCORE_MAX = {"grab": 15, "curiosity_gap": 10, "relatable_setup": 10, "one_wrong_thing": 10, "pressure_loop": 20,
+             "choice": 10, "reframe": 10, "payoff_clarity": 10, "final_image": 5}
+
+SCORE_PROMPT = """You are a tough judge for a horror TikTok channel. Score this 50-60 second narration script.
+Be strict: most first drafts deserve 55-75. Only a genuinely gripping, clear, complete story scores 80+.
+
+SCORING (give each category a whole number up to its maximum):
+- grab (max 15): does the FIRST sentence alone make you think "wait, what?" (contradiction, impossible situation, threat)? A plain setup line ("At 2 AM someone knocked") scores 5 or less.
+- curiosity_gap (max 10): is there one burning question the viewer needs answered?
+- relatable_setup (max 10): an ordinary situation the viewer can picture themselves in, with no biography or wasted names?
+- one_wrong_thing (max 10): ONE central strange thing the story stays focused on (not a pile of creepy details)?
+- pressure_loop (max 20): does every answer create a worse question, so tension keeps rising?
+- choice (max 10): is the narrator forced into a decision the viewer instinctively makes with them?
+- reframe (max 10): a reveal that changes the meaning of something already shown (not a random new monster)?
+- payoff_clarity (max 10): can the viewer say in one sentence WHAT JUST HAPPENED? The monster may stay unexplained, but the event must be understandable. A vague ending where you can't tell what happened scores 0-3.
+- final_image (max 5): does it end on one unforgettable image or line?
+
+Also give:
+- what_happened: one sentence explaining what happened. If you cannot, say "UNCLEAR".
+- fixes: the 2-3 most important concrete changes that would raise the score.
+
+SCRIPT:
+\"\"\"
+{script}
+\"\"\"
+"""
+
+
+def score_script(script: str, api_key: str) -> tuple[int, dict]:
+    last = None
+    for model in CONFIG["llm_models"]:
+        try:
+            r = _call_gemini(model, SCORE_PROMPT.replace("{script}", script), api_key, 0.2, as_json=True, schema=SCORE_SCHEMA)
+            total = sum(max(0, min(int(r.get(k, 0)), mx)) for k, mx in SCORE_MAX.items())
+            if "UNCLEAR" in r.get("what_happened", "").upper():
+                total = min(total, 70)  # a story nobody can explain never passes
+            return total, r
+        except Exception as e:  # noqa: BLE001
+            last = e
+            if "404" in str(e) or "429" in str(e) or "503" in str(e):
+                continue
+    raise RuntimeError(f"Could not score the story: {str(last)[:200]}")
+
+
+class StoryBelowBar(Exception):
+    pass
+
+
 def _prompt_files() -> list:
     from common import ROOT
     return sorted((ROOT / "prompts").glob("fiction*.txt"))
@@ -299,16 +361,56 @@ The narration must be {lo} to {hi} words in total (about {round(lo / 2.4)}-{roun
         prompt += ("\n## INSPIRATION\nTake only the core idea and the feeling of this piece and write a NEW, ORIGINAL story "
                    "from it: new characters, names, setting details, twist and ending. Never copy its sentences.\n\"\"\"\n"
                    + inspiration[:6000] + "\n\"\"\"\n")
-    script, model = _run_text(prompt, api_key, lo, hi)
-    log(f"Script written with {file.name} via {model} ({len(script.split())} words)")
+    bar = int(CONFIG.get("story_min_score", 80))
+    tries = int(CONFIG.get("story_max_drafts", 3))
+    best = None  # (score, script, model, review)
+    ask = prompt
+    for attempt in range(1, tries + 1):
+        script, model = _run_text(ask, api_key, lo, hi)
+        try:
+            score, review = score_script(script, api_key)
+        except Exception as e:  # noqa: BLE001
+            log(f"Scoring unavailable ({str(e)[:120]}); keeping this draft")
+            best = (bar, script, model, {"what_happened": "(not scored)"})
+            break
+        log(f"Draft {attempt} ({file.name}, {len(script.split())} words): {score}/100. "
+            f"What happened: {review.get('what_happened', '')[:140]}")
+        if best is None or score > best[0]:
+            best = (score, script, model, review)
+        if score >= bar:
+            break
+        ask = (prompt + f"\n\n## YOUR LAST DRAFT SCORED {score}/100. REWRITE IT.\n"
+               f"Fix these: {review.get('fixes', '')}\n"
+               "Keep what worked, fix what didn't, and make sure the viewer can say what happened in one sentence.\n"
+               "LAST DRAFT:\n\"\"\"\n" + script + "\n\"\"\"\n")
+    if best[0] < bar:
+        raise StoryBelowBar(f"best made-up story scored {best[0]}/100 (needs {bar})")
+    score, script, model, review = best
+    log(f"Story passed with {score}/100")
 
+    story = plan_scenes(script, api_key, sfx_list)
+    story.update({"mode": "fiction", "subgenre": subgenre, "prompt_file": file.name, "script_model": model,
+                  "score": score, "what_happened": review.get("what_happened", "")})
+    return story
+
+
+def plan_scenes(script: str, api_key: str, sfx_list: str) -> dict:
+    """Step 2: split a finished script into scenes + image prompts + sounds + caption, without changing its words."""
     from common import ROOT
     plan = (ROOT / "prompts" / "scene_plan.txt").read_text(encoding="utf-8")
     plan = "\n".join(l for l in plan.splitlines() if not l.startswith("#"))
     plan_prompt = plan.replace("{script}", script).replace("{sfx_list}", sfx_list)
     story = _run_models(plan_prompt, api_key, temperature=0.4)
-    story.update({"mode": "fiction", "subgenre": subgenre,
-                  "prompt_file": file.name, "script_model": model})
+    prompts = [sc.get(k, "") for sc in story["scenes"] for k in ("image_prompt", "image_prompt_2", "image_prompt_3", "image_prompt_4") if sc.get(k)]
+    avg = sum(len(x.split()) for x in prompts) / max(1, len(prompts))
+    if avg < 16:
+        log(f"Image prompts too short (avg {avg:.0f} words); asking again for detailed ones")
+        retry = plan_prompt + ("\n\nIMPORTANT: your last image prompts were far too short. Every image prompt must be "
+                               "25-45 words with character names, setting details, lighting, camera angle and mood.")
+        try:
+            story = _run_models(retry, api_key, temperature=0.6)
+        except Exception as e:  # noqa: BLE001
+            log(f"Retry failed, keeping the first plan: {str(e)[:120]}")
     return story
 
 
@@ -361,6 +463,11 @@ def _write_story(history: list[dict], skipped: list[dict]) -> dict:
         try:
             text = sources.inbox_text(item)
             log(f"Inbox item: {item['key']} ({item['kind']}, {len(text)} chars)")
+            if item["kind"] == "script":
+                log("Inbox SCRIPT: narrating it exactly as written, only adding visuals")
+                story = plan_scenes(text, api_key, sfx_list)
+                story.update({"mode": "inbox-script", "source": item["key"], "subgenre": "creator script"})
+                return story
             if item["kind"] == "true":
                 try:
                     story = _true_story(text, item["key"], api_key, sfx_list)
@@ -395,6 +502,29 @@ def _write_story(history: list[dict], skipped: list[dict]) -> dict:
         log("Falling back to fiction today")
 
     if mode in ("mystery", "lore") and not inspiration:
+        story = _real_story(history, mode, api_key, sfx_list)
+        if story:
+            return story
+        log("Falling back to fiction today")
+
+    try:
+        story = _creator_story(history, api_key, sfx_list, inspiration)
+    except StoryBelowBar as e:
+        log(f"{e}: throwing those drafts away and making a legend video instead")
+        story = _real_story(history, "lore", api_key, sfx_list) or _real_story(history, "mystery", api_key, sfx_list)
+        if not story:
+            raise RuntimeError("No story passed the quality bar and no legend/mystery could be made") from e
+        return story
+    if inspiration and item:
+        story["source"] = item["key"]
+    words = sum(len(s["narration"].split()) for s in story["scenes"])
+    log(f"Story '{story['title']}' ({words} words, {len(story['scenes'])} scenes) via {story['model']}")
+    return story
+
+
+def _real_story(history: list[dict], mode: str, api_key: str, sfx_list: str) -> dict | None:
+    """A real legend (lore) or unsolved mystery, fact-locked to its Wikipedia source."""
+    if True:
         import mystery
         for _ in range(3):
             case = mystery.pick_case(history, mode)
@@ -411,11 +541,4 @@ def _write_story(history: list[dict], skipped: list[dict]) -> dict:
             except Exception as e:  # noqa: BLE001
                 log(f"{mode} mode failed ({str(e)[:200]}); trying another topic")
                 history = history + [{"case": case}]
-        log("Falling back to fiction today")
-
-    story = _creator_story(history, api_key, sfx_list, inspiration)
-    if inspiration and item:
-        story["source"] = item["key"]
-    words = sum(len(s["narration"].split()) for s in story["scenes"])
-    log(f"Story '{story['title']}' ({words} words, {len(story['scenes'])} scenes) via {story['model']}")
-    return story
+    return None

@@ -3,8 +3,8 @@
 inbox/links.txt  one link per line.  "true <url>"    -> retell the real story, facts only
                                      "fiction <url>" -> use it as inspiration for an ORIGINAL story
                                      a bare url      -> treated as "true"
-inbox/*.txt      any other text file = a pasted story/article. First line "TRUE" or "FICTION"
-                 (default FICTION = inspiration only).
+inbox/*.txt      any other text file = a pasted story/article. First line "TRUE", "FICTION" or "SCRIPT"
+                 (default FICTION = inspiration only; SCRIPT = narrate these exact words, only add the visuals).
 Each item is used once (tracked in data/history.json). Inbox items jump the queue.
 """
 import json
@@ -124,7 +124,7 @@ def next_inbox(history: list[dict]) -> dict | None:
         if not lines:
             continue
         kind = "fiction"
-        if lines[0].strip().upper() in ("TRUE", "FICTION"):
+        if lines[0].strip().upper() in ("TRUE", "FICTION", "SCRIPT"):
             kind = lines.pop(0).strip().lower()
         text = "\n".join(lines).strip()
         if len(text) > 200:

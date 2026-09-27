@@ -69,6 +69,7 @@ def main() -> int:
             "setting": story.get("setting"),
             "threat": story.get("threat"),
             "twist": story.get("twist"),
+            "score": story.get("score"),
             "seconds": round(narration["duration"], 1),
             "tiktok": result,
         })
