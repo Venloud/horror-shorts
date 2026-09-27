@@ -21,7 +21,7 @@
     "seconds": 3,
     "timeout": 240,
     "total_budget": 420,
-    "spaces": ["multimodalart/wan2-1-fast", "DeepRat/LTX-Video-ZeroGPU-Optimized", "Lightricks/ltx-video-distilled", "Wan-AI/Wan2.1-I2V-480P"]
+    "spaces": ["multimodalart/wan2-1-fast", "linoyts/wan2-2-i2v-rCM", "DeepRat/LTX-Video-ZeroGPU-Optimized", "Lightricks/ltx-video-distilled"]
   },
 
   "story_modes": ["lore", "mystery", "lore", "case"],
