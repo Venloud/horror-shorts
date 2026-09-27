@@ -174,5 +174,25 @@
       "status": "SEND_TO_USER_INBOX",
       "mode": "draft"
     }
+  },
+  {
+    "date": "2026-09-27_0546",
+    "title": "Midnight Knock From the Neighbor",
+    "premise": "A man home alone at night is warned by his terrified neighbor not to let someone in, only to discover his own double walking down the hallway.",
+    "subgenre": "creator script",
+    "mode": "inbox-script",
+    "case": null,
+    "source": "inbox/the_knock.txt",
+    "prompt_file": null,
+    "setting": "An apartment building hallway and living room at 2:17 AM.",
+    "threat": "An uncanny doppelganger wearing the narrator's clothes is inside the apartment.",
+    "twist": "The neighbor outside was warning him about the duplicate already inside the apartment while another copy approaches from the hallway.",
+    "score": null,
+    "seconds": 57.1,
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7690089005442615326",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    }
   }
 ]
