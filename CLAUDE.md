@@ -23,8 +23,13 @@ so a new session can pick up without starting over.
 
 ## Pipeline (pipeline/main.py runs it in order)
 1. **Story** (`story.py`, `mystery.py`, `sources.py`) with the Gemini API (free tier). Models in `config.json` `llm_models`,
-   automatic fallback on 404/429/503/safety blocks. 4 modes rotate evenly (`story_modes`):
-   - `fiction`: written with the OWNER'S OWN instructions in `prompts/fiction_*.txt` (Reddit-style
+   automatic fallback on 404/429/503/safety blocks. On 503 (overloaded) the FIRST model is retried up to 5 times
+   (~2 min wait, `_run_models(patient=True)`) because the backup model writes much worse image prompts.
+   Modes rotate by position through `story_modes` (a mode can repeat), currently `[lore, mystery, lore, case]`;
+   inbox runs don't count toward the rotation. Made-up fiction was dropped from the rotation on purpose: real
+   legends with a pop-culture tie-in perform best (the Strigoi video got 232 views and 47% average watch time).
+   Fiction is only the fallback when a mode fails (still behind the 80/100 quality gate).
+   - `fiction` (fallback only): written with the OWNER'S OWN instructions in `prompts/fiction_*.txt` (Reddit-style
      thriller/suspense/mystery). `fiction_creepy_job.txt` is his text verbatim; `fiction_reddit_thriller.txt` is a
      widened version with `{subgenre}`. `subgenre_prompts` in config maps subgenres to files.
      Step 2 turns the script into scenes with `prompts/scene_plan.txt` (images, sounds, caption) WITHOUT changing words.
@@ -44,6 +49,10 @@ so a new session can pick up without starting over.
 3. **Images** (`images.py`): Cloudflare Workers AI FLUX schnell (free 10,000 neurons/day, ~58 per image,
    resets 8 PM New York) -> Hugging Face (credits usually used up, 402) -> Pollinations (`POLLINATIONS_KEY`).
    Up to 4 images per scene (`shots_per_scene`), each showing exactly what the words say at that moment.
+   Quota order: every scene's "a"/"b" shots are drawn before any "c"/"d", so running out of quota loses extra
+   cuts, not scenes. Cloudflare daily cap vs short rate limit are told apart (short limit = wait and retry);
+   Pollinations 402 marks it out for the run; once all services are out the rest are skipped. The run only
+   fails if more than max(1, scenes // 4) scenes have no image at all.
    Consistency: the scene plan outputs `characters` and `locations` sheets; the code injects the fixed looks
    into every prompt (style first, then setting, then character looks, then the shot).
    Art style (config `image_style`): comic / storybook illustration, NOT photoreal. Owner chose to keep comic

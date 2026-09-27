@@ -140,10 +140,12 @@ def pick_mode(history: list[dict]) -> str:
     return modes[count % len(modes)]
 
 
-def _run_models(prompt: str, api_key: str, temperature: float) -> dict:
+def _run_models(prompt: str, api_key: str, temperature: float, patient: bool = True) -> dict:
     errors = []
-    for model in CONFIG["llm_models"]:
-        for attempt in range(3):
+    for idx, model in enumerate(CONFIG["llm_models"]):
+        # The first model writes far better image prompts: when it's only overloaded (503), wait for it (~2 min).
+        wait_503 = patient and idx == 0
+        for attempt in range(5 if wait_503 else 3):
             try:
                 story = _call_gemini(model, prompt, api_key, temperature)
                 _validate(story)
@@ -158,8 +160,14 @@ def _run_models(prompt: str, api_key: str, temperature: float) -> dict:
                     break  # daily free quota used up for this model: go straight to the next one
                 if "BLOCKED" in str(e) and attempt >= 1:
                     break  # topic refused twice: try the next model once, then give up on this topic
+                if "503" in str(e) and wait_503:
+                    if attempt < 4:
+                        time.sleep(min(40, 10 * (attempt + 1)))
+                    continue  # best model overloaded: wait for it, up to 5 tries
                 if "503" in str(e) and attempt >= 1:
-                    break  # model overloaded: don't wait, move to the next model
+                    break  # backup model overloaded: don't wait, move to the next model
+                if attempt >= 2:
+                    break  # other errors: 3 tries per model, as before
                 time.sleep(8 * (attempt + 1))
     raise RuntimeError("Could not write a story:\n" + "\n".join(errors))
 
@@ -308,8 +316,10 @@ def _prompt_files() -> list:
 
 def _run_text(prompt: str, api_key: str, lo: int, hi: int) -> tuple[str, str]:
     errors = []
-    for model in CONFIG["llm_models"]:
-        for attempt in range(3):
+    for idx, model in enumerate(CONFIG["llm_models"]):
+        # The first model writes far better image prompts: when it's only overloaded (503), wait for it (~2 min).
+        wait_503 = patient and idx == 0
+        for attempt in range(5 if wait_503 else 3):
             try:
                 text = _call_gemini(model, prompt, api_key, 1.0, as_json=False)
                 n = len(text.split())
