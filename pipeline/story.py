@@ -483,7 +483,11 @@ TRUE_MODES = ("case", "mystery", "inbox-true")  # real events; NOT lore (legends
 
 
 def with_true_opener(text: str) -> str:
-    """Put "This is a true story." right AFTER the hook sentence (never first: that's a slow opener)."""
+    """Put "This is a true story." right AFTER the hook sentence (never first: that's a slow opener).
+    If the text already has it somewhere after the start (e.g. after a two-sentence hook), leave it there."""
+    if re.search(r"\S.*?this is a true story", text.strip(), re.IGNORECASE | re.DOTALL) and not re.match(
+            r"\s*this is a true story", text, re.IGNORECASE):
+        return text.strip()
     text = re.sub(r"\s*this is a true story[.!]?\s*", " ", text.strip(), flags=re.IGNORECASE).strip()
     end = re.search(r"[.!?…][\"”’)]?(?=\s+[A-Z\"“‘(]|\s*$)", text)
     if not end:

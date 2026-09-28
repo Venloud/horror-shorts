@@ -9,5 +9,4 @@
 # Start the file with a line that says TRUE or FICTION (no line = FICTION).
 # Lines starting with # are ignored. Each link is only used once.
 
-true https://en.wikipedia.org/wiki/Death_of_Elisa_Lam
 true https://en.wikipedia.org/wiki/2025_Louvre_heist
