@@ -124,10 +124,20 @@ so a new session can pick up without starting over.
   matches, else local SD-Turbo), not added to the buffer, no history, mp4 kept as an artifact, ntfy "[TEST]".
 - `daily.yml` (`pipeline/publish.py`) does NO generation: oldest buffered video -> TikTok + YouTube Shorts ->
   delete from buffer -> both results + "posted" time saved in history -> phone alert with the YouTube link
-  (+ "buffer low" alert at 1 left, "EMPTY" at 0). Only if both platforms fail does the video stay in the buffer.
+  (+ "buffer low" alert at 1 left). Only if both platforms fail does the video stay in the buffer.
+- **Empty buffer at a slot**: the publisher does NOT fail. It writes `data/missed_slot.json` {"slot", "at"}, sends
+  "Buffer empty: building now, will post when ready", and daily.yml starts build.yml at once (`gh workflow run`,
+  GH_PAT or github.token with actions: write). When a video passes QA and enters the buffer, main.py calls
+  `publish.post_missed_slot()`: missed slot < 6 h old -> post it right away (same publish code, TikTok + YouTube,
+  so build.yml also has the TikTok/YouTube secrets + token-save step), then delete the file; older -> just delete
+  it and the next slot posts normally. Both workflows save history.json + missed_slot.json with
+  `pipeline/push_state.sh` (merge_history.py + 3 push tries).
 - Note: while the repo is public, buffered (unposted) videos on the release are publicly downloadable.
 
 ## Reliability (build side)
+- **Render join**: every clip (AI motion, parallax, Ken Burns) is normalized to 1080x1920 / 30 fps / yuv420p /
+  SAR 1 / one timebase, video only, before the xfade chain (`render.NORMALIZE`, `_join`), so odd AI clips can't
+  crash it.
 - **Checkpoints** (`checkpoint.py`, Actions cache `ckpt-<run id>`): a build keeps story.json, the narration
   (wav + timings, tied to a hash of the text + speed) and every finished image in `cache/checkpoint/`. A failed
   build's next try resumes the same story and only makes what's missing. Success writes `done.json`, so an older
@@ -138,7 +148,8 @@ so a new session can pick up without starting over.
   narration so it's re-fitted; the SAME story failing QA twice is skipped for good (history `skipped` + reason).
 - **Concurrency**: build.yml and daily.yml share the group `night-files` (never write history.json at the same
   time); build cron is :50 every 3 h, just after the publish slots. Pushing history uses
-  `pipeline/merge_history.py` (applies this run's new/changed entries onto origin/main's file) + push, 3 tries;
+  `pipeline/push_state.sh` -> `merge_history.py` (applies this run's new/changed entries onto origin/main's file)
+  + push, 3 tries;
   no rebase conflicts. Note: GitHub keeps only ONE pending run per concurrency group; a newer queued run
   replaces an older pending one.
 

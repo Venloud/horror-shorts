@@ -185,6 +185,12 @@ def main() -> int:
         checkpoint.finish(story)
         (ROOT / ".built").write_text(stamp)  # tells build.yml to save the image cache
         log(f"Done: '{story['title']}' is in the buffer.")
+        try:  # a publish slot found the buffer empty in the last 6 h: post this video right away
+            import publish
+            publish.post_missed_slot()
+        except Exception as e:  # noqa: BLE001
+            traceback.print_exc()
+            log(f"Make-up post failed ({e}); the video stays in the buffer for the next slot")
         return 0
     except Exception as e:  # noqa: BLE001
         traceback.print_exc()

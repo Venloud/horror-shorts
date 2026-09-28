@@ -3,6 +3,10 @@
 Download the oldest <stamp>.mp4 + <stamp>.json from the "buffer" release -> TikTok (drafts or direct) and YouTube
 Shorts, independently -> delete it from the buffer if at least one worked -> record both results in history.json
 -> phone alert with the YouTube link (+ warning when the buffer is low). Takes about a minute or two.
+
+Empty buffer: no failure. It writes data/missed_slot.json, alerts "building now", and daily.yml starts build.yml
+right away (ROOT/.trigger_build tells it to). When that build (or any build within 6 h) puts a video in the buffer,
+main.py calls post_missed_slot(), which posts it at once and deletes missed_slot.json.
 """
 import json
 import sys
@@ -11,8 +15,39 @@ from datetime import datetime, timezone
 
 from common import CONFIG, ROOT, load_history, log, save_history
 
+MISSED = ROOT / "data" / "missed_slot.json"
+MISSED_MAX_AGE_H = 6
 
-def main() -> int:
+
+def _slot_label(now: datetime) -> str:
+    try:
+        from zoneinfo import ZoneInfo
+        return now.astimezone(ZoneInfo("America/New_York")).strftime("%a %b %d, %I:%M %p New York")
+    except Exception:  # noqa: BLE001
+        return now.strftime("%Y-%m-%d %H:%M UTC")
+
+
+def post_missed_slot() -> None:
+    """Called by the builder after a video entered the buffer: make up for a slot that found the buffer empty."""
+    if not MISSED.exists():
+        return
+    try:
+        info = json.loads(MISSED.read_text())
+        age_h = (datetime.now(timezone.utc) - datetime.fromisoformat(info["at"])).total_seconds() / 3600
+    except Exception as e:  # noqa: BLE001
+        log(f"missed_slot.json unreadable ({e}), deleting it")
+        MISSED.unlink(missing_ok=True)
+        return
+    if age_h >= MISSED_MAX_AGE_H:
+        log(f"Missed slot ({info.get('slot')}) is {age_h:.1f} h old: not posting now, the next slot posts normally")
+        MISSED.unlink(missing_ok=True)
+        return
+    log(f"Making up the missed slot ({info.get('slot')}, {age_h:.1f} h ago): posting now")
+    main(from_build=True)
+    MISSED.unlink(missing_ok=True)
+
+
+def main(from_build: bool = False) -> int:
     import buffer
     import tiktok
     import youtube
@@ -25,9 +60,18 @@ def main() -> int:
         notify_text("Night Files: publish FAILED", f"Could not read the video buffer: {e}", warn=True)
         return 1
     if not waiting:
-        notify_text("Night Files: buffer EMPTY", "Nothing to post this slot. Check the last build.yml runs.",
-                    warn=True)
-        return 1
+        if from_build:
+            log("Buffer is empty, nothing to post")
+            return 1
+        now = datetime.now(timezone.utc)
+        slot = _slot_label(now)
+        MISSED.parent.mkdir(parents=True, exist_ok=True)
+        MISSED.write_text(json.dumps({"slot": slot, "at": now.isoformat(timespec="seconds")}))
+        (ROOT / ".trigger_build").write_text(slot)  # daily.yml starts build.yml right away
+        log(f"Buffer empty at the {slot} slot: starting a build, it posts as soon as the video is ready")
+        notify_text("Night Files: buffer empty",
+                    "Buffer empty: building now, will post when ready (if it's ready within 6 hours).")
+        return 0
 
     video = waiting[0]
     out = ROOT / "output" / "publish"
@@ -105,7 +149,7 @@ def main() -> int:
             "pinned_comment": meta.get("pinned_comment", "")}, result, note="\n".join(lines))
     left = len(waiting) - 1
     log(f"Done. {left} video(s) left in the buffer.")
-    if left <= 1:
+    if left <= 1 and not from_build:  # after a make-up post the builder is refilling anyway
         notify_text(f"Night Files: buffer low ({left} left)",
                     "build.yml refills it every 3 hours. If it stays low, check the build runs.", warn=True)
     return 0

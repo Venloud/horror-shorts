@@ -106,28 +106,31 @@ jobs:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
+          # only used to make up a missed publish slot right after the build
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+          TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
         run: cd pipeline && python main.py ${{ inputs.test && '--test' || '' }}
 
-      - name: Save story history (marks inbox items / cases as used)
-        if: success() && steps.check.outputs.build == 'true' && inputs.test != true
+      - name: Save new TikTok token if TikTok rotated it (make-up post)
+        if: always() && hashFiles('.new_refresh_token') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
-          git config user.name "horror-bot"
-          git config user.email "horror-bot@users.noreply.github.com"
-          git diff --quiet -- data/history.json && exit 0
-          git show HEAD:data/history.json > "$RUNNER_TEMP/base.json"
-          cp data/history.json "$RUNNER_TEMP/ours.json"
-          # Up to 3 tries: merge our history changes onto the newest main (no rebase conflicts), then push.
-          for i in 1 2 3; do
-            git fetch -q origin main
-            python pipeline/merge_history.py "$RUNNER_TEMP/base.json" "$RUNNER_TEMP/ours.json"
-            git reset -q --mixed origin/main
-            git add data/history.json
-            git diff --cached --quiet && exit 0
-            git commit -q -m "Buffer story $(date -u +%F_%H%M)"
-            git push origin HEAD:main && exit 0
-            echo "Push failed (try $i), retrying"; sleep 5
-          done
-          exit 1
+          if [ -n "$GH_TOKEN" ]; then
+            gh secret set TIKTOK_REFRESH_TOKEN --repo "${{ github.repository }}" < .new_refresh_token
+            echo "Refresh token updated."
+          else
+            echo "::warning::TikTok gave a new refresh token but GH_PAT is not set, so it could not be saved."
+          fi
+          rm -f .new_refresh_token
+
+      - name: Save story history (marks inbox items / cases as used) + missed slot
+        if: success() && steps.check.outputs.build == 'true' && inputs.test != true
+        run: bash pipeline/push_state.sh "Buffer story"
 
       - name: Save the checkpoint (story, narration, images; or "done")
         if: always() && steps.check.outputs.build == 'true' && inputs.test != true && hashFiles('cache/checkpoint/**') != ''
