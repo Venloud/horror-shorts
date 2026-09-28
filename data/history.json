@@ -231,6 +231,14 @@
     "score": null,
     "seconds": 59.8,
     "buffered": "2026-09-28_0943",
-    "tiktok": null
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7690577347778578463",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "error": "RefreshError: ('unauthorized_client: Unauthorized', {'error': 'unauthorized_client', 'error_description': 'Unauthorized'})"
+    },
+    "posted": "2026-09-28_1330"
   }
 ]
