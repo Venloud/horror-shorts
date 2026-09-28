@@ -1,0 +1,129 @@
+name: Build video (buffer)
+
+# Every 3 hours: if fewer than BUFFER_SIZE finished videos are waiting on the "buffer" release, make one.
+# A failed build (Gemini 503, image quota...) exits quietly and the next run tries again; the phone alert only
+# goes out when the buffer is empty. Test builds never touch the buffer, history or Cloudflare.
+on:
+  schedule:
+    - cron: "15 */3 * * *"
+  workflow_dispatch:
+    inputs:
+      test:
+        description: "Test build: no Cloudflare, not added to the buffer, no history (mp4 kept as an artifact)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-video
+  cancel-in-progress: false
+
+env:
+  BUFFER_SIZE: 3
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Is the buffer full?
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          waiting=$(gh release view buffer --repo "${{ github.repository }}" --json assets \
+            -q '[.assets[].name | select(endswith(".mp4"))] | length' 2>/dev/null || echo 0)
+          echo "Videos waiting in the buffer: $waiting (target $BUFFER_SIZE)"
+          if [ "${{ inputs.test }}" = "true" ] || [ "$waiting" -lt "$BUFFER_SIZE" ]; then
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Buffer is full, nothing to build."
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.build == 'true'
+
+      - uses: actions/setup-python@v5
+        if: steps.check.outputs.build == 'true'
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install system tools
+        if: steps.check.outputs.build == 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg espeak-ng fonts-dejavu-core > /dev/null
+
+      - name: Get caption font (Anton, free license)
+        if: steps.check.outputs.build == 'true'
+        run: |
+          mkdir -p assets/fonts
+          if [ ! -s assets/fonts/Anton-Regular.ttf ]; then
+            curl -fsSL -o assets/fonts/Anton-Regular.ttf \
+              https://raw.githubusercontent.com/google/fonts/main/ofl/anton/Anton-Regular.ttf || true
+          fi
+
+      - name: Cache models (voice, depth, SD-Turbo)
+        if: steps.check.outputs.build == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-models-v3
+
+      - name: Restore last run's images (test mode reuses them)
+        if: steps.check.outputs.build == 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: cache/last-images
+          key: last-images-${{ github.run_id }}
+          restore-keys: last-images-
+
+      - name: Install Python packages
+        if: steps.check.outputs.build == 'true'
+        run: |
+          pip install -q torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -q -r requirements.txt
+
+      - name: Make video
+        if: steps.check.outputs.build == 'true'
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: cd pipeline && python main.py ${{ inputs.test && '--test' || '' }}
+
+      - name: Save story history (marks inbox items / cases as used)
+        if: success() && steps.check.outputs.build == 'true' && inputs.test != true
+        run: |
+          git config user.name "horror-bot"
+          git config user.email "horror-bot@users.noreply.github.com"
+          git add data/history.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Buffer story $(date -u +%F_%H%M)"
+          for i in 1 2 3; do git pull --rebase && git push && exit 0; sleep 5; done
+          exit 1
+
+      - name: Save this run's images for test mode
+        if: success() && inputs.test != true && hashFiles('.built') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: cache/last-images
+          key: last-images-${{ github.run_id }}
+
+      - name: Keep the video for download (7 days)
+        if: always() && steps.check.outputs.build == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: video-${{ github.run_number }}
+          path: |
+            output/**/final.mp4
+            output/**/caption.txt
+            output/**/story.json
+          retention-days: 7
+          if-no-files-found: ignore

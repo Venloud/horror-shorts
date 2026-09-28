@@ -29,22 +29,34 @@ def run_url() -> str | None:
     return f"{os.environ.get('GITHUB_SERVER_URL', 'https://github.com')}/{repo}/actions/runs/{run_id}"
 
 
-def notify(story: dict, result: dict | None, error: str | None = None) -> None:
+def notify_text(title: str, body: str, warn: bool = False) -> None:
+    """Plain phone alert (buffer low/empty, publish failed)."""
+    _send(title, body, warn=warn, url=run_url())
+
+
+def notify(story: dict, result: dict | None, error: str | None = None, prefix: str = "", note: str = "") -> None:
     url = run_url()
     download = f"{url}#artifacts" if url else None
+    caption = story.get("caption_text") or (caption_text(story) if story.get("caption") else "")
     if error:
-        title = "Horror video FAILED"
+        title = f"{prefix}Horror video FAILED"
         body = error[:1500]
     else:
-        title = f"New TikTok {'draft' if result and result.get('mode') == 'draft' else 'post'}: {story['title']}"
+        kind = "draft" if result and result.get("mode") == "draft" else ("video" if not result else "post")
+        title = f"{prefix}New TikTok {kind}: {story['title']}"
         body = (
-            f"CAPTION (copy this):\n{caption_text(story)}\n\n"
+            (f"{note}\n\n" if note else "") +
+            f"CAPTION (copy this):\n{caption}\n\n"
             f"PIN THIS COMMENT:\n{story.get('pinned_comment', '')}"
         )
         if download:  # backup in case TikTok never delivers the draft (kept 7 days)
             body += (f"\n\nNOT IN TIKTOK? Download it (7 days): {download} "
                      f"-> video-{os.environ.get('GITHUB_RUN_NUMBER', '')} (final.mp4 + caption.txt)")
 
+    _send(title, body, warn=bool(error), url=url, download=None if error else download)
+
+
+def _send(title: str, body: str, warn: bool = False, url: str | None = None, download: str | None = None) -> None:
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:
         with open(summary, "a", encoding="utf-8") as f:
@@ -54,11 +66,13 @@ def notify(story: dict, result: dict | None, error: str | None = None) -> None:
     if not topic:
         return
     try:
-        headers = {"Title": title.encode("ascii", "ignore").decode(),
-                   "Tags": "ghost" if not error else "warning"}
-        if url:  # tap the notification = open the run; button = straight to the video download
-            headers["Click"] = download if not error else url
-            headers["Actions"] = (f"view, Download video, {download}" if not error else f"view, Open run log, {url}")
+        headers = {"Title": title.encode("ascii", "ignore").decode(), "Tags": "warning" if warn else "ghost"}
+        if download:  # tap the notification or its button = straight to the video download
+            headers["Click"] = download
+            headers["Actions"] = f"view, Download video, {download}"
+        elif url:
+            headers["Click"] = url
+            headers["Actions"] = f"view, Open run log, {url}"
         requests.post(f"https://ntfy.sh/{topic}", data=body.encode("utf-8"), timeout=20, headers=headers)
         log("Phone notification sent")
     except Exception as e:  # noqa: BLE001

@@ -63,12 +63,20 @@ so a new session can pick up without starting over.
      sent as "ALREADY USED".
    - Length: `story_words` [120, 140] = about 50-60 s (the Kokoro voice reads ~2.2-2.4 words/sec at speed 1.1).
 2. **Voice**: Kokoro TTS `am_michael`, speed 1.1, word timings tagged by scene.
-3. **Images** (`images.py`): Cloudflare Workers AI FLUX schnell (free 10,000 neurons/day, ~58 per image,
-   resets 8 PM New York) -> Hugging Face (credits usually used up, 402) -> Pollinations (`POLLINATIONS_KEY`).
+3. **Images** (`images.py`), all free: Cloudflare Workers AI FLUX schnell (10,000 neurons/day, resets 00:00 UTC =
+   8 PM New York; no size option, 1024x1024 = 4 tiles x 4.8 + 4 steps x 9.6 = ~57.6 neurons, logged per image)
+   -> free HF ZeroGPU Spaces running FLUX.1-schnell (config `image_spaces`, 576x1024, gradio_client like ai_motion;
+   shares the daily GPU minutes with the AI hook) -> local SD-Turbo on the runner CPU (`local_image_model`,
+   512x896, 2 steps, guidance 0; ~23 s load + ~20 s/image on 4 CPUs; Stability AI Community License: free under
+   $1M/yr revenue, register once at stability.ai/community-license). Pollinations and the paid HF router were
+   removed (always 402). The render upscales everything to 1080x1920 with lanczos. Log shows the source of every
+   image and the local model's total time. `preflight()` runs BEFORE the story: tiny Cloudflare quota check; if
+   it's out, test the Spaces, then the local model; only if all fail, stop with a phone alert (nothing wasted).
+   If Cloudflare is out (or hits its limit mid-run), only 2 shots per scene for the rest of the run.
    Up to 4 images per scene (`shots_per_scene`), each showing exactly what the words say at that moment.
    Quota order: every scene's "a"/"b" shots are drawn before any "c"/"d", so running out of quota loses extra
    cuts, not scenes. Cloudflare daily cap vs short rate limit are told apart (short limit = wait and retry);
-   Pollinations 402 marks it out for the run; once all services are out the rest are skipped. The run only
+   A Space quota error marks the Spaces out for the run; the local model is always the last step. The run only
    fails if more than max(1, scenes // 4) scenes have no image at all.
    Consistency: the scene plan outputs `characters` and `locations` sheets; the code injects the fixed looks
    into every prompt (style first, then setting, then character looks, then the shot).
@@ -89,11 +97,24 @@ so a new session can pick up without starting over.
    Plan if needed: an approved third-party posting service, or turn this into a public product later.
 6. **Notify**: ntfy phone alert with caption + pinned comment (`NTFY_TOPIC`).
 
+## Buffer (build.yml fills it, daily.yml posts from it)
+- `build.yml` runs every 3 h: if fewer than 3 (`BUFFER_SIZE`) videos wait on the GitHub Release **"buffer"**
+  (assets `<stamp>.mp4` + `<stamp>.json`), it makes one (`pipeline/main.py`) and uploads it (`pipeline/buffer.py`).
+  Inbox items / cases / history are marked used when the video enters the buffer. A failed build exits quietly
+  (next run retries); the phone alert only fires when the buffer is empty. The images + story are saved to the
+  Actions cache (`last-images-*`) after each build.
+- `build.yml` "test" input (workflow_dispatch): no Cloudflare (reuses the cached images if the scene count
+  matches, else local SD-Turbo), not added to the buffer, no history, mp4 kept as an artifact, ntfy "[TEST]".
+- `daily.yml` (`pipeline/publish.py`) does NO generation: oldest buffered video -> TikTok -> delete from buffer ->
+  TikTok result + "posted" time saved in history -> phone alert (+ "buffer low" alert at 1 left, "EMPTY" at 0).
+  If TikTok fails, the video stays in the buffer for the next slot.
+- Note: while the repo is public, buffered (unposted) videos on the release are publicly downloadable.
+
 ## Schedule
 - 2 videos a day, **11:40 AM and 8:40 PM New York**. GitHub's own cron was unreliable (4 h late / skipped),
   so the plan is **cron-job.org** calling the `workflow_dispatch` API for `daily.yml` with a fine-grained token
   (Actions: read & write). Only remove the `schedule:` block from daily.yml AFTER cron-job.org is tested.
-- `daily.yml` should have `timeout-minutes: 60` and HF cache key `hf-models-v2`.
+- `build.yml` has `timeout-minutes: 60` and HF cache key `hf-models-v3` (adds SD-Turbo); `daily.yml` 15 min.
 
 ## Owner preferences (how to work with him)
 - Hook must hit in the first second; stories need a hook, a logical plot and a real ending that pays off the hook.
@@ -115,4 +136,5 @@ so a new session can pick up without starting over.
 
 ## Secrets used
 GEMINI_API_KEY, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, TIKTOK_CLIENT_KEY, TIKTOK_CLIENT_SECRET,
-TIKTOK_REFRESH_TOKEN, NTFY_TOPIC, HF_TOKEN, POLLINATIONS_KEY, FREESOUND_API_KEY, GH_PAT.
+TIKTOK_REFRESH_TOKEN, NTFY_TOPIC, HF_TOKEN, FREESOUND_API_KEY, GH_PAT. (POLLINATIONS_KEY is no longer used.)
+build.yml/daily.yml also use the built-in `github.token` for the buffer release.

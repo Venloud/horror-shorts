@@ -12,6 +12,11 @@
   },
 
   "shots_per_scene": 4,
+  "image_spaces": ["black-forest-labs/FLUX.1-schnell", "evalstate/flux1_schnell", "hysts-mcp/FLUX.1-schnell"],
+  "space_image_size": [576, 1024],
+  "local_image_model": "stabilityai/sd-turbo",
+  "local_image_size": [512, 896],
+  "local_image_steps": 2,
 
   "effects": {"parallax": true, "fog": true, "fog_strength": 0.22, "dust": false, "flicker": true, "shake": true},
 

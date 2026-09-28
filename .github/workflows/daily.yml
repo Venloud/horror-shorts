@@ -1,72 +1,43 @@
 name: Daily horror video
 
+# Publisher: no generation here. Takes the oldest finished video from the "buffer" release (filled by build.yml),
+# sends it to TikTok, deletes it from the buffer and sends the phone alert. About a minute.
 on:
   schedule:
     # Twice a day, in UTC. 15:40 UTC = 11:40 AM New York, 00:40 UTC = 8:40 PM New York (daylight time).
     - cron: "40 15 * * *"
     - cron: "40 0 * * *"
   workflow_dispatch:
-    inputs:
-      no_upload:
-        description: "Test run: make the video but don't send it to TikTok"
-        type: boolean
-        default: false
 
 permissions:
   contents: write
 
 concurrency:
-  group: daily-video
+  group: publish-video
   cancel-in-progress: false
 
 jobs:
-  make-video:
+  publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: pip
 
-      - name: Install system tools
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg espeak-ng fonts-dejavu-core > /dev/null
+      - name: Install
+        run: pip install -q requests
 
-      - name: Get caption font (Anton, free license)
-        run: |
-          mkdir -p assets/fonts
-          if [ ! -s assets/fonts/Anton-Regular.ttf ]; then
-            curl -fsSL -o assets/fonts/Anton-Regular.ttf \
-              https://raw.githubusercontent.com/google/fonts/main/ofl/anton/Anton-Regular.ttf || true
-          fi
-
-      - name: Cache voice model
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/huggingface
-          key: hf-models-v2
-
-      - name: Install Python packages
-        run: |
-          pip install -q torch --index-url https://download.pytorch.org/whl/cpu
-          pip install -q -r requirements.txt
-
-      - name: Make video and send to TikTok
+      - name: Post the oldest buffered video to TikTok
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
           TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
           TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          POLLINATIONS_KEY: ${{ secrets.POLLINATIONS_KEY }}
-        run: cd pipeline && python main.py ${{ inputs.no_upload && '--no-upload' || '' }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: cd pipeline && python publish.py
 
       - name: Save new TikTok token if TikTok rotated it
         if: always() && hashFiles('.new_refresh_token') != ''
@@ -81,24 +52,24 @@ jobs:
           fi
           rm -f .new_refresh_token
 
-      - name: Save story history (prevents repeats)
+      - name: Save the TikTok result in history
         if: success()
         run: |
           git config user.name "horror-bot"
           git config user.email "horror-bot@users.noreply.github.com"
           git add data/history.json
-          git diff --cached --quiet || git commit -m "Add story $(date -u +%F)"
-          git pull --rebase
-          git push
+          git diff --cached --quiet && exit 0
+          git commit -m "Posted story $(date -u +%F_%H%M)"
+          for i in 1 2 3; do git pull --rebase && git push && exit 0; sleep 5; done
+          exit 1
 
-      - name: Keep the video for download (7 days)
+      - name: Keep the posted video for download (7 days)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: video-${{ github.run_number }}
           path: |
-            output/**/final.mp4
-            output/**/caption.txt
-            output/**/story.json
+            output/publish/final.mp4
+            output/publish/caption.txt
           retention-days: 7
           if-no-files-found: ignore

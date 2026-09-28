@@ -1,19 +1,47 @@
-"""Generates one image per scene. Cloudflare Workers AI (Flux schnell) first, Pollinations as free fallback."""
+"""Scene images. Chain: Cloudflare Workers AI (FLUX schnell, 10,000 free neurons/day) -> free Hugging Face ZeroGPU
+Spaces running FLUX.1-schnell (config "image_spaces") -> local SD-Turbo on the runner's CPU (always available).
+Test mode never calls Cloudflare: it reuses the last run's cached images or uses the local model.
+Pollinations and the paid Hugging Face router were removed on purpose (always out of credit, 402)."""
 import base64
+import io
+import json
+import math
+import os
 import random
+import re
 import shutil
 import time
-import urllib.parse
 from pathlib import Path
 
 import requests
 from PIL import Image
 
-from common import CONFIG, env, log
+from common import CONFIG, ROOT, env, log
 
-_STATE = {"cf_out": False, "hf_out": False, "pol_out": False}
-HF_URL = "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell"
+_STATE = {"cf_out": False, "spaces_out": False, "cf_neurons": 0.0, "local_secs": 0.0, "clients": {}, "sd": None}
 CF_URL = "https://api.cloudflare.com/client/v4/accounts/{acct}/ai/run/@cf/black-forest-labs/flux-1-schnell"
+CF_CHECK_URL = "https://api.cloudflare.com/client/v4/accounts/{acct}/ai/run/@cf/baai/bge-small-en-v1.5"
+CACHE_DIR = ROOT / "cache" / "last-images"   # saved/restored by daily.yml (actions/cache, "last-images-*")
+QUOTA_RE = re.compile(r"\((\d+)s requested vs\. (-?\d+)s left\)")
+
+
+def test_mode() -> bool:
+    return os.environ.get("TEST_MODE", "").lower() in ("1", "true", "yes")
+
+
+def _log_neurons(raw: bytes, headers) -> None:
+    """Cloudflare bills FLUX schnell 4.8 neurons per 512x512 output tile + 9.6 per step (it has no size option)."""
+    try:
+        with Image.open(io.BytesIO(raw)) as im:
+            tiles = math.ceil(im.width / 512) * math.ceil(im.height / 512)
+    except Exception:  # noqa: BLE001
+        tiles = 4
+    steps = int(CONFIG.get("image_steps", 4))
+    neurons = tiles * 4.8 + steps * 9.6
+    _STATE["cf_neurons"] += neurons
+    extra = {k: v for k, v in headers.items() if "neuron" in k.lower()}
+    log(f"Cloudflare image: ~{neurons:.1f} neurons ({tiles} tiles x 4.8 + {steps} steps x 9.6), "
+        f"~{_STATE['cf_neurons']:.0f} this run{f' {extra}' if extra else ''}")
 
 
 def _cloudflare(prompt: str, seed: int) -> bytes:
@@ -53,51 +81,198 @@ def _cloudflare(prompt: str, seed: int) -> bytes:
     img_b64 = (data.get("result") or {}).get("image") or data.get("image")
     if not img_b64:
         raise RuntimeError(f"Cloudflare returned no image: {str(data)[:300]}")
-    return base64.b64decode(img_b64)
+    raw = base64.b64decode(img_b64)
+    _log_neurons(raw, r.headers)
+    return raw
 
 
-def _huggingface(prompt: str, seed: int) -> bytes:
-    """Free backup: Hugging Face Inference Providers (FLUX.1 schnell, provider picked automatically). Needs HF_TOKEN."""
-    token = env("HF_TOKEN", required=False)
-    if not token:
-        raise RuntimeError("no HF_TOKEN secret")
-    if _STATE["hf_out"]:
-        raise RuntimeError("Hugging Face credits used up for this run")
-    import io
-    from huggingface_hub import InferenceClient
-    client = InferenceClient(provider="auto", api_key=token, timeout=180)
-    image = client.text_to_image(prompt[:1500], model="black-forest-labs/FLUX.1-schnell",
-                                 width=768, height=1344, num_inference_steps=4, seed=seed)
+
+
+def _space_endpoint(client):
+    """The named endpoint that takes a prompt and returns an image (FLUX Spaces call it /infer)."""
+    info = client.view_api(return_format="dict", print_info=False)
+    best = None
+    for name, ep in (info.get("named_endpoints") or {}).items():
+        names = [p.get("parameter_name") or "" for p in ep.get("parameters", [])]
+        returns = " ".join(str(r.get("component", "")) for r in ep.get("returns", [])).lower()
+        if "prompt" in names and "image" in returns:
+            score = 2 if name == "/infer" else 1
+            if best is None or score > best[0]:
+                best = (score, name, names)
+    return (best[1], best[2]) if best else (None, None)
+
+
+def _space_file(result):
+    """Spaces return a path, a dict with 'path'/'url', or a tuple (image, seed): find the image file."""
+    stack = [result]
+    while stack:
+        r = stack.pop(0)
+        if isinstance(r, str) and os.path.exists(r):
+            return r
+        if isinstance(r, dict):
+            stack.extend(v for k, v in r.items() if k in ("path", "image", "value", "name"))
+        elif isinstance(r, (list, tuple)):
+            stack.extend(r)
+    return None
+
+
+def _hf_space(prompt: str, seed: int, width: int | None = None, height: int | None = None,
+              steps: int | None = None) -> bytes:
+    """Free fallback: FLUX.1-schnell on Hugging Face ZeroGPU Spaces (shares the daily GPU minutes with ai_motion)."""
+    if _STATE["spaces_out"]:
+        raise RuntimeError("free GPU Spaces out of quota for this run")
+    from gradio_client import Client
+    import ai_motion
+    size = CONFIG.get("space_image_size", [576, 1024])
+    width, height = width or int(size[0]), height or int(size[1])
+    steps = steps or int(CONFIG.get("image_steps", 4))
+    token = os.environ.get("HF_TOKEN") or None
+    errors = []
+    for space in CONFIG.get("image_spaces", []):
+        try:
+            if space not in _STATE["clients"]:
+                client = ai_motion._connect(Client, space, token)
+                _STATE["clients"][space] = (client, *_space_endpoint(client))
+            client, endpoint, names = _STATE["clients"][space]
+            if not endpoint:
+                errors.append(f"{space}: no prompt->image endpoint")
+                continue
+            kw = {"prompt": prompt[:1500]}
+            for k, v in (("seed", seed % 2_147_483_647), ("randomize_seed", False), ("width", width),
+                         ("height", height), ("num_inference_steps", steps)):
+                if k in names:
+                    kw[k] = v
+            path = _space_file(client.predict(api_name=endpoint, **kw))
+            if not path:
+                errors.append(f"{space}: no image returned")
+                continue
+            return Path(path).read_bytes()
+        except Exception as e:  # noqa: BLE001
+            msg = str(e)
+            m = QUOTA_RE.search(msg)
+            if m:
+                log(f"ZeroGPU quota: {space} requested {m.group(1)}s, {m.group(2)}s left")
+                if int(m.group(2)) <= 0:
+                    _STATE["spaces_out"] = True
+                    raise RuntimeError(f"free GPU minutes used up: {msg[:150]}") from e
+            elif "runs limit" in msg.lower() or ("quota" in msg.lower() and "exceeded" in msg.lower()):
+                _STATE["spaces_out"] = True
+                raise RuntimeError(f"free GPU quota used up: {msg[:150]}") from e
+            errors.append(f"{space}: {type(e).__name__}: {msg[:120]}")
+    raise RuntimeError("; ".join(errors) or "no image_spaces configured")
+
+
+def _local_sd(prompt: str, seed: int) -> bytes:
+    """Last resort, always available: SD-Turbo on the runner's CPU (512x896, 1-2 steps, no guidance).
+    Stability AI Community License (free commercial use under $1M/yr revenue; register once with Stability)."""
+    import torch
+    t0 = time.time()
+    if _STATE["sd"] is None:
+        from diffusers import AutoPipelineForText2Image
+        model = CONFIG.get("local_image_model", "stabilityai/sd-turbo")
+        log(f"Loading local image model {model} (CPU)...")
+        pipe = AutoPipelineForText2Image.from_pretrained(model, torch_dtype=torch.float32, variant="fp16")
+        pipe.set_progress_bar_config(disable=True)
+        _STATE["sd"] = pipe
+        log(f"Local image model loaded in {time.time() - t0:.0f}s")
+        t0 = time.time()
+    w, h = CONFIG.get("local_image_size", [512, 896])
+    image = _STATE["sd"](prompt=prompt, width=int(w), height=int(h), guidance_scale=0.0,
+                         num_inference_steps=int(CONFIG.get("local_image_steps", 2)),
+                         generator=torch.Generator("cpu").manual_seed(seed % 2_147_483_647)).images[0]
     buf = io.BytesIO()
     image.convert("RGB").save(buf, "PNG")
+    _STATE["local_secs"] += time.time() - t0
     return buf.getvalue()
 
 
-def _pollinations(prompt: str, seed: int) -> bytes:
-    """Backup: Pollinations (new gen.pollinations.ai API, free key from enter.pollinations.ai)."""
-    if _STATE["pol_out"]:
-        raise RuntimeError("Pollinations balance used up for this run")
-    key = env("POLLINATIONS_KEY", required=False)
-    q = urllib.parse.quote(prompt[:1500])
-    if key:
-        url = f"https://gen.pollinations.ai/image/{q}?width=1080&height=1920&seed={seed}&model=flux&nologo=true"
-        r = requests.get(url, timeout=180, headers={"Authorization": f"Bearer {key}"})
-    else:  # old keyless endpoint, may be retired
-        url = f"https://image.pollinations.ai/prompt/{q}?width=1080&height=1920&seed={seed}&nologo=true&model=flux"
-        r = requests.get(url, timeout=180)
-    if r.status_code == 402 or "insufficient balance" in r.text.lower():
-        _STATE["pol_out"] = True  # out of balance: skip it for the rest of this run
-        raise RuntimeError(f"Pollinations out of balance (402): {r.text[:150]}")
-    if r.status_code != 200 or not r.headers.get("content-type", "").startswith("image"):
-        raise RuntimeError(f"Pollinations HTTP {r.status_code}: {r.text[:150] if not r.headers.get('content-type','').startswith('image') else ''}")
-    # crop the bottom 7% in case a logo is stamped there
-    import io
-    with Image.open(io.BytesIO(r.content)) as im:
-        im = im.convert("RGB")
-        im = im.crop((0, 0, im.width, int(im.height * 0.93)))
-        buf = io.BytesIO()
-        im.save(buf, "PNG")
-        return buf.getvalue()
+def cloudflare_has_quota() -> bool | None:
+    """Tiny embeddings call (a few neurons) to see if the daily allocation is used up. None = no token/unknown."""
+    token = env("CLOUDFLARE_API_TOKEN", required=False)
+    acct = env("CLOUDFLARE_ACCOUNT_ID", required=False)
+    if not (token and acct):
+        return None
+    try:
+        r = requests.post(CF_CHECK_URL.format(acct=acct), timeout=30, headers={"Authorization": f"Bearer {token}"},
+                          json={"text": ["ok"]})
+    except Exception as e:  # noqa: BLE001
+        log(f"Cloudflare quota check failed ({e}); will just try it")
+        return None
+    if r.status_code == 200:
+        return True
+    try:
+        errs = r.json().get("errors") or []
+    except ValueError:
+        errs = []
+    text = " ".join(str(e.get("message", "")) for e in errs if isinstance(e, dict)).lower()
+    if any(e.get("code") == 4006 for e in errs if isinstance(e, dict)) or "daily free allocation" in text:
+        return False
+    log(f"Cloudflare quota check: HTTP {r.status_code} {r.text[:150]}")
+    return None
+
+
+def preflight() -> str | None:
+    """Before spending Gemini + voice time: make sure at least one image source works. Returns a problem or None."""
+    if test_mode():
+        log("TEST MODE: images come from the last run's cache or the local model (Cloudflare is never called)")
+        return None
+    cf = cloudflare_has_quota()
+    if cf is not False:
+        log(f"Cloudflare: {'has quota' if cf else 'status unknown, will try it'}")
+        return None
+    _STATE["cf_out"] = True
+    log("Cloudflare daily limit is used up (resets 00:00 UTC = 8 PM New York); 2 shots per scene this run")
+    try:
+        _hf_space("a foggy forest at night, illustration", 1, width=256, height=256, steps=1)
+        log("Free FLUX Spaces: working")
+        return None
+    except Exception as e:  # noqa: BLE001
+        spaces_err = str(e)[:200]
+        log(f"Free FLUX Spaces not usable: {spaces_err}")
+    try:
+        _local_sd("a foggy forest at night, illustration", 1)
+        log("Local SD-Turbo: working (slow, CPU)")
+        return None
+    except Exception as e:  # noqa: BLE001
+        return ("No image source available. Cloudflare daily limit used up (resets 8 PM New York); "
+                f"free Spaces: {spaces_err}; local model: {str(e)[:200]}. Nothing was generated; "
+                "inbox items stay queued.")
+
+
+def save_cache(story: dict, images: list[list[Path]]) -> None:
+    """Keep this run's images + story for test mode (daily.yml saves cache/last-images to the Actions cache)."""
+    shutil.rmtree(CACHE_DIR, ignore_errors=True)
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    for shots in images:
+        for p in shots:
+            if p and p.exists():
+                shutil.copy(p, CACHE_DIR / p.name)
+    (CACHE_DIR / "story.json").write_text(json.dumps({"scenes": len(story.get("scenes", []))}))
+
+
+def _cached_images(story: dict, outdir: Path) -> list[list[Path]] | None:
+    """Test mode: reuse the last run's images if the new story has the same number of scenes."""
+    meta = CACHE_DIR / "story.json"
+    if not meta.exists():
+        log("TEST MODE: no cached images yet")
+        return None
+    n = len(story["scenes"])
+    if json.loads(meta.read_text()).get("scenes") != n:
+        log(f"TEST MODE: cached images are for a different number of scenes, not {n}")
+        return None
+    per_scene = []
+    for i in range(n):
+        shots = []
+        for s in ("a", "b", "c", "d"):
+            src = CACHE_DIR / f"scene_{i:02d}{s}.png"
+            if src.exists():
+                shutil.copy(src, outdir / src.name)
+                shots.append(outdir / src.name)
+        if not shots:
+            return None
+        per_scene.append(shots)
+    log(f"TEST MODE: reusing {sum(map(len, per_scene))} cached images from the last run (source: cache)")
+    return per_scene
 
 
 def _save_valid(raw: bytes, path: Path) -> None:
@@ -141,9 +316,14 @@ def build_prompt(story: dict, scene_i: int, shot: str, style: str) -> str:
 def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
     """Up to four images per scene, one per part of the narration. Returns [[a, b, c, d], ...]."""
     outdir.mkdir(parents=True, exist_ok=True)
+    testing = test_mode()
+    if testing:
+        cached = _cached_images(story, outdir)
+        if cached:
+            return cached
     style = CONFIG["image_style"]
     base_seed = random.randint(1, 2_000_000_000)
-    use_cf = bool(env("CLOUDFLARE_API_TOKEN", required=False))
+    use_cf = bool(env("CLOUDFLARE_API_TOKEN", required=False)) and not testing
 
     jobs = []  # (scene index, shot letter, prompt)
     for i, scene in enumerate(story["scenes"]):
@@ -158,42 +338,47 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
     jobs.sort(key=lambda j: (j[1] not in ("a", "b"), j[0], j[1]))
 
     results: dict[tuple[int, str], Path | None] = {}
+    sources: dict[str, int] = {}
+    told_two = False
     for n, (i, shot, raw_prompt) in enumerate(jobs):
-        if (_STATE["cf_out"] or not use_cf) and _STATE["hf_out"] and _STATE["pol_out"]:
-            log(f"All image services are out of quota: skipping {len(jobs) - n} remaining images")
-            for j, jshot, _ in jobs[n:]:
-                results[(j, jshot)] = None
-            break
+        # Cloudflare out (or test mode): the fallbacks are slow/limited, so only 2 shots per scene from here on.
+        if shot in ("c", "d") and (testing or _STATE["cf_out"] or not use_cf):
+            if not told_two:
+                log("Cloudflare not available: 2 shots per scene for the rest of this run")
+                told_two = True
+            continue
         prompt = build_prompt(story, i, raw_prompt, style)
         path = outdir / f"scene_{i:02d}{shot}.png"
-        ok = False
+        ok, source = False, ""
         providers = (([_cloudflare] if use_cf and not _STATE["cf_out"] else [])
-                     + ([] if _STATE["hf_out"] else [_huggingface])
-                     + ([] if _STATE["pol_out"] else [_pollinations]))
+                     + ([] if testing or _STATE["spaces_out"] else [_hf_space]) + [_local_sd])
         for provider in providers:
             for attempt in range(2):
                 try:
                     _save_valid(provider(prompt, base_seed + n * 7 + attempt), path)
-                    ok = True
+                    ok, source = True, provider.__name__.lstrip("_")
                     break
                 except Exception as e:  # noqa: BLE001
-                    log(f"Image {i}{shot} via {provider.__name__} failed: {str(e)[:150]}")
-                    if provider is _huggingface and ("402" in str(e) or "Payment Required" in str(e)):
-                        _STATE["hf_out"] = True  # out of free credit: skip it for the rest of this run
-                    if (provider is _cloudflare and _STATE["cf_out"]) or _STATE["hf_out"] and provider is _huggingface or (
-                            provider is _pollinations and _STATE["pol_out"]) or any(
-                            k in str(e) for k in ("no HF_TOKEN", "410", "401", "403", "deprecated")):
-                        break  # no point retrying this provider
+                    log(f"Image {i}{shot} via {provider.__name__.lstrip('_')} failed: {str(e)[:150]}")
+                    if (provider is _cloudflare and _STATE["cf_out"]) or (provider is _hf_space and _STATE["spaces_out"]) \
+                            or provider is _hf_space or any(k in str(e) for k in ("401", "403", "deprecated")):
+                        break  # no point retrying this one (Spaces already tried every Space in the list)
             if ok:
                 break
-        log(f"Image {i}{shot}: {'ok' if ok else 'FAILED'}")
+        sources[source or "FAILED"] = sources.get(source or "FAILED", 0) + 1
+        log(f"Image {i}{shot}: {'ok (' + source + ')' if ok else 'FAILED'}")
         results[(i, shot)] = path if ok else None
 
-    failed = sum(p is None for p in results.values())
     n_scenes = len(story["scenes"])
     empty = sum(1 for i in range(n_scenes) if not any(results.get((i, s)) for s in ("a", "b", "c", "d")))
-    if failed:
-        log(f"Missing {failed} of {len(jobs)} images; {empty} of {n_scenes} scenes have no image at all")
+    log("Image sources: " + ", ".join(f"{k} {v}" for k, v in sources.items())
+        + (f"; local model total {_STATE['local_secs']:.0f}s" if _STATE["local_secs"] else "")
+        + (f"; Cloudflare ~{_STATE['cf_neurons']:.0f} neurons" if _STATE["cf_neurons"] else ""))
+    skipped = len(jobs) - len(results)
+    failed = sum(p is None for p in results.values())
+    if failed or skipped:
+        log(f"Missing {failed + skipped} of {len(jobs)} images ({skipped} extra cuts skipped); "
+            f"{empty} of {n_scenes} scenes have no image at all")
     if empty > max(1, n_scenes // 4):
         raise RuntimeError(f"{empty} of {n_scenes} scenes have no image; not rendering a broken video.")
 
