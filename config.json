@@ -17,6 +17,9 @@
   "local_image_model": "stabilityai/sd-turbo",
   "local_image_size": [512, 896],
   "local_image_steps": 2,
+  "local_image_budget_minutes": 12,
+  "target_seconds": [50, 60],
+  "voice_speed_range": [1.0, 1.2],
 
   "effects": {"parallax": true, "fog": true, "fog_strength": 0.22, "dust": false, "flicker": true, "shake": true},
 

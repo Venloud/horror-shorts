@@ -1,6 +1,7 @@
 """Renders the final 1080x1920 video with FFmpeg: Ken Burns scenes, crossfades, grade, grain, captions, music."""
 import random
 import re
+import subprocess
 from pathlib import Path
 
 from common import CONFIG, ROOT, log, media_duration, run
@@ -285,6 +286,40 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
          "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", str(out)])
     log(f"Rendered {out.name} ({media_duration(out):.1f}s, {out.stat().st_size / 1e6:.1f} MB)")
     return out
+
+
+def qa_gate(path: Path, ass_path: Path, narration: dict) -> list[str]:
+    """Checks a finished video must pass before it may enter the buffer. Returns the problems (empty = pass)."""
+    problems = []
+    lo, hi = CONFIG.get("target_seconds", [50, 60])
+    dur = media_duration(path)
+    if not lo <= dur <= hi + TAIL + 0.5:  # narration target + the end-card tail
+        problems.append(f"duration {dur:.1f}s (want {lo}-{hi + TAIL + 0.5:.1f}s)")
+    streams = run(["ffprobe", "-v", "error", "-show_entries", "stream=codec_type,width,height",
+                   "-of", "csv=p=0", str(path)])
+    if f"{W},{H}" not in streams:
+        problems.append(f"resolution {streams.strip()!r} (want {W}x{H})")
+    if "audio" not in streams:
+        problems.append("no audio stream")
+    else:
+        p = subprocess.run(["ffmpeg", "-nostats", "-hide_banner", "-i", str(path), "-map", "0:a:0",
+                            "-af", "ebur128", "-f", "null", "-"], capture_output=True, text=True)
+        m = re.findall(r"I:\s+(-?\d+(?:\.\d+)?) LUFS", p.stderr)
+        lufs = float(m[-1]) if m else None
+        if lufs is None or not -18 <= lufs <= -12:
+            problems.append(f"loudness {lufs} LUFS (want -18..-12)")
+    # Captions: the render always burns in this .ass file; check it really has the word captions in it.
+    cap_lines = sum(1 for ln in Path(ass_path).read_text(encoding="utf-8").splitlines()
+                    if ln.startswith("Dialogue:") and ",Cap," in ln) if Path(ass_path).exists() else 0
+    n_words = len(narration.get("words") or [])
+    if n_words and cap_lines < 0.8 * n_words:
+        problems.append(f"captions: {cap_lines} caption lines for {n_words} words")
+    size = path.stat().st_size
+    if not 5_000_000 < size < 64_000_000:
+        problems.append(f"file size {size / 1e6:.1f} MB (want 5-64 MB)")
+    log("QA gate: " + ("passed" if not problems else "FAILED: " + "; ".join(problems))
+        + f" ({dur:.1f}s, {size / 1e6:.1f} MB)")
+    return problems
 
 
 def quality_check(path: Path) -> None:

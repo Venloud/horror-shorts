@@ -44,6 +44,8 @@ SCHEMA = {
         "caption": {"type": "STRING"},
         "hashtags": {"type": "ARRAY", "items": {"type": "STRING"}},
         "pinned_comment": {"type": "STRING"},
+        "hook_candidates": {"type": "ARRAY", "items": {"type": "STRING"}},
+        "hook_scores": {"type": "ARRAY", "items": {"type": "STRING"}},
     },
     "required": ["title", "premise", "hook_overlay", "scenes", "twist_scene",
                  "caption", "hashtags", "pinned_comment"],
@@ -59,7 +61,7 @@ CHECKLIST
 4. Does every scene move the story forward? Cut filler, keep the scariest concrete details.
 5. THE HOOK: would the first 6 words alone stop a scroller? Does scene 1 open on the most shocking moment and raise one burning question? If it is generic, slow, or explains too much, rewrite scene 1 and hook_overlay until it hits hard (max 18 words).
 6. Same rules as before: {rules}
-
+{hooks}
 If something fails, rewrite those scenes (and image_prompt, image_prompt_2 and sfx to match; the four image prompts must be different shots matching each quarter of the scene). Keep what already works. Keep the characters and locations lists and each scene's location.
 Keep {words} words total, the same number of scenes or 7-9, and keep sfx values from this list only: {sfx_list}
 
@@ -68,21 +70,84 @@ DRAFT:
 """
 
 
+HOOKS_TASK = """7. HOOK CANDIDATES: score each candidate first sentence below from 1 to 10 (strangest or most shocking
+detail in the first 6 words; no date, year or place name; under 18 words; makes you NEED the next sentence).
+Put one line per candidate in "hook_scores" as "<score> | <sentence>", and start scene 1 with the highest-scoring
+sentence, word for word.
+{candidates}
+"""
+
+
 def edit_story(story: dict, api_key: str, sfx_list: str, rules: str) -> dict:
     """Second pass: an editor checks logic, ending, and hook payoff, then rewrites."""
     draft = {k: story[k] for k in SCHEMA["properties"] if k in story}
+    cands = [c.strip() for c in story.get("hook_candidates") or [] if c.strip()]
+    hooks = HOOKS_TASK.format(candidates="\n".join(f"- {c}" for c in cands)) if len(cands) >= 2 else ""
     prompt = EDITOR_PROMPT.format(draft=json.dumps(draft, ensure_ascii=False, indent=1),
-                                  sfx_list=sfx_list, rules=rules, words="120 to 140")
+                                  sfx_list=sfx_list, rules=rules, words="120 to 140", hooks=hooks)
     try:
         edited = _run_models(prompt, api_key, temperature=0.5)
         for k in ("characters", "locations"):  # keep the character / location sheets if the editor dropped them
             if story.get(k) and not edited.get(k):
                 edited[k] = story[k]
         log("Editor pass: story revised")
+        if cands:
+            edited["hook_candidates"] = cands
+            use_best_hook(edited)
         return edited
     except Exception as e:  # noqa: BLE001
         log(f"Editor pass failed, keeping the first draft: {str(e)[:200]}")
         return story
+
+
+def use_best_hook(story: dict) -> None:
+    """Make scene 1 start with the editor's highest-scoring hook candidate (that isn't a slow opener)."""
+    scored = []
+    for line in story.get("hook_scores") or []:
+        m = re.match(r"\s*(\d+(?:\.\d+)?)\s*\|\s*(.+)", str(line))
+        if m:
+            scored.append((float(m.group(1)), m.group(2).strip().strip('"')))
+    if scored:
+        log("Hook scores: " + " / ".join(f"{sc:g}: {txt[:60]}" for sc, txt in sorted(scored, reverse=True)))
+    scored = [(sc, txt) for sc, txt in sorted(scored, reverse=True) if not hook_problem(txt)]
+    if not scored or not story.get("scenes"):
+        return
+    best = scored[0][1]
+    first = story["scenes"][0].get("narration", "")
+    if first.lower().startswith(best.lower()[:40]):
+        return
+    end = re.search(r"[.!?…][\"”’)]?(?=\s|$)", first)
+    rest = first[end.end():].strip() if end else ""
+    story["scenes"][0]["narration"] = f"{best} {rest}".strip()
+    log(f"Scene 1 now starts with the best-scoring hook: {best}")
+
+
+RESIZE_PROMPT = """You are editing the narration of a short vertical video (JSON below). It is {now} words and must
+be {want} words (+-5), so the voiceover lands in the target length. {how}
+Rules: keep the same number of scenes and the same order; keep scene 1's FIRST sentence exactly; keep the exact
+sentence "This is a true story." if it is there; do not add facts, names or events that are not already in the
+story; keep the ending line's meaning. Only change image prompts of scenes whose content changed.
+Return the whole story in the SAME JSON format.
+
+STORY:
+{draft}
+"""
+
+
+def resize_story(story: dict, api_key: str, want_words: int) -> dict:
+    """Trim or extend the narration to about want_words, keeping structure and facts (used by the duration fit)."""
+    now = sum(len(s["narration"].split()) for s in story["scenes"])
+    how = ("Cut filler words and weaker details." if want_words < now else
+           "Slow the telling down: add sensory detail and short beats that are already implied by the story.")
+    draft = {k: story[k] for k in SCHEMA["properties"] if k in story}
+    new = _run_models(RESIZE_PROMPT.format(now=now, want=want_words, how=how,
+                                           draft=json.dumps(draft, ensure_ascii=False, indent=1)),
+                      api_key, temperature=0.4)
+    for k, v in story.items():  # keep everything the resize doesn't return (mode, source, flags...)
+        new.setdefault(k, v)
+    got = sum(len(s["narration"].split()) for s in new["scenes"])
+    log(f"Script resized: {now} -> {got} words (asked for {want_words})")
+    return new
 
 
 def pick_subgenre(history: list[dict]) -> str:

@@ -18,7 +18,8 @@ from PIL import Image
 
 from common import CONFIG, ROOT, env, log
 
-_STATE = {"cf_out": False, "spaces_out": False, "cf_neurons": 0.0, "local_secs": 0.0, "clients": {}, "sd": None}
+_STATE = {"cf_out": False, "spaces_out": False, "local_out": False, "cf_neurons": 0.0, "local_secs": 0.0,
+          "clients": {}, "sd": None}
 CF_URL = "https://api.cloudflare.com/client/v4/accounts/{acct}/ai/run/@cf/black-forest-labs/flux-1-schnell"
 CF_CHECK_URL = "https://api.cloudflare.com/client/v4/accounts/{acct}/ai/run/@cf/baai/bge-small-en-v1.5"
 CACHE_DIR = ROOT / "cache" / "last-images"   # saved/restored by daily.yml (actions/cache, "last-images-*")
@@ -166,6 +167,10 @@ def _local_sd(prompt: str, seed: int) -> bytes:
     """Last resort, always available: SD-Turbo on the runner's CPU (512x896, 1-2 steps, no guidance).
     Stability AI Community License (free commercial use under $1M/yr revenue; register once with Stability)."""
     import torch
+    budget = float(CONFIG.get("local_image_budget_minutes", 12)) * 60
+    if _STATE["local_secs"] >= budget:
+        _STATE["local_out"] = True
+        raise RuntimeError(f"local model time budget used up ({_STATE['local_secs']:.0f}s of {budget:.0f}s)")
     t0 = time.time()
     if _STATE["sd"] is None:
         from diffusers import AutoPipelineForText2Image
@@ -175,7 +180,6 @@ def _local_sd(prompt: str, seed: int) -> bytes:
         pipe.set_progress_bar_config(disable=True)
         _STATE["sd"] = pipe
         log(f"Local image model loaded in {time.time() - t0:.0f}s")
-        t0 = time.time()
     w, h = CONFIG.get("local_image_size", [512, 896])
     image = _STATE["sd"](prompt=prompt, width=int(w), height=int(h), guidance_scale=0.0,
                          num_inference_steps=int(CONFIG.get("local_image_steps", 2)),
@@ -286,6 +290,15 @@ def _save_valid(raw: bytes, path: Path) -> None:
     tmp.unlink(missing_ok=True)
 
 
+def _is_image(path: Path) -> bool:
+    try:
+        with Image.open(path) as im:
+            im.verify()
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def _key(name: str) -> str:
     n = name.lower().strip()
     return n[4:] if n.startswith("the ") else n
@@ -334,24 +347,37 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
             if extra.strip():
                 jobs.append((i, letter, extra))
 
-    # Every scene's "a"/"b" shots first, extra cuts ("c"/"d") last: if quotas run out we lose cuts, not scenes.
-    jobs.sort(key=lambda j: (j[1] not in ("a", "b"), j[0], j[1]))
+    # Every scene's "a" shot first, then every "b", then the extra cuts ("c"/"d"): if a quota or the local time
+    # budget runs out we lose cuts, never whole scenes.
+    jobs.sort(key=lambda j: ("abcd".index(j[1]), j[0]))
 
     results: dict[tuple[int, str], Path | None] = {}
     sources: dict[str, int] = {}
     told_two = False
     for n, (i, shot, raw_prompt) in enumerate(jobs):
         # Cloudflare out (or test mode): the fallbacks are slow/limited, so only 2 shots per scene from here on.
-        if shot in ("c", "d") and (testing or _STATE["cf_out"] or not use_cf):
+        if shot in ("c", "d") and (testing or _STATE["cf_out"] or not use_cf) \
+                and not _is_image(outdir / f"scene_{i:02d}{shot}.png"):
             if not told_two:
                 log("Cloudflare not available: 2 shots per scene for the rest of this run")
                 told_two = True
             continue
-        prompt = build_prompt(story, i, raw_prompt, style)
         path = outdir / f"scene_{i:02d}{shot}.png"
+        if _is_image(path):  # checkpoint from an earlier try of this same story: keep it
+            sources["checkpoint"] = sources.get("checkpoint", 0) + 1
+            results[(i, shot)] = path
+            continue
+        prompt = build_prompt(story, i, raw_prompt, style)
         ok, source = False, ""
         providers = (([_cloudflare] if use_cf and not _STATE["cf_out"] else [])
-                     + ([] if testing or _STATE["spaces_out"] else [_hf_space]) + [_local_sd])
+                     + ([] if testing or _STATE["spaces_out"] else [_hf_space])
+                     + ([] if _STATE["local_out"] else [_local_sd]))
+        if not providers:
+            if not _STATE.get("told_none"):
+                log("No image source left (Cloudflare/Spaces out, local time budget used): using what exists")
+                _STATE["told_none"] = True
+            results[(i, shot)] = None
+            continue
         for provider in providers:
             for attempt in range(2):
                 try:
@@ -360,7 +386,7 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
                     break
                 except Exception as e:  # noqa: BLE001
                     log(f"Image {i}{shot} via {provider.__name__.lstrip('_')} failed: {str(e)[:150]}")
-                    if (provider is _cloudflare and _STATE["cf_out"]) or (provider is _hf_space and _STATE["spaces_out"]) \
+                    if (provider is _cloudflare and _STATE["cf_out"]) or provider is _local_sd \
                             or provider is _hf_space or any(k in str(e) for k in ("401", "403", "deprecated")):
                         break  # no point retrying this one (Spaces already tried every Space in the list)
             if ok:

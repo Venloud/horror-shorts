@@ -1,9 +1,10 @@
-"""Builder (build.yml): story -> voice -> images -> captions -> render -> into the video buffer.
+"""Builder (build.yml): story -> voice -> images -> captions -> render -> QA gate -> into the video buffer.
 
 Posting happens separately (publish.py, run by daily.yml), so a failed build wastes nothing: the inbox item or case
-is only marked used (history.json) once its video is safely in the buffer.
+is only marked used (history.json) once its video is safely in the buffer, and a failed build keeps its story,
+narration and images as a checkpoint (checkpoint.py) so the next try only redoes what's missing.
   python main.py          normal build: add the video to the buffer and write history
-  python main.py --test   test build: no Cloudflare, no buffer, no history; the mp4 is kept as an Actions artifact
+  python main.py --test   test build: no Cloudflare, no buffer, no history, no checkpoints; mp4 kept as an artifact
 """
 import argparse
 import json
@@ -12,7 +13,56 @@ import sys
 import traceback
 from datetime import datetime, timezone
 
-from common import CONFIG, ROOT, load_history, log, save_history
+from common import CONFIG, ROOT, env, load_history, log, save_history
+
+
+def fit_duration(story: dict, workdir, narrate, allow_rewrite: bool) -> tuple[dict, dict]:
+    """Voice it, then get the narration into config target_seconds: first by voice speed (config voice_speed_range),
+    then, if still outside, by asking Gemini to trim/extend by the needed word count (max 2 tries)."""
+    from story import resize_story
+    lo, hi = CONFIG.get("target_seconds", [50, 60])
+    smin, smax = CONFIG.get("voice_speed_range", [1.0, 1.2])
+    narr = narrate(story, workdir)
+
+    def inside(n: dict) -> bool:
+        return lo <= n["duration"] <= hi
+
+    def speed_for(n: dict) -> float:
+        want = hi - 1.5 if n["duration"] > hi else lo + 1.5
+        return round(max(smin, min(smax, n["speed"] * n["duration"] / want)), 3)
+
+    if inside(narr):
+        return story, narr
+    speed = speed_for(narr)
+    if abs(speed - narr["speed"]) > 0.005:
+        log(f"Narration {narr['duration']:.1f}s is outside {lo}-{hi}s: re-voicing at speed {speed}")
+        narr = narrate(story, workdir, speed=speed)
+        if inside(narr):
+            return story, narr
+    if not allow_rewrite:
+        log(f"Exact-words script: keeping it at {narr['duration']:.1f}s (speed {narr['speed']}), no rewrite")
+        return story, narr
+    for attempt in range(1, 3):
+        want = hi - 1.5 if narr["duration"] > hi else lo + 1.5
+        words = sum(len(s["narration"].split()) for s in story["scenes"])
+        want_words = max(60, round(words * want / narr["duration"]))
+        log(f"Still {narr['duration']:.1f}s: asking for {want_words} words instead of {words} ({attempt}/2)")
+        try:
+            story = resize_story(story, env("GEMINI_API_KEY"), want_words)
+        except Exception as e:  # noqa: BLE001
+            log(f"Resize failed ({str(e)[:150]}): keeping the current script")
+            break
+        narr = narrate(story, workdir, speed=narr["speed"])
+        if inside(narr):
+            break
+        speed = speed_for(narr)
+        if abs(speed - narr["speed"]) > 0.005:
+            narr = narrate(story, workdir, speed=speed)
+            if inside(narr):
+                break
+    if not inside(narr):
+        log(f"Narration is {narr['duration']:.1f}s after all tries; the QA gate will decide")
+    return story, narr
 
 
 def main() -> int:
@@ -25,11 +75,12 @@ def main() -> int:
         os.environ["TEST_MODE"] = "true"
 
     import buffer
+    import checkpoint
     import images
     from captions import build_ass
     from notify import caption_text, notify
-    from render import quality_check, render
-    from story import write_story
+    from render import qa_gate, render
+    from story import mark_true_story, write_story
     from voice import narrate
 
     prefix = "[TEST] " if testing else ""
@@ -43,20 +94,54 @@ def main() -> int:
         problem = images.preflight()  # don't spend Gemini + voice time if no image source works
         if problem:
             raise RuntimeError(problem)
-        story = write_story(history)
+
+        story = None if testing else checkpoint.resume(history)
+        if story is None:
+            story = write_story(history)
+            if not testing:
+                checkpoint.start(story)
         (workdir / "story.json").write_text(json.dumps(story, indent=2, ensure_ascii=False))
 
-        narration = narrate(story, workdir)
-        imgs = images.generate_images(story, workdir / "images")
+        narration = None if testing else checkpoint.load_narration(story, workdir)
+        if narration is None:
+            before = json.dumps(story.get("scenes"))
+            story, narration = fit_duration(story, workdir, narrate,
+                                            allow_rewrite=story.get("mode") != "inbox-script")
+            if json.dumps(story.get("scenes")) != before:  # resized: re-check the TRUE STORY line
+                mark_true_story(story)
+            if not testing:
+                checkpoint.save_story(story)
+                checkpoint.save_narration(story, narration)
+
+        img_dir = workdir / "images" if testing else checkpoint.IMAGES  # images are kept as soon as they exist
+        imgs = images.generate_images(story, img_dir)
         from render import END_CARD_DELAY, TAIL
         ass = build_ass(narration["words"], story.get("hook_overlay", ""),
                         narration["duration"] + TAIL, workdir / "captions.ass",
                         end_start=narration["duration"] + END_CARD_DELAY,
                         badge="TRUE STORY" if story.get("true_story") else None)
         video = render(story, imgs, narration, ass, workdir)
-        quality_check(video)
         caption = caption_text(story)
         (workdir / "caption.txt").write_text(caption + "\n\nPIN: " + story.get("pinned_comment", ""))
+
+        problems = qa_gate(video, ass, narration)
+        if problems:  # never let a broken video into the buffer
+            reason = "; ".join(problems)
+            if testing:
+                notify(story, None, prefix=prefix, error=f"QA gate failed: {reason}")
+                return 1
+            fails = checkpoint.qa_failed(story, problems)
+            if fails >= 2:  # same story failed twice: skip it for good so the builder can't loop on it
+                history.append({"date": stamp, "story_id": story.get("story_id"), "title": story["title"],
+                                "mode": story.get("mode"), "source": story.get("source"), "case": story.get("case"),
+                                "skipped": True, "reason": f"QA gate: {reason}"})
+                save_history(history)
+                checkpoint.finish(story)
+                notify(story, None, error=f"QA gate failed twice, story skipped for good: {reason}")
+            else:
+                notify(story, None, error=f"QA gate failed, not added to the buffer (next build retries): {reason}")
+            return 0  # alert already sent; exit 0 so build.yml still saves history + checkpoint
+
         meta = workdir / "caption.json"
         meta.write_text(json.dumps({
             "stamp": stamp, "title": story["title"], "caption_text": caption,
@@ -77,6 +162,7 @@ def main() -> int:
             history.append({"date": stamp, **sk})
         history.append({
             "date": stamp,
+            "story_id": story.get("story_id"),
             "title": story["title"],
             "premise": story.get("premise", ""),
             "subgenre": story.get("subgenre", ""),
@@ -90,11 +176,13 @@ def main() -> int:
             "twist": story.get("twist"),
             "score": story.get("score"),
             "seconds": round(narration["duration"], 1),
+            "voice_speed": narration.get("speed"),
             "buffered": stamp,
             "tiktok": None,  # filled in by publish.py when it's posted
         })
         save_history(history)
         images.save_cache(story, imgs)
+        checkpoint.finish(story)
         (ROOT / ".built").write_text(stamp)  # tells build.yml to save the image cache
         log(f"Done: '{story['title']}' is in the buffer.")
         return 0
@@ -103,7 +191,8 @@ def main() -> int:
         if testing:
             notify(story, None, error=f"{type(e).__name__}: {e}", prefix=prefix)
             return 1
-        # Quiet failure: the next build (every 3 h) tries again. Only alert if nothing is waiting to be posted.
+        # Quiet failure: the checkpoint is kept and the next build (every 3 h) continues from it.
+        # Only alert if nothing is waiting to be posted.
         try:
             waiting = buffer.count()
         except Exception as be:  # noqa: BLE001

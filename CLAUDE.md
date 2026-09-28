@@ -62,6 +62,13 @@ so a new session can pick up without starting over.
    - Anti-repeat: `data/history.json` stores title, premise, setting, threat, twist; the last 40 are
      sent as "ALREADY USED".
    - Length: `story_words` [120, 140] = about 50-60 s (the Kokoro voice reads ~2.2-2.4 words/sec at speed 1.1).
+     **Duration fit** (`main.fit_duration`): narration must land in config `target_seconds` [50, 60]. First the voice
+     speed is adjusted within `voice_speed_range` [1.0, 1.2]; if still outside, Gemini trims/extends by the needed
+     word count (`story.resize_story`, keeps scene 1's first sentence + the TRUE line, max 2 tries). Exact-words
+     inbox SCRIPTs only get the speed change, never a rewrite.
+   - **Hook candidates**: the real-story prompts return `hook_candidates` (3 first sentences); the editor pass
+     scores them (`hook_scores`, "score | sentence") and `use_best_hook()` makes scene 1 start with the best one
+     that passes `hook_problem()`; then `fix_hook()` still runs as a safety net.
 2. **Voice**: Kokoro TTS `am_michael`, speed 1.1, word timings tagged by scene.
 3. **Images** (`images.py`), all free: Cloudflare Workers AI FLUX schnell (10,000 neurons/day, resets 00:00 UTC =
    8 PM New York; no size option, 1024x1024 = 4 tiles x 4.8 + 4 steps x 9.6 = ~57.6 neurons, logged per image)
@@ -74,8 +81,10 @@ so a new session can pick up without starting over.
    it's out, test the Spaces, then the local model; only if all fail, stop with a phone alert (nothing wasted).
    If Cloudflare is out (or hits its limit mid-run), only 2 shots per scene for the rest of the run.
    Up to 4 images per scene (`shots_per_scene`), each showing exactly what the words say at that moment.
-   Quota order: every scene's "a"/"b" shots are drawn before any "c"/"d", so running out of quota loses extra
-   cuts, not scenes. Cloudflare daily cap vs short rate limit are told apart (short limit = wait and retry);
+   Quota order: every scene's "a" shot first, then every "b", then "c"/"d", so running out of quota (or the local
+   time budget) loses extra cuts, never whole scenes. SD-Turbo has a hard budget for the whole run
+   (`local_image_budget_minutes`, 12); when it's hit the run stops drawing and uses what exists.
+   Cloudflare daily cap vs short rate limit are told apart (short limit = wait and retry).
    A Space quota error marks the Spaces out for the run; the local model is always the last step. The run only
    fails if more than max(1, scenes // 4) scenes have no image at all.
    Consistency: the scene plan outputs `characters` and `locations` sheets; the code injects the fixed looks
@@ -118,11 +127,27 @@ so a new session can pick up without starting over.
   (+ "buffer low" alert at 1 left, "EMPTY" at 0). Only if both platforms fail does the video stay in the buffer.
 - Note: while the repo is public, buffered (unposted) videos on the release are publicly downloadable.
 
+## Reliability (build side)
+- **Checkpoints** (`checkpoint.py`, Actions cache `ckpt-<run id>`): a build keeps story.json, the narration
+  (wav + timings, tied to a hash of the text + speed) and every finished image in `cache/checkpoint/`. A failed
+  build's next try resumes the same story and only makes what's missing. Success writes `done.json`, so an older
+  cache entry is never resumed; a story already in history is never resumed. Test builds skip checkpoints.
+- **QA gate** (`render.qa_gate`) before the buffer: 1080x1920, duration within target + end-card tail, audio
+  stream, integrated loudness -18..-12 LUFS (ffmpeg ebur128; the mix is loudnormed to -14), caption lines in the
+  burned-in .ass cover the words, 5-64 MB. Fail = not buffered + ntfy alert; a duration failure drops the saved
+  narration so it's re-fitted; the SAME story failing QA twice is skipped for good (history `skipped` + reason).
+- **Concurrency**: build.yml and daily.yml share the group `night-files` (never write history.json at the same
+  time); build cron is :50 every 3 h, just after the publish slots. Pushing history uses
+  `pipeline/merge_history.py` (applies this run's new/changed entries onto origin/main's file) + push, 3 tries;
+  no rebase conflicts. Note: GitHub keeps only ONE pending run per concurrency group; a newer queued run
+  replaces an older pending one.
+
 ## Schedule
 - 2 videos a day, **11:40 AM and 8:40 PM New York**. GitHub's own cron was unreliable (4 h late / skipped),
   so the plan is **cron-job.org** calling the `workflow_dispatch` API for `daily.yml` with a fine-grained token
   (Actions: read & write). Only remove the `schedule:` block from daily.yml AFTER cron-job.org is tested.
 - `build.yml` has `timeout-minutes: 60` and HF cache key `hf-models-v3` (adds SD-Turbo); `daily.yml` 15 min.
+- `build.yml` runs at :50 every 3 hours (UTC); publish slots are 15:40 and 00:40 UTC.
 
 ## Owner preferences (how to work with him)
 - Hook must hit in the first second; stories need a hook, a logical plot and a real ending that pays off the hook.

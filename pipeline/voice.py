@@ -50,11 +50,17 @@ def _tokens_to_words(tokens, offset: float) -> list[dict]:
     return words
 
 
-def narrate(story: dict, outdir: Path) -> dict:
+_PIPE = {}
+
+
+def narrate(story: dict, outdir: Path, speed: float | None = None) -> dict:
     from kokoro import KPipeline  # heavy import, keep local
 
-    pipe = KPipeline(lang_code=CONFIG.get("voice_lang", "a"))
-    voice, speed = CONFIG["voice"], float(CONFIG.get("voice_speed", 1.0))
+    if "pipe" not in _PIPE:  # re-voicing at another speed reuses the loaded model
+        _PIPE["pipe"] = KPipeline(lang_code=CONFIG.get("voice_lang", "a"))
+    pipe = _PIPE["pipe"]
+    voice = CONFIG["voice"]
+    speed = float(speed or CONFIG.get("voice_speed", 1.0))
 
     pieces = [np.zeros(int(LEAD_IN * SR), dtype=np.float32)]
     t = LEAD_IN
@@ -96,5 +102,5 @@ def narrate(story: dict, outdir: Path) -> dict:
     wav = wav / peak * 0.9
     path = outdir / "narration.wav"
     sf.write(path, wav, SR)
-    log(f"Narration: {t:.1f}s, {len(words)} words timed")
-    return {"path": path, "duration": t, "words": words, "scene_times": scene_times}
+    log(f"Narration: {t:.1f}s at speed {speed:.2f}, {len(words)} words timed")
+    return {"path": path, "duration": t, "words": words, "scene_times": scene_times, "speed": speed}
