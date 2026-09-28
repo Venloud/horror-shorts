@@ -264,6 +264,14 @@
     "seconds": 59.5,
     "voice_speed": 1.161,
     "buffered": "2026-09-28_1953",
-    "tiktok": null
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7690698978912159775",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "error": "RefreshError: ('invalid_grant: Token has been expired or revoked.', {'error': 'invalid_grant', 'error_description': 'Token has been expired or revoked.'})"
+    },
+    "posted": "2026-09-28_2122"
   }
 ]
