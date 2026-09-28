@@ -214,5 +214,23 @@
       "status": "SEND_TO_USER_INBOX",
       "mode": "draft"
     }
+  },
+  {
+    "date": "2026-09-28_0943",
+    "title": "The 2025 Louvre Heist",
+    "premise": "Thieves disguised as construction workers use a furniture lift to steal millions in French crown jewels from the Louvre in under eight minutes.",
+    "subgenre": "true story",
+    "mode": "inbox-true",
+    "true_story": true,
+    "case": null,
+    "source": "https://en.wikipedia.org/wiki/2025_Louvre_heist",
+    "prompt_file": null,
+    "setting": "Paris, France, 2025",
+    "threat": "Disguised thieves armed with power tools raiding royal display cases",
+    "twist": "The gallery's security camera faced the wrong direction, and the security password was simply Louvre.",
+    "score": null,
+    "seconds": 59.8,
+    "buffered": "2026-09-28_0943",
+    "tiktok": null
   }
 ]
