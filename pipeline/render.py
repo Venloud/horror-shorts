@@ -43,14 +43,40 @@ def _scene_clip(img: Path, seconds: float, motion: str, out: Path) -> Path:
     return out
 
 
+# Every clip is forced to this exact format before the crossfades: xfade fails on any size / fps / pixel format /
+# SAR / timebase mismatch (AI Spaces return all sorts: 480x832, 24 fps, odd SAR, audio tracks).
+NORMALIZE = (f"scale={W}:{H}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{H},"
+             f"fps={FPS},setsar=1,format=yuv420p,settb=AVTB")
+
+
 def _fit_clip(src: Path, seconds: float, out: Path) -> Path:
-    """Fit an AI clip to the shot: fill 1080x1920, stretch up to 1.5x slower if short, then hold the last frame."""
+    """Fit an AI clip to the shot: fill 1080x1920, stretch up to 1.5x slower if short, then hold the last frame.
+    Only the first video stream is used (audio dropped), output is 1080x1920 / 30 fps / yuv420p / SAR 1."""
     have = media_duration(src)
     slow = min(1.5, max(1.0, seconds / max(0.1, have)))
-    vf = (f"scale={W}:{H}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{H},"
-          f"setpts={slow:.3f}*PTS,fps={FPS},tpad=stop_mode=clone:stop_duration={seconds:.2f},setsar=1,format=yuv420p")
-    run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(src), "-vf", vf, "-an", "-t", f"{seconds:.3f}",
-         "-c:v", "libx264", "-preset", "veryfast", "-crf", "14", "-r", str(FPS), str(out)])
+    vf = (f"setpts={slow:.3f}*PTS,{NORMALIZE},tpad=stop_mode=clone:stop_duration={seconds:.2f}")
+    run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(src), "-map", "0:v:0", "-vf", vf, "-an",
+         "-t", f"{seconds:.3f}", "-c:v", "libx264", "-preset", "veryfast", "-crf", "14", "-r", str(FPS),
+         "-pix_fmt", "yuv420p", str(out)])
+    return out
+
+
+def _join(clips: list[Path], seg: list[float], scene_cut: list[bool], out: Path) -> Path:
+    """Crossfade all shots into one silent video. Every input is normalized first (see NORMALIZE)."""
+    inputs, fc = [], []
+    for i, c in enumerate(clips):
+        inputs += ["-i", str(c)]
+        fc.append(f"[{i}:v]{NORMALIZE}[n{i}]")
+    prev = "[n0]"
+    for i in range(1, len(clips)):
+        offset = sum(seg[:i])
+        trans = random.choice(["fadeblack", "fade", "fadeblack"]) if scene_cut[i] else random.choice(["fade", "dissolve"])
+        label = f"[x{i}]"
+        fc.append(f"{prev}[n{i}]xfade=transition={trans}:duration={XFADE}:offset={offset:.3f}{label}")
+        prev = label
+    run(["ffmpeg", "-y", "-loglevel", "error", *inputs, "-filter_complex", ";".join(fc),
+         "-map", prev, "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "14", "-r", str(FPS),
+         "-pix_fmt", "yuv420p", str(out)])
     return out
 
 
@@ -130,22 +156,8 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
         clips.append(_scene_clip(img, length, m, out))
         log(f"Shot {k}: {length:.1f}s {m}")
 
-    # 2) Chain crossfades
-    inputs, fc, prev = [], [], "[0:v]"
-    for c in clips:
-        inputs += ["-i", str(c)]
-    for i in range(1, len(clips)):
-        offset = sum(seg[:i])
-        trans = random.choice(["fadeblack", "fade", "fadeblack"]) if scene_cut[i] else random.choice(["fade", "dissolve"])
-        label = f"[x{i}]"
-        fc.append(f"{prev}[{i}:v]xfade=transition={trans}:duration={XFADE}:offset={offset:.3f}{label}")
-        prev = label
-    joined = workdir / "joined.mp4"
-    if len(clips) == 1:
-        joined = clips[0]
-    else:
-        run(["ffmpeg", "-y", "-loglevel", "error", *inputs, "-filter_complex", ";".join(fc),
-             "-map", prev, "-c:v", "libx264", "-preset", "veryfast", "-crf", "14", "-r", str(FPS), str(joined)])
+    # 2) Chain crossfades (every clip normalized to 1080x1920 / 30 fps / yuv420p / SAR 1, audio dropped)
+    joined = _join(clips, seg, scene_cut, workdir / "joined.mp4")
 
     # 3) Final pass: colour grade, grain, vignette, captions, audio mix
     font, fontsdir = font_setup()
