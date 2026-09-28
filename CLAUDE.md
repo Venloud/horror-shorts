@@ -95,7 +95,15 @@ so a new session can pick up without starting over.
    the owner's TikTok inbox and he posts them himself (account stays PUBLIC). Direct Post app review was
    submitted, but TikTok's guidelines reject "tools that upload to your own/team accounts", so expect rejection.
    Plan if needed: an approved third-party posting service, or turn this into a public product later.
-6. **Notify**: ntfy phone alert with caption + pinned comment (`NTFY_TOPIC`).
+   **YouTube Shorts** (`youtube.py`, Data API v3, scope youtube.upload): the same mp4 right after TikTok, in
+   publish.py. Title = story title + " #Shorts" (<=100 chars, cut at a word), description = the TikTok caption
+   text + #Shorts, tags from hashtags, category 24, containsSyntheticMedia true, not made for kids, privacy from
+   config `youtube_privacy` (`youtube_enabled` switches it off). Uploads from an UNVERIFIED Google Cloud project
+   are forced private until YouTube's API audit passes; the log/alert shows the privacy YouTube returned.
+   TikTok and YouTube are independent: the video leaves the buffer if at least one worked (never double-posted);
+   only if both fail does it stay for the next slot. Refresh token: run `pipeline/connect_youtube.py` once
+   locally (OAuth consent screen must be "In production", or Google expires the token after 7 days).
+6. **Notify**: ntfy phone alert with caption + pinned comment + YouTube link (`NTFY_TOPIC`).
 
 ## Buffer (build.yml fills it, daily.yml posts from it)
 - `build.yml` runs every 3 h: if fewer than 3 (`BUFFER_SIZE`) videos wait on the GitHub Release **"buffer"**
@@ -105,9 +113,9 @@ so a new session can pick up without starting over.
   Actions cache (`last-images-*`) after each build.
 - `build.yml` "test" input (workflow_dispatch): no Cloudflare (reuses the cached images if the scene count
   matches, else local SD-Turbo), not added to the buffer, no history, mp4 kept as an artifact, ntfy "[TEST]".
-- `daily.yml` (`pipeline/publish.py`) does NO generation: oldest buffered video -> TikTok -> delete from buffer ->
-  TikTok result + "posted" time saved in history -> phone alert (+ "buffer low" alert at 1 left, "EMPTY" at 0).
-  If TikTok fails, the video stays in the buffer for the next slot.
+- `daily.yml` (`pipeline/publish.py`) does NO generation: oldest buffered video -> TikTok + YouTube Shorts ->
+  delete from buffer -> both results + "posted" time saved in history -> phone alert with the YouTube link
+  (+ "buffer low" alert at 1 left, "EMPTY" at 0). Only if both platforms fail does the video stay in the buffer.
 - Note: while the repo is public, buffered (unposted) videos on the release are publicly downloadable.
 
 ## Schedule
@@ -127,7 +135,7 @@ so a new session can pick up without starting over.
 - Test renders locally before shipping when possible.
 
 ## Future ideas (not now)
-- Repost to YouTube Shorts, Instagram Reels, Snapchat after the TikTok trial.
+- Repost to Instagram Reels, Snapchat (YouTube Shorts is live).
 - More channels on the same bot: football facts, Bible stories, finance/side hustles ("side hustles that got
   patched", educational only, not financial advice), tech devices (needs real product images, affiliate links).
 - Turn it into a public product (working names: ReelPilot / ChannelPilot): users run it on their own GitHub
@@ -136,5 +144,5 @@ so a new session can pick up without starting over.
 
 ## Secrets used
 GEMINI_API_KEY, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, TIKTOK_CLIENT_KEY, TIKTOK_CLIENT_SECRET,
-TIKTOK_REFRESH_TOKEN, NTFY_TOPIC, HF_TOKEN, FREESOUND_API_KEY, GH_PAT. (POLLINATIONS_KEY is no longer used.)
+TIKTOK_REFRESH_TOKEN, NTFY_TOPIC, HF_TOKEN, FREESOUND_API_KEY, GH_PAT, YT_CLIENT_ID, YT_CLIENT_SECRET, YT_REFRESH_TOKEN. (POLLINATIONS_KEY is no longer used.)
 build.yml/daily.yml also use the built-in `github.token` for the buffer release.

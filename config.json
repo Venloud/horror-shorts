@@ -82,6 +82,8 @@
 
   "mascot_intro": false,
   "tiktok_mode": "draft",
+  "youtube_enabled": true,
+  "youtube_privacy": "public",
   "direct_privacy": "SELF_ONLY",
   "tiktok_ai_label": true
 }

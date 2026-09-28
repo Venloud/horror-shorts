@@ -28,13 +28,16 @@ jobs:
           python-version: "3.11"
 
       - name: Install
-        run: pip install -q requests
+        run: pip install -q requests google-api-python-client google-auth
 
-      - name: Post the oldest buffered video to TikTok
+      - name: Post the oldest buffered video to TikTok + YouTube Shorts
         env:
           TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
           TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
           TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           GITHUB_TOKEN: ${{ github.token }}
         run: cd pipeline && python publish.py

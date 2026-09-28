@@ -61,6 +61,7 @@ def main() -> int:
         meta.write_text(json.dumps({
             "stamp": stamp, "title": story["title"], "caption_text": caption,
             "pinned_comment": story.get("pinned_comment", ""), "mode": story.get("mode", "fiction"),
+            "hashtags": story.get("hashtags", []),
             "true_story": bool(story.get("true_story")), "seconds": round(narration["duration"], 1),
         }, indent=2, ensure_ascii=False))
 
