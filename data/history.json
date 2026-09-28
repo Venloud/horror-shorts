@@ -240,5 +240,30 @@
       "error": "RefreshError: ('unauthorized_client: Unauthorized', {'error': 'unauthorized_client', 'error_description': 'Unauthorized'})"
     },
     "posted": "2026-09-28_1330"
+  },
+  {
+    "date": "2026-09-28_1953",
+    "source": "inbox/elisa_lam.txt",
+    "skipped": true
+  },
+  {
+    "date": "2026-09-28_1953",
+    "story_id": "1181ded8eba0",
+    "title": "The Disappearance of D. B. Cooper",
+    "premise": "A man hijacked a passenger flight in 1971, collected a ransom, and parachuted into the night, never to be seen again.",
+    "subgenre": "real unsolved mystery",
+    "mode": "mystery",
+    "true_story": true,
+    "case": "D. B. Cooper",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Pacific Northwest, 1971",
+    "threat": "An unidentified airline hijacker with an alleged bomb",
+    "twist": "The ransom money was found years later, but the hijacker and the rest of the cash vanished without a trace.",
+    "score": null,
+    "seconds": 59.5,
+    "voice_speed": 1.161,
+    "buffered": "2026-09-28_1953",
+    "tiktok": null
   }
 ]
