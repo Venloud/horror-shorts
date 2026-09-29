@@ -1,0 +1,73 @@
+name: yt_upload_test
+
+# Manual: re-upload an already posted video (artifact "video-N" of a daily.yml run) to YouTube Shorts with
+# pipeline/youtube.py, the same way publish.py does. Read-only for the repo: no buffer, history, counter or TikTok.
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "daily.yml run id that has the artifact"
+        required: true
+      artifact:
+        description: "artifact name"
+        default: "video-26"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install -q requests google-api-python-client google-auth
+
+      - name: Download the posted video
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifact }}
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+          path: yt_test
+
+      - name: Upload to YouTube
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          ARTIFACT: ${{ inputs.artifact }}
+        working-directory: pipeline
+        shell: python
+        run: |
+          import os, re, sys
+          from pathlib import Path
+          from common import ROOT, load_history
+          import youtube
+
+          folder = ROOT / "yt_test"
+          mp4 = folder / "final.mp4"
+          caption_txt = (folder / "caption.txt").read_text()
+          # publish.py wrote caption.txt = caption_text + "\n\nPIN: " + pinned_comment
+          caption_text = caption_txt.split("\n\nPIN: ")[0].strip()
+
+          # The artifact has no title/hashtags: take them from the history entry with this video number (read only).
+          m = re.search(r"(\d+)$", os.environ["ARTIFACT"])
+          entry = next((h for h in load_history() if m and h.get("video_number") == int(m.group(1))), {})
+          title = entry.get("title") or caption_text.splitlines()[0]
+          hashtags = entry.get("hashtags")
+          print(f"File: {mp4} ({mp4.stat().st_size / 1e6:.1f} MB)")
+          print(f"Title: {youtube.make_title(title)}")
+          print(f"Tags: {youtube.make_tags(hashtags or [], caption_text)}")
+
+          if not youtube.configured():
+              sys.exit("YouTube secrets missing (YT_CLIENT_ID / YT_CLIENT_SECRET / YT_REFRESH_TOKEN)")
+          yt = youtube.upload(mp4, title, caption_text, hashtags)
+          print(f"Video URL: {yt['url']}")
+          print(f"Privacy YouTube returned: {yt['privacy']} (asked for: {yt['wanted']})")
