@@ -29,10 +29,12 @@ so a new session can pick up without starting over.
    inbox runs don't count toward the rotation. Made-up fiction was dropped from the rotation on purpose: real
    legends with a pop-culture tie-in perform best (the Strigoi video got 232 views and 47% average watch time).
    Fiction is only the fallback when a mode fails (still behind the 80/100 quality gate).
-   **Groq backup writer** (flag `groq_backup`, `groq_model` llama-3.3-70b-versatile, only if GROQ_API_KEY):
+   **Groq backup writer** (flag `groq_backup`, `groq_model` openai/gpt-oss-120b, only if GROQ_API_KEY):
    `story.model_chain()` = first Gemini model -> Groq (OpenAI-compatible JSON mode, schema spelled out in the
    prompt, same prompts + fact lock) -> the other Gemini models. One Groq failure = next model at once. Every story
    logs "Written by gemini (...)" / "groq (...)"; history `writer`. Cloudflare text models are never used.
+   Groq vision (`groq_vision_model` qwen/qwen3.8-27b, flag `groq_vision_qa`) is the backup image-QA checker when
+   Gemini answers 429 (log reason "groq..."); without it that image's QA is skipped as before.
    - `fiction` (fallback only): written with the OWNER'S OWN instructions in `prompts/fiction_*.txt` (Reddit-style
      thriller/suspense/mystery). `fiction_creepy_job.txt` is his text verbatim; `fiction_reddit_thriller.txt` is a
      widened version with `{subgenre}`. `subgenre_prompts` in config maps subgenres to files.

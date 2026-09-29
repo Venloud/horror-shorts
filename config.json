@@ -42,7 +42,9 @@
   "story_modes": ["lore", "mystery", "lore", "case", "coldcase"],
 
   "groq_backup": true,
-  "groq_model": "llama-3.3-70b-versatile",
+  "groq_model": "openai/gpt-oss-120b",
+  "groq_vision_qa": true,
+  "groq_vision_model": "qwen/qwen3.8-27b",
   "llm_models": ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-flash-latest"],
 
   "subgenres": [

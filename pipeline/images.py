@@ -726,8 +726,8 @@ def check_image(path: Path, request: str, wait: bool = True) -> tuple[bool | Non
                               "generationConfig": {"temperature": 0, "maxOutputTokens": 20}})
     except Exception as e:  # noqa: BLE001
         return None, f"error {str(e)[:60]}"
-    if r.status_code == 429:
-        return None, "rate_limited"
+    if r.status_code == 429:  # Gemini rate-limited: ask Groq's vision model instead (if set up), else skip
+        return _groq_check(buf.getvalue(), request) or (None, "rate_limited")
     if r.status_code != 200:
         return None, f"http_{r.status_code}"
     try:
@@ -739,6 +739,36 @@ def check_image(path: Path, request: str, wait: bool = True) -> tuple[bool | Non
     if answer.upper().startswith("NO"):
         return False, re.sub(r"^NO\W*", "", answer, flags=re.IGNORECASE).strip().lower()[:60] or "mismatch"
     return None, "unclear_answer"
+
+
+def _groq_check(jpeg: bytes, request: str) -> tuple[bool | None, str] | None:
+    """Backup QA checker (flag groq_vision_qa, GROQ_API_KEY): Groq's vision model answers the same question.
+    None = not available / failed (the caller then skips QA for this image)."""
+    key = env("GROQ_API_KEY", required=False)
+    if not key or not CONFIG.get("groq_vision_qa", True):
+        return None
+    model = CONFIG.get("groq_vision_model", "qwen/qwen3.8-27b")
+    try:
+        r = requests.post("https://api.groq.com/openai/v1/chat/completions", timeout=30,
+                          headers={"Authorization": f"Bearer {key}"}, json={
+                              "model": model, "temperature": 0, "max_tokens": 400,
+                              "messages": [{"role": "user", "content": [
+                                  {"type": "text", "text": QA_QUESTION.format(request=request)},
+                                  {"type": "image_url", "image_url": {
+                                      "url": "data:image/jpeg;base64," + base64.b64encode(jpeg).decode()}}]}]})
+        if r.status_code != 200:
+            log(f"Groq vision QA: HTTP {r.status_code}")
+            return None
+        answer = (r.json()["choices"][0]["message"]["content"] or "").strip()
+        answer = re.sub(r"(?s)<think>.*?</think>", "", answer).strip()  # reasoning models may think out loud first
+    except Exception as e:  # noqa: BLE001
+        log(f"Groq vision QA failed ({str(e)[:80]})")
+        return None
+    if answer.upper().startswith("YES"):
+        return True, "groq"
+    if answer.upper().startswith("NO"):
+        return False, "groq: " + (re.sub(r"^NO\W*", "", answer, flags=re.IGNORECASE).strip().lower()[:60] or "mismatch")
+    return None
 
 
 _NAMES = {"_cloudflare": "cloudflare", "_hf_space": "hf_space", "_local_sd": "local_sd"}

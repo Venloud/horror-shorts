@@ -215,7 +215,7 @@ def model_chain() -> list[str]:
     after the first Gemini model. Cloudflare's text models are never used."""
     models = list(CONFIG["llm_models"])
     if CONFIG.get("groq_backup", True) and env("GROQ_API_KEY", required=False):
-        models.insert(1, "groq:" + CONFIG.get("groq_model", "llama-3.3-70b-versatile"))
+        models.insert(1, "groq:" + CONFIG.get("groq_model", "openai/gpt-oss-120b"))
     return models
 
 
@@ -232,7 +232,7 @@ def _call_groq(model: str, prompt: str, temperature: float = 1.0, as_json: bool 
         prompt += ("\n\nReply with ONLY one JSON object (no markdown) that follows this JSON schema exactly, "
                    "same field names:\n" + json.dumps(schema or SCHEMA))
     body = {"model": model, "messages": [{"role": "user", "content": prompt}], "temperature": min(1.0, temperature),
-            "max_tokens": 8000}
+            "max_tokens": 16000}  # gpt-oss reasons before it answers: leave room for both
     if as_json:
         body["response_format"] = {"type": "json_object"}
     r = requests.post(GROQ_URL, json=body, timeout=120, headers={"Authorization": f"Bearer {env('GROQ_API_KEY')}"})
