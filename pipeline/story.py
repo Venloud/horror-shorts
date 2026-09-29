@@ -45,6 +45,7 @@ SCHEMA = {
         "hashtags": {"type": "ARRAY", "items": {"type": "STRING"}},
         "pinned_comment": {"type": "STRING"},
         "hook_candidates": {"type": "ARRAY", "items": {"type": "STRING"}},
+        "fact_ledger": {"type": "ARRAY", "items": {"type": "STRING"}},
         "hook_scores": {"type": "ARRAY", "items": {"type": "STRING"}},
     },
     "required": ["title", "premise", "hook_overlay", "scenes", "twist_scene",
@@ -89,7 +90,7 @@ def edit_story(story: dict, api_key: str, sfx_list: str, rules: str) -> dict:
                                   sfx_list=sfx_list, rules=rules, words="120 to 140", hooks=hooks)
     try:
         edited = _run_models(prompt, api_key, temperature=0.5)
-        for k in ("characters", "locations"):  # keep the character / location sheets if the editor dropped them
+        for k in ("characters", "locations", "fact_ledger"):  # keep the sheets + fact ledger if the editor dropped them
             if story.get(k) and not edited.get(k):
                 edited[k] = story[k]
         log("Editor pass: story revised")
@@ -129,6 +130,9 @@ be {want} words (+-5), so the voiceover lands in the target length. {how}
 Rules: keep the same number of scenes and the same order; keep scene 1's FIRST sentence exactly; keep the exact
 sentence "This is a true story." if it is there; do not add facts, names or events that are not already in the
 story; keep the ending line's meaning. Only change image prompts of scenes whose content changed.
+Never rewrite the factual content while changing the length: every number, name, date, place and factual claim
+stays exactly the same (for true stories, the values in "fact_ledger" are locked). When shortening, remove
+repetition and filler first; when extending, add only sensory or transitional wording the story already supports.
 Return the whole story in the SAME JSON format.
 
 STORY:
@@ -444,10 +448,9 @@ The narration must be {lo} to {hi} words in total (about {round(lo / 2.4)}-{roun
 ## ALREADY USED (do not reuse the premise, setting, threat, or twist of any of these)
 {recent}
 """
-    prompt = prompt.replace("{place_note}", "" if cold_case else (
-        '- If the place matters to the story (a road, a bridge, a motel, a trail), open by naming the place and its '
-        'warning, e.g. "If you ever drive down Old Mill Road at night, never stop at the bridge." The place can be '
-        "invented. If the place doesn't matter, don't force it.\n"))
+    prompt = prompt.replace("{place_note}", (
+        "- Do not open with the location, date, year, job title or background. Open with the strangest thing that "
+        "happened. Reveal where and when after the hook.\n"))
     if inspiration:
         prompt += ("\n## INSPIRATION\nTake only the core idea and the feeling of this piece and write a NEW, ORIGINAL story "
                    "from it: new characters, names, setting details, twist and ending. Never copy its sentences.\n\"\"\"\n"
@@ -637,6 +640,7 @@ def mark_true_story(story: dict) -> dict:
 
 FACT_PROMPT = """You are the fact checker of a TRUE-story video. These details in the narration are NOT found in the
 SOURCE: {items}.
+The story's "fact_ledger" lists the locked values; correct it too if one of its values is not in the SOURCE.
 Fix each one from the SOURCE: use the exact number, amount, date, year, name, place or organization the source
 gives, or drop the detail if the source doesn't have it. Change nothing else: same scenes, same order, about the
 same length; keep scene 1's first sentence unless it contains one of these details; keep the exact sentence
@@ -677,7 +681,13 @@ def fact_check(story: dict, source: str, api_key: str, exact: bool = False) -> d
     """True stories, BEFORE voicing: every number/amount/date/year/name/place/organization must be in the source.
     Unsupported ones are corrected from the source by Gemini. exact=True (owner's TRUE SCRIPT): only log them."""
     text = " ".join(s["narration"] for s in story.get("scenes", []))
-    items = unsupported_details(text, source)
+    ledger = [str(x) for x in story.get("fact_ledger") or []]
+    if ledger:
+        log(f"Fact ledger ({len(ledger)} values): " + " | ".join(ledger)[:600])
+        bad = unsupported_details(" ".join(v.split(":", 1)[-1] for v in ledger), source)
+        if bad:
+            log(f"Fact ledger values NOT found in the source (ignored): {', '.join(bad)}")
+    items = unsupported_details(text, source)  # the source is the authority; the ledger is extracted from it
     if not items:
         log("Fact check: every number and name in the narration is in the source")
         return story

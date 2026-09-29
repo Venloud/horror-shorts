@@ -111,7 +111,9 @@ def animate(image: Path, shot_prompt: str, out: Path) -> Path | None:
         log(f"AI animation off (gradio_client not installed: {e})")
         return None
     prompt = (f"{shot_prompt}. Subtle cinematic motion: slow camera push-in, fog drifting, small natural "
-              f"movements, eerie atmosphere, consistent illustrated art style, no sudden changes")
+              f"movements, eerie atmosphere, consistent illustrated art style, no sudden changes. Preserve the exact "
+              f"composition, character identity, clothing, location and object positions. Do not add or remove "
+              f"people or objects. Do not morph faces.")
     start = time.time()
     for space in s["spaces"]:
         if time.time() - start > s["total_budget"]:

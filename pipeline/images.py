@@ -320,36 +320,64 @@ def _looks(story: dict, scene_i: int, shot: str) -> tuple[dict | None, list[dict
     return loc, chars
 
 
-def build_prompt(story: dict, scene_i: int, shot: str, style: str) -> str:
-    """Cloudflare prompt: the shot FIRST, then the fixed character and location looks, then the art style,
-    so every image of a story shares the same people, places and style (and the shot is never cut off)."""
+_CAMERA = re.compile(r"\b(extreme close-up|close-up|close up|medium shot|medium close-up|wide shot|wide establishing "
+                     r"shot|establishing shot|long shot|full shot|over-the-shoulder|low angle|high angle|eye-level|"
+                     r"bird's-eye view|top-down|profile shot|two-shot|point-of-view|pov)\b", re.IGNORECASE)
+
+
+def _blocks(story: dict, scene_i: int, shot: str) -> tuple[list[str], str, str]:
+    """The LOCKED character and setting blocks for this shot (word-for-word from the sheets, never rewritten) and
+    the camera framing (scene 'camera' field, else the framing words already in the shot)."""
     loc, chars = _looks(story, scene_i, shot)
-    parts = [f"Shot: {shot}"] + [f"{c['name']}: {c['look']}" for c in chars]
-    if loc:
-        parts.append(f"Setting: {loc['look']}")
-    parts.append(style)
-    return ". ".join(p.strip().rstrip(".") for p in parts if p.strip())
+    char_blocks = [f"{c['name']}: {c['look'].strip().rstrip('.')}" for c in chars]
+    setting = f"{loc['name']}: {loc['look'].strip().rstrip('.')}" if loc else ""
+    scene = story["scenes"][scene_i]
+    camera = scene.get("camera") or ", ".join(dict.fromkeys(m.group(0).lower() for m in _CAMERA.finditer(shot)))
+    return char_blocks, setting, camera
+
+
+def _assemble(shot: str, chars: list[str], setting: str, camera: str, style: str) -> str:
+    parts = [f"SHOT: {shot.strip().rstrip('.')}"]
+    if chars:
+        parts.append("CHARACTERS: " + "; ".join(chars))
+    if setting:
+        parts.append(f"SETTING: {setting}")
+    if camera:
+        parts.append(f"CAMERA: {camera}")
+    parts.append(f"STYLE: {style}")
+    return ". ".join(parts)
+
+
+def build_prompt(story: dict, scene_i: int, shot: str, style: str | None = None) -> str:
+    """Cloudflare FLUX: SHOT, CHARACTERS, SETTING, CAMERA, STYLE (rich style `image_style_cf`)."""
+    style = style or CONFIG.get("image_style_cf") or CONFIG.get("image_style", "")
+    chars, setting, camera = _blocks(story, scene_i, shot)
+    return _assemble(shot, chars, setting, camera, style)
 
 
 def build_short_prompt(story: dict, scene_i: int, shot: str, max_words: int = 60) -> str:
-    """Spaces / SD-Turbo prompt (SD-Turbo's text encoder stops at 77 tokens): shot first, then 1-2 short
-    character/location cues, then a SHORT style tag. Never 'comic', 'graphic novel' or 'panels': those words
-    make these models draw comic pages and panel grids."""
-    loc, chars = _looks(story, scene_i, shot)
-    cues = [" ".join(c["look"].split()[:8]) for c in chars[:1]]
-    if loc:
-        cues.append(" ".join(loc["look"].split()[:6]))
-    shot_words = _PANEL_WORDS.sub("", shot).split()
-    room = max_words - len(shot_words) - len(SHORT_STYLE.split())
-    cue_words: list[str] = []
-    for cue in cues[:2]:
-        w = _PANEL_WORDS.sub("", cue).split()
-        if room - len(cue_words) - len(w) >= 0:
-            cue_words += w + [","]
-    text = " ".join(shot_words[:max_words - len(SHORT_STYLE.split())])
-    if cue_words:
-        text += ", " + " ".join(cue_words).strip(" ,")
-    return re.sub(r"\s+([,.])", r"\1", f"{text}, {SHORT_STYLE}").strip()
+    """Spaces / SD-Turbo (SD-Turbo reads only ~77 tokens): same SHOT, CHARACTERS, SETTING, CAMERA, STYLE order with
+    the short `image_style_fallback`, under ~60 words, never "graphic novel", "comic" or "panels". Character and
+    setting blocks are kept word-for-word; if the budget is tight, whole blocks are dropped (setting first, then
+    extra characters), never cut or rewritten."""
+    style = _PANEL_WORDS.sub("", CONFIG.get("image_style_fallback", SHORT_STYLE))
+    shot = _PANEL_WORDS.sub("", shot)
+    chars, setting, camera = _blocks(story, scene_i, shot)
+    chars = [_PANEL_WORDS.sub("", c) for c in chars]
+    setting = _PANEL_WORDS.sub("", setting)
+    words = lambda t: len(t.split())
+    text = _assemble(shot, chars, setting, camera, style)
+    while words(text) > max_words and (setting or len(chars) > 1):
+        if setting:
+            setting = ""
+        else:
+            chars = chars[:-1]
+        text = _assemble(shot, chars, setting, camera, style)
+    if words(text) > max_words:  # still too long: the shot itself is huge; keep style, trim the shot's tail
+        fixed = words(_assemble("", chars, setting, camera, style))
+        shot = " ".join(shot.split()[:max(12, max_words - fixed)])
+        text = _assemble(shot, chars, setting, camera, style)
+    return re.sub(r"\s{2,}", " ", text).strip()
 
 
 def _virtual_shot(src: Path, dest: Path, shot: str) -> None:
@@ -412,7 +440,7 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
         cached = _cached_images(story, outdir)
         if cached:
             return cached
-    style = CONFIG["image_style"]
+    style = CONFIG.get("image_style_cf") or CONFIG.get("image_style", "")
     base_seed = random.randint(1, 2_000_000_000)
     use_cf = bool(env("CLOUDFLARE_API_TOKEN", required=False)) and not testing
 

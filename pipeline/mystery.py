@@ -33,6 +33,8 @@ STRUCTURE (follow exactly)
 4. LAST SCENE = what remains unexplained, ending with a direct question to the viewer, e.g. "What do you think really happened?"
 
 HARD RULES
+- FACT LOCK: before writing, build a fact ledger from the SOURCE in "fact_ledger" (one "label: value" line each: names, numbers, money, dates, years, ages, places, counts, organizations, vehicles/aircraft, quotes). Write the story ONLY from that ledger. Values may be turned into spoken words but NEVER changed, rounded, estimated or slangified ("$200,000" -> "two hundred thousand dollars"; never "twenty-k", "twenty thousand" or "about two hundred thousand"). Before returning, silently compare every value in the narration with the ledger.
+- Never distort a fact to make a hook more shocking. A specific true detail beats a dramatic interpretation.
 - TRUE FACTS ONLY. Use only details in the source text. Do not invent names, quotes, dates, numbers, dialogue, or details. If unsure, leave it out.
 - Never state or imply that a named real person is guilty of anything the source doesn't establish. Theories must be labelled as theories.
 - Be respectful to victims and families. No graphic injury detail, no gore, no mocking.
@@ -47,7 +49,9 @@ IMAGE PROMPTS
 
 - No all-seeing eye, eye-in-a-triangle or Illuminati-style symbols in any image, UNLESS the story itself is about that topic (e.g. a video about the Illuminati or the eye on the dollar bill). Eyes in the dark are fine.
 - Keep every shot simple and drawable: one clear subject from a normal eye-level angle. Never ask for over-the-shoulder shots, people seen from behind, close-ups of hands or isolated body parts, or extreme low/high angles (the image AI twists bodies and puts faces on the back of heads). Prefer places, objects and wide shots.
-- CONSISTENCY: fill "locations" with the 1-3 key places (short "name" + fixed "look" matching the real place and era) and set each scene's "location". List recurring figures in "characters" (e.g. "the hijacker": "man in his 40s, short dark hair, dark business suit, thin black tie, sunglasses, 1970s"). In image prompts, refer to them by that exact name; their look is added automatically.
+- ONE FRAME ONLY: every image is ONE continuous full frame, like a single frame from a film. Never comic panels, page layouts, storyboards, collages, split screens or multiple versions of a scene.
+- TRUE STORY VISUALS: keep objects, clothing, vehicles, buildings and era historically accurate. If the source doesn't establish a visual detail, keep it generic.
+- CONSISTENCY: fill "locations" with the 1-3 key places (short "name" + fixed "look", max 15 words, matching the real place and era) and set each scene's "location". List recurring figures in "characters" (e.g. "the hijacker": "man in his 40s, short dark hair, dark business suit, thin black tie, sunglasses, 1970s"). In image prompts, refer to them by that exact name; their look is added automatically.
 - POP CULTURE HOOK: if the source says a famous movie, TV show, video game, song or book was based on or inspired by this (for example, the Beast of Gevaudan appears in Teen Wolf), add ONE short line near the end that connects it, e.g. "Sound familiar? It's the same beast from Teen Wolf." Put that title in the caption and one hashtag. ONLY use references stated in the source. Never invent or guess one; if the source has none, skip this.
 
 SOUND EFFECTS
@@ -93,6 +97,8 @@ STRUCTURE (follow exactly). It must feel like a complete mini-story with a clear
 6. LAST SCENE = a chilling closing line that ties back to the hook and ends the video cleanly, e.g. "So next time you [situation]... maybe don't [action]."
 
 HARD RULES
+- FACT LOCK: before writing, build a fact ledger from the SOURCE in "fact_ledger" (one "label: value" line each: names, numbers, money, dates, years, ages, places, counts, organizations, vehicles/aircraft, quotes). Write the story ONLY from that ledger. Values may be turned into spoken words but NEVER changed, rounded, estimated or slangified ("$200,000" -> "two hundred thousand dollars"; never "twenty-k", "twenty thousand" or "about two hundred thousand"). Before returning, silently compare every value in the narration with the ledger.
+- Never distort a fact to make a hook more shocking. A specific true detail beats a dramatic interpretation.
 - Use only facts from the source. Present the legend as a legend ("the story goes", "people believed"), never as proven fact.
 - Respectful to the cultures these stories come from: no mocking, no stereotypes, and no treating anyone's religion as evil.
 - No gore, no harm to children, no sexual content.
@@ -106,7 +112,8 @@ IMAGE PROMPTS
 
 - No all-seeing eye, eye-in-a-triangle or Illuminati-style symbols in any image, UNLESS the story itself is about that topic (e.g. a video about the Illuminati or the eye on the dollar bill). Eyes in the dark are fine.
 - Keep every shot simple and drawable: one clear subject from a normal eye-level angle. Never ask for over-the-shoulder shots, people seen from behind, close-ups of hands or isolated body parts, or extreme low/high angles (the image AI twists bodies and puts faces on the back of heads). Prefer places, objects and wide shots.
-- CONSISTENCY: fill "locations" with the 1-3 key places (short "name" + fixed "look" matching the real place and era) and set each scene's "location". List recurring figures in "characters" (e.g. "the hijacker": "man in his 40s, short dark hair, dark business suit, thin black tie, sunglasses, 1970s"). In image prompts, refer to them by that exact name; their look is added automatically.
+- ONE FRAME ONLY: every image is ONE continuous full frame, like a single frame from a film. Never comic panels, page layouts, storyboards, collages, split screens or multiple versions of a scene.
+- CONSISTENCY: fill "locations" with the 1-3 key places (short "name" + fixed "look", max 15 words, matching the real place and era) and set each scene's "location". List recurring figures in "characters" (e.g. "the hijacker": "man in his 40s, short dark hair, dark business suit, thin black tie, sunglasses, 1970s"). In image prompts, refer to them by that exact name; their look is added automatically.
 - POP CULTURE HOOK: if the source says a famous movie, TV show, video game, song or book was based on or inspired by this (for example, the Beast of Gevaudan appears in Teen Wolf), add ONE short line near the end that connects it, e.g. "Sound familiar? It's the same beast from Teen Wolf." Put that title in the caption and one hashtag. ONLY use references stated in the source. Never invent or guess one; if the source has none, skip this.
 
 SOUND EFFECTS
@@ -152,6 +159,8 @@ STRUCTURE (follow exactly)
 5. LAST SCENE: one strong closing line, then a short question to the viewer.
 
 HARD RULES
+- FACT LOCK: before writing, build a fact ledger from the SOURCE in "fact_ledger" (one "label: value" line each: names, numbers, money, dates, years, ages, places, counts, organizations, vehicles/aircraft, quotes). Write the story ONLY from that ledger. Values may be turned into spoken words but NEVER changed, rounded, estimated or slangified ("$200,000" -> "two hundred thousand dollars"; never "twenty-k", "twenty thousand" or "about two hundred thousand"). Before returning, silently compare every value in the narration with the ledger.
+- Never distort a fact to make a hook more shocking. A specific true detail beats a dramatic interpretation.
 - TRUE FACTS ONLY. Never invent names, quotes, dates, numbers, dialogue or details. If unsure, leave it out.
 - Only call someone guilty if the source says they were convicted or confessed. Otherwise say "suspected" or "accused".
 - Respectful to victims and families. No graphic injury detail, no gore, no mocking.
@@ -166,7 +175,9 @@ IMAGE PROMPTS
 
 - No all-seeing eye, eye-in-a-triangle or Illuminati-style symbols in any image, UNLESS the story itself is about that topic (e.g. a video about the Illuminati or the eye on the dollar bill). Eyes in the dark are fine.
 - Keep every shot simple and drawable: one clear subject from a normal eye-level angle. Never ask for over-the-shoulder shots, people seen from behind, close-ups of hands or isolated body parts, or extreme low/high angles (the image AI twists bodies and puts faces on the back of heads). Prefer places, objects and wide shots.
-- CONSISTENCY: fill "locations" with the 1-3 key places (short "name" + fixed "look" matching the real place and era) and set each scene's "location". List recurring figures in "characters" (e.g. "the hijacker": "man in his 40s, short dark hair, dark business suit, thin black tie, sunglasses, 1970s"). In image prompts, refer to them by that exact name; their look is added automatically.
+- ONE FRAME ONLY: every image is ONE continuous full frame, like a single frame from a film. Never comic panels, page layouts, storyboards, collages, split screens or multiple versions of a scene.
+- TRUE STORY VISUALS: keep objects, clothing, vehicles, buildings and era historically accurate. If the source doesn't establish a visual detail, keep it generic.
+- CONSISTENCY: fill "locations" with the 1-3 key places (short "name" + fixed "look", max 15 words, matching the real place and era) and set each scene's "location". List recurring figures in "characters" (e.g. "the hijacker": "man in his 40s, short dark hair, dark business suit, thin black tie, sunglasses, 1970s"). In image prompts, refer to them by that exact name; their look is added automatically.
 - POP CULTURE HOOK: if the source says a famous movie, TV show, video game, song or book was based on or inspired by this (for example, the Beast of Gevaudan appears in Teen Wolf), add ONE short line near the end that connects it, e.g. "Sound familiar? It's the same beast from Teen Wolf." Put that title in the caption and one hashtag. ONLY use references stated in the source. Never invent or guess one; if the source has none, skip this.
 
 SOUND EFFECTS

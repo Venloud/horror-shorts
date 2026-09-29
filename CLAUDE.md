@@ -69,6 +69,11 @@ so a new session can pick up without starting over.
      speed is adjusted within `voice_speed_range` [1.0, 1.2]; if still outside, Gemini trims/extends by the needed
      word count (`story.resize_story`, keeps scene 1's first sentence + the TRUE line, max 2 tries). Exact-words
      inbox SCRIPTs only get the speed change, never a rewrite.
+   - **FACT LOCK** (mystery.py MYSTERY/LORE/TRUE prompts): the model first writes a `fact_ledger` from the SOURCE
+     (names, numbers, money, dates, ages, places, counts, organizations, vehicles/aircraft, quotes) and writes only
+     from it; values may become spoken words but are never changed, rounded, estimated or slangified. "Never
+     distort a fact to make a hook more shocking." The ledger is saved in story.json and logged; resize_story keeps
+     every factual value unchanged.
    - **TRUE-STORY FACT CHECK** (before voicing; `story.fact_check`, for `case`, `inbox-true`, `mystery`):
      `unsupported_details()` lists every number > 10, money amount, year, slang amount ("20k", "twenty-k") and
      capitalized name/place/organization in the narration that isn't in the source (numbers match however they're
@@ -108,10 +113,15 @@ so a new session can pick up without starting over.
    `characters` entry whose fixed look is reused word-for-word in every shot. This replaced the old
    silhouettes-only rule; the build_prompt "seen from behind, face not visible" auto-add was removed with it.
    The occult / all-seeing-eye / floating-eyes ban still applies.
-   **Image prompts**: Cloudflare = `build_prompt`: shot FIRST, then character/location looks, then `image_style`.
-   Spaces + SD-Turbo = `build_short_prompt`: shot first, 1-2 short character/location cues, then
-   "single full-frame dark cinematic illustration, painterly", max ~60 words, and never "graphic novel", "comic" or
-   "panels" (long style-first prompts made them draw comic-page grids; SD-Turbo also cuts prompts at 77 tokens).
+   **Image prompts** (every provider): `SHOT: <action/event, subject, key object>. CHARACTERS: <locked blocks>.
+   SETTING: <locked block>. CAMERA: <framing>. STYLE: <provider style>`. Character/setting blocks are the sheet's
+   "look" word-for-word every time (max 15 words each, never rewritten). Styles are split in config:
+   `image_style_cf` (rich, Cloudflare FLUX) and `image_style_fallback` (short, Spaces + SD-Turbo). Fallback prompts
+   stay under ~60 words (whole blocks are dropped, setting first, never cut) and never say "graphic novel",
+   "comic" or "panels" (they made comic-page grids; SD-Turbo also reads only ~77 tokens). scene_plan.txt and the
+   mystery.py prompts add ONE FRAME ONLY (one continuous film frame, never panels/collages/storyboards/split
+   screens) and, for real stories, TRUE STORY VISUALS (historically accurate objects/clothing/vehicles/era;
+   generic when the source doesn't say).
    Negative prompt (`images.NEGATIVE`: comic page, multiple panels, panel grid, collage, split screen, text,
    letters, speech bubbles, watermark) is passed to any Space that exposes `negative_prompt`; today none of the
    three sources uses one (Cloudflare FLUX / FLUX Spaces have no such input, SD-Turbo runs at guidance 0).
@@ -121,7 +131,7 @@ so a new session can pick up without starting over.
    Skipped for the rest of the run on a Gemini 429; never blocks the build. Log: provider, YES/NO, redraws.
    Consistency: the scene plan outputs `characters` and `locations` sheets; the code injects the fixed looks
    into every prompt (style first, then setting, then character looks, then the shot).
-   Art style (config `image_style`): comic / storybook illustration, NOT photoreal. Owner chose to keep comic
+   Art style (config `image_style_cf` / `image_style_fallback`): comic / storybook illustration, NOT photoreal. Owner chose to keep comic
    only (not the 1980s found-photo look).
 4. **Render** (`render.py`, `effects.py`, `ai_motion.py`), FFmpeg 1080x1920:
    - Hook shot: real AI animation via free Hugging Face ZeroGPU Spaces (list in config `ai_motion.spaces`,
