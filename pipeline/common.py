@@ -58,3 +58,22 @@ def load_history() -> list[dict]:
 def save_history(items: list[dict]) -> None:
     HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
     HISTORY_FILE.write_text(json.dumps(items, indent=2, ensure_ascii=False))
+
+
+# Gemini's free DAILY quota: once a call answers 429 "exceeded your current quota" (not a per-minute limit), every
+# module stops calling Gemini for the rest of the run and goes to Groq (writing, critic, image QA) right away.
+GEMINI = {"out": False}
+
+
+def gemini_out() -> bool:
+    return GEMINI["out"]
+
+
+def note_gemini_429(body: str) -> bool:
+    """Call with the body of a Gemini 429. Marks Gemini out for this run if it's the daily quota. True = out."""
+    text = body or ""
+    daily = ("exceeded your current quota" in text.lower() or "PerDay" in text) and "PerMinute" not in text
+    if daily and not GEMINI["out"] and CONFIG.get("gemini_quota_switch", True):
+        GEMINI["out"] = True
+        log("Gemini daily quota used up: no more Gemini calls this run (Groq writes and checks images instead)")
+    return GEMINI["out"]

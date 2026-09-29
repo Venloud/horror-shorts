@@ -7,7 +7,7 @@ from collections import Counter
 
 import requests
 
-from common import CONFIG, env, log
+from common import CONFIG, env, gemini_out, log, note_gemini_429
 
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
@@ -194,9 +194,13 @@ def _call_gemini(model: str, prompt: str, api_key: str, temperature: float = 1.0
             "HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH",
             "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT")],
     }
+    if gemini_out() and any(m.startswith("groq:") for m in model_chain()):
+        raise RuntimeError(f"{model} skipped: Gemini daily quota used up (429)")
     _gemini_pace()
     r = requests.post(GEMINI_URL.format(model=model), json=body, timeout=120,
                       headers={"x-goog-api-key": api_key})
+    if r.status_code == 429:
+        note_gemini_429(r.text)
     if r.status_code != 200:
         raise RuntimeError(f"{model} HTTP {r.status_code}: {r.text[:400]}")
     data = r.json()
@@ -215,8 +219,11 @@ def model_chain() -> list[str]:
     """Story writers in order: config llm_models, with Groq (flag groq_backup, only if GROQ_API_KEY is set) right
     after the first Gemini model. Cloudflare's text models are never used."""
     models = list(CONFIG["llm_models"])
-    if CONFIG.get("groq_backup", True) and env("GROQ_API_KEY", required=False):
+    groq = CONFIG.get("groq_backup", True) and env("GROQ_API_KEY", required=False)
+    if groq:
         models.insert(1, "groq:" + CONFIG.get("groq_model", "openai/gpt-oss-120b"))
+    if gemini_out():  # daily quota used up earlier in this run: Groq only, no more Gemini calls
+        models = [m for m in models if m.startswith("groq:")] or models
     return models
 
 
@@ -519,10 +526,14 @@ def _json_call(prompt: str, api_key: str, temperature: float = 0.3) -> dict:
         try:
             if model.startswith("groq:"):
                 return _call_groq(model[5:], prompt, temperature, True, {"type": "OBJECT"})
+            if gemini_out():
+                continue
             gen = {"temperature": temperature, "responseMimeType": "application/json"}
             _gemini_pace()
             r = requests.post(GEMINI_URL.format(model=model), timeout=90, headers={"x-goog-api-key": api_key},
                               json={"contents": [{"role": "user", "parts": [{"text": prompt}]}], "generationConfig": gen})
+            if r.status_code == 429:
+                note_gemini_429(r.text)
             if r.status_code != 200:
                 raise RuntimeError(f"{model} HTTP {r.status_code}")
             parts = r.json()["candidates"][0]["content"]["parts"]

@@ -34,7 +34,10 @@ so a new session can pick up without starting over.
    prompt, same prompts + fact lock) -> the other Gemini models. One Groq failure = next model at once. Every story
    logs "Written by gemini (...)" / "groq (...)"; history `writer`. Cloudflare text models are never used.
    Groq vision (`groq_vision_model` qwen/qwen3.8-27b, flag `groq_vision_qa`) is the backup image-QA checker when
-   Gemini answers 429 (log reason "groq..."); without it that image's QA is skipped as before.
+   Gemini answers 429 or errors (log reason "groq..."); without it that image's QA is skipped as before.
+   **Gemini daily quota** (flag `gemini_quota_switch`, `common.note_gemini_429`): a 429 "exceeded your current
+   quota" that isn't a per-minute limit marks Gemini out for the rest of the run: model_chain() = Groq only, image
+   QA goes straight to Groq vision, dedupe/shorten helpers use Groq; no per-call retries.
    - `fiction` (fallback only): written with the OWNER'S OWN instructions in `prompts/fiction_*.txt` (Reddit-style
      thriller/suspense/mystery). `fiction_creepy_job.txt` is his text verbatim; `fiction_reddit_thriller.txt` is a
      widened version with `{subgenre}`. `subgenre_prompts` in config maps subgenres to files.
@@ -117,7 +120,9 @@ so a new session can pick up without starting over.
      ending explains what happened; the existing 80/100 score loop (3 drafts) is its critic.
    - **Captions** (flag `caption_search_style`, `notify.normalize_caption`): line 1 = the search phrase ("What
      happened to D.B. Cooper?") + " | illustrated horror story"; hashtags = 5 topic tags + #illustratedhorror
-     #horrorstory (+ #truestory only for true stories); fyp/foryou/viral removed.
+     #horrorstory (+ #truestory only for true stories); fyp/foryou/viral removed. True stories whose own facts
+     show an official ruling or a solved case (`notify.is_resolved`: ruled, convicted, confessed, cause of death,
+     accidental drowning...) never get "unsolved" / #unsolved (caption "Unsolved" -> "Strange").
    - **Hook candidates**: the real-story prompts return `hook_candidates` (3 first sentences); the editor pass
      scores them (`hook_scores`, "score | sentence") and `use_best_hook()` makes scene 1 start with the best one
      that passes `hook_problem()`; then `fix_hook()` still runs as a safety net.
@@ -136,7 +141,7 @@ so a new session can pick up without starting over.
    main visual, shot b = a DIFFERENT subject/action/angle of the same words (render motion covers the rest).
    Quota order: every scene's "a" shot first, then every "b", then "c"/"d", so running out of quota (or the local
    time budget) loses extra cuts, never whole scenes. SD-Turbo is a GAP FILLER only: max `local_image_max` (6)
-   local images per video in production (test builds: only the 12-min `local_image_budget_minutes`). If Cloudflare
+   local images per video (test builds too). If Cloudflare
    and the Spaces are out and more scenes need an image than local may make, the build stops early
    (`images.ImageQuotaWait`, ntfy "waiting for image quota"; the checkpoint keeps story + narration, the buffer
    covers the gap); preflight does the same before writing a story when both are already out.
@@ -211,6 +216,18 @@ so a new session can pick up without starting over.
    TikTok caption line "Visuals: Pexels, Wikimedia Commons"; YouTube description "Visual credits:" (caption.json
    `visual_credits`). Free Spaces draw at most `space_images_max` (6) images per video so ZeroGPU minutes stay
    for the hook animation.
+   **The planner's source tag is NOT trusted** (Groq tagged every shot "ai"): `media.auto_tag` re-classifies every
+   shot after planning, for every story incl. inbox SCRIPT / TRUE SCRIPT (flag `real_media_auto_tag`): no story
+   character / person + atmosphere, place or object -> stock_video; a named real place/object in a TRUE story ->
+   real_photo (query = the name); else ai; the hook (0a) stays ai. scene_plan.txt has few-shot tagging examples.
+   **Cloudflare out** (daily limit, no token, or a test build without Cloudflare images; flag
+   `real_media_when_cf_out`): every eligible shot tries real media first (`stock_video_max_share_cf_out` 1.0),
+   then Spaces, then SD-Turbo (max 6, test builds too).
+   **Real victims** (flag `no_victim_images`, `images.sanitize_victim_shots`, run before media search and image
+   generation; also a hard rule in scene_plan.txt + mystery.py): in true stories a shot showing a real victim's
+   death, body, body parts or remains ("Elisa floats in the tank", "a pale hand breaks the water") is rewritten to
+   the place/object with no people (the tank, the open hatch, the dark water). Ordinary hands ("presses buttons
+   with trembling hands") are not touched.
 4. **Render** (`render.py`, `effects.py`, `ai_motion.py`), FFmpeg 1080x1920:
    - Hook shot: real AI animation via free Hugging Face ZeroGPU Spaces (list in config `ai_motion.spaces`,
      live API discovery, never hard-wired) -> falls back to 3D parallax -> falls back to Ken Burns zoom.

@@ -298,6 +298,89 @@ def fill_shots(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
         return story.setdefault("media_assets", [])
 
 
+_PERSON = re.compile(r"\b(man|men|woman|women|girl|boy|guest|guests|officer|officers|police|policeman|detective|"
+                     r"receptionist|clerk|worker|workers|staff|people|person|crowd|child|children|he|she|they|his|"
+                     r"her|him|figure|hijacker|passenger|passengers|pilot|nurse|doctor|victim|stranger|narrator|"
+                     r"family|couple|friends|someone|anyone)\b", re.IGNORECASE)
+_ATMOS = re.compile(r"\b(fog|mist|rain|storm|night|sky|moon|clouds?|forest|woods|trees?|river|lake|sea|ocean|waves|"
+                    r"road|street|city|skyline|hallway|corridor|stairs|staircase|doors?|window|room|building|hotel|"
+                    r"house|exterior|tank|water|faucet|sink|lights?|candle|lamp|shadows?|smoke|fire|snow|field|bridge|"
+                    r"alley|elevator|rooftop|roof|calendar|clock|keys?|phone|screen|tv|monitor|tape|camera|car|"
+                    r"airplane|plane|aircraft|cabin|ship|boat|church|cemetery|grave|lighthouse|tunnel|basement)\b",
+                    re.IGNORECASE)
+_PROPER = re.compile(r"\b((?:[A-Z][a-z]+|[A-Z]\.)(?:\s+(?:[A-Z][a-z]+|[A-Z]\.|of|the|de))*\s+[A-Z][a-z]+)\b")
+_STOP = set(("a an the of in on at to with and or its his her their is are was from by for into near under over as "
+             "while shot close up close-up medium wide establishing view light lighting dark shadow shadows mood eerie "
+             "tense cinematic frame angle eye level atmosphere soft warm cold dim harsh casting glow uneasy ominous "
+             "unsettling mysterious quiet silent faint hinting where which that vague slowly against into onto inside "
+             "outside turned highlighted flickers flickering glistening catching").split())
+
+
+def _stock_query(text: str) -> str:
+    words = [w for w in re.findall(r"[A-Za-z]+", text.lower()) if w not in _STOP and len(w) > 2]
+    return " ".join(list(dict.fromkeys(words))[:4])
+
+
+def auto_tag(story: dict) -> int:
+    """Re-classify EVERY shot in code after planning (the planner's own tag is not trusted: Groq tagged every shot
+    "ai", even "empty hotel hallway"): no story character / person in the shot + atmosphere, place or object ->
+    stock_video; a named real place or object in a TRUE story -> real_photo; else ai. Runs for every story,
+    inbox SCRIPT / TRUE SCRIPT included. Flag real_media_auto_tag. The hook (scene 1 shot a) always stays ai.
+    Returns how many shots got real media."""
+    if not CONFIG.get("real_media_auto_tag", True):
+        return 0
+    import images
+    true = bool(story.get("true_story"))
+    names = [c.get("name", "").lower().removeprefix("the ") for c in story.get("characters") or [] if c.get("name")]
+    changed = 0
+    for i, sc in enumerate(story.get("scenes") or []):
+        for l in images._letters():
+            text = (sc.get(PROMPT_KEYS[l]) or "").strip()
+            cur = (sc.get(SRC_KEYS[l]) or "").strip().lower()
+            if not text:
+                continue
+            if (i, l) == (0, "a"):
+                sc[SRC_KEYS[l]] = "ai"
+                continue
+            low = text.lower()
+            if _PERSON.search(text) or any(nm and nm in low for nm in names):
+                new, query = "ai", ""
+            else:
+                proper = [m.group(1) for m in _PROPER.finditer(text)
+                          if not any(nm and nm in m.group(1).lower() for nm in names)]
+                if true and proper:
+                    new, query = "real_photo", proper[0]
+                elif _ATMOS.search(text) or images._OBJECTS.search(text):
+                    new, query = "stock_video", _stock_query(text)
+                else:
+                    new, query = "ai", ""
+            sc[SRC_KEYS[l]] = new
+            if new != "ai":
+                if new != cur or not (sc.get(QUERY_KEYS[l]) or "").strip():
+                    sc[QUERY_KEYS[l]] = (sc.get(QUERY_KEYS[l]) or "").strip() if new == cur else query
+                changed += 1
+            if new != (cur or "ai"):
+                log(f"Shot {i:02d}{l}: planner said {cur or 'nothing'}, re-classified {new}"
+                    + (f' (query "{sc.get(QUERY_KEYS[l])}")' if new != "ai" else ""))
+    return changed
+
+
+def _cloudflare_out() -> bool:
+    """Is Cloudflare unusable for this run (daily limit, no token, or a test build without Cloudflare images)?"""
+    import images
+    if images._STATE.get("cf_out"):
+        return True
+    if not env("CLOUDFLARE_API_TOKEN", required=False):
+        return True
+    if images.test_mode():
+        if not images.test_cloudflare_images():
+            return True
+        if images.cloudflare_has_quota() is False:  # test builds skip preflight: ask now (a few neurons)
+            images._STATE["cf_out"] = True
+            return True
+    return False
+
+
 def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
     import images  # the same paced Gemini QA and the same shot letters as the AI images
 
@@ -308,10 +391,18 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
         return assets
     outdir.mkdir(parents=True, exist_ok=True)
     true = bool(story.get("true_story"))
+    images.sanitize_victim_shots(story)  # never a real victim's body, before anything is searched or drawn
+    cf_out = _cloudflare_out() and CONFIG.get("real_media_when_cf_out", True)
+    tagged = auto_tag(story)
+    log(f"Shot sources re-classified: {tagged} shot(s) for real media")
     shots = [(i, l) for i, sc in enumerate(story["scenes"]) for l in images._letters()
              if (sc.get(PROMPT_KEYS[l]) or "").strip()]
-    max_stock = int(len(shots) * float(CONFIG.get("stock_video_max_share", 0.4)))
+    share = float(CONFIG.get("stock_video_max_share_cf_out", 1.0) if cf_out else CONFIG.get("stock_video_max_share", 0.4))
+    max_stock = int(len(shots) * share)
     max_photo = int(CONFIG.get("real_photo_max", 3))
+    if cf_out:
+        log(f"Cloudflare is out: real media first for every eligible shot (stock limit {max_stock}), then Spaces, "
+            f"then SD-Turbo (max {CONFIG.get('local_image_max', 6)})")
     recent = _recent_ids(history, int(CONFIG.get("stock_reuse_window", 20)))
     n = {"stock_video": 0, "real_photo": 0}
     used: set[str] = set()

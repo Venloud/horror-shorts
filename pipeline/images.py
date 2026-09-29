@@ -16,7 +16,7 @@ from pathlib import Path
 import requests
 from PIL import Image
 
-from common import CONFIG, ROOT, env, log
+from common import CONFIG, ROOT, env, gemini_out, log, note_gemini_429
 
 _STATE = {"cf_out": False, "spaces_out": False, "local_out": False, "cf_neurons": 0.0, "local_secs": 0.0,
           "clients": {}, "sd": None}
@@ -608,8 +608,9 @@ def near_duplicate(p1: str, p2: str) -> bool:
 
 
 def _gemini_json(prompt: str, models: list[str] | None = None) -> dict | None:
+    """Small JSON answer (duplicate-shot rewrite, shot shortening): Gemini, else the Groq writer model."""
     key = env("GEMINI_API_KEY", required=False)
-    for model in (models or (CONFIG.get("llm_models") or [])[:2]) if key else []:
+    for model in (models or (CONFIG.get("llm_models") or [])[:2]) if key and not gemini_out() else []:
         try:
             r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
                               headers={"x-goog-api-key": key}, timeout=60, json={
@@ -618,8 +619,16 @@ def _gemini_json(prompt: str, models: list[str] | None = None) -> dict | None:
             if r.status_code == 200:
                 return json.loads(r.json()["candidates"][0]["content"]["parts"][0]["text"])
             log(f"Gemini ({model}) HTTP {r.status_code}")
+            if r.status_code == 429 and note_gemini_429(r.text):
+                break
         except Exception as e:  # noqa: BLE001
             log(f"Gemini ({model}) failed ({str(e)[:80]})")
+    if env("GROQ_API_KEY", required=False) and CONFIG.get("groq_backup", True):
+        try:
+            from story import _call_groq
+            return _call_groq(CONFIG.get("groq_model", "openai/gpt-oss-120b"), prompt, 0.7, True, {"type": "OBJECT"})
+        except Exception as e:  # noqa: BLE001
+            log(f"Groq backup failed ({str(e)[:80]})")
     return None
 
 
@@ -635,6 +644,55 @@ def _reframe(p: str, narration: str, taken: list[str]) -> str:
     body = _join(_bits(_CAMERA.sub("", p)))
     body = re.sub(r"^\W*(?:shot\s+)?of\s+", "", body, flags=re.IGNORECASE)
     return f"wide establishing shot, {body}" if re.search(r"close", p, re.IGNORECASE) else f"extreme close-up, {body}"
+
+
+_DEATH = re.compile(r"\b(body|bodies|corpse\w*|dead|death|died|dying|remains|floats?|floating|drown\w*|lifeless|"
+                    r"autopsy|injur\w*|wound\w*|blood\w*|hang(?:ed|ing)|strangl\w*|murder\w*|killed|skeleton|"
+                    r"decompos\w*|submerged|face ?down)\b", re.IGNORECASE)
+_PEOPLE = re.compile(r"\b(man|men|woman|women|girl|boy|guest|guests|person|people|victim|she|he|her|his|body|figure)\b",
+                     re.IGNORECASE)
+_BODYPART = re.compile(r"\b(hand|hands|arm|arms|fingers?|foot|feet|legs?|hair|face|skin|skull|bones?)\b", re.IGNORECASE)
+# remains context for a body part: "a pale hand breaks the surface", NOT "the glass trembling in their hands"
+_REMAINS = re.compile(r"\b(pale|lifeless|limp|submerged|surface|floating|floats?|drift\w*|under the water|"
+                      r"beneath the water|in the tank|morgue|grave|decompos\w*|bloated|motionless|sticking out)\b",
+                      re.IGNORECASE)
+_PLACE_THINGS = re.compile(r"\b(tank|hatch|water|lid|roof|rooftop|door|doorway|room|bed|car|river|lake|bridge|hallway|"
+                           r"stairs|elevator|window|field|forest|road|house|shore|grave|cemetery)\b", re.IGNORECASE)
+
+
+def sanitize_victim_shots(story: dict) -> int:
+    """True stories (flag no_victim_images): never draw a real victim's death, body, body parts, injuries or remains
+    (e.g. "Elisa floats in the tank", "a pale hand breaks the water"). Such a shot is rewritten to the place / object instead (the tank, the open hatch,
+    the water), with no people in it. Returns how many were rewritten."""
+    if not CONFIG.get("no_victim_images", True) or not (story.get("true_story") or
+                                                         story.get("mode") in ("case", "mystery", "inbox-true")):
+        return 0
+    names = [_key(c.get("name", "")) for c in story.get("characters") or [] if c.get("name")]
+    n = 0
+    for i, sc in enumerate(story.get("scenes") or []):
+        for l, k in PROMPT_KEYS.items():
+            shot = sc.get(k) or ""
+            low = shot.lower()
+            if not shot:
+                continue
+            death = _DEATH.search(shot) and (_PEOPLE.search(shot) or any(nm and nm in low for nm in names)
+                                             or _BODYPART.search(shot))
+            remains = _BODYPART.search(shot) and _REMAINS.search(shot)  # "a pale hand breaks the water"
+            if not (death or remains):
+                continue  # an object (a coroner's file, a closed door), or "presses buttons with trembling hands"
+            loc = _shot_location(story, i, l, _clean_shot(shot))
+            if not loc:  # this case only: the scene's own place is a better stand-in than nothing
+                loc = next((x for x in story.get("locations") or [] if x.get("look") and
+                            _key(x.get("name", "")) == _key(sc.get("location") or "")), None)
+            things = list(dict.fromkeys(m.group(0).lower() for m in _PLACE_THINGS.finditer(shot)))
+            place = (loc["look"].strip().rstrip(".") if loc else
+                     ("dark still " + ", ".join(things)) if things else "the empty place where it happened")
+            extra = ", ".join(t for t in things if t not in place.lower())
+            new = _join([place, extra, "empty and still, no people, quiet eerie aftermath"])
+            sc[k] = new
+            n += 1
+            log(f"Image {i:02d}{l}: real victim shot replaced by the place/object (never a body): {new}")
+    return n
 
 
 def _letters() -> str:
@@ -701,7 +759,7 @@ def check_image(path: Path, request: str, wait: bool = True) -> tuple[bool | Non
     if not CONFIG.get("image_check", True):
         return None, "off"
     key = env("GEMINI_API_KEY", required=False)
-    if not key:
+    if not key and not env("GROQ_API_KEY", required=False):
         return None, "no_key"
     gap = 60 / max(1, float(CONFIG.get("image_check_per_minute", 10))) - (time.time() - _STATE.get("qa_last", 0))
     if gap > 0:
@@ -717,6 +775,11 @@ def check_image(path: Path, request: str, wait: bool = True) -> tuple[bool | Non
             im.thumbnail((512, 512))
             buf = io.BytesIO()
             im.save(buf, "JPEG", quality=85)
+    except Exception as e:  # noqa: BLE001
+        return None, f"error {str(e)[:60]}"
+    if gemini_out() or not key:  # Gemini's daily quota is gone (or no key): Groq vision right away
+        return _groq_check(buf.getvalue(), request) or (None, "gemini_quota_out")
+    try:
         r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
                           headers={"x-goog-api-key": key}, timeout=15, json={
                               "contents": [{"role": "user", "parts": [
@@ -724,9 +787,10 @@ def check_image(path: Path, request: str, wait: bool = True) -> tuple[bool | Non
                                                    "data": base64.b64encode(buf.getvalue()).decode()}},
                                   {"text": QA_QUESTION.format(request=request)}]}],
                               "generationConfig": {"temperature": 0, "maxOutputTokens": 20}})
-    except Exception as e:  # noqa: BLE001
-        return None, f"error {str(e)[:60]}"
+    except Exception as e:  # noqa: BLE001 (timeout / network: one Groq try, else skip)
+        return _groq_check(buf.getvalue(), request) or (None, f"error {str(e)[:60]}")
     if r.status_code == 429:  # Gemini rate-limited: ask Groq's vision model instead (if set up), else skip
+        note_gemini_429(r.text)
         return _groq_check(buf.getvalue(), request) or (None, "rate_limited")
     if r.status_code != 200:
         return None, f"http_{r.status_code}"
@@ -825,6 +889,7 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
         if cached:
             return cached
     style = CONFIG.get("image_style_cf") or CONFIG.get("image_style", "")
+    sanitize_victim_shots(story)  # true stories: never a real victim's body / death
     dedupe_shots(story)  # the same picture twice in one video -> the later shot gets a different subject/angle
     base_seed = random.randint(1, 2_000_000_000)
     has_cf = bool(env("CLOUDFLARE_API_TOKEN", required=False)) and (not testing or test_cf > 0)
@@ -855,10 +920,10 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
         tag = f"{i:02d}{shot}"
         path = outdir / f"scene_{i:02d}{shot}.png"
         use_cf = cf_usable()
-        # Production: SD-Turbo is only a gap filler (local_image_max, 6 per video). With Cloudflare and the Spaces
+        # SD-Turbo is only a gap filler (local_image_max, 6 per video, test builds too). With Cloudflare and the Spaces
         # out, more local images than that = stop now (story + narration stay in the checkpoint) instead of
         # burning the time budget; the buffer covers the gap.
-        if not testing and not use_cf and _STATE["spaces_out"]:
+        if not use_cf and (testing or _STATE["spaces_out"]):  # test builds never use the Spaces
             have = {j for (j, _s), p in results.items() if p}
             needed = len({j for (j, s2, _) in jobs[n:] if j not in have
                           and not _is_image(outdir / f"scene_{j:02d}{s2}.png")})
@@ -925,7 +990,7 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
                 _STATE["spaces_out"] = True  # keep the rest of the free GPU minutes for the hook animation
                 log(f"Free Spaces: {space_max} images this video, the rest of the GPU time stays for the hook animation")
                 continue
-            if provider is _local_sd and not testing and count["local_sd"] >= local_max:
+            if provider is _local_sd and count["local_sd"] >= local_max:
                 _STATE["local_out"] = True
                 log(f"Local SD-Turbo gap-filler limit reached ({local_max} images this video)")
                 continue

@@ -1,5 +1,6 @@
 """Phone notification via ntfy.sh (free app) + GitHub run summary with the caption to copy."""
 import os
+import re
 
 import requests
 
@@ -21,6 +22,16 @@ def is_fiction(story: dict) -> bool:
 SPAM_TAGS = {"fyp", "foryou", "foryoupage", "foryourpage", "fy", "viral", "trending", "xyzbca", "tiktok", "explore",
              "blowthisup", "goviral"}
 SEARCH_SUFFIX = "illustrated horror story"
+# An official ruling / solved case in the story's own facts: then it is not "unsolved" (no #unsolved, no "unsolved").
+RESOLVED = re.compile(r"\b(ruled|ruling|convicted|sentenced|confess(?:ed|ion)|pleaded guilty|found guilty|"
+                      r"was solved|case (?:was )?closed|cause of death|coroner (?:found|said|determined)|"
+                      r"identified as|arrested and charged|accidental drowning)\b", re.IGNORECASE)
+
+
+def is_resolved(story: dict) -> bool:
+    text = " ".join([sc.get("narration", "") for sc in story.get("scenes") or []]
+                    + [str(x) for x in story.get("fact_ledger") or []])
+    return bool(RESOLVED.search(text))
 
 
 def normalize_caption(story: dict) -> None:
@@ -31,7 +42,13 @@ def normalize_caption(story: dict) -> None:
         return
     tags = [str(t).lstrip("#").replace(" ", "") for t in story.get("hashtags") or []]
     tags = [t for t in tags if t and t.lower() not in SPAM_TAGS and t.lower() not in
-            ("truestory", "illustratedhorror", "horrorstory")][:5]
+            ("truestory", "illustratedhorror", "horrorstory")]
+    resolved = story.get("true_story") and is_resolved(story)
+    if resolved:  # official ruling / solved: the caption must match the source
+        tags = [t for t in tags if "unsolved" not in t.lower()]
+        story["caption"] = re.sub(r"\bUnsolved\b", "Strange", story["caption"])
+        story["caption"] = re.sub(r"\bunsolved\b", "strange", story["caption"], flags=re.IGNORECASE)
+    tags = tags[:5]
     tags += ["illustratedhorror", "horrorstory"] + (["truestory"] if story.get("true_story") else [])
     story["hashtags"] = list(dict.fromkeys(tags))
     lines = story["caption"].strip().split("\n")
