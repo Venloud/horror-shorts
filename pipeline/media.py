@@ -342,7 +342,8 @@ _VAGUE = set(("exterior interior closeup close up shot view scene background for
               "opened dark darkness eerie creepy scary spooky old vintage empty lonely strange weird small large big "
               "huge tiny heavy thin thick long short black white grey gray red blue green yellow brown pale bright "
               "dripping running leaking moving slow fast night-time daytime evening morning afternoon very some many "
-              "every one two three single double little tall wide narrow").split())
+              "every one two three single double little tall wide narrow flat rusty worn faded dusty dirty wet damp peeling "
+              "cracked battered weathered metal metallic wooden").split())
 
 
 def clean_query(query: str, most: int = 4) -> str:
