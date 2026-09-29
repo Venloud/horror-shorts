@@ -270,7 +270,15 @@ def _video(c: dict, png: Path) -> Path:
           "-vf", f"{FIT},fps={FPS},{GRADE},noise=alls=8:allf=t+u,format=yuv420p", "-c:v", "libx264",
           "-preset", "veryfast", "-crf", "23", str(mp4)])
     raw.unlink(missing_ok=True)
-    _run(["ffmpeg", "-y", "-loglevel", "error", "-ss", "3", "-i", str(mp4), "-frames:v", "1", str(png)])
+    # ONE single frame from the middle of the clip for the poster + QA (never a tiled / multi-frame picture)
+    try:
+        mid = max(0.0, float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of",
+                                             "default=nw=1:nk=1", str(mp4)], capture_output=True,
+                                            text=True).stdout.strip() or 6) / 2)
+    except ValueError:
+        mid = 3.0
+    _run(["ffmpeg", "-y", "-loglevel", "error", "-ss", f"{mid:.2f}", "-i", str(mp4), "-frames:v", "1",
+          "-update", "1", str(png)])
     return mp4
 
 
@@ -316,9 +324,59 @@ _STOP = set(("a an the of in on at to with and or its his her their is are was f
              "outside turned highlighted flickers flickering glistening catching").split())
 
 
+# Words that make stock search imprecise ("rooftop water tank exterior" returned a flag video): framing, mood,
+# colour and vague adjectives. A stock query is 2-4 concrete nouns.
+_VAGUE = set(("exterior interior closeup close up shot view scene background foreground low high flow stuck open "
+              "opened dark darkness eerie creepy scary spooky old vintage empty lonely strange weird small large big "
+              "huge tiny heavy thin thick long short black white grey gray red blue green yellow brown pale bright "
+              "dripping running leaking moving slow fast night-time daytime evening morning afternoon very some many "
+              "every one two three single double little tall wide narrow").split())
+
+
+def clean_query(query: str, most: int = 4) -> str:
+    """2-4 concrete nouns for stock search: no framing, mood, colour or vague words."""
+    words = [w for w in re.findall(r"[A-Za-z]+", query.lower())
+             if w not in _STOP and w not in _VAGUE and len(w) > 2]
+    words = list(dict.fromkeys(words))[:most]
+    return " ".join(words) if words else " ".join(re.findall(r"[A-Za-z]+", query.lower())[:3])
+
+
 def _stock_query(text: str) -> str:
-    words = [w for w in re.findall(r"[A-Za-z]+", text.lower()) if w not in _STOP and len(w) > 2]
-    return " ".join(list(dict.fromkeys(words))[:4])
+    return clean_query(text, 3)
+
+
+def honest_place_shots(story: dict) -> int:
+    """Cloudflare-out days: a scene whose every shot shows a story character can't get real media, so its
+    SECOND shot becomes an honest place shot: the scene's own location, empty (e.g. "the Cecil Hotel lobby").
+    Only when the scene has a known location; never invents a place. Flag honest_place_shots."""
+    if not CONFIG.get("honest_place_shots", True):
+        return 0
+    import images
+    locs = {l.get("name", "").lower().removeprefix("the "): l for l in story.get("locations") or [] if l.get("look")}
+    n = 0
+    for i, sc in enumerate(story.get("scenes") or []):
+        filled = [l for l in images._letters() if (sc.get(PROMPT_KEYS[l]) or "").strip()]
+        if not filled or any((sc.get(SRC_KEYS[l]) or "ai") != "ai" for l in filled):
+            continue  # already has a real-media shot
+        name = ""
+        for key in (images.LOC_KEYS.get("b", ""), images.LOC_KEYS.get("a", ""), "location"):
+            cand = (sc.get(key) or "").lower().removeprefix("the ").strip()
+            if cand in locs:
+                name = cand
+                break
+        if not name:
+            continue
+        loc = locs[name]
+        proper = [m.group(1) for m in _PROPER.finditer(loc.get("name", ""))]
+        real = bool(story.get("true_story")) and bool(proper)
+        sc[PROMPT_KEYS["b"]] = f"{loc['look'].strip().rstrip('.')}, empty, no people"
+        sc[images.LOC_KEYS["b"]] = loc["name"]
+        sc[SRC_KEYS["b"]] = "real_photo" if real else "stock_video"
+        sc[QUERY_KEYS["b"]] = loc["name"] if real else clean_query(loc["look"], 3)
+        n += 1
+        log(f"Shot {i:02d}b: every shot showed a character; now an honest place shot of '{loc['name']}' "
+            f"({sc[SRC_KEYS['b']]}, query \"{sc[QUERY_KEYS['b']]}\")")
+    return n
 
 
 def auto_tag(story: dict) -> int:
@@ -394,6 +452,8 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
     images.sanitize_victim_shots(story)  # never a real victim's body, before anything is searched or drawn
     cf_out = _cloudflare_out() and CONFIG.get("real_media_when_cf_out", True)
     tagged = auto_tag(story)
+    if cf_out:
+        tagged += honest_place_shots(story)
     log(f"Shot sources re-classified: {tagged} shot(s) for real media")
     shots = [(i, l) for i, sc in enumerate(story["scenes"]) for l in images._letters()
              if (sc.get(PROMPT_KEYS[l]) or "").strip()]
@@ -425,46 +485,62 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
             continue
         if n[kind] >= (max_photo if kind == "real_photo" else max_stock):
             continue
-        query = (sc.get(QUERY_KEYS[l]) or "").strip() or " ".join(re.findall(r"[A-Za-z]+", sc[PROMPT_KEYS[l]])[:5])
-        cands = []
-        for provider in PROVIDERS[kind]:
-            try:
-                cands += provider(query)
-            except Exception as e:  # noqa: BLE001
-                log(f"Shot {i:02d}{l}: {provider.__name__} search failed ({str(e)[:120]})")
-        cands = [c for c in cands if c["id"] not in used and c["id"] not in recent]
-        if not cands:
-            log(f"Shot {i:02d}{l}: no {kind} result for '{query}', using AI")
-            continue
+        raw_q = (sc.get(QUERY_KEYS[l]) or "").strip() or sc[PROMPT_KEYS[l]]
+        # stock: 2-4 concrete nouns; archive photos keep the real name ("Cecil Hotel Los Angeles")
+        queries = [clean_query(raw_q)] if kind == "stock_video" else [raw_q]
+        if kind == "stock_video" and len(queries[0].split()) > 2:
+            queries.append(" ".join(queries[0].split()[:2]))  # second, broader try: the two main nouns
         request, _ = images.shot_request(story, i, sc[PROMPT_KEYS[l]], l)
-        for c in cands[:3]:  # QA fail -> next result (max 3) -> AI image
-            tried += 1
-            try:
-                (_video if c["kind"] == "video" else _photo)(c, png)
-            except Exception as e:  # noqa: BLE001
-                log(f"Shot {i:02d}{l}: {c['source']} {c['id']} unusable ({str(e)[:120]})")
-                _remove(png)
+        done = False
+        for query in queries:
+            cands = []
+            for provider in PROVIDERS[kind]:
+                try:
+                    cands += provider(query)
+                except Exception as e:  # noqa: BLE001
+                    log(f"Shot {i:02d}{l}: {provider.__name__} search failed ({str(e)[:120]})")
+            cands = [c for c in cands if c["id"] not in used and c["id"] not in recent]
+            if not cands:
+                log(f"Shot {i:02d}{l}: no {kind} result for '{query}'")
                 continue
-            verdict, why = images.check_image(png, request)
-            qa = "PASS" if verdict else ("FAIL" if verdict is False else "SKIPPED")
-            log(f"Image {i:02d}{l}: provider={c['source']} ({c['kind']}), qa={qa}" + (f", reason={why}" if why else "")
-                + f', query="{query}", url={c["url"]}')
-            if verdict is False:
-                _remove(png)
-                continue
-            meta = {"scene": i, "shot": l, "type": kind, "kind": c["kind"], "source": c["source"], "id": c["id"],
-                    "url": c["url"], "author": c.get("author", ""), "license": c.get("license", ""),
-                    "date": c.get("date", ""), "title": c.get("title", ""), "query": query}
-            side.write_text(json.dumps(meta, ensure_ascii=False))
-            assets.append(meta)
-            used.add(c["id"])
-            n[kind] += 1
-            break
-        else:
+            done = _try_candidates(cands[:3], i, l, kind, query, request, png, side, assets, used, n, images)
+            tried += min(3, len(cands))
+            if done:
+                break
+        if not done:
             log(f"Shot {i:02d}{l}: no usable {kind}, using AI")
     log(f"Real media: {n['stock_video']} stock video(s), {n['real_photo']} real photo(s) "
         f"({tried} candidate(s) tried; limits {max_stock} stock / {max_photo} photos)")
     return assets
+
+
+def _try_candidates(cands, i, l, kind, query, request, png, side, assets, used, n, images) -> bool:
+    """QA fail -> next result (max 3). True = one was accepted."""
+    for c in cands:
+        try:
+            (_video if c["kind"] == "video" else _photo)(c, png)
+        except Exception as e:  # noqa: BLE001
+            log(f"Shot {i:02d}{l}: {c['source']} {c['id']} unusable ({str(e)[:120]})")
+            _remove(png)
+            continue
+        # real-media QA: one frame, judged on subject / setting / text / real faces / panels, never on colour
+        verdict, why = images.check_image(png, request, kind="real")
+        qa = "PASS" if verdict else ("FAIL" if verdict is False else "SKIPPED")
+        log(f"Image {i:02d}{l}: provider={c['source']} ({c['kind']}), qa={qa}" + (f", reason={why}" if why else "")
+            + f', query="{query}", url={c["url"]}')
+        if verdict is False:
+            _remove(png)
+            used.add(c["id"])  # never retried by the second, broader query
+            continue
+        meta = {"scene": i, "shot": l, "type": kind, "kind": c["kind"], "source": c["source"], "id": c["id"],
+                "url": c["url"], "author": c.get("author", ""), "license": c.get("license", ""),
+                "date": c.get("date", ""), "title": c.get("title", ""), "query": query}
+        side.write_text(json.dumps(meta, ensure_ascii=False))
+        assets.append(meta)
+        used.add(c["id"])
+        n[kind] += 1
+        return True
+    return False
 
 
 def credits(assets: list[dict]) -> tuple[str, str]:

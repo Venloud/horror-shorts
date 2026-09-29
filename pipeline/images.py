@@ -745,13 +745,32 @@ YES
 NO: <reason in 2-5 words>
 Answer NO if: the main subject or action is different or missing; the setting clearly contradicts the request
 (e.g. an airplane cabin when the request is outdoors, a factory when it asks for a hotel roof); it is several
-panels, a comic page, a collage or a split screen instead of one single frame; or it shows garbled or fake text.
+panels, a comic page, a collage or a split screen instead of one single frame; it shows garbled or fake text; or
+the anatomy is clearly broken (extra or missing limbs, merged or melted bodies, faces on the back of heads).
+NEVER answer NO for the art style alone: cartoon, painterly, sketchy, realistic or any other style is fine, and so
+is the image quality, as long as the subject, action and setting are right.
 Do NOT require the identity of a specific real landmark, building, brand or person: a generic painterly version
 is fine (any old downtown hotel for a named hotel, any 1970s airliner for a named flight).
 Answer YES when the requested subject and action are clearly recognizable in one frame that fits the setting."""
 
+# Real stock video / archive photos: the picture is ONE frame from a real clip or photo. Colour and lighting are
+# set by our own grade, so they never count. Fail only for a wrong subject/setting, visible text, a real private
+# person's face, or panels / a split screen.
+REAL_QA_QUESTION = """This is ONE single frame taken from a stock video clip or an archive photo (not a collage).
+Does it show the requested subject in a fitting setting?
+REQUEST: {request}
+Answer exactly one:
+YES
+NO: <reason in 2-5 words>
+Answer NO only if: the main subject or setting is clearly different (e.g. a flag when a water tank was asked for);
+it shows readable or garbled text, a logo or a watermark as a main element; a real person's face is clearly visible
+in close-up; or the frame itself is visibly split into several panels or a split screen.
+NEVER answer NO for colour, lighting, warm vs cold tones, time of day, weather, art style or image quality: those
+are changed afterwards. A generic version of a named place or object is fine.
+Answer YES when the requested subject is recognizable."""
 
-def check_image(path: Path, request: str, wait: bool = True) -> tuple[bool | None, str]:
+
+def check_image(path: Path, request: str, wait: bool = True, kind: str = "ai") -> tuple[bool | None, str]:
     """Strict Gemini vision check (same free key): (True, "") = PASS, (False, reason) = FAIL, (None, reason) = QA
     skipped. Paced to config image_check_per_minute (10): wait=True waits for the next slot (a few seconds),
     wait=False skips instead (used for Cloudflare images, so fallback checks keep the free quota).
@@ -777,21 +796,22 @@ def check_image(path: Path, request: str, wait: bool = True) -> tuple[bool | Non
             im.save(buf, "JPEG", quality=85)
     except Exception as e:  # noqa: BLE001
         return None, f"error {str(e)[:60]}"
+    question = (REAL_QA_QUESTION if kind == "real" else QA_QUESTION).format(request=request)
     if gemini_out() or not key:  # Gemini's daily quota is gone (or no key): Groq vision right away
-        return _groq_check(buf.getvalue(), request) or (None, "gemini_quota_out")
+        return _groq_check(buf.getvalue(), question) or (None, "groq_unavailable")
     try:
         r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
                           headers={"x-goog-api-key": key}, timeout=15, json={
                               "contents": [{"role": "user", "parts": [
                                   {"inline_data": {"mime_type": "image/jpeg",
                                                    "data": base64.b64encode(buf.getvalue()).decode()}},
-                                  {"text": QA_QUESTION.format(request=request)}]}],
+                                  {"text": question}]}],
                               "generationConfig": {"temperature": 0, "maxOutputTokens": 20}})
-    except Exception as e:  # noqa: BLE001 (timeout / network: one Groq try, else skip)
-        return _groq_check(buf.getvalue(), request) or (None, f"error {str(e)[:60]}")
+    except Exception as e:  # noqa: BLE001 (timeout / network: Groq instead, else skip)
+        return _groq_check(buf.getvalue(), question) or (None, f"error {str(e)[:60]}")
     if r.status_code == 429:  # Gemini rate-limited: ask Groq's vision model instead (if set up), else skip
         note_gemini_429(r.text)
-        return _groq_check(buf.getvalue(), request) or (None, "rate_limited")
+        return _groq_check(buf.getvalue(), question) or (None, "rate_limited")
     if r.status_code != 200:
         return None, f"http_{r.status_code}"
     try:
@@ -805,21 +825,36 @@ def check_image(path: Path, request: str, wait: bool = True) -> tuple[bool | Non
     return None, "unclear_answer"
 
 
-def _groq_check(jpeg: bytes, request: str) -> tuple[bool | None, str] | None:
+def _groq_check(jpeg: bytes, question: str) -> tuple[bool | None, str] | None:
     """Backup QA checker (flag groq_vision_qa, GROQ_API_KEY): Groq's vision model answers the same question.
-    None = not available / failed (the caller then skips QA for this image)."""
+    Paced to groq_vision_per_minute (20); a 429 waits (Retry-After, max 30 s) and retries, up to 3 times, instead of
+    skipping QA. None = not available / still failing (the caller then skips QA for this image)."""
     key = env("GROQ_API_KEY", required=False)
     if not key or not CONFIG.get("groq_vision_qa", True):
         return None
     model = CONFIG.get("groq_vision_model", "qwen/qwen3.8-27b")
+    r = None
     try:
-        r = requests.post("https://api.groq.com/openai/v1/chat/completions", timeout=30,
-                          headers={"Authorization": f"Bearer {key}"}, json={
-                              "model": model, "temperature": 0, "max_tokens": 400,
-                              "messages": [{"role": "user", "content": [
-                                  {"type": "text", "text": QA_QUESTION.format(request=request)},
-                                  {"type": "image_url", "image_url": {
-                                      "url": "data:image/jpeg;base64," + base64.b64encode(jpeg).decode()}}]}]})
+        for attempt in range(4):
+            gap = 60 / max(1, float(CONFIG.get("groq_vision_per_minute", 20))) - (time.time() - _STATE.get("groq_last", 0))
+            if gap > 0:
+                time.sleep(gap)
+            _STATE["groq_last"] = time.time()
+            r = requests.post("https://api.groq.com/openai/v1/chat/completions", timeout=30,
+                              headers={"Authorization": f"Bearer {key}"}, json={
+                                  "model": model, "temperature": 0, "max_tokens": 400,
+                                  "messages": [{"role": "user", "content": [
+                                      {"type": "text", "text": question},
+                                      {"type": "image_url", "image_url": {
+                                          "url": "data:image/jpeg;base64," + base64.b64encode(jpeg).decode()}}]}]})
+            if r.status_code != 429 or attempt == 3:
+                break
+            try:
+                wait = min(30.0, max(2.0, float(r.headers.get("retry-after") or 0) or 5.0 * (attempt + 1)))
+            except ValueError:
+                wait = 5.0 * (attempt + 1)
+            log(f"Groq vision QA: HTTP 429, waiting {wait:.0f}s (try {attempt + 1}/3)")
+            time.sleep(wait)
         if r.status_code != 200:
             log(f"Groq vision QA: HTTP {r.status_code}")
             return None
