@@ -310,5 +310,15 @@
     "voice_speed": 1.1,
     "buffered": "2026-09-29_0339",
     "tiktok": null
+  },
+  {
+    "date": "2026-09-29_1820",
+    "story_id": "2f4cf2b4d7ee",
+    "title": "Cecil Hotel Water Mystery",
+    "mode": "inbox-script",
+    "source": "inbox/elisa_lam.txt",
+    "case": null,
+    "skipped": true,
+    "reason": "QA gate: duration 64.5s (want 50-63.9s)"
   }
 ]
