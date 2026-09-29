@@ -17,7 +17,9 @@ def main() -> int:
     if len(sys.argv) < 2:
         sys.exit(__doc__)
     flow = InstalledAppFlow.from_client_secrets_file(sys.argv[1],
-                                                     ["https://www.googleapis.com/auth/youtube.upload"])
+                                                     ["https://www.googleapis.com/auth/youtube.upload",
+                                                      # read-only stats for analytics.yml (data/analytics.json)
+                                                      "https://www.googleapis.com/auth/yt-analytics.readonly"])
     creds = flow.run_local_server(port=0, access_type="offline", prompt="consent")
     info = json.load(open(sys.argv[1]))
     client = info.get("installed") or info.get("web") or {}

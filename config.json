@@ -112,6 +112,8 @@
   "buffer_purge": true,
   "buffer_purge_before": "2026-09-29T04:47:43Z",
   "youtube_enabled": true,
+  "analytics": true,
+  "analytics_start": "2026-09-01",
   "youtube_privacy": "public",
   "direct_privacy": "SELF_ONLY",
   "tiktok_ai_label": true

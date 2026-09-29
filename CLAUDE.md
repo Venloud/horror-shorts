@@ -232,6 +232,12 @@ so a new session can pick up without starting over.
    only if both fail does it stay for the next slot. Refresh token: run `pipeline/connect_youtube.py` once
    locally (OAuth consent screen must be "In production", or Google expires the token after 7 days).
 6. **Notify**: ntfy phone alert with caption + pinned comment + YouTube link (`NTFY_TOPIC`).
+7. **Analytics** (`analytics.yml` daily 09:17 UTC + manual, `pipeline/analytics.py`, flag `analytics`): YouTube
+   Analytics API per Short (creatorContentType==SHORTS): views, engagedViews, averageViewDuration,
+   averageViewPercentage, likes, comments, shares, subscribersGained, matched by YouTube id to history
+   (video_number, mode, visual_mode, story_shape, writer) -> `data/analytics.json` (+ by_mode / by_visual_mode
+   summaries). Needs the yt-analytics.readonly scope (connect_youtube.py now asks for it; re-run once and update
+   YT_REFRESH_TOKEN); without it the log says "analytics scope missing" and it exits 0.
 
 ## Buffer (build.yml fills it, daily.yml posts from it)
 - `build.yml` runs every 3 h: if fewer than 3 (`BUFFER_SIZE`) videos wait on the GitHub Release **"buffer"**

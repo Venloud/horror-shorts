@@ -1,0 +1,49 @@
+name: YouTube analytics
+
+# Daily: per-Short YouTube Analytics (views, engaged views, watch %, likes, comments, shares, subs) matched to
+# video_number / mode / visual_mode, saved to data/analytics.json. Read-only for the channel; never posts.
+on:
+  schedule:
+    - cron: "17 9 * * *"   # 09:17 UTC, away from the build (:50) and publish (:40) slots
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: night-files
+  cancel-in-progress: false
+
+jobs:
+  analytics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -q requests google-auth
+      - name: Pull YouTube Shorts analytics
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+        run: cd pipeline && python analytics.py
+      - name: Save data/analytics.json
+        run: |
+          [ -f data/analytics.json ] || { echo "Nothing to save"; exit 0; }
+          git config user.name "horror-bot"
+          git config user.email "horror-bot@users.noreply.github.com"
+          cp data/analytics.json "$RUNNER_TEMP/analytics.json"
+          for i in 1 2 3; do
+            git fetch -q origin main
+            git reset -q --hard origin/main
+            cp "$RUNNER_TEMP/analytics.json" data/analytics.json
+            git add data/analytics.json
+            git diff --cached --quiet && { echo "No change"; exit 0; }
+            git commit -q -m "YouTube analytics $(date -u +%F)"
+            git push -q origin HEAD:main && exit 0
+            echo "Push failed (try $i), retrying"; sleep 5
+          done
+          exit 1
