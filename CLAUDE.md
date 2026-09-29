@@ -113,15 +113,18 @@ so a new session can pick up without starting over.
    `characters` entry whose fixed look is reused word-for-word in every shot. This replaced the old
    silhouettes-only rule; the build_prompt "seen from behind, face not visible" auto-add was removed with it.
    The occult / all-seeing-eye / floating-eyes ban still applies.
-   **Image prompts** (every provider): `SHOT: <action/event, subject, key object>. CHARACTERS: <locked blocks>.
-   SETTING: <locked block>. CAMERA: <framing>. STYLE: <provider style>`. Character/setting blocks are the sheet's
-   "look" word-for-word every time (max 15 words each, never rewritten). Styles are split in config:
-   `image_style_cf` (rich, Cloudflare FLUX) and `image_style_fallback` (short, Spaces + SD-Turbo). Fallback prompts
-   stay under ~60 words (whole blocks are dropped, setting first, never cut) and never say "graphic novel",
-   "comic" or "panels" (they made comic-page grids; SD-Turbo also reads only ~77 tokens). scene_plan.txt and the
-   mystery.py prompts add ONE FRAME ONLY (one continuous film frame, never panels/collages/storyboards/split
-   screens) and, for real stories, TRUE STORY VISUALS (historically accurate objects/clothing/vehicles/era;
-   generic when the source doesn't say).
+   **Image prompts** (every provider): `CHARACTERS: <locked blocks, only people in this shot> . SETTING: <locked
+   block> . SHOT: <action/event, subject, key object> . CAMERA: <framing> . STYLE: <provider style>`. Blocks are the
+   sheet's "look" word-for-word every time (max ~20 words, concrete: age, hair, clothing; never rewritten); shots
+   with no person have no CHARACTERS. Styles are split in config: `image_style_cf` (rich, Cloudflare FLUX) and
+   `image_style_fallback` (short, Spaces + SD-Turbo); fallbacks never say "graphic novel", "comic" or "panels".
+   **Fallback token budget** (`build_short_prompt`, real CLIP tokenizer, limit 77): if over, trim STYLE, then
+   CAMERA, then non-essential SETTING details, then non-essential CHARACTER details; the SHOT and key traits
+   (age, hair, clothing) are never trimmed. If the shot + key traits alone still exceed 77 tokens, the SHOT is
+   moved first so CLIP never cuts it (logged). Every fallback image logs its final prompt + token count.
+   scene_plan.txt and the mystery.py prompts add ONE FRAME ONLY (one continuous film frame, never panels/
+   collages/storyboards/split screens) and, for real stories, TRUE STORY VISUALS (historically accurate
+   objects/clothing/vehicles/era; generic when the source doesn't say).
    Negative prompt (`images.NEGATIVE`: comic page, multiple panels, panel grid, collage, split screen, text,
    letters, speech bubbles, watermark) is passed to any Space that exposes `negative_prompt`; today none of the
    three sources uses one (Cloudflare FLUX / FLUX Spaces have no such input, SD-Turbo runs at guidance 0).

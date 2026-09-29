@@ -337,47 +337,94 @@ def _blocks(story: dict, scene_i: int, shot: str) -> tuple[list[str], str, str]:
 
 
 def _assemble(shot: str, chars: list[str], setting: str, camera: str, style: str) -> str:
-    parts = [f"SHOT: {shot.strip().rstrip('.')}"]
+    """CHARACTERS (only people in this shot), SETTING, SHOT, CAMERA, STYLE."""
+    parts = []
     if chars:
         parts.append("CHARACTERS: " + "; ".join(chars))
     if setting:
         parts.append(f"SETTING: {setting}")
+    parts.append(f"SHOT: {shot.strip().rstrip('.')}")
     if camera:
         parts.append(f"CAMERA: {camera}")
-    parts.append(f"STYLE: {style}")
+    if style:
+        parts.append(f"STYLE: {style}")
     return ". ".join(parts)
 
 
 def build_prompt(story: dict, scene_i: int, shot: str, style: str | None = None) -> str:
-    """Cloudflare FLUX: SHOT, CHARACTERS, SETTING, CAMERA, STYLE (rich style `image_style_cf`)."""
+    """Cloudflare FLUX (long prompts are fine): CHARACTERS, SETTING, SHOT, CAMERA, rich `image_style_cf`."""
     style = style or CONFIG.get("image_style_cf") or CONFIG.get("image_style", "")
     chars, setting, camera = _blocks(story, scene_i, shot)
     return _assemble(shot, chars, setting, camera, style)
 
 
-def build_short_prompt(story: dict, scene_i: int, shot: str, max_words: int = 60) -> str:
-    """Spaces / SD-Turbo (SD-Turbo reads only ~77 tokens): same SHOT, CHARACTERS, SETTING, CAMERA, STYLE order with
-    the short `image_style_fallback`, under ~60 words, never "graphic novel", "comic" or "panels". Character and
-    setting blocks are kept word-for-word; if the budget is tight, whole blocks are dropped (setting first, then
-    extra characters), never cut or rewritten."""
+CLIP_LIMIT = 77  # SD-Turbo's text encoder (and the CLIP half of FLUX) reads 77 tokens; the rest is cut off
+_KEY_TRAIT = re.compile(r"\b(\d+s?|\w+-year-old|years?|old|young|teen\w*|elderly|aged?|child|boy|girl|man|woman|men|"
+                        r"women|hair\w*|bald|beard\w*|mustache|blonde?|brunette|redhead|grey|gray|suit|jacket|coat|"
+                        r"dress|shirt|blouse|sweater|hoodie|uniform|vest|tie|hat|cap|hood\w*|mask\w*|robe|cloak|"
+                        r"jeans|trousers|pants|skirt|boots|glasses|sunglasses|scarf|gloves|apron|overalls)\b",
+                        re.IGNORECASE)
+
+
+def clip_tokens(text: str) -> int:
+    """Token count as the CLIP text encoder sees it (incl. start/end tokens); a close estimate if the
+    tokenizer isn't available."""
+    if "tok" not in _STATE:
+        try:
+            from transformers import CLIPTokenizer
+            _STATE["tok"] = CLIPTokenizer.from_pretrained(CONFIG.get("local_image_model", "stabilityai/sd-turbo"),
+                                                          subfolder="tokenizer")
+        except Exception:  # noqa: BLE001
+            _STATE["tok"] = None
+    tok = _STATE["tok"]
+    if tok is not None:
+        return len(tok(text).input_ids)
+    return int(len(re.findall(r"\w+|[^\w\s]", text)) * 1.15) + 2
+
+
+def _trim_details(block: str, keep_key_traits: bool) -> str | None:
+    """Drop the last non-essential comma detail of a 'name: look' block (key traits kept). None = nothing left."""
+    name, _, look = block.partition(": ")
+    bits = [b.strip() for b in look.split(",") if b.strip()]
+    for k in range(len(bits) - 1, 0, -1):  # never the first detail (the main noun / who it is)
+        if not (keep_key_traits and _KEY_TRAIT.search(bits[k])):
+            return f"{name}: {', '.join(bits[:k] + bits[k + 1:])}"
+    return None
+
+
+def build_short_prompt(story: dict, scene_i: int, shot: str, limit: int = CLIP_LIMIT) -> str:
+    """Spaces / SD-Turbo: CHARACTERS, SETTING, SHOT, CAMERA, short `image_style_fallback`, never "graphic
+    novel", "comic" or "panels". The SHOT must survive the 77-token CLIP limit: over it, trim STYLE, then CAMERA,
+    then non-essential SETTING details, then non-essential CHARACTER details. The SHOT and the characters' key
+    traits (age, hair, clothing) are never trimmed."""
+    shot = _PANEL_WORDS.sub("", shot).strip()
     style = _PANEL_WORDS.sub("", CONFIG.get("image_style_fallback", SHORT_STYLE))
-    shot = _PANEL_WORDS.sub("", shot)
     chars, setting, camera = _blocks(story, scene_i, shot)
     chars = [_PANEL_WORDS.sub("", c) for c in chars]
     setting = _PANEL_WORDS.sub("", setting)
-    words = lambda t: len(t.split())
-    text = _assemble(shot, chars, setting, camera, style)
-    while words(text) > max_words and (setting or len(chars) > 1):
-        if setting:
-            setting = ""
+    fits = lambda: clip_tokens(_assemble(shot, chars, setting, camera, style)) <= limit
+    style_bits = [b.strip() for b in style.split(",")]
+    while not fits() and style_bits:                      # 1) style, word group by word group
+        style_bits.pop()
+        style = ", ".join(style_bits)
+    if not fits():                                        # 2) camera
+        camera = ""
+    while not fits() and setting:                         # 3) non-essential setting details
+        setting = _trim_details(setting, keep_key_traits=False) or ""
+    k = len(chars) - 1
+    while not fits() and k >= 0:                          # 4) non-essential character details
+        t = _trim_details(chars[k], keep_key_traits=True)
+        if t is None:
+            k -= 1
         else:
-            chars = chars[:-1]
-        text = _assemble(shot, chars, setting, camera, style)
-    if words(text) > max_words:  # still too long: the shot itself is huge; keep style, trim the shot's tail
-        fixed = words(_assemble("", chars, setting, camera, style))
-        shot = " ".join(shot.split()[:max(12, max_words - fixed)])
-        text = _assemble(shot, chars, setting, camera, style)
-    return re.sub(r"\s{2,}", " ", text).strip()
+            chars[k] = t
+    text = re.sub(r"\s{2,}", " ", _assemble(shot, chars, setting, camera, style)).strip()
+    if not fits():  # shot + key traits alone exceed the limit: put the SHOT first so it is never cut off
+        log(f"Fallback prompt still {clip_tokens(text)} tokens after trimming: SHOT moved first so it survives")
+        rest = _assemble("", chars, setting, camera, style).split(". SHOT: ")
+        text = f"SHOT: {shot.rstrip('.')}. " + ". ".join(x for x in rest if x and x != "SHOT:")
+        text = re.sub(r"\s{2,}", " ", text.replace(". SHOT: .", ".")).strip()
+    return text
 
 
 def _virtual_shot(src: Path, dest: Path, shot: str) -> None:
@@ -486,10 +533,15 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
                 _STATE["told_none"] = True
             results[(i, shot)] = None
             continue
+        logged_short: list = []
+
         def draw(chain: list) -> int:
             """Try the sources in order; returns the index of the one that made the image, or -1."""
             for k, provider in enumerate(chain):
                 p = prompt if provider is _cloudflare else short_prompt
+                if provider is not _cloudflare and not logged_short:
+                    log(f"Image {i}{shot} fallback prompt ({clip_tokens(p)} CLIP tokens): {p}")
+                    logged_short.append(1)
                 for attempt in range(2):
                     try:
                         _save_valid(provider(p, base_seed + n * 7 + attempt), path)
