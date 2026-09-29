@@ -41,6 +41,8 @@
 
   "story_modes": ["lore", "mystery", "lore", "case", "coldcase"],
 
+  "groq_backup": true,
+  "groq_model": "llama-3.3-70b-versatile",
   "llm_models": ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-flash-latest"],
 
   "subgenres": [

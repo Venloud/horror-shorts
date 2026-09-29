@@ -10,6 +10,7 @@ import requests
 from common import CONFIG, env, log
 
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 SCHEMA = {
     "type": "OBJECT",
@@ -209,6 +210,42 @@ def _call_gemini(model: str, prompt: str, api_key: str, temperature: float = 1.0
     return json.loads(text) if as_json else text.strip()
 
 
+def model_chain() -> list[str]:
+    """Story writers in order: config llm_models, with Groq (flag groq_backup, only if GROQ_API_KEY is set) right
+    after the first Gemini model. Cloudflare's text models are never used."""
+    models = list(CONFIG["llm_models"])
+    if CONFIG.get("groq_backup", True) and env("GROQ_API_KEY", required=False):
+        models.insert(1, "groq:" + CONFIG.get("groq_model", "llama-3.3-70b-versatile"))
+    return models
+
+
+def _call_model(model: str, prompt: str, api_key: str, temperature: float = 1.0, as_json: bool = True, schema=None):
+    if model.startswith("groq:"):
+        return _call_groq(model[5:], prompt, temperature, as_json, schema)
+    return _call_gemini(model, prompt, api_key, temperature, as_json, schema)
+
+
+def _call_groq(model: str, prompt: str, temperature: float = 1.0, as_json: bool = True, schema=None):
+    """Groq (OpenAI-compatible, JSON mode): same prompt; the response schema is spelled out in the prompt because
+    JSON mode only guarantees valid JSON, not our fields."""
+    if as_json:
+        prompt += ("\n\nReply with ONLY one JSON object (no markdown) that follows this JSON schema exactly, "
+                   "same field names:\n" + json.dumps(schema or SCHEMA))
+    body = {"model": model, "messages": [{"role": "user", "content": prompt}], "temperature": min(1.0, temperature),
+            "max_tokens": 8000}
+    if as_json:
+        body["response_format"] = {"type": "json_object"}
+    r = requests.post(GROQ_URL, json=body, timeout=120, headers={"Authorization": f"Bearer {env('GROQ_API_KEY')}"})
+    if r.status_code != 200:
+        raise RuntimeError(f"groq:{model} HTTP {r.status_code}: {r.text[:300]}")
+    text = r.json()["choices"][0]["message"]["content"] or ""
+    return json.loads(text) if as_json else text.strip()
+
+
+def _writer(model: str) -> str:
+    return f"groq ({model[5:]})" if model.startswith("groq:") else f"gemini ({model})"
+
+
 def _validate(story: dict) -> None:
     scenes = story.get("scenes") or []
     if not 6 <= len(scenes) <= 14:
@@ -230,20 +267,22 @@ def pick_mode(history: list[dict]) -> str:
 
 def _run_models(prompt: str, api_key: str, temperature: float, patient: bool = True) -> dict:
     errors = []
-    for idx, model in enumerate(CONFIG["llm_models"]):
+    for idx, model in enumerate(model_chain()):
         # The first model writes far better image prompts: when it's only overloaded (503), wait for it (~2 min).
         wait_503 = patient and idx == 0
         for attempt in range(5 if wait_503 else 3):
             try:
-                story = _call_gemini(model, prompt, api_key, temperature)
+                story = _call_model(model, prompt, api_key, temperature)
                 _validate(story)
                 story["model"] = model
+                story["writer"] = _writer(model)
+                log(f"Written by {story['writer']}")
                 return story
             except Exception as e:  # noqa: BLE001
                 errors.append(f"{model}#{attempt + 1}: {str(e)[:300]}")
                 log(f"Story attempt failed: {str(e)[:200]}")
-                if "404" in str(e):
-                    break  # model retired: skip straight to the next one
+                if "404" in str(e) or model.startswith("groq:"):
+                    break  # model retired / Groq backup failed once: skip straight to the next one
                 if "429" in str(e):
                     break  # daily free quota used up for this model: go straight to the next one
                 if "BLOCKED" in str(e) and attempt >= 1:
@@ -379,9 +418,9 @@ SCRIPT:
 
 def score_script(script: str, api_key: str) -> tuple[int, dict]:
     last = None
-    for model in CONFIG["llm_models"]:
+    for model in model_chain():
         try:
-            r = _call_gemini(model, SCORE_PROMPT.replace("{script}", script), api_key, 0.2, as_json=True, schema=SCORE_SCHEMA)
+            r = _call_model(model, SCORE_PROMPT.replace("{script}", script), api_key, 0.2, as_json=True, schema=SCORE_SCHEMA)
             total = sum(max(0, min(int(r.get(k, 0)), mx)) for k, mx in SCORE_MAX.items())
             if "UNCLEAR" in r.get("what_happened", "").upper():
                 total = min(total, 70)  # a story nobody can explain never passes
@@ -406,14 +445,14 @@ def _prompt_files() -> list:
     return sorted(p for p in (ROOT / "prompts").glob("fiction*.txt") if p.name != COLD_CASE_FILE)
 
 
-def _run_text(prompt: str, api_key: str, lo: int, hi: int) -> tuple[str, str]:
+def _run_text(prompt: str, api_key: str, lo: int, hi: int, patient: bool = True) -> tuple[str, str]:
     errors = []
-    for idx, model in enumerate(CONFIG["llm_models"]):
+    for idx, model in enumerate(model_chain()):
         # The first model writes far better image prompts: when it's only overloaded (503), wait for it (~2 min).
         wait_503 = patient and idx == 0
         for attempt in range(5 if wait_503 else 3):
             try:
-                text = _call_gemini(model, prompt, api_key, 1.0, as_json=False)
+                text = _call_model(model, prompt, api_key, 1.0, as_json=False)
                 n = len(text.split())
                 if not lo * 0.8 <= n <= hi * 1.3:
                     raise ValueError(f"story length {n} words, wanted {lo}-{hi}")
@@ -421,7 +460,8 @@ def _run_text(prompt: str, api_key: str, lo: int, hi: int) -> tuple[str, str]:
             except Exception as e:  # noqa: BLE001
                 errors.append(f"{model}#{attempt + 1}: {str(e)[:200]}")
                 log(f"Story attempt failed: {str(e)[:200]}")
-                if "404" in str(e) or "429" in str(e) or ("BLOCKED" in str(e) and attempt >= 1) or ("503" in str(e) and attempt >= 1):
+                if "404" in str(e) or "429" in str(e) or ("BLOCKED" in str(e) and attempt >= 1) or \
+                        ("503" in str(e) and attempt >= 1) or model.startswith("groq:"):
                     break
                 time.sleep(6 * (attempt + 1))
     raise RuntimeError("Could not write a story:\n" + "\n".join(errors))
@@ -503,7 +543,7 @@ The narration must be {lo} to {hi} words in total (about {round(lo / 2.4)}-{roun
     log(f"Story passed with {score}/100")
 
     story = plan_scenes(script, api_key, sfx_list)
-    story.update({"mode": "coldcase" if cold_case else "fiction", "subgenre": subgenre, "prompt_file": file.name, "script_model": model,
+    story.update({"mode": "coldcase" if cold_case else "fiction", "subgenre": subgenre, "prompt_file": file.name, "script_model": model, "writer": _writer(model),
                   "score": score, "what_happened": review.get("what_happened", "")})
     return story
 

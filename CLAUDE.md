@@ -29,6 +29,10 @@ so a new session can pick up without starting over.
    inbox runs don't count toward the rotation. Made-up fiction was dropped from the rotation on purpose: real
    legends with a pop-culture tie-in perform best (the Strigoi video got 232 views and 47% average watch time).
    Fiction is only the fallback when a mode fails (still behind the 80/100 quality gate).
+   **Groq backup writer** (flag `groq_backup`, `groq_model` llama-3.3-70b-versatile, only if GROQ_API_KEY):
+   `story.model_chain()` = first Gemini model -> Groq (OpenAI-compatible JSON mode, schema spelled out in the
+   prompt, same prompts + fact lock) -> the other Gemini models. One Groq failure = next model at once. Every story
+   logs "Written by gemini (...)" / "groq (...)"; history `writer`. Cloudflare text models are never used.
    - `fiction` (fallback only): written with the OWNER'S OWN instructions in `prompts/fiction_*.txt` (Reddit-style
      thriller/suspense/mystery). `fiction_creepy_job.txt` is his text verbatim; `fiction_reddit_thriller.txt` is a
      widened version with `{subgenre}`. `subgenre_prompts` in config maps subgenres to files.
@@ -292,5 +296,5 @@ UPDATE REPORT
 ## Secrets used
 GEMINI_API_KEY, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, TIKTOK_CLIENT_KEY, TIKTOK_CLIENT_SECRET,
 TIKTOK_REFRESH_TOKEN, NTFY_TOPIC, HF_TOKEN, FREESOUND_API_KEY, GH_PAT, YT_CLIENT_ID, YT_CLIENT_SECRET, YT_REFRESH_TOKEN.
-Optional (feature skipped without them): PEXELS_API_KEY, PIXABAY_API_KEY, SI_API_KEY (api.data.gov). (POLLINATIONS_KEY is no longer used.)
+Optional (feature skipped without them): PEXELS_API_KEY, PIXABAY_API_KEY, SI_API_KEY (api.data.gov), GROQ_API_KEY. (POLLINATIONS_KEY is no longer used.)
 build.yml/daily.yml also use the built-in `github.token` for the buffer release.

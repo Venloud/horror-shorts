@@ -113,7 +113,8 @@ def main() -> int:
         story["story_id"] = story.get("story_id") or checkpoint.story_id(story)
         _gh_output("story_id", story["story_id"])
         log(f"Story {story['story_id']}: '{story['title']}' (mode {story.get('mode')}, "
-            f"source {story.get('source') or story.get('case') or 'rotation'}, true story: {bool(story.get('true_story'))})")
+            f"source {story.get('source') or story.get('case') or 'rotation'}, true story: {bool(story.get('true_story'))}, "
+            f"written by {story.get('writer') or story.get('model')})")
         (workdir / "story.json").write_text(json.dumps(story, indent=2, ensure_ascii=False))
 
         narration = None if testing else checkpoint.load_narration(story, workdir)
@@ -196,6 +197,7 @@ def main() -> int:
             "score": story.get("score"),
             "seconds": round(narration["duration"], 1),
             "voice_speed": narration.get("speed"),
+            "writer": story.get("writer") or story.get("model"),  # which provider wrote it (gemini / groq)
             "media_ids": [a["id"] for a in story.get("media_assets") or []],  # stock clips are not reused for 20 videos
             "buffered": stamp,
             "tiktok": None,  # filled in by publish.py when it's posted
