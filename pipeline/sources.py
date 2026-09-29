@@ -91,7 +91,8 @@ def next_case(history: list[dict]) -> dict:
     fresh = [c for c in json.loads(CASES_FILE.read_text()) if c["title"] not in used]
     if not fresh:
         raise RuntimeError("All FBI cases have been used. Add more to data/cases.json.")
-    return random.choice(fresh)
+    import trends
+    return trends.pick(fresh, lambda c: c.get("wiki") or c["title"])  # prefer a case people are looking up now
 
 
 def case_facts(case: dict) -> str:

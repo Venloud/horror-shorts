@@ -231,7 +231,8 @@ def pick_case(history: list[dict], kind: str = "mystery") -> str:
     fresh = [c for c in json.loads(file.read_text()) if c not in used]
     if not fresh:
         raise RuntimeError(f"All topics in {file.name} have been used. Add more titles.")
-    return random.choice(fresh)
+    import trends
+    return trends.pick(fresh)  # prefer a topic whose Wikipedia views just jumped
 
 
 def fetch_facts(title: str, limit: int = 9000) -> str:

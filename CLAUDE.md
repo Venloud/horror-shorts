@@ -51,6 +51,10 @@ so a new session can pick up without starting over.
      Wikipedia fallback). Sensitive stories (harm to a child, sexual crime, suicide) are NOT skipped: they
      become inspiration for an original fictional story instead (owner's request: "make it safe").
    - `mystery`: real unsolved mysteries (`data/mysteries.json`, Wikipedia facts).
+   - **Trend picking** (`trends.py`, flag `trend_picking`): lore / mystery / case picks check up to `trend_sample`
+     (25) unused topics on the Wikimedia pageviews API (NightFilesBot User-Agent, one request at a time, cached 24 h
+     in cache/media-search/trends.json) and take the one whose last-7-day views are >= `trend_min_ratio` (1.5x)
+     its 60-day average; else (or on any error) a random pick as before. Log: "Trending pick: ...".
    - `lore`: legends/folklore with a "Did you know" hook (`data/lore.json`).
    - `inbox/`: the owner can drop links (`inbox/links.txt`: `true <url>` or `fiction <url>`) or pasted
      stories (`.txt`, first line TRUE/FICTION/SCRIPT/SCRIPT TRUE). Inbox items jump the queue and are used once.
