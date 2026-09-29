@@ -13,6 +13,10 @@ on:
         description: "Test build: no Cloudflare, not added to the buffer, no history (mp4 kept as an artifact)"
         type: boolean
         default: false
+      test_cloudflare_images:
+        description: "Test build only: use this many real Cloudflare images (0-12) to check actual quality"
+        type: number
+        default: 0
 
 permissions:
   contents: write
@@ -107,6 +111,7 @@ jobs:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
+          TEST_CF_IMAGES: ${{ inputs.test_cloudflare_images || 0 }}
           # only used to make up a missed publish slot right after the build
           TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
           TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}

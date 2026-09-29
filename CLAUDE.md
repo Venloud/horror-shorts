@@ -36,7 +36,9 @@ so a new session can pick up without starting over.
    - `coldcase` (IN THE ROTATION AS A TEST): ORIGINAL fake case files (`prompts/fiction_cold_case.txt`: invented
      small town, missing adult, last sighting, evidence, suspects, one strange detail, twist that pays off the hook).
      Uses the fiction score loop (min 80, max 3 drafts; a date/year/place first sentence fails the draft), falls back
-     to lore. Never gets the TRUE STORY badge/line/caption; caption gets "(fictional story)" + #fiction. Never copies
+     to lore. Never gets the TRUE STORY badge/line/caption; caption gets "(fictional story)" + #fiction
+     (`notify.is_fiction`: forced for ANY made-up story: coldcase, fiction fallback, inbox FICTION, sensitive cases
+     retold as fiction; never for true stories, lore or inbox SCRIPTs). Never copies
      or resembles real cases or other creators' stories (e.g. the fake "Emily Carter case" is inspiration for the
      FORMAT only). Compare its analytics with the real modes via `mode` in history.json.
    - `case`: real FBI / History.com cases from `data/cases.json` (fact-locked `TRUE_PROMPT`; FBI page first,
@@ -102,8 +104,12 @@ so a new session can pick up without starting over.
    **2 images per scene** (`shots_per_scene` 2, was 4; 3-4 still work if configured): shot a = the narration's
    main visual, shot b = a DIFFERENT subject/action/angle of the same words (render motion covers the rest).
    Quota order: every scene's "a" shot first, then every "b", then "c"/"d", so running out of quota (or the local
-   time budget) loses extra cuts, never whole scenes. SD-Turbo has a hard budget for the whole run
-   (`local_image_budget_minutes`, 12); when it's hit the run stops drawing and uses what exists.
+   time budget) loses extra cuts, never whole scenes. SD-Turbo is a GAP FILLER only: max `local_image_max` (6)
+   local images per video in production (test builds: only the 12-min `local_image_budget_minutes`). If Cloudflare
+   and the Spaces are out and more scenes need an image than local may make, the build stops early
+   (`images.ImageQuotaWait`, ntfy "waiting for image quota"; the checkpoint keeps story + narration, the buffer
+   covers the gap); preflight does the same before writing a story when both are already out.
+   Hook shot (scene 0 shot a): up to 3 draws (new seed, then `build_simple_prompt`) before it's dropped.
    Cloudflare daily cap vs short rate limit are told apart (short limit = wait and retry).
    A Space quota error marks the Spaces out for the run; the local model is always the last step. The run only
    fails if more than max(1, scenes // 4) scenes have no image at all.
@@ -119,7 +125,13 @@ so a new session can pick up without starting over.
    of the characters named IN this shot -> THIS shot's location -> camera framing -> style. Cloudflare gets the full
    looks + full location + rich `image_style_cf`; fallbacks get 3-6 key traits (age, hair, clothing), <= 8 words of
    location, short `image_style_fallback`, and stay <= 70 CLIP tokens (trim order: style, camera, setting details,
-   character details; the shot is never shortened and is always first). Every image logs one line: provider,
+   character details; the shot is never cut and is always first; a shot over ~42 CLIP tokens is rewritten to
+   <= 20 words by flash-lite, `_shorter_shot`, keeping subject/action/object). Token counts come from the real CLIP
+   tokenizer (its "longer than 77" warning was only drafts being measured; silenced). Only style words are
+   filtered ("graphic novel", "comic panels"...), never a literal "panel" (elevator button panel).
+   **No readable text**: prompts never ask for signs, neon lettering, title cards, headlines or screens/documents
+   with words (`_no_text` strips quoted words, "sign reading ...", "neon sign" -> glowing neon tubes; texty shots
+   get "no legible text" on Cloudflare / "blank unmarked surfaces" on fallbacks). Every image logs one line: provider,
    tokens, qa, subject, location (+ neurons for Cloudflare) and the final prompt.
    **Per-shot location**: the scene plan / mystery prompts output `image_location`, `image_location_2..4` (a
    `locations` name or "none") for each image prompt; only that shot's location is injected, never the scene's.
@@ -134,8 +146,9 @@ so a new session can pick up without starting over.
    Negative prompt (`images.NEGATIVE`: comic page, multiple panels, panel grid, collage, split screen, text,
    letters, speech bubbles, watermark) is passed to any Space that exposes `negative_prompt`; today none of the
    three sources uses one (Cloudflare FLUX / FLUX Spaces have no such input, SD-Turbo runs at guidance 0).
-   **Image QA** (`check_image`, Gemini vision lite model, strict): "Does this image clearly depict the requested
-   subject, action, and location? ... YES / NO: reason" (also NO for panels/collages). Paced to
+   **Image QA** (`check_image`, Gemini vision lite model): passes if the image clearly shows the requested subject
+   and action in a setting that fits, is one frame and has no garbled text; it does NOT require a real landmark /
+   brand / person identity (a painterly "old downtown hotel" is fine for the Cecil Hotel). "YES / NO: reason". Paced to
    `image_check_per_minute` (10); a 429 skips QA for that image only (qa=SKIPPED); never fails the build.
    Fallback images always get QA (waits a few s for the slot); Cloudflare images only when a slot is free right now
    (`image_check_cloudflare`), so fallbacks keep the quota. NO = rejected (file renamed `*.rejected*.png`, never
@@ -182,6 +195,8 @@ so a new session can pick up without starting over.
   Actions cache (`last-images-*`) after each build.
 - `build.yml` "test" input (workflow_dispatch): no Cloudflare (reuses the cached images if the scene count
   matches, else local SD-Turbo), not added to the buffer, no history, mp4 kept as an artifact, ntfy "[TEST]".
+  `test_cloudflare_images` input (0-12, default 0; env TEST_CF_IMAGES): a test build uses that many real
+  Cloudflare images first (no cache reuse then) to check actual quality.
 - `daily.yml` (`pipeline/publish.py`) does NO generation: oldest buffered video -> TikTok + YouTube Shorts ->
   delete from buffer -> both results + "posted" time saved in history -> phone alert with the YouTube link
   (+ "buffer low" alert at 1 left). Only if both platforms fail does the video stay in the buffer.

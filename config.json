@@ -18,6 +18,7 @@
   "local_image_size": [512, 896],
   "local_image_steps": 2,
   "local_image_budget_minutes": 12,
+  "local_image_max": 6,
   "target_seconds": [50, 60],
   "voice_speed_range": [1.0, 1.2],
 

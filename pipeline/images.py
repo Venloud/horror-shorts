@@ -219,7 +219,9 @@ def cloudflare_has_quota() -> bool | None:
 def preflight() -> str | None:
     """Before spending Gemini + voice time: make sure at least one image source works. Returns a problem or None."""
     if test_mode():
-        log("TEST MODE: images come from the last run's cache or the local model (Cloudflare is never called)")
+        n = test_cloudflare_images()
+        log(f"TEST MODE: {n} real Cloudflare image(s), then the local model" if n else
+            "TEST MODE: images come from the last run's cache or the local model (Cloudflare is never called)")
         return None
     cf = cloudflare_has_quota()
     if cf is not False:
@@ -234,14 +236,15 @@ def preflight() -> str | None:
     except Exception as e:  # noqa: BLE001
         spaces_err = str(e)[:200]
         log(f"Free FLUX Spaces not usable: {spaces_err}")
+    _STATE["spaces_out"] = True
+    # Local SD-Turbo alone is a gap filler (local_image_max per video), never enough for a whole video: wait for
+    # the quota instead of spending Gemini + voice + 12 minutes of CPU on a weak video. The buffer covers the gap.
     try:
-        _local_sd("a foggy forest at night, illustration", 1)
-        log("Local SD-Turbo: working (slow, CPU)")
-        return None
-    except Exception as e:  # noqa: BLE001
-        return ("No image source available. Cloudflare daily limit used up (resets 8 PM New York); "
-                f"free Spaces: {spaces_err}; local model: {str(e)[:200]}. Nothing was generated; "
-                "inbox items stay queued.")
+        _quota_stop(f"Cloudflare daily limit used up and the free Spaces are out ({spaces_err[:120]}). "
+                    "No story was written; inbox items stay queued.")
+    except ImageQuotaWait as e:
+        return str(e)
+    return None
 
 
 def save_cache(story: dict, images: list[list[Path]]) -> None:
@@ -336,8 +339,25 @@ def _key(name: str) -> str:
 
 SHORT_STYLE = "single full-frame dark cinematic illustration, painterly"
 NEGATIVE = "comic page, multiple panels, panel grid, collage, split screen, text, letters, speech bubbles, watermark"
-_PANEL_WORDS = re.compile(r"\b(graphic[- ]novels?|comic(?:[- ]book)?s?|panels?|storyboards?|page layouts?)\b",
-                          re.IGNORECASE)
+# Style words that make models draw page layouts. Only these phrases: a literal "panel" (an elevator's button panel,
+# a control panel) is part of the shot and must never be cut out of it.
+_PANEL_WORDS = re.compile(r"\b(graphic[- ]novels?|comic(?:[- ]book)?s?(?:[- ]panels?)?|multiple panels|panel grids?|"
+                          r"storyboards?|page layouts?)\b", re.IGNORECASE)
+# Things the image models render as garbled fake text. Never ask for readable words: show the object blank.
+_QUOTED = re.compile(r"[\"“”]([^\"“”]{1,60})[\"“”]")
+_TEXTY = re.compile(r"\b(signs?|signboard|neon|lettering|headlines?|newspapers?|documents?|letters?|notes?|screens?|"
+                    r"monitors?|laptops?|phones?|posters?|title cards?|labels?|clipboards?|reports?|receipts?|"
+                    r"forms?|files?|folders?|books?|diary|journal|maps?|plaques?|billboards?|menus?)\b", re.IGNORECASE)
+
+
+def _no_text(shot: str) -> str:
+    """Remove requests for readable text: quoted words, "sign reading ...", "neon sign" -> glowing neon tubes."""
+    shot = re.sub(r"\b(reading|saying|that says|that reads|labeled|labelled|titled|with the words?)\s+" + _QUOTED.pattern,
+                  "", shot, flags=re.IGNORECASE)
+    shot = _QUOTED.sub("", shot)
+    shot = re.sub(r"\b(retro |glowing |old |flickering )?neon (sign|lettering|letters)s?\b", "glowing neon tubes",
+                  shot, flags=re.IGNORECASE)
+    return re.sub(r"\s+([,.;])", r"\1", re.sub(r"\s{2,}", " ", shot)).strip()
 
 
 def _letter(scene: dict, shot: str) -> str:
@@ -403,7 +423,7 @@ def _shot_parts(story: dict, scene_i: int, shot: str, letter: str | None):
     """(shot text without framing words, camera framing, characters IN this shot, location OF this shot, object?)"""
     scene = story["scenes"][scene_i]
     letter = letter or _letter(scene, shot)
-    shot = _PANEL_WORDS.sub("", _clean_shot(shot))
+    shot = _no_text(_PANEL_WORDS.sub("", _clean_shot(shot)))
     chars = _shot_characters(story, shot)
     loc = _shot_location(story, scene_i, letter, shot)
     camera = scene.get("camera") or ", ".join(dict.fromkeys(m.group(0).lower() for m in _CAMERA.finditer(shot)))
@@ -429,7 +449,8 @@ def build_prompt(story: dict, scene_i: int, shot: str, style: str | None = None,
     if loc:
         look = loc["look"].strip().rstrip(".")
         parts.append(" ".join(_bits(look)[0].split()[:3]) if is_object else look)
-    return _join(parts + [camera, style])
+    blank = "the surfaces blank, no legible text or lettering" if _TEXTY.search(body) else ""
+    return _join(parts + [blank, camera, style])
 
 
 CLIP_LIMIT = 77  # SD-Turbo's text encoder (and the CLIP half of FLUX) reads 77 tokens; the rest is cut off
@@ -448,6 +469,9 @@ def clip_tokens(text: str) -> int:
             from transformers import CLIPTokenizer
             _STATE["tok"] = CLIPTokenizer.from_pretrained(CONFIG.get("local_image_model", "stabilityai/sd-turbo"),
                                                           subfolder="tokenizer")
+            # Counting only: drafts over 77 are measured while trimming, the "longer than the specified maximum"
+            # warning they trigger is not a real overflow (the final prompt count is what's logged).
+            _STATE["tok"].model_max_length = 10**6
         except Exception:  # noqa: BLE001
             _STATE["tok"] = None
     tok = _STATE["tok"]
@@ -492,7 +516,11 @@ def build_short_prompt(story: dict, scene_i: int, shot: str, limit: int = FALLBA
     limit, trim in this order: style, camera, setting details, character details (down to 3 traits). The shot
     itself is never shortened. No labels, never "graphic novel" / "comic" / "panels"."""
     body, camera, chars, loc, is_object = _shot_parts(story, scene_i, shot, letter)
+    if clip_tokens(body) > 42:  # the shot alone would push who/where past CLIP's reach: shorten it, never cut it
+        body = _shorter_shot(body)
     style_bits = _bits(_PANEL_WORDS.sub("", CONFIG.get("image_style_fallback", SHORT_STYLE)))
+    if _TEXTY.search(body):
+        style_bits.insert(0, "blank unmarked surfaces")
     traits = [[c["name"]] + [_PANEL_WORDS.sub("", t).strip() for t in _key_traits(c["look"])] for c in chars]
     setting = "" if is_object or not loc else _PANEL_WORDS.sub("", _few_words(loc["look"], 8))
     compose = lambda: _join([body] + [", ".join(t) for t in traits] + [setting, camera] + style_bits)
@@ -507,10 +535,34 @@ def build_short_prompt(story: dict, scene_i: int, shot: str, limit: int = FALLBA
         for t in traits:
             if not fits() and len(t) > want + 1:
                 del t[want + 1:]
+    if not fits() and len(body.split()) > 20:  # still over: the shot itself is too long, have it shortened
+        body = _shorter_shot(body)
     text = compose()
     if not fits():
         log(f"Fallback prompt {clip_tokens(text)} tokens after trimming; the shot is first, so CLIP keeps it")
     return text
+
+
+SHORTEN_PROMPT = """Shorten this image description to at most 20 words. Keep the main subject, the action and the key
+object, in that order, and keep every person's name exactly as written. Whole phrases only, no cut-off words.
+No readable text, signs or lettering. Return JSON: {{"shot": "<shortened description>"}}
+
+{shot}"""
+
+
+def _shorter_shot(body: str) -> str:
+    """Gemini flash-lite rewrites an over-long shot to <= 20 words (subject, action, key object). Cached per shot.
+    Without Gemini the shot stays whole (never cut mid-phrase)."""
+    cache = _STATE.setdefault("short_shots", {})
+    if body not in cache:
+        models = CONFIG.get("llm_models") or []
+        lite = [m for m in models if "lite" in m] or models[-1:]
+        new = str((_gemini_json(SHORTEN_PROMPT.format(shot=body), lite) or {}).get("shot") or "").strip()
+        ok = bool(new) and len(new.split()) <= 24
+        cache[body] = _no_text(_PANEL_WORDS.sub("", new)).rstrip(".") if ok else body
+        log(f"Shot shortened for the fallbacks: {cache[body]}" if ok else
+            "Shot could not be shortened (Gemini unavailable), keeping it whole")
+    return cache[body]
 
 
 def build_simple_prompt(story: dict, scene_i: int, shot: str, letter: str | None = None) -> str:
@@ -555,9 +607,9 @@ def near_duplicate(p1: str, p2: str) -> bool:
     return jac >= 0.6 or difflib.SequenceMatcher(None, a, b).ratio() >= 0.8
 
 
-def _gemini_json(prompt: str) -> dict | None:
+def _gemini_json(prompt: str, models: list[str] | None = None) -> dict | None:
     key = env("GEMINI_API_KEY", required=False)
-    for model in (CONFIG.get("llm_models") or [])[:2] if key else []:
+    for model in (models or (CONFIG.get("llm_models") or [])[:2]) if key else []:
         try:
             r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
                               headers={"x-goog-api-key": key}, timeout=60, json={
@@ -565,9 +617,9 @@ def _gemini_json(prompt: str) -> dict | None:
                                   "generationConfig": {"temperature": 0.7, "responseMimeType": "application/json"}})
             if r.status_code == 200:
                 return json.loads(r.json()["candidates"][0]["content"]["parts"][0]["text"])
-            log(f"Duplicate-shot rewrite: {model} HTTP {r.status_code}")
+            log(f"Gemini ({model}) HTTP {r.status_code}")
         except Exception as e:  # noqa: BLE001
-            log(f"Duplicate-shot rewrite: {model} failed ({str(e)[:80]})")
+            log(f"Gemini ({model}) failed ({str(e)[:80]})")
     return None
 
 
@@ -628,15 +680,17 @@ def _virtual_shot(src: Path, dest: Path, shot: str) -> None:
         im.crop((x, y, x + cw, y + ch)).resize((w, h), Image.LANCZOS).save(dest, "PNG")
 
 
-QA_QUESTION = """Does this image clearly depict the requested subject, action, and location?
+QA_QUESTION = """Does this image clearly show the requested subject and action, in a setting that fits the request?
 REQUEST: {request}
 Answer exactly one:
 YES
 NO: <reason in 2-5 words>
-Answer NO if the image depicts a different main subject, wrong location, wrong action, generic unrelated scenery,
-an airplane cabin when the request is outdoors, or another obvious mismatch. Also answer NO if the image is a grid
-of panels, a comic page, a collage or a split screen instead of one single scene.
-Answer YES only when the requested visual is clearly recognizable."""
+Answer NO if: the main subject or action is different or missing; the setting clearly contradicts the request
+(e.g. an airplane cabin when the request is outdoors, a factory when it asks for a hotel roof); it is several
+panels, a comic page, a collage or a split screen instead of one single frame; or it shows garbled or fake text.
+Do NOT require the identity of a specific real landmark, building, brand or person: a generic painterly version
+is fine (any old downtown hotel for a named hotel, any 1970s airliner for a named flight).
+Answer YES when the requested subject and action are clearly recognizable in one frame that fits the setting."""
 
 
 def check_image(path: Path, request: str, wait: bool = True) -> tuple[bool | None, str]:
@@ -690,6 +744,29 @@ def check_image(path: Path, request: str, wait: bool = True) -> tuple[bool | Non
 _NAMES = {"_cloudflare": "cloudflare", "_hf_space": "hf_space", "_local_sd": "local_sd"}
 
 
+class ImageQuotaWait(RuntimeError):
+    """No free image quota for this video right now: stop early, the next build continues it."""
+
+
+def test_cloudflare_images() -> int:
+    """Test builds: how many real Cloudflare images to use (build.yml input test_cloudflare_images, 0-12)."""
+    try:
+        return max(0, min(12, int(os.environ.get("TEST_CF_IMAGES") or 0))) if test_mode() else 0
+    except ValueError:
+        return 0
+
+
+def _quota_stop(detail: str) -> None:
+    log(f"Waiting for image quota: {detail}")
+    try:
+        from notify import notify_text
+        notify_text("Night Files: waiting for image quota", f"{detail}\nThe buffer covers the gap; Cloudflare resets "
+                    "at 00:00 UTC (8 PM New York).", warn=True)
+    except Exception as e:  # noqa: BLE001
+        log(f"Quota alert not sent ({e})")
+    raise ImageQuotaWait(f"waiting for image quota: {detail}")
+
+
 def _place(story: dict, i: int, letter: str) -> tuple[str, bool]:
     """(location name of the shot or "", is it an outdoor shot) - decides which images may stand in for it."""
     shot = story["scenes"][i].get(PROMPT_KEYS[letter]) or ""
@@ -711,15 +788,17 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
     Rejected images are never used; a missing shot is only covered by a fitting image from the same scene."""
     outdir.mkdir(parents=True, exist_ok=True)
     testing = test_mode()
-    if testing:
+    test_cf = test_cloudflare_images()
+    if testing and not test_cf:
         cached = _cached_images(story, outdir)
         if cached:
             return cached
     style = CONFIG.get("image_style_cf") or CONFIG.get("image_style", "")
     dedupe_shots(story)  # the same picture twice in one video -> the later shot gets a different subject/angle
     base_seed = random.randint(1, 2_000_000_000)
-    use_cf = bool(env("CLOUDFLARE_API_TOKEN", required=False)) and not testing
+    has_cf = bool(env("CLOUDFLARE_API_TOKEN", required=False)) and (not testing or test_cf > 0)
     qa_cf = CONFIG.get("image_check_cloudflare", True)
+    local_max = int(CONFIG.get("local_image_max", 6))
 
     jobs = []  # (scene index, shot letter, prompt)
     for i, scene in enumerate(story["scenes"]):
@@ -736,11 +815,27 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
     count = {"cloudflare": 0, "hf_space": 0, "local_sd": 0, "rejected": 0, "virtual_cached": 0}
     told_two = False
     done_shots: list[str] = []
+
+    def cf_usable() -> bool:  # test builds: only the first `test_cloudflare_images` images
+        return has_cf and not _STATE["cf_out"] and (not testing or count["cloudflare"] < test_cf)
+
     for n, (i, shot, raw_prompt) in enumerate(jobs):
         tag = f"{i:02d}{shot}"
         path = outdir / f"scene_{i:02d}{shot}.png"
+        use_cf = cf_usable()
+        # Production: SD-Turbo is only a gap filler (local_image_max, 6 per video). With Cloudflare and the Spaces
+        # out, more local images than that = stop now (story + narration stay in the checkpoint) instead of
+        # burning the time budget; the buffer covers the gap.
+        if not testing and not use_cf and _STATE["spaces_out"]:
+            have = {j for (j, _s), p in results.items() if p}
+            needed = len({j for (j, s2, _) in jobs[n:] if j not in have
+                          and not _is_image(outdir / f"scene_{j:02d}{s2}.png")})
+            if needed > local_max - count["local_sd"]:
+                _quota_stop(f"Cloudflare and the free Spaces are out; {needed} scenes still need an image but "
+                            f"local SD-Turbo is a gap filler only ({local_max - count['local_sd']} of {local_max} "
+                            "left). Stopped early; the story is kept and the next build continues it.")
         # Cloudflare out (or test mode): the fallbacks are slow/limited, so at most 2 shots per scene from here on.
-        if shot in ("c", "d") and (testing or _STATE["cf_out"] or not use_cf) and not _is_image(path):
+        if shot in ("c", "d") and not use_cf and not _is_image(path):
             if not told_two:
                 log("Cloudflare not available: 2 shots per scene for the rest of this run")
                 told_two = True
@@ -763,7 +858,7 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
         prompts = {"full": build_prompt(story, i, raw_prompt, style, letter=shot),       # Cloudflare
                    "short": build_short_prompt(story, i, raw_prompt, letter=shot),       # Spaces / SD-Turbo
                    "simple": build_simple_prompt(story, i, raw_prompt, letter=shot)}     # after a QA rejection
-        chain = (([_cloudflare] if use_cf and not _STATE["cf_out"] else [])
+        chain = (([_cloudflare] if use_cf else [])
                  + ([] if testing or _STATE["spaces_out"] else [_hf_space])
                  + ([] if _STATE["local_out"] else [_local_sd]))
         if not chain:
@@ -772,25 +867,48 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
                 _STATE["told_none"] = True
             results[(i, shot)] = None
             continue
-        ok, used, fallback_rejections = False, set(), 0
-        for provider in chain:
-            if (provider is _cloudflare and _STATE["cf_out"]) or (provider is _hf_space and _STATE["spaces_out"]) \
+        ok, used, fallback_rejections, draws, last_kind = False, set(), 0, 0, ""
+        # The hook shot (scene 0, shot a) is the thumbnail: up to 3 draws (new seed, then a simplified prompt)
+        # with the last source that drew, before it is dropped.
+        extra = 2 if (i, shot) == (0, "a") else 0
+        last = None
+        for k in range(len(chain) + extra):
+            if k < len(chain):
+                provider, retry = chain[k], 0
+                if fallback_rejections >= 2:
+                    continue  # one retry after a fallback rejection, then (hook only) the extra draws below
+            else:
+                if ok or last is None or draws >= 3:
+                    break
+                provider, retry = last, k - len(chain) + 1
+            if (provider is _cloudflare and not cf_usable()) or (provider is _hf_space and _STATE["spaces_out"]) \
                     or (provider is _local_sd and _STATE["local_out"]):
                 continue
-            name = _NAMES[provider.__name__]
-            kind = "full" if provider is _cloudflare else ("short" if not fallback_rejections else "simple")
-            if prompts[kind] in used:  # never send the exact same prompt twice
-                kind = "simple"
-            if prompts[kind] in used:
+            if provider is _local_sd and not testing and count["local_sd"] >= local_max:
+                _STATE["local_out"] = True
+                log(f"Local SD-Turbo gap-filler limit reached ({local_max} images this video)")
                 continue
+            name = _NAMES[provider.__name__]
+            if retry == 1:  # hook: same prompt, new seed
+                kind = last_kind
+            elif retry == 2:  # hook: simplified prompt
+                kind = "simple"
+            else:
+                kind = "full" if provider is _cloudflare else ("short" if not fallback_rejections else "simple")
+                if prompts[kind] in used:  # never send the exact same prompt twice
+                    kind = "simple"
+                if prompts[kind] in used:
+                    continue
             p = prompts[kind]
             neurons_before = _STATE["cf_neurons"]
             try:
-                _save_valid(provider(p, base_seed + n * 7), path)  # one try per provider, no blind retries
+                _save_valid(provider(p, base_seed + n * 7 + k), path)  # one try per provider, no blind retries
             except Exception as e:  # noqa: BLE001
                 log(f"Image {tag}: provider={name} failed: {str(e)[:150]}")
                 continue
             used.add(p)
+            draws += 1
+            last, last_kind = provider, kind
             tokens = clip_tokens(p)
             if provider is _cloudflare:
                 count["cloudflare"] += 1
@@ -802,19 +920,17 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
                 count[name] += 1
                 verdict, why = check_image(path, request)
             qa = "PASS" if verdict else ("FAIL" if verdict is False else "SKIPPED")
-            extra = f", neurons~{_STATE['cf_neurons'] - neurons_before:.1f}" if provider is _cloudflare else ""
+            extra_log = f", neurons~{_STATE['cf_neurons'] - neurons_before:.1f}" if provider is _cloudflare else ""
             log(f"Image {tag}: provider={name}, tokens={tokens}, qa={qa}"
                 + (f", reason={why}" if why else "") + f', subject="{subject[:60]}", location="{place or "-"}"'
-                + extra + f" | prompt: {p}")
+                + extra_log + (f", hook retry {retry}" if retry else "") + f" | prompt: {p}")
             if verdict is False:  # clearly wrong: never used; the next source tries (once) with a simpler prompt
                 count["rejected"] += 1
-                bad = path.with_name(f"{path.stem}.rejected{len(used)}.png")
+                bad = path.with_name(f"{path.stem}.rejected{draws}.png")
                 path.replace(bad)
                 rejected_files[(i, shot)] = bad
                 if provider is not _cloudflare:
                     fallback_rejections += 1
-                    if fallback_rejections >= 2:
-                        break
                 continue
             ok = True
             break

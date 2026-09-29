@@ -6,6 +6,18 @@ import requests
 from common import CONFIG, env, log
 
 
+FICTION_MODES = ("fiction", "coldcase", "inbox-fiction")
+
+
+def is_fiction(story: dict) -> bool:
+    """Made-up story: fiction fallback, coldcase, inbox FICTION or a too-sensitive case retold as original fiction.
+    Never a true story (TRUE STORY badge) and never lore (legends are told as legends)."""
+    if story.get("true_story"):
+        return False
+    mode = str(story.get("mode") or "")
+    return mode in FICTION_MODES or mode.endswith("fiction")
+
+
 def caption_text(story: dict) -> str:
     tags = " ".join("#" + t.lstrip("#").replace(" ", "") for t in story.get("hashtags", []))
     credit = CONFIG.get("music_credits", {}).get(story.get("music_file") or "", "")
@@ -13,7 +25,7 @@ def caption_text(story: dict) -> str:
     caption = story["caption"].strip()
     if story.get("true_story") and not caption.upper().startswith("TRUE STORY"):
         caption = f"TRUE STORY: {caption}"
-    if story.get("mode") == "coldcase":  # made-up case file: say so
+    if is_fiction(story):  # anything made up (inbox FICTION, coldcase, fiction fallback): say so
         if "fiction" not in caption.lower():
             caption = f"{caption} (fictional story)"
         if "#fiction" not in tags.lower():
