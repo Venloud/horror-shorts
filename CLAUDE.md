@@ -98,8 +98,9 @@ so a new session can pick up without starting over.
    removed (always 402). The render upscales everything to 1080x1920 with lanczos. Log shows the source of every
    image and the local model's total time. `preflight()` runs BEFORE the story: tiny Cloudflare quota check; if
    it's out, test the Spaces, then the local model; only if all fail, stop with a phone alert (nothing wasted).
-   If Cloudflare is out (or hits its limit mid-run), only 2 shots per scene for the rest of the run.
-   Up to 4 images per scene (`shots_per_scene`), each showing exactly what the words say at that moment.
+   If Cloudflare is out (or hits its limit mid-run), at most 2 shots per scene for the rest of the run.
+   **2 images per scene** (`shots_per_scene` 2, was 4; 3-4 still work if configured): shot a = the narration's
+   main visual, shot b = a DIFFERENT subject/action/angle of the same words (render motion covers the rest).
    Quota order: every scene's "a" shot first, then every "b", then "c"/"d", so running out of quota (or the local
    time budget) loses extra cuts, never whole scenes. SD-Turbo has a hard budget for the whole run
    (`local_image_budget_minutes`, 12); when it's hit the run stops drawing and uses what exists.
@@ -113,29 +114,43 @@ so a new session can pick up without starting over.
    `characters` entry whose fixed look is reused word-for-word in every shot. This replaced the old
    silhouettes-only rule; the build_prompt "seen from behind, face not visible" auto-add was removed with it.
    The occult / all-seeing-eye / floating-eyes ban still applies.
-   **Image prompts** (every provider): `CHARACTERS: <locked blocks, only people in this shot> . SETTING: <locked
-   block> . SHOT: <action/event, subject, key object> . CAMERA: <framing> . STYLE: <provider style>`. Blocks are the
-   sheet's "look" word-for-word every time (max ~20 words, concrete: age, hair, clothing; never rewritten); shots
-   with no person have no CHARACTERS. Styles are split in config: `image_style_cf` (rich, Cloudflare FLUX) and
-   `image_style_fallback` (short, Spaces + SD-Turbo); fallbacks never say "graphic novel", "comic" or "panels".
-   **Fallback token budget** (`build_short_prompt`, real CLIP tokenizer, limit 77): if over, trim STYLE, then
-   CAMERA, then non-essential SETTING details, then non-essential CHARACTER details; the SHOT and key traits
-   (age, hair, clothing) are never trimmed. If the shot + key traits alone still exceed 77 tokens, the SHOT is
-   moved first so CLIP never cuts it (logged). Every fallback image logs its final prompt + token count.
+   **Image prompts** (`images.build_prompt` Cloudflare / `build_short_prompt` fallbacks): natural comma-separated
+   text, NO labels ("SHOT:", "SETTING:"... are stripped). Order: shot subject + action + key object -> locked looks
+   of the characters named IN this shot -> THIS shot's location -> camera framing -> style. Cloudflare gets the full
+   looks + full location + rich `image_style_cf`; fallbacks get 3-6 key traits (age, hair, clothing), <= 8 words of
+   location, short `image_style_fallback`, and stay <= 70 CLIP tokens (trim order: style, camera, setting details,
+   character details; the shot is never shortened and is always first). Every image logs one line: provider,
+   tokens, qa, subject, location (+ neurons for Cloudflare) and the final prompt.
+   **Per-shot location**: the scene plan / mystery prompts output `image_location`, `image_location_2..4` (a
+   `locations` name or "none") for each image prompt; only that shot's location is injected, never the scene's.
+   An outdoor shot (forest, river, roof, sky...) never gets an interior block (e.g. the cabin). Object close-ups
+   (note, briefcase, money...) get no setting (Cloudflare: 3 words at most). Older plans without the fields: only a
+   location named in the shot. Schema lives in story.SCHEMA.
+   **Near-duplicates**: `dedupe_shots` (before drawing) + a check before each shot: a nearly identical prompt is
+   rewritten by Gemini to a different subject/angle, else rebuilt around an object from its narration.
    scene_plan.txt and the mystery.py prompts add ONE FRAME ONLY (one continuous film frame, never panels/
    collages/storyboards/split screens) and, for real stories, TRUE STORY VISUALS (historically accurate
    objects/clothing/vehicles/era; generic when the source doesn't say).
    Negative prompt (`images.NEGATIVE`: comic page, multiple panels, panel grid, collage, split screen, text,
    letters, speech bubbles, watermark) is passed to any Space that exposes `negative_prompt`; today none of the
    three sources uses one (Cloudflare FLUX / FLUX Spaces have no such input, SD-Turbo runs at guidance 0).
-   **Fallback-image QA** (`check_image`, never for Cloudflare images): Gemini vision (lite model, 15 s timeout)
-   answers "Is this a single scene, not a grid of panels or a collage, that shows: <shot>? YES/NO". NO -> redraw
-   once with the next source; still NO -> a "virtual shot" (75% crop of another good image of the same scene).
-   Skipped for the rest of the run on a Gemini 429; never blocks the build. Log: provider, YES/NO, redraws.
-   Consistency: the scene plan outputs `characters` and `locations` sheets; the code injects the fixed looks
-   into every prompt (style first, then setting, then character looks, then the shot).
-   Art style (config `image_style_cf` / `image_style_fallback`): comic / storybook illustration, NOT photoreal. Owner chose to keep comic
-   only (not the 1980s found-photo look).
+   **Image QA** (`check_image`, Gemini vision lite model, strict): "Does this image clearly depict the requested
+   subject, action, and location? ... YES / NO: reason" (also NO for panels/collages). Paced to
+   `image_check_per_minute` (10); a 429 skips QA for that image only (qa=SKIPPED); never fails the build.
+   Fallback images always get QA (waits a few s for the slot); Cloudflare images only when a slot is free right now
+   (`image_check_cloudflare`), so fallbacks keep the quota. NO = rejected (file renamed `*.rejected*.png`, never
+   used): after a Cloudflare NO the fallbacks draw it; after a fallback NO the next source tries once with a
+   simpler prompt (`build_simple_prompt`); the same prompt is never sent twice; one try per provider (no blind
+   retries). Also refused: files < 256 px or landscape. A shot with no usable image gets a virtual shot (75% crop)
+   only from the SAME scene and the same place (never a cabin image for a forest shot); a scene with no image at
+   all borrows a same-place image, else (emergency, logged) its own rejected image or the previous scene's.
+   End of run: "Cloudflare images / Cloudflare estimated neurons / HF images / Local SD images / Rejected images /
+   Virtual/cached images".
+   Consistency: the scene plan outputs `characters` and `locations` sheets (never removed); looks are injected
+   word-for-word, only into shots where that character / location actually appears.
+   Art style (config `image_style_cf` / `image_style_fallback`): dark painterly illustration with bold ink linework,
+   NOT photoreal. "graphic novel", "comic", "panels", "storyboard" are never in a positive prompt (they caused page
+   layouts / panels); the look stays the same (painterly + bold ink, warm lamp / moonlight highlights).
 4. **Render** (`render.py`, `effects.py`, `ai_motion.py`), FFmpeg 1080x1920:
    - Hook shot: real AI animation via free Hugging Face ZeroGPU Spaces (list in config `ai_motion.spaces`,
      live API discovery, never hard-wired) -> falls back to 3D parallax -> falls back to Ken Burns zoom.

@@ -29,8 +29,13 @@ SCHEMA = {
                     "image_prompt_4": {"type": "STRING"},
                     "sfx": {"type": "STRING"},
                     "location": {"type": "STRING"},
+                    "image_location": {"type": "STRING"},
+                    "image_location_2": {"type": "STRING"},
+                    "image_location_3": {"type": "STRING"},
+                    "image_location_4": {"type": "STRING"},
                 },
-                "required": ["narration", "image_prompt", "image_prompt_2", "image_prompt_3", "image_prompt_4", "sfx"],
+                "required": ["narration", "image_prompt", "image_prompt_2", "image_prompt_3", "image_prompt_4", "sfx",
+                             "image_location", "image_location_2", "image_location_3", "image_location_4"],
             },
         },
         "characters": {"type": "ARRAY", "items": {"type": "OBJECT", "properties": {
@@ -63,7 +68,7 @@ CHECKLIST
 5. THE HOOK: would the first 6 words alone stop a scroller? Does scene 1 open on the most shocking moment and raise one burning question? If it is generic, slow, or explains too much, rewrite scene 1 and hook_overlay until it hits hard (max 18 words).
 6. Same rules as before: {rules}
 {hooks}
-If something fails, rewrite those scenes (and image_prompt, image_prompt_2 and sfx to match; the four image prompts must be different shots matching each quarter of the scene). Keep what already works. Keep the characters and locations lists and each scene's location.
+If something fails, rewrite those scenes (and image_prompt, image_prompt_2 and sfx to match; the four image prompts must be different shots matching each quarter of the scene). Keep what already works. Keep the characters and locations lists, each scene's location and each image's image_location (update it if you change that image prompt).
 Keep {words} words total, the same number of scenes or 7-9, and keep sfx values from this list only: {sfx_list}
 
 DRAFT:

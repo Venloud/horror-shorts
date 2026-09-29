@@ -41,8 +41,8 @@ def _log_neurons(raw: bytes, headers) -> None:
     neurons = tiles * 4.8 + steps * 9.6
     _STATE["cf_neurons"] += neurons
     extra = {k: v for k, v in headers.items() if "neuron" in k.lower()}
-    log(f"Cloudflare image: ~{neurons:.1f} neurons ({tiles} tiles x 4.8 + {steps} steps x 9.6), "
-        f"~{_STATE['cf_neurons']:.0f} this run{f' {extra}' if extra else ''}")
+    if extra:  # the per-image line in generate_images shows the estimate; log Cloudflare's own figure if it sends one
+        log(f"Cloudflare neuron headers: {extra}")
 
 
 def _cloudflare(prompt: str, seed: int) -> bytes:
@@ -286,7 +286,9 @@ def _save_valid(raw: bytes, path: Path) -> None:
     with Image.open(tmp) as im:
         im = im.convert("RGB")
         if im.width < 256 or im.height < 256:
-            raise RuntimeError("image too small")
+            raise RuntimeError(f"image too small ({im.width}x{im.height})")
+        if im.width > im.height * 1.1:  # the video is vertical: a landscape image is the wrong format
+            raise RuntimeError(f"wrong dimensions ({im.width}x{im.height}, landscape)")
         im.save(path, "PNG")
     tmp.unlink(missing_ok=True)
 
@@ -300,6 +302,33 @@ def _is_image(path: Path) -> bool:
         return False
 
 
+_CAMERA = re.compile(r"\b(extreme close-up|close-up|close up|medium shot|medium close-up|wide shot|wide establishing "
+                     r"shot|establishing shot|long shot|full shot|over-the-shoulder|low angle|high angle|eye-level|"
+                     r"bird's-eye view|top-down|profile shot|two-shot|point-of-view|pov)\b", re.IGNORECASE)
+
+
+PROMPT_KEYS = {"a": "image_prompt", "b": "image_prompt_2", "c": "image_prompt_3", "d": "image_prompt_4"}
+LOC_KEYS = {"a": "image_location", "b": "image_location_2", "c": "image_location_3", "d": "image_location_4"}
+_LABELS = re.compile(r"\b(CHARACTERS?|SETTING|SHOT|CAMERA|STYLE|LOCATION)\s*:\s*", re.IGNORECASE)
+_OUTDOOR = re.compile(r"\b(forest|woods|trees?|river\w*|lake\w*|creek|stream|shore|beach|sea|ocean|mountains?|hills?|"
+                      r"hillside|field|meadow|road|highway|street|alley|sky|outside|outdoors?|exterior|parking lot|"
+                      r"bridge|cliff|swamp|desert|clearing|trail|path|garden|yard|cemetery|graveyard|tarmac|runway|"
+                      r"rooftop|roof|porch|snow\w*|dock|pier|waterfall|cave)\b", re.IGNORECASE)
+# Words that put a SHOT indoors (a building's name alone, e.g. "the cabin at night, snow on the roof", does not).
+_INSIDE = re.compile(r"\b(inside|interior|indoors|room|kitchen|bedroom|hallway|corridor|basement|attic|office|"
+                     r"bathroom|lobby|fireplace|bed|couch|sofa|desk|aisle|seats?|closet|ceiling|walls?|cockpit)\b",
+                     re.IGNORECASE)
+_INDOOR = re.compile(r"\b(cabin|room|kitchen|bedroom|hallway|corridor|basement|attic|interior|inside|indoors|office|"
+                     r"bathroom|lobby|cell|walls?|ceiling|fireplace|bed|couch|sofa|desk|cockpit|aisle|seats?|"
+                     r"staircase|closet|gallery|hall)\b", re.IGNORECASE)
+_OBJECTS = re.compile(r"\b(note|letter|envelope|briefcase|suitcase|bag|money|cash|bills?|banknotes?|coins?|photo\w*|"
+                      r"picture|key|keys|phone|map|ticket|parachute|jewel\w*|crown|necklace|ring|diary|journal|book|"
+                      r"newspaper|file|folder|documents?|badge|knife|bottle|cup|mug|watch|clock|footprints?|shoe|"
+                      r"glove|tape|camera|recorder|radio|lantern|candle|lock|box|chest|painting|password|screen|"
+                      r"monitor|tie|clip|receipt|map|skull|doll|mirror)\b", re.IGNORECASE)
+_DETAIL = re.compile(r"\b(extreme close-up|close-up|close up|macro|detail shot|insert shot|top-down)\b", re.IGNORECASE)
+
+
 def _key(name: str) -> str:
     n = name.lower().strip()
     return n[4:] if n.startswith("the ") else n
@@ -307,55 +336,100 @@ def _key(name: str) -> str:
 
 SHORT_STYLE = "single full-frame dark cinematic illustration, painterly"
 NEGATIVE = "comic page, multiple panels, panel grid, collage, split screen, text, letters, speech bubbles, watermark"
-_PANEL_WORDS = re.compile(r"\b(graphic[- ]novel|comic(?:[- ]book)?s?|panels?)\b", re.IGNORECASE)
+_PANEL_WORDS = re.compile(r"\b(graphic[- ]novels?|comic(?:[- ]book)?s?|panels?|storyboards?|page layouts?)\b",
+                          re.IGNORECASE)
 
 
-def _looks(story: dict, scene_i: int, shot: str) -> tuple[dict | None, list[dict]]:
+def _letter(scene: dict, shot: str) -> str:
+    return next((l for l, k in PROMPT_KEYS.items() if (scene.get(k) or "").strip() == shot.strip()), "a")
+
+
+def _is_interior(look: str) -> bool:
+    return bool(_INDOOR.search(look)) and not _OUTDOOR.search(look)
+
+
+def _is_exterior_shot(shot: str) -> bool:
+    return bool(_OUTDOOR.search(shot)) and not _INSIDE.search(shot)
+
+
+def _shot_location(story: dict, scene_i: int, letter: str, shot: str) -> dict | None:
+    """The location of THIS shot (scene plan field image_location[_N]; "none" = no setting). Older plans without
+    it: a location named in the shot, else the scene's. An exterior shot never gets an interior block."""
+    scene = story["scenes"][scene_i]
+    locs = [l for l in story.get("locations") or [] if _key(l.get("name", "")) and l.get("look")]
+    field = LOC_KEYS.get(letter, "image_location")
+    if field in scene:
+        name = _key(scene.get(field) or "")
+        if not name or name in ("none", "n/a", "no location", "-"):
+            return None
+        loc = next((l for l in locs if _key(l["name"]) == name), None) \
+            or next((l for l in locs if _key(l["name"]) in name or name in _key(l["name"])), None)
+    else:
+        text = shot.lower()
+        loc = next((l for l in locs if _key(l["name"]) in text), None) \
+            or next((l for l in locs if _key(l["name"]) == _key(scene.get("location") or "")), None)
+    if loc and _is_exterior_shot(shot) and _is_interior(loc["look"]):
+        return None  # e.g. a forest/river shot never gets the cabin block
+    return loc
+
+
+def _shot_characters(story: dict, shot: str) -> list[dict]:
     text = shot.lower()
+    return [c for c in story.get("characters") or [] if _key(c.get("name", "")) and c.get("look")
+            and _key(c["name"]) in text]
+
+
+def _is_object_shot(shot: str, chars: list[dict]) -> bool:
+    """A close-up of a thing (a note, a briefcase, money): the object is the subject, almost no setting."""
+    head = " ".join(shot.split()[:14])
+    return not chars and bool(_OBJECTS.search(head)) and (bool(_DETAIL.search(head))
+                                                          or head.lower().startswith(("a ", "an ", "the ")))
+
+
+def _clean_shot(shot: str) -> str:
+    text = re.sub(r"\s{2,}", " ", _LABELS.sub("", shot)).strip()
+    return re.sub(r"^[\W_]+", "", text).rstrip(".,; ")
+
+
+def _bits(text: str) -> list[str]:
+    return [b.strip().rstrip(".") for b in text.split(",") if b.strip().rstrip(".")]
+
+
+def _join(parts: list[str]) -> str:
+    return re.sub(r"\s{2,}", " ", ", ".join(p.strip().strip(",") for p in parts if p and p.strip())).strip()
+
+
+def _shot_parts(story: dict, scene_i: int, shot: str, letter: str | None):
+    """(shot text without framing words, camera framing, characters IN this shot, location OF this shot, object?)"""
     scene = story["scenes"][scene_i]
-    loc_name = _key(scene.get("location") or "")
-    loc = next((l for l in story.get("locations") or []
-                if _key(l.get("name", "")) and (_key(l["name"]) == loc_name or _key(l["name"]) in text)), None)
-    chars = [c for c in story.get("characters") or [] if _key(c.get("name", "")) and _key(c["name"]) in text]
-    return loc, chars
-
-
-_CAMERA = re.compile(r"\b(extreme close-up|close-up|close up|medium shot|medium close-up|wide shot|wide establishing "
-                     r"shot|establishing shot|long shot|full shot|over-the-shoulder|low angle|high angle|eye-level|"
-                     r"bird's-eye view|top-down|profile shot|two-shot|point-of-view|pov)\b", re.IGNORECASE)
-
-
-def _blocks(story: dict, scene_i: int, shot: str) -> tuple[list[str], str, str]:
-    """The LOCKED character and setting blocks for this shot (word-for-word from the sheets, never rewritten) and
-    the camera framing (scene 'camera' field, else the framing words already in the shot)."""
-    loc, chars = _looks(story, scene_i, shot)
-    char_blocks = [f"{c['name']}: {c['look'].strip().rstrip('.')}" for c in chars]
-    setting = f"{loc['name']}: {loc['look'].strip().rstrip('.')}" if loc else ""
-    scene = story["scenes"][scene_i]
+    letter = letter or _letter(scene, shot)
+    shot = _PANEL_WORDS.sub("", _clean_shot(shot))
+    chars = _shot_characters(story, shot)
+    loc = _shot_location(story, scene_i, letter, shot)
     camera = scene.get("camera") or ", ".join(dict.fromkeys(m.group(0).lower() for m in _CAMERA.finditer(shot)))
-    return char_blocks, setting, camera
+    body = _CAMERA.sub("", shot)
+    body = re.sub(r"^\W*(?:shot\s+)?of\s+", "", body.strip(), flags=re.IGNORECASE)  # "Wide shot of X" -> "X"
+    body = re.sub(r"^[\W_]+", "", _join(_bits(body))) or shot
+    return body, camera, chars, loc, _is_object_shot(shot, chars)
 
 
-def _assemble(shot: str, chars: list[str], setting: str, camera: str, style: str) -> str:
-    """CHARACTERS (only people in this shot), SETTING, SHOT, CAMERA, STYLE."""
-    parts = []
-    if chars:
-        parts.append("CHARACTERS: " + "; ".join(chars))
-    if setting:
-        parts.append(f"SETTING: {setting}")
-    parts.append(f"SHOT: {shot.strip().rstrip('.')}")
-    if camera:
-        parts.append(f"CAMERA: {camera}")
-    if style:
-        parts.append(f"STYLE: {style}")
-    return ". ".join(parts)
+def shot_request(story: dict, scene_i: int, shot: str, letter: str | None = None) -> tuple[str, str]:
+    """(what the image must show, its location name) for the QA question and the log."""
+    body, _, _, loc, _ = _shot_parts(story, scene_i, shot, letter)
+    return body, (loc or {}).get("name", "") if loc else ""
 
 
-def build_prompt(story: dict, scene_i: int, shot: str, style: str | None = None) -> str:
-    """Cloudflare FLUX (long prompts are fine): CHARACTERS, SETTING, SHOT, CAMERA, rich `image_style_cf`."""
-    style = style or CONFIG.get("image_style_cf") or CONFIG.get("image_style", "")
-    chars, setting, camera = _blocks(story, scene_i, shot)
-    return _assemble(shot, chars, setting, camera, style)
+def build_prompt(story: dict, scene_i: int, shot: str, style: str | None = None, letter: str | None = None) -> str:
+    """Cloudflare FLUX (handles long prompts): the shot's subject + action + key object first, then the full locked
+    looks of the characters IN this shot, then this shot's locked location (object shots: 3 words at most), then
+    the camera framing, then the rich `image_style_cf`. Natural comma-separated text, no labels."""
+    style = _PANEL_WORDS.sub("", style or CONFIG.get("image_style_cf") or CONFIG.get("image_style", ""))
+    body, camera, chars, loc, is_object = _shot_parts(story, scene_i, shot, letter)
+    parts = [body] + [f"{c['name']}, {c['look'].strip().rstrip('.')}" for c in chars]
+    if loc:
+        look = loc["look"].strip().rstrip(".")
+        parts.append(" ".join(_bits(look)[0].split()[:3]) if is_object else look)
+    return _join(parts + [camera, style])
 
 
 CLIP_LIMIT = 77  # SD-Turbo's text encoder (and the CLIP half of FLUX) reads 77 tokens; the rest is cut off
@@ -382,49 +456,165 @@ def clip_tokens(text: str) -> int:
     return int(len(re.findall(r"\w+|[^\w\s]", text)) * 1.15) + 2
 
 
-def _trim_details(block: str, keep_key_traits: bool) -> str | None:
-    """Drop the last non-essential comma detail of a 'name: look' block (key traits kept). None = nothing left."""
-    name, _, look = block.partition(": ")
-    bits = [b.strip() for b in look.split(",") if b.strip()]
-    for k in range(len(bits) - 1, 0, -1):  # never the first detail (the main noun / who it is)
-        if not (keep_key_traits and _KEY_TRAIT.search(bits[k])):
-            return f"{name}: {', '.join(bits[:k] + bits[k + 1:])}"
+def _key_traits(look: str, most: int = 6) -> list[str]:
+    """3-6 key traits of a locked look: who it is (first detail) + age/hair/clothing details, in the sheet's order."""
+    bits = _bits(look)
+    if len(bits) <= 3:
+        return bits
+    keep = [bits[0]] + [b for b in bits[1:] if _KEY_TRAIT.search(b)]
+    keep += [b for b in bits[1:] if b not in keep][: max(0, 3 - len(keep))]
+    keep = set(keep[:most])
+    return [b for b in bits if b in keep]
+
+
+def _few_words(look: str, limit: int = 8) -> str:
+    """At most `limit` words of a setting look, whole comma details first."""
+    out, n = [], 0
+    for b in _bits(look):
+        w = len(b.split())
+        if n + w > limit:
+            if not out:
+                out.append(" ".join(b.split()[:limit]))
+            break
+        out.append(b)
+        n += w
+    return ", ".join(out)
+
+
+FALLBACK_TOKENS = 70  # stay comfortably below CLIP's 77
+
+
+def build_short_prompt(story: dict, scene_i: int, shot: str, limit: int = FALLBACK_TOKENS,
+                       letter: str | None = None) -> str:
+    """Spaces / SD-Turbo (CLIP reads 77 tokens): the shot's subject + action + key object first (so it sits in the
+    first ~40 tokens), then 3-6 key traits of each character IN the shot, then at most 8 words of this shot's
+    location (none for object shots), then the camera framing, then the short `image_style_fallback`. Over the
+    limit, trim in this order: style, camera, setting details, character details (down to 3 traits). The shot
+    itself is never shortened. No labels, never "graphic novel" / "comic" / "panels"."""
+    body, camera, chars, loc, is_object = _shot_parts(story, scene_i, shot, letter)
+    style_bits = _bits(_PANEL_WORDS.sub("", CONFIG.get("image_style_fallback", SHORT_STYLE)))
+    traits = [[c["name"]] + [_PANEL_WORDS.sub("", t).strip() for t in _key_traits(c["look"])] for c in chars]
+    setting = "" if is_object or not loc else _PANEL_WORDS.sub("", _few_words(loc["look"], 8))
+    compose = lambda: _join([body] + [", ".join(t) for t in traits] + [setting, camera] + style_bits)
+    fits = lambda: clip_tokens(compose()) <= limit
+    while not fits() and style_bits:          # 1) style
+        style_bits.pop()
+    if not fits():                            # 2) camera
+        camera = ""
+    while not fits() and setting:             # 3) non-essential setting details
+        setting = ", ".join(_bits(setting)[:-1])
+    for want in (5, 4, 3):                    # 4) non-essential character details, down to 3 key traits
+        for t in traits:
+            if not fits() and len(t) > want + 1:
+                del t[want + 1:]
+    text = compose()
+    if not fits():
+        log(f"Fallback prompt {clip_tokens(text)} tokens after trimming; the shot is first, so CLIP keeps it")
+    return text
+
+
+def build_simple_prompt(story: dict, scene_i: int, shot: str, letter: str | None = None) -> str:
+    """Retry after a QA rejection: a materially simpler prompt built only around the requested subject: the shot's
+    first ~12 words, who is in it (names + first trait), 4 words of location, a minimal style."""
+    body, _, chars, loc, is_object = _shot_parts(story, scene_i, shot, letter)
+    core = []
+    for b in _bits(body) or [body]:
+        if sum(len(x.split()) for x in core) >= 12:
+            break
+        core.append(b)
+    who = [f"{c['name']}, {_bits(c['look'])[0]}" for c in chars if _bits(c["look"])]
+    where = "" if is_object or not loc else _few_words(loc["look"], 4)
+    return _join(core + who + [where, "single full-frame dark painterly illustration"])
+
+
+DUP_PROMPT = """These image prompts for one short video are near-duplicates of an earlier shot, so the video would
+show the same picture twice. Rewrite each one as a DIFFERENT shot of the same narration moment: a different
+subject or a different angle/framing (e.g. the key object in close-up, the place as a wide establishing shot, a
+reaction of another character). Rules: the main subject + action + key object in the first 12 words; 20-40 words;
+refer to people by these exact names: {names}; one continuous film frame; no labels like "SHOT:"; no text in the
+image; never an all-seeing eye or occult symbol.
+Return JSON: {{"<id>": "<new prompt>", ...}}
+
+{items}
+"""
+_DUP_STOP = set(("a an the of in on at to with and or his her their its is are was from by for into near behind "
+                 "under over as while shot close-up close up medium wide establishing view light lighting dark "
+                 "shadows shadow mood eerie tense cinematic frame angle eye level").split())
+
+
+def _content_words(p: str) -> list[str]:
+    return [w for w in re.findall(r"[a-z0-9']+", p.lower()) if w not in _DUP_STOP and len(w) > 2]
+
+
+def near_duplicate(p1: str, p2: str) -> bool:
+    import difflib
+    a, b = _content_words(p1), _content_words(p2)
+    if not a or not b:
+        return False
+    jac = len(set(a) & set(b)) / len(set(a) | set(b))
+    return jac >= 0.6 or difflib.SequenceMatcher(None, a, b).ratio() >= 0.8
+
+
+def _gemini_json(prompt: str) -> dict | None:
+    key = env("GEMINI_API_KEY", required=False)
+    for model in (CONFIG.get("llm_models") or [])[:2] if key else []:
+        try:
+            r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+                              headers={"x-goog-api-key": key}, timeout=60, json={
+                                  "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                                  "generationConfig": {"temperature": 0.7, "responseMimeType": "application/json"}})
+            if r.status_code == 200:
+                return json.loads(r.json()["candidates"][0]["content"]["parts"][0]["text"])
+            log(f"Duplicate-shot rewrite: {model} HTTP {r.status_code}")
+        except Exception as e:  # noqa: BLE001
+            log(f"Duplicate-shot rewrite: {model} failed ({str(e)[:80]})")
     return None
 
 
-def build_short_prompt(story: dict, scene_i: int, shot: str, limit: int = CLIP_LIMIT) -> str:
-    """Spaces / SD-Turbo: CHARACTERS, SETTING, SHOT, CAMERA, short `image_style_fallback`, never "graphic
-    novel", "comic" or "panels". The SHOT must survive the 77-token CLIP limit: over it, trim STYLE, then CAMERA,
-    then non-essential SETTING details, then non-essential CHARACTER details. The SHOT and the characters' key
-    traits (age, hair, clothing) are never trimmed."""
-    shot = _PANEL_WORDS.sub("", shot).strip()
-    style = _PANEL_WORDS.sub("", CONFIG.get("image_style_fallback", SHORT_STYLE))
-    chars, setting, camera = _blocks(story, scene_i, shot)
-    chars = [_PANEL_WORDS.sub("", c) for c in chars]
-    setting = _PANEL_WORDS.sub("", setting)
-    fits = lambda: clip_tokens(_assemble(shot, chars, setting, camera, style)) <= limit
-    style_bits = [b.strip() for b in style.split(",")]
-    while not fits() and style_bits:                      # 1) style, word group by word group
-        style_bits.pop()
-        style = ", ".join(style_bits)
-    if not fits():                                        # 2) camera
-        camera = ""
-    while not fits() and setting:                         # 3) non-essential setting details
-        setting = _trim_details(setting, keep_key_traits=False) or ""
-    k = len(chars) - 1
-    while not fits() and k >= 0:                          # 4) non-essential character details
-        t = _trim_details(chars[k], keep_key_traits=True)
-        if t is None:
-            k -= 1
-        else:
-            chars[k] = t
-    text = re.sub(r"\s{2,}", " ", _assemble(shot, chars, setting, camera, style)).strip()
-    if not fits():  # shot + key traits alone exceed the limit: put the SHOT first so it is never cut off
-        log(f"Fallback prompt still {clip_tokens(text)} tokens after trimming: SHOT moved first so it survives")
-        rest = _assemble("", chars, setting, camera, style).split(". SHOT: ")
-        text = f"SHOT: {shot.rstrip('.')}. " + ". ".join(x for x in rest if x and x != "SHOT:")
-        text = re.sub(r"\s{2,}", " ", text.replace(". SHOT: .", ".")).strip()
-    return text
+def _reframe(p: str, narration: str, taken: list[str]) -> str:
+    """No Gemini: rebuild a duplicate shot around a key object from its narration (e.g. "briefcase containing cash
+    on the seat" after "man opening a briefcase"); if there is none, at least flip the framing."""
+    used = " ".join(taken).lower()
+    for m in _OBJECTS.finditer(narration):
+        obj = m.group(0).lower()
+        cand = f"close-up of the {obj}, the {obj} alone fills the frame, dark moody light"
+        if f"close-up of the {obj}" not in used:
+            return cand
+    body = _join(_bits(_CAMERA.sub("", p)))
+    body = re.sub(r"^\W*(?:shot\s+)?of\s+", "", body, flags=re.IGNORECASE)
+    return f"wide establishing shot, {body}" if re.search(r"close", p, re.IGNORECASE) else f"extreme close-up, {body}"
+
+
+def _letters() -> str:
+    """Shot letters generated per scene (config shots_per_scene, default 2: shot a + a different shot b)."""
+    return "abcd"[: max(1, min(4, int(CONFIG.get("shots_per_scene", 2))))]
+
+
+def dedupe_shots(story: dict) -> int:
+    """Near-identical prompts in one video -> rewrite the later one to a different subject/angle. Returns count."""
+    shots = [(i, l, sc[PROMPT_KEYS[l]]) for i, sc in enumerate(story.get("scenes") or [])
+             for l in _letters() if (sc.get(PROMPT_KEYS[l]) or "").strip()]
+    dups = []
+    for n, (i, l, p) in enumerate(shots):
+        first = next(((i2, l2, p2) for i2, l2, p2 in shots[:n] if near_duplicate(p, p2)), None)
+        if first:
+            dups.append(((i, l, p), first))
+    if not dups:
+        return 0
+    names = ", ".join(c["name"] for c in story.get("characters") or [] if c.get("name")) or "(none)"
+    items = "\n\n".join(f'id {i}{l}: "{p}"\n  duplicates shot {i2}{l2}: "{p2}"\n  narration of this moment: '
+                        f'"{story["scenes"][i].get("narration", "")}"' for (i, l, p), (i2, l2, p2) in dups)
+    new = _gemini_json(DUP_PROMPT.format(names=names, items=items)) or {}
+    for (i, l, p), (i2, l2, _) in dups:
+        cand = str(new.get(f"{i}{l}") or "").strip()
+        others = [story["scenes"][a][PROMPT_KEYS[b]] for (a, b, _) in shots if (a, b) != (i, l)]
+        if not cand or any(near_duplicate(cand, q) for q in others):
+            cand = _reframe(p, story["scenes"][i].get("narration", ""), others)
+        story["scenes"][i][PROMPT_KEYS[l]] = cand
+        if cand.startswith("close-up of the "):
+            story["scenes"][i][LOC_KEYS[l]] = "none"  # an object close-up: the object is the subject
+        log(f"Image {i:02d}{l} was a near-duplicate of {i2:02d}{l2}; rewritten: {cand}")
+    return len(dups)
 
 
 def _virtual_shot(src: Path, dest: Path, shot: str) -> None:
@@ -438,13 +628,33 @@ def _virtual_shot(src: Path, dest: Path, shot: str) -> None:
         im.crop((x, y, x + cw, y + ch)).resize((w, h), Image.LANCZOS).save(dest, "PNG")
 
 
-def check_image(path: Path, shot: str) -> bool | None:
-    """Ask Gemini (vision, same free key) if the image is ONE scene showing the shot. None = check skipped."""
-    if not CONFIG.get("image_check", True) or _STATE.get("check_off"):
-        return None
+QA_QUESTION = """Does this image clearly depict the requested subject, action, and location?
+REQUEST: {request}
+Answer exactly one:
+YES
+NO: <reason in 2-5 words>
+Answer NO if the image depicts a different main subject, wrong location, wrong action, generic unrelated scenery,
+an airplane cabin when the request is outdoors, or another obvious mismatch. Also answer NO if the image is a grid
+of panels, a comic page, a collage or a split screen instead of one single scene.
+Answer YES only when the requested visual is clearly recognizable."""
+
+
+def check_image(path: Path, request: str, wait: bool = True) -> tuple[bool | None, str]:
+    """Strict Gemini vision check (same free key): (True, "") = PASS, (False, reason) = FAIL, (None, reason) = QA
+    skipped. Paced to config image_check_per_minute (10): wait=True waits for the next slot (a few seconds),
+    wait=False skips instead (used for Cloudflare images, so fallback checks keep the free quota).
+    A 429 skips the check for this image only: no long sleep, no retry, never fails the build."""
+    if not CONFIG.get("image_check", True):
+        return None, "off"
     key = env("GEMINI_API_KEY", required=False)
     if not key:
-        return None
+        return None, "no_key"
+    gap = 60 / max(1, float(CONFIG.get("image_check_per_minute", 10))) - (time.time() - _STATE.get("qa_last", 0))
+    if gap > 0:
+        if not wait:
+            return None, "paced"
+        time.sleep(gap)
+    _STATE["qa_last"] = time.time()
     models = CONFIG.get("llm_models", [])
     model = CONFIG.get("image_check_model") or next((m for m in models if "lite" in m), models[0] if models else "")
     try:
@@ -453,34 +663,52 @@ def check_image(path: Path, shot: str) -> bool | None:
             im.thumbnail((512, 512))
             buf = io.BytesIO()
             im.save(buf, "JPEG", quality=85)
-        question = (f'Is this a single scene, not a grid of panels or a collage, that shows: "{shot}"? '
-                    "Answer YES or NO.")
         r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
                           headers={"x-goog-api-key": key}, timeout=15, json={
                               "contents": [{"role": "user", "parts": [
                                   {"inline_data": {"mime_type": "image/jpeg",
                                                    "data": base64.b64encode(buf.getvalue()).decode()}},
-                                  {"text": question}]}],
-                              "generationConfig": {"temperature": 0, "maxOutputTokens": 5}})
+                                  {"text": QA_QUESTION.format(request=request)}]}],
+                              "generationConfig": {"temperature": 0, "maxOutputTokens": 20}})
     except Exception as e:  # noqa: BLE001
-        log(f"Image check skipped ({str(e)[:80]})")
-        return None
+        return None, f"error {str(e)[:60]}"
     if r.status_code == 429:
-        _STATE["check_off"] = True  # rate-limited: keep the free quota for stories, stop checking this run
-        log("Image check: Gemini rate-limited, skipping the checks for the rest of this run")
-        return None
+        return None, "rate_limited"
     if r.status_code != 200:
-        log(f"Image check skipped (HTTP {r.status_code})")
-        return None
+        return None, f"http_{r.status_code}"
     try:
-        answer = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip().lower()
+        answer = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
     except Exception:  # noqa: BLE001
-        return None
-    return answer.startswith("y")
+        return None, "no_answer"
+    if answer.upper().startswith("YES"):
+        return True, ""
+    if answer.upper().startswith("NO"):
+        return False, re.sub(r"^NO\W*", "", answer, flags=re.IGNORECASE).strip().lower()[:60] or "mismatch"
+    return None, "unclear_answer"
+
+
+_NAMES = {"_cloudflare": "cloudflare", "_hf_space": "hf_space", "_local_sd": "local_sd"}
+
+
+def _place(story: dict, i: int, letter: str) -> tuple[str, bool]:
+    """(location name of the shot or "", is it an outdoor shot) - decides which images may stand in for it."""
+    shot = story["scenes"][i].get(PROMPT_KEYS[letter]) or ""
+    loc = _shot_location(story, i, letter, _clean_shot(shot))
+    return _key(loc["name"]) if loc else "", _is_exterior_shot(shot)
+
+
+def _fits(story: dict, i: int, letter: str, j: int, other: str) -> bool:
+    """May shot (j, other) stand in for (i, letter)? Same location, or both without one and both in- or outdoors.
+    Never an airplane-cabin image for a forest shot."""
+    (p1, out1), (p2, out2) = _place(story, i, letter), _place(story, j, other)
+    return (p1 == p2 and bool(p1)) or (not p1 and not p2 and out1 == out2)
 
 
 def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
-    """Up to four images per scene, one per part of the narration. Returns [[a, b, c, d], ...]."""
+    """`shots_per_scene` images per scene (default 2: shot a = the narration's main visual, shot b = a different
+    subject/angle of it). Returns [[a, b], ...]. Every image must pass the checks to be used: a valid portrait/square
+    file, and (when Gemini QA is available) a strict "does it show this subject, action and location" check.
+    Rejected images are never used; a missing shot is only covered by a fitting image from the same scene."""
     outdir.mkdir(parents=True, exist_ok=True)
     testing = test_mode()
     if testing:
@@ -488,122 +716,153 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
         if cached:
             return cached
     style = CONFIG.get("image_style_cf") or CONFIG.get("image_style", "")
+    dedupe_shots(story)  # the same picture twice in one video -> the later shot gets a different subject/angle
     base_seed = random.randint(1, 2_000_000_000)
     use_cf = bool(env("CLOUDFLARE_API_TOKEN", required=False)) and not testing
+    qa_cf = CONFIG.get("image_check_cloudflare", True)
 
     jobs = []  # (scene index, shot letter, prompt)
     for i, scene in enumerate(story["scenes"]):
-        jobs.append((i, "a", scene["image_prompt"]))
-        extra_keys = (("image_prompt_2", "b"), ("image_prompt_3", "c"), ("image_prompt_4", "d"))
-        for key, letter in extra_keys[: max(0, int(CONFIG.get("shots_per_scene", 4)) - 1)]:
-            extra = scene.get(key) or ""
-            if extra.strip():
-                jobs.append((i, letter, extra))
-
-    # Every scene's "a" shot first, then every "b", then the extra cuts ("c"/"d"): if a quota or the local time
-    # budget runs out we lose cuts, never whole scenes.
+        for letter in _letters():
+            text = scene.get(PROMPT_KEYS[letter]) or ""
+            if text.strip():
+                jobs.append((i, letter, text))
+    # Every scene's "a" shot first, then every "b", then any extra cuts: if a quota or the local time budget runs
+    # out we lose cuts, never whole scenes.
     jobs.sort(key=lambda j: ("abcd".index(j[1]), j[0]))
 
     results: dict[tuple[int, str], Path | None] = {}
-    sources: dict[str, int] = {}
-    qa_failed: list[tuple[int, str]] = []
+    rejected_files: dict[tuple[int, str], Path] = {}
+    count = {"cloudflare": 0, "hf_space": 0, "local_sd": 0, "rejected": 0, "virtual_cached": 0}
     told_two = False
+    done_shots: list[str] = []
     for n, (i, shot, raw_prompt) in enumerate(jobs):
-        # Cloudflare out (or test mode): the fallbacks are slow/limited, so only 2 shots per scene from here on.
-        if shot in ("c", "d") and (testing or _STATE["cf_out"] or not use_cf) \
-                and not _is_image(outdir / f"scene_{i:02d}{shot}.png"):
+        tag = f"{i:02d}{shot}"
+        path = outdir / f"scene_{i:02d}{shot}.png"
+        # Cloudflare out (or test mode): the fallbacks are slow/limited, so at most 2 shots per scene from here on.
+        if shot in ("c", "d") and (testing or _STATE["cf_out"] or not use_cf) and not _is_image(path):
             if not told_two:
                 log("Cloudflare not available: 2 shots per scene for the rest of this run")
                 told_two = True
             continue
-        path = outdir / f"scene_{i:02d}{shot}.png"
-        if _is_image(path):  # checkpoint from an earlier try of this same story: keep it
-            sources["checkpoint"] = sources.get("checkpoint", 0) + 1
+        if _is_image(path):  # checkpoint from an earlier try of this same story (it passed its checks then)
+            count["virtual_cached"] += 1
             results[(i, shot)] = path
+            log(f"Image {tag}: provider=checkpoint")
             continue
-        prompt = build_prompt(story, i, raw_prompt, style)            # Cloudflare: full prompt
-        short_prompt = build_short_prompt(story, i, raw_prompt)        # Spaces / SD-Turbo: short, no "comic"
-        ok, source = False, ""
-        providers = (([_cloudflare] if use_cf and not _STATE["cf_out"] else [])
-                     + ([] if testing or _STATE["spaces_out"] else [_hf_space])
-                     + ([] if _STATE["local_out"] else [_local_sd]))
-        if not providers:
+        # Last guard before spending anything: a prompt nearly identical to one already made is rebuilt.
+        if any(near_duplicate(raw_prompt, p) for p in done_shots):
+            raw_prompt = _reframe(raw_prompt, story["scenes"][i].get("narration", ""), done_shots)
+            story["scenes"][i][PROMPT_KEYS[shot]] = raw_prompt
+            if raw_prompt.startswith("close-up of the "):
+                story["scenes"][i][LOC_KEYS[shot]] = "none"
+            log(f"Image {tag}: near-duplicate of an earlier shot, rebuilt as: {raw_prompt}")
+        done_shots.append(raw_prompt)
+        subject, place = shot_request(story, i, raw_prompt, shot)
+        request = subject + (f", location: {place}" if place else "")
+        prompts = {"full": build_prompt(story, i, raw_prompt, style, letter=shot),       # Cloudflare
+                   "short": build_short_prompt(story, i, raw_prompt, letter=shot),       # Spaces / SD-Turbo
+                   "simple": build_simple_prompt(story, i, raw_prompt, letter=shot)}     # after a QA rejection
+        chain = (([_cloudflare] if use_cf and not _STATE["cf_out"] else [])
+                 + ([] if testing or _STATE["spaces_out"] else [_hf_space])
+                 + ([] if _STATE["local_out"] else [_local_sd]))
+        if not chain:
             if not _STATE.get("told_none"):
                 log("No image source left (Cloudflare/Spaces out, local time budget used): using what exists")
                 _STATE["told_none"] = True
             results[(i, shot)] = None
             continue
-        logged_short: list = []
-
-        def draw(chain: list) -> int:
-            """Try the sources in order; returns the index of the one that made the image, or -1."""
-            for k, provider in enumerate(chain):
-                p = prompt if provider is _cloudflare else short_prompt
-                if provider is not _cloudflare and not logged_short:
-                    log(f"Image {i}{shot} fallback prompt ({clip_tokens(p)} CLIP tokens): {p}")
-                    logged_short.append(1)
-                for attempt in range(2):
-                    try:
-                        _save_valid(provider(p, base_seed + n * 7 + attempt), path)
-                        return k
-                    except Exception as e:  # noqa: BLE001
-                        log(f"Image {i}{shot} via {provider.__name__.lstrip('_')} failed: {str(e)[:150]}")
-                        if (provider is _cloudflare and _STATE["cf_out"]) or provider is _local_sd \
-                                or provider is _hf_space or any(x in str(e) for x in ("401", "403", "deprecated")):
-                            break  # no point retrying this one (Spaces already tried every Space in the list)
-            return -1
-
-        k = draw(providers)
-        if k >= 0:
-            ok, source = True, providers[k].__name__.lstrip("_")
-            # Fallback-image QA (never for Cloudflare): one yes/no vision question. "No" -> redraw once with the
-            # NEXT source; still "no" -> replaced by a virtual shot from another good image of the scene at the end.
-            verdict = None if providers[k] is _cloudflare else check_image(path, raw_prompt)
-            if verdict is not None:
-                log(f"Image {i}{shot} check: {'YES' if verdict else 'NO'}")
-            if verdict is False:
-                log(f"Image {i}{shot} ({source}) failed the check (panels/collage or wrong subject): redrawing")
-                nxt = [p for p in providers[k + 1:] if not (p is _hf_space and _STATE["spaces_out"])
-                       and not (p is _local_sd and _STATE["local_out"])]
-                k2 = draw(nxt) if nxt else -1
-                if k2 >= 0:
-                    source = nxt[k2].__name__.lstrip("_")
-                if k2 < 0 or check_image(path, raw_prompt) is False:
-                    qa_failed.append((i, shot))
-        sources[source or "FAILED"] = sources.get(source or "FAILED", 0) + 1
-        log(f"Image {i}{shot}: {'ok (' + source + ')' if ok else 'FAILED'}")
+        ok, used, fallback_rejections = False, set(), 0
+        for provider in chain:
+            if (provider is _cloudflare and _STATE["cf_out"]) or (provider is _hf_space and _STATE["spaces_out"]) \
+                    or (provider is _local_sd and _STATE["local_out"]):
+                continue
+            name = _NAMES[provider.__name__]
+            kind = "full" if provider is _cloudflare else ("short" if not fallback_rejections else "simple")
+            if prompts[kind] in used:  # never send the exact same prompt twice
+                kind = "simple"
+            if prompts[kind] in used:
+                continue
+            p = prompts[kind]
+            neurons_before = _STATE["cf_neurons"]
+            try:
+                _save_valid(provider(p, base_seed + n * 7), path)  # one try per provider, no blind retries
+            except Exception as e:  # noqa: BLE001
+                log(f"Image {tag}: provider={name} failed: {str(e)[:150]}")
+                continue
+            used.add(p)
+            tokens = clip_tokens(p)
+            if provider is _cloudflare:
+                count["cloudflare"] += 1
+                if not qa_cf:
+                    verdict, why = None, "off_for_cloudflare"
+                else:  # only when a paced slot is free right now: fallback checks keep priority on the quota
+                    verdict, why = check_image(path, request, wait=False)
+            else:
+                count[name] += 1
+                verdict, why = check_image(path, request)
+            qa = "PASS" if verdict else ("FAIL" if verdict is False else "SKIPPED")
+            extra = f", neurons~{_STATE['cf_neurons'] - neurons_before:.1f}" if provider is _cloudflare else ""
+            log(f"Image {tag}: provider={name}, tokens={tokens}, qa={qa}"
+                + (f", reason={why}" if why else "") + f', subject="{subject[:60]}", location="{place or "-"}"'
+                + extra + f" | prompt: {p}")
+            if verdict is False:  # clearly wrong: never used; the next source tries (once) with a simpler prompt
+                count["rejected"] += 1
+                bad = path.with_name(f"{path.stem}.rejected{len(used)}.png")
+                path.replace(bad)
+                rejected_files[(i, shot)] = bad
+                if provider is not _cloudflare:
+                    fallback_rejections += 1
+                    if fallback_rejections >= 2:
+                        break
+                continue
+            ok = True
+            break
         results[(i, shot)] = path if ok else None
+        if not ok:
+            log(f"Image {tag}: no usable image")
 
-    # Images that failed the check twice: use a virtual shot (crop of another good image of the same scene).
-    for i, shot in qa_failed:
-        sib = next((results[(i, s)] for s in ("a", "b", "c", "d")
-                    if s != shot and results.get((i, s)) and (i, s) not in qa_failed), None)
+    # A shot with no usable image: a virtual shot (crop) of a fitting image from the SAME scene, never another place.
+    for (i, shot), p in list(results.items()):
+        if p is not None:
+            continue
+        sib = next((s for s in _letters() if s != shot and results.get((i, s)) and _fits(story, i, shot, i, s)), None)
         if sib:
-            _virtual_shot(sib, outdir / f"scene_{i:02d}{shot}.png", shot)
-            sources["virtual"] = sources.get("virtual", 0) + 1
-            log(f"Image {i}{shot}: replaced by a virtual shot of {sib.name}")
-        else:
-            log(f"Image {i}{shot}: failed the check but no other image in the scene, keeping it")
+            _virtual_shot(results[(i, sib)], outdir / f"scene_{i:02d}{shot}.png", shot)
+            results[(i, shot)] = outdir / f"scene_{i:02d}{shot}.png"
+            count["virtual_cached"] += 1
+            log(f"Image {i:02d}{shot}: virtual shot from {i:02d}{sib} (same scene, same place)")
 
     n_scenes = len(story["scenes"])
-    empty = sum(1 for i in range(n_scenes) if not any(results.get((i, s)) for s in ("a", "b", "c", "d")))
-    log("Image sources: " + ", ".join(f"{k} {v}" for k, v in sources.items())
-        + (f"; local model total {_STATE['local_secs']:.0f}s" if _STATE["local_secs"] else "")
-        + (f"; Cloudflare ~{_STATE['cf_neurons']:.0f} neurons" if _STATE["cf_neurons"] else ""))
-    skipped = len(jobs) - len(results)
-    failed = sum(p is None for p in results.values())
-    if failed or skipped:
-        log(f"Missing {failed + skipped} of {len(jobs)} images ({skipped} extra cuts skipped); "
-            f"{empty} of {n_scenes} scenes have no image at all")
-    if empty > max(1, n_scenes // 4):
-        raise RuntimeError(f"{empty} of {n_scenes} scenes have no image; not rendering a broken video.")
+    empty = [i for i in range(n_scenes) if not any(results.get((i, s)) for s in "abcd")]
+    log(f"Cloudflare images: {count['cloudflare']}")
+    log(f"Cloudflare estimated neurons: {_STATE['cf_neurons']:.0f}")
+    log(f"HF images: {count['hf_space']}")
+    log(f"Local SD images: {count['local_sd']}" + (f" ({_STATE['local_secs']:.0f}s)" if _STATE["local_secs"] else ""))
+    log(f"Rejected images: {count['rejected']}")
+    log(f"Virtual/cached images: {count['virtual_cached']}")
+    missing = len(jobs) - sum(1 for p in results.values() if p)
+    if missing or empty:
+        log(f"Missing {missing} of {len(jobs)} shots; {len(empty)} of {n_scenes} scenes have no image at all")
+    if len(empty) > max(1, n_scenes // 4):
+        raise RuntimeError(f"{len(empty)} of {n_scenes} scenes have no image; not rendering a broken video.")
 
-    good = [p for p in results.values() if p]
     per_scene: list[list[Path]] = []
-    for i in range(len(story["scenes"])):
-        shots = [results.get((i, s)) for s in ("a", "b", "c", "d") if (i, s) in results]
-        shots = [p for p in shots if p]
-        if not shots:  # both failed: borrow the previous scene's last image
-            shots = [per_scene[-1][-1] if per_scene else good[0]]
+    for i in range(n_scenes):
+        shots = [results[(i, s)] for s in "abcd" if results.get((i, s))]
+        if not shots:  # emergency only (the run already allows at most max(1, scenes // 4) of these)
+            near = sorted((j for j in range(n_scenes) if j != i), key=lambda j: abs(j - i))
+            pick = next((results[(j, s)] for j in near for s in "abcd"
+                         if results.get((j, s)) and _fits(story, i, "a", j, s)), None)
+            own_bad = next((rejected_files[(i, s)] for s in "abcd" if (i, s) in rejected_files), None)
+            if pick is None and own_bad:
+                pick = own_bad
+                log(f"Scene {i}: EMERGENCY, no fitting image anywhere; keeping its rejected image {pick.name}")
+            if pick is None:
+                pick = per_scene[-1][-1] if per_scene else next(p for p in results.values() if p)
+                log(f"Scene {i}: EMERGENCY, borrowing {pick.name} (no image of this scene or its place exists)")
+            else:
+                log(f"Scene {i}: no image of its own, using {pick.name} (same place)")
+            shots = [pick]
         per_scene.append(shots)
     return per_scene

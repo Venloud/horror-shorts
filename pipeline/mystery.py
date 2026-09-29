@@ -43,7 +43,7 @@ HARD RULES
 
 IMAGE PROMPTS
 - A painted illustration of the place, era, objects, or atmosphere of that moment. Match the real setting and time period.
-- FOUR images per scene, one for each quarter of the narration, and each shows EXACTLY what is being said at that moment (when the words say "the bridge", show the bridge; "the windshield", show the view through the windshield): "image_prompt" = first part, "image_prompt_2" = second, "image_prompt_3" = third, "image_prompt_4" = last part. Each is a different shot, like a fast film edit: mix wide establishing shots of the place, medium shots of people, close-ups of key objects and clues, and reaction shots. A short scene may use fewer (leave the extra ones empty).
+- TWO images per scene: "image_prompt" = the main visual of what the narration says (when the words say "the bridge", show the bridge); "image_prompt_2" = a genuinely DIFFERENT visual from the same narration: another subject, action or angle (e.g. the key object in close-up, the place as a wide shot, another person's reaction). Never the same picture twice. Leave "image_prompt_3" and "image_prompt_4" empty (and their image_location fields "none").
 - REAL PEOPLE: real people are shown with normal visible faces in the channel's illustrated style, matching only basic public facts (approximate age, hair, clothing, era). Do NOT try to copy a real private person's actual face. Historical figures (dead 100+ years) may follow known portraits. Masked or hooded figures are fine when the story fits (thieves, disguises). Each real person gets a "characters" entry with a fixed look that is reused word-for-word in every shot they appear in, so they stay consistent.
 - No text, no writing, no blood, no bodies.
 
@@ -52,6 +52,10 @@ IMAGE PROMPTS
 - ONE FRAME ONLY: every image is ONE continuous full frame, like a single frame from a film. Never comic panels, page layouts, storyboards, collages, split screens or multiple versions of a scene.
 - TRUE STORY VISUALS: keep objects, clothing, vehicles, buildings and era historically accurate. If the source doesn't establish a visual detail, keep it generic.
 - CONSISTENCY: fill "locations" with the 1-3 key places (short "name" + fixed "look", max 20 words, matching the real place and era) and set each scene's "location". List recurring figures in "characters" (e.g. "the hijacker": "man in his 40s, short dark hair, dark business suit, thin black tie, sunglasses, 1970s"). In image prompts, refer to them by that exact name; their look is added automatically.
+- PER-SHOT LOCATION: every image prompt has its own location field: "image_location", "image_location_2", "image_location_3", "image_location_4" = the exact "locations" name where THAT shot takes place, or "none" (object close-ups, sky, anything not in a listed place). An outdoor shot (forest, river, road, sky) never uses an indoor location like a cabin; if the story goes outside, add that outdoor place to "locations".
+- OBJECT SHOTS: in a close-up of a thing (a note, a briefcase, money), the object is the subject: describe the object and the surface it lies on, nothing else; its location is "none".
+- Write every image prompt as plain descriptive text, never labels like "SHOT:" or "SETTING:". The main subject + action + key object come in the first 12 words; then framing, lighting, mood.
+- Every shot in the video is a different picture: never two prompts with nearly the same subject and framing.
 - POP CULTURE HOOK: if the source says a famous movie, TV show, video game, song or book was based on or inspired by this (for example, the Beast of Gevaudan appears in Teen Wolf), add ONE short line near the end that connects it, e.g. "Sound familiar? It's the same beast from Teen Wolf." Put that title in the caption and one hashtag. ONLY use references stated in the source. Never invent or guess one; if the source has none, skip this.
 
 SOUND EFFECTS
@@ -106,7 +110,7 @@ HARD RULES
 
 IMAGE PROMPTS
 - Painted illustrations showing the creature, the setting, the era, or the moment. The creature can be shown (it is folklore), but no gore.
-- FOUR images per scene, one for each quarter of the narration, and each shows EXACTLY what is being said at that moment (when the words say "the bridge", show the bridge; "the windshield", show the view through the windshield): "image_prompt" = first part, "image_prompt_2" = second, "image_prompt_3" = third, "image_prompt_4" = last part. Each is a different shot, like a fast film edit: mix wide establishing shots of the place, medium shots of people, close-ups of key objects and clues, and reaction shots. A short scene may use fewer (leave the extra ones empty).
+- TWO images per scene: "image_prompt" = the main visual of what the narration says (when the words say "the bridge", show the bridge); "image_prompt_2" = a genuinely DIFFERENT visual from the same narration: another subject, action or angle (e.g. the key object in close-up, the place as a wide shot, another person's reaction). Never the same picture twice. Leave "image_prompt_3" and "image_prompt_4" empty (and their image_location fields "none").
 - No text or writing in the image.
 - REAL PEOPLE (if the legend involves real people): real people are shown with normal visible faces in the channel's illustrated style, matching only basic public facts (approximate age, hair, clothing, era). Do NOT try to copy a real private person's actual face. Historical figures (dead 100+ years) may follow known portraits. Masked or hooded figures are fine when the story fits. Each real person gets a "characters" entry with a fixed look that is reused word-for-word in every shot they appear in.
 
@@ -114,6 +118,10 @@ IMAGE PROMPTS
 - Keep every shot simple and drawable: one clear subject from a normal eye-level angle. Never ask for over-the-shoulder shots, people seen from behind, close-ups of hands or isolated body parts, or extreme low/high angles (the image AI twists bodies and puts faces on the back of heads). Prefer places, objects and wide shots.
 - ONE FRAME ONLY: every image is ONE continuous full frame, like a single frame from a film. Never comic panels, page layouts, storyboards, collages, split screens or multiple versions of a scene.
 - CONSISTENCY: fill "locations" with the 1-3 key places (short "name" + fixed "look", max 20 words, matching the real place and era) and set each scene's "location". List recurring figures in "characters" (e.g. "the hijacker": "man in his 40s, short dark hair, dark business suit, thin black tie, sunglasses, 1970s"). In image prompts, refer to them by that exact name; their look is added automatically.
+- PER-SHOT LOCATION: every image prompt has its own location field: "image_location", "image_location_2", "image_location_3", "image_location_4" = the exact "locations" name where THAT shot takes place, or "none" (object close-ups, sky, anything not in a listed place). An outdoor shot (forest, river, road, sky) never uses an indoor location like a cabin; if the story goes outside, add that outdoor place to "locations".
+- OBJECT SHOTS: in a close-up of a thing (a note, a briefcase, money), the object is the subject: describe the object and the surface it lies on, nothing else; its location is "none".
+- Write every image prompt as plain descriptive text, never labels like "SHOT:" or "SETTING:". The main subject + action + key object come in the first 12 words; then framing, lighting, mood.
+- Every shot in the video is a different picture: never two prompts with nearly the same subject and framing.
 - POP CULTURE HOOK: if the source says a famous movie, TV show, video game, song or book was based on or inspired by this (for example, the Beast of Gevaudan appears in Teen Wolf), add ONE short line near the end that connects it, e.g. "Sound familiar? It's the same beast from Teen Wolf." Put that title in the caption and one hashtag. ONLY use references stated in the source. Never invent or guess one; if the source has none, skip this.
 
 SOUND EFFECTS
@@ -169,7 +177,7 @@ HARD RULES
 
 IMAGE PROMPTS
 - Illustrated scenes of the real place, era, objects and moments. Match the real setting and time period.
-- FOUR images per scene, one for each quarter of the narration, and each shows EXACTLY what is being said at that moment (when the words say "the bridge", show the bridge; "the windshield", show the view through the windshield): "image_prompt" = first part, "image_prompt_2" = second, "image_prompt_3" = third, "image_prompt_4" = last part. Each is a different shot, like a fast film edit: mix wide establishing shots of the place, medium shots of people, close-ups of key objects and clues, and reaction shots. A short scene may use fewer (leave the extra ones empty).
+- TWO images per scene: "image_prompt" = the main visual of what the narration says (when the words say "the bridge", show the bridge); "image_prompt_2" = a genuinely DIFFERENT visual from the same narration: another subject, action or angle (e.g. the key object in close-up, the place as a wide shot, another person's reaction). Never the same picture twice. Leave "image_prompt_3" and "image_prompt_4" empty (and their image_location fields "none").
 - REAL PEOPLE: real people are shown with normal visible faces in the channel's illustrated style, matching only basic public facts (approximate age, hair, clothing, era). Do NOT try to copy a real private person's actual face. Historical figures (dead 100+ years) may follow known portraits. Masked or hooded figures are fine when the story fits (thieves, disguises). Each real person gets a "characters" entry with a fixed look that is reused word-for-word in every shot they appear in, so they stay consistent.
 - Lighting gets darker and tenser as the story builds. No text, no writing, no blood, no bodies.
 
@@ -178,6 +186,10 @@ IMAGE PROMPTS
 - ONE FRAME ONLY: every image is ONE continuous full frame, like a single frame from a film. Never comic panels, page layouts, storyboards, collages, split screens or multiple versions of a scene.
 - TRUE STORY VISUALS: keep objects, clothing, vehicles, buildings and era historically accurate. If the source doesn't establish a visual detail, keep it generic.
 - CONSISTENCY: fill "locations" with the 1-3 key places (short "name" + fixed "look", max 20 words, matching the real place and era) and set each scene's "location". List recurring figures in "characters" (e.g. "the hijacker": "man in his 40s, short dark hair, dark business suit, thin black tie, sunglasses, 1970s"). In image prompts, refer to them by that exact name; their look is added automatically.
+- PER-SHOT LOCATION: every image prompt has its own location field: "image_location", "image_location_2", "image_location_3", "image_location_4" = the exact "locations" name where THAT shot takes place, or "none" (object close-ups, sky, anything not in a listed place). An outdoor shot (forest, river, road, sky) never uses an indoor location like a cabin; if the story goes outside, add that outdoor place to "locations".
+- OBJECT SHOTS: in a close-up of a thing (a note, a briefcase, money), the object is the subject: describe the object and the surface it lies on, nothing else; its location is "none".
+- Write every image prompt as plain descriptive text, never labels like "SHOT:" or "SETTING:". The main subject + action + key object come in the first 12 words; then framing, lighting, mood.
+- Every shot in the video is a different picture: never two prompts with nearly the same subject and framing.
 - POP CULTURE HOOK: if the source says a famous movie, TV show, video game, song or book was based on or inspired by this (for example, the Beast of Gevaudan appears in Teen Wolf), add ONE short line near the end that connects it, e.g. "Sound familiar? It's the same beast from Teen Wolf." Put that title in the caption and one hashtag. ONLY use references stated in the source. Never invent or guess one; if the source has none, skip this.
 
 SOUND EFFECTS
