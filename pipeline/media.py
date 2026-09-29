@@ -257,7 +257,11 @@ def _photo(c: dict, png: Path) -> None:
     src = raw.with_suffix(".crop.png")
     _run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(src), "-vf", f"{GRADE},noise=alls=5", "-frames:v", "1",
           str(png)])
-    src.unlink(missing_ok=True)
+    src.replace(_qa_frame(png))  # QA judges the clean, ungraded picture (grain / vignette confuse it)
+
+
+def _qa_frame(png: Path) -> Path:
+    return png.with_name(png.stem + ".qa.png")
 
 
 def _video(c: dict, png: Path) -> Path:
@@ -269,7 +273,6 @@ def _video(c: dict, png: Path) -> Path:
     _run(["ffmpeg", "-y", "-loglevel", "error", "-ss", f"{start}", "-i", str(raw), "-t", "8", "-map", "0:v:0", "-an",
           "-vf", f"{FIT},fps={FPS},{GRADE},noise=alls=8:allf=t+u,format=yuv420p", "-c:v", "libx264",
           "-preset", "veryfast", "-crf", "23", str(mp4)])
-    raw.unlink(missing_ok=True)
     # ONE single frame from the middle of the clip for the poster + QA (never a tiled / multi-frame picture)
     try:
         mid = max(0.0, float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of",
@@ -279,6 +282,10 @@ def _video(c: dict, png: Path) -> Path:
         mid = 3.0
     _run(["ffmpeg", "-y", "-loglevel", "error", "-ss", f"{mid:.2f}", "-i", str(mp4), "-frames:v", "1",
           "-update", "1", str(png)])
+    # QA frame: the same single moment, fitted to 9:16 but WITHOUT our grade / grain / vignette
+    _run(["ffmpeg", "-y", "-loglevel", "error", "-ss", f"{start + mid:.2f}", "-i", str(raw), "-frames:v", "1",
+          "-vf", FIT, "-update", "1", str(_qa_frame(png))])
+    raw.unlink(missing_ok=True)
     return mp4
 
 
@@ -292,7 +299,8 @@ def _recent_ids(history: list[dict], window: int) -> set[str]:
 
 
 def _remove(png: Path) -> None:
-    for p in (png, png.with_suffix(".mp4"), png.with_suffix(".json")):
+    for p in (png, png.with_suffix(".mp4"), png.with_suffix(".json"), _qa_frame(png), png.with_suffix(".src"),
+              png.with_suffix(".src.mp4"), png.with_suffix(".crop.png")):
         p.unlink(missing_ok=True)
 
 
@@ -316,6 +324,10 @@ _ATMOS = re.compile(r"\b(fog|mist|rain|storm|night|sky|moon|clouds?|forest|woods
                     r"alley|elevator|rooftop|roof|calendar|clock|keys?|phone|screen|tv|monitor|tape|camera|car|"
                     r"airplane|plane|aircraft|cabin|ship|boat|church|cemetery|grave|lighthouse|tunnel|basement)\b",
                     re.IGNORECASE)
+# a specific thing ON a screen or a brand / text: no stock clip matches it ("netflix logo", "news ticker")
+_SCREEN_CONTENT = re.compile(r"\b(logos?|brand|ticker|footage|headlines?|newscast|broadcast|website|app|netflix|"
+                             r"youtube|tiktok|instagram|google|facebook|twitter|livestream|cctv|surveillance)\b",
+                             re.IGNORECASE)
 _PROPER = re.compile(r"\b((?:[A-Z][a-z]+|[A-Z]\.)(?:\s+(?:[A-Z][a-z]+|[A-Z]\.|of|the|de))*\s+[A-Z][a-z]+)\b")
 _STOP = set(("a an the of in on at to with and or its his her their is are was from by for into near under over as "
              "while shot close up close-up medium wide establishing view light lighting dark shadow shadows mood eerie "
@@ -345,19 +357,24 @@ def _stock_query(text: str) -> str:
     return clean_query(text, 3)
 
 
-def honest_place_shots(story: dict) -> int:
+def honest_place_shots(story: dict, only: set | None = None, force: bool = False) -> list[int]:
     """Cloudflare-out days: a scene whose every shot shows a story character can't get real media, so its
     SECOND shot becomes an honest place shot: the scene's own location, empty (e.g. "the Cecil Hotel lobby").
-    Only when the scene has a known location; never invents a place. Flag honest_place_shots."""
+    Only when the scene has a known location; never invents a place. Flag honest_place_shots.
+    only/force: second pass for scenes that still have no image after the real-media search. Returns the scenes."""
     if not CONFIG.get("honest_place_shots", True):
-        return 0
+        return []
     import images
     locs = {l.get("name", "").lower().removeprefix("the "): l for l in story.get("locations") or [] if l.get("look")}
-    n = 0
+    done = []
     for i, sc in enumerate(story.get("scenes") or []):
+        if only is not None and i not in only:
+            continue
         filled = [l for l in images._letters() if (sc.get(PROMPT_KEYS[l]) or "").strip()]
-        if not filled or any((sc.get(SRC_KEYS[l]) or "ai") != "ai" for l in filled):
+        if not force and (not filled or any((sc.get(SRC_KEYS[l]) or "ai") != "ai" for l in filled)):
             continue  # already has a real-media shot
+        if sc.get("_place_shot"):
+            continue  # already tried as a place shot
         name = ""
         for key in (images.LOC_KEYS.get("b", ""), images.LOC_KEYS.get("a", ""), "location"):
             cand = (sc.get(key) or "").lower().removeprefix("the ").strip()
@@ -373,10 +390,11 @@ def honest_place_shots(story: dict) -> int:
         sc[images.LOC_KEYS["b"]] = loc["name"]
         sc[SRC_KEYS["b"]] = "real_photo" if real else "stock_video"
         sc[QUERY_KEYS["b"]] = loc["name"] if real else clean_query(loc["look"], 3)
-        n += 1
-        log(f"Shot {i:02d}b: every shot showed a character; now an honest place shot of '{loc['name']}' "
+        sc["_place_shot"] = True
+        done.append(i)
+        log(f"Shot {i:02d}b: no real media for this scene yet; now an honest place shot of '{loc['name']}' "
             f"({sc[SRC_KEYS['b']]}, query \"{sc[QUERY_KEYS['b']]}\")")
-    return n
+    return done
 
 
 def auto_tag(story: dict) -> int:
@@ -401,8 +419,8 @@ def auto_tag(story: dict) -> int:
                 sc[SRC_KEYS[l]] = "ai"
                 continue
             low = text.lower()
-            if _PERSON.search(text) or any(nm and nm in low for nm in names):
-                new, query = "ai", ""
+            if _PERSON.search(text) or any(nm and nm in low for nm in names) or _SCREEN_CONTENT.search(text):
+                new, query = "ai", ""  # people, or a logo / ticker / footage / brand stock video can't match
             else:
                 proper = [m.group(1) for m in _PROPER.finditer(text)
                           if not any(nm and nm in m.group(1).lower() for nm in names)]
@@ -453,7 +471,7 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
     cf_out = _cloudflare_out() and CONFIG.get("real_media_when_cf_out", True)
     tagged = auto_tag(story)
     if cf_out:
-        tagged += honest_place_shots(story)
+        tagged += len(honest_place_shots(story))
     log(f"Shot sources re-classified: {tagged} shot(s) for real media")
     shots = [(i, l) for i, sc in enumerate(story["scenes"]) for l in images._letters()
              if (sc.get(PROMPT_KEYS[l]) or "").strip()]
@@ -467,7 +485,8 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
     n = {"stock_video": 0, "real_photo": 0}
     used: set[str] = set()
     tried = 0
-    for i, l in shots:
+    def attempt(i: int, l: str) -> None:
+        nonlocal tried
         sc = story["scenes"][i]
         png = outdir / f"scene_{i:02d}{l}.png"
         side = png.with_suffix(".json")
@@ -476,21 +495,25 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
             assets.append(meta)
             used.add(meta["id"])
             n[meta["type"]] = n.get(meta["type"], 0) + 1
-            continue
+            return
         kind = (sc.get(SRC_KEYS[l]) or "ai").strip().lower()
         if kind not in PROVIDERS or (i, l) == (0, "a"):  # the hook stays AI: thumbnail + AI animation
-            continue
+            return
         if kind == "real_photo" and not true:
             log(f"Shot {i:02d}{l}: real_photo asked for a fiction story, using AI")
-            continue
+            return
         if n[kind] >= (max_photo if kind == "real_photo" else max_stock):
-            continue
+            return
         raw_q = (sc.get(QUERY_KEYS[l]) or "").strip() or sc[PROMPT_KEYS[l]]
         # stock: 2-4 concrete nouns; archive photos keep the real name ("Cecil Hotel Los Angeles")
         queries = [clean_query(raw_q)] if kind == "stock_video" else [raw_q]
         if kind == "stock_video" and len(queries[0].split()) > 2:
             queries.append(" ".join(queries[0].split()[:2]))  # second, broader try: the two main nouns
-        request, _ = images.shot_request(story, i, sc[PROMPT_KEYS[l]], l)
+        # QA asks for the concept that was searched (the stock clip only has to show "a rooftop water tank", not
+        # the story's exact moment or lighting); a real photo may show the place from any side.
+        request = (f"{clean_query(raw_q)}" if kind == "stock_video"
+                   else f"{raw_q} (any view of it: outside, inside, an entrance or a detail)")
+        budget = int(CONFIG.get("real_media_max_candidates", 4))  # per shot, all queries together
         done = False
         for query in queries:
             cands = []
@@ -503,12 +526,23 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
             if not cands:
                 log(f"Shot {i:02d}{l}: no {kind} result for '{query}'")
                 continue
-            done = _try_candidates(cands[:3], i, l, kind, query, request, png, side, assets, used, n, images)
-            tried += min(3, len(cands))
+            take = cands[:min(3, budget)]
+            if not take:
+                break
+            budget -= len(take)
+            done = _try_candidates(take, i, l, kind, query, request, png, side, assets, used, n, images)
+            tried += len(take)
             if done:
                 break
         if not done:
             log(f"Shot {i:02d}{l}: no usable {kind}, using AI")
+
+    for i, l in shots:
+        attempt(i, l)
+    if cf_out:  # second pass: scenes still without any image get one honest place shot of their own location
+        missing = {i for i in range(len(story["scenes"])) if i not in {a["scene"] for a in assets}}
+        for i in honest_place_shots(story, only=missing, force=True):
+            attempt(i, "b")
     log(f"Real media: {n['stock_video']} stock video(s), {n['real_photo']} real photo(s) "
         f"({tried} candidate(s) tried; limits {max_stock} stock / {max_photo} photos)")
     return assets
@@ -524,7 +558,9 @@ def _try_candidates(cands, i, l, kind, query, request, png, side, assets, used, 
             _remove(png)
             continue
         # real-media QA: one frame, judged on subject / setting / text / real faces / panels, never on colour
-        verdict, why = images.check_image(png, request, kind="real")
+        qa_png = _qa_frame(png) if _qa_frame(png).exists() else png
+        verdict, why = images.check_image(qa_png, request, kind="real")
+        _qa_frame(png).unlink(missing_ok=True)
         qa = "PASS" if verdict else ("FAIL" if verdict is False else "SKIPPED")
         log(f"Image {i:02d}{l}: provider={c['source']} ({c['kind']}), qa={qa}" + (f", reason={why}" if why else "")
             + f', query="{query}", url={c["url"]}')

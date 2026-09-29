@@ -764,7 +764,9 @@ YES
 NO: <reason in 2-5 words>
 Answer NO only if: the main subject or setting is clearly different (e.g. a flag when a water tank was asked for);
 it shows readable or garbled text, a logo or a watermark as a main element; a real person's face is clearly visible
-in close-up; or the frame itself is visibly split into several panels or a split screen.
+in close-up; or the frame itself is visibly cut into separate pictures by straight borders (a split screen).
+Reflections, ripples, windows, doors, shelves, tiles, frames on a wall or several objects side by side are NOT
+panels.
 NEVER answer NO for colour, lighting, warm vs cold tones, time of day, weather, art style or image quality: those
 are changed afterwards. A generic version of a named place or object is fine.
 Answer YES when the requested subject is recognizable."""
@@ -959,9 +961,10 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
         # out, more local images than that = stop now (story + narration stay in the checkpoint) instead of
         # burning the time budget; the buffer covers the gap.
         if not use_cf and (testing or _STATE["spaces_out"]):  # test builds never use the Spaces
-            have = {j for (j, _s), p in results.items() if p}
-            needed = len({j for (j, s2, _) in jobs[n:] if j not in have
-                          and not _is_image(outdir / f"scene_{j:02d}{s2}.png")})
+            # scenes that already have ANY image (drawn this run, real media, checkpoint) need nothing more
+            have = {j for (j, _s), p in results.items() if p} | {
+                j for (j, _s, _) in jobs if any(_is_image(outdir / f"scene_{j:02d}{x}.png") for x in "abcd")}
+            needed = len({j for (j, s2, _) in jobs[n:] if j not in have})
             if needed > local_max - count["local_sd"]:
                 _quota_stop(f"Cloudflare and the free Spaces are out; {needed} scenes still need an image but "
                             f"local SD-Turbo is a gap filler only ({local_max - count['local_sd']} of {local_max} "

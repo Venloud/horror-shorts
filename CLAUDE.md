@@ -237,10 +237,16 @@ so a new session can pick up without starting over.
    grade fixes those). Groq vision QA is paced (`groq_vision_per_minute` 20) and a 429 waits (Retry-After, max 30 s)
    and retries up to 3 times instead of skipping. Stock queries = 2-4 concrete nouns (`media.clean_query`: no
    framing/mood/colour words), then a broader 2-noun query; a clip that failed QA is never retried.
+   QA judges the UNGRADED frame (`scene_XXl.qa.png`, deleted after QA; grain/vignette confused it) against the
+   searched concept (stock: the cleaned query; photo: "<name> (any view: outside, inside, entrance, detail)"),
+   not the story's exact moment. Reflections/ripples/windows are not "panels". At most
+   `real_media_max_candidates` (4) candidates per shot. Shots about screen content / brands / logos / footage
+   ("netflix logo", "news ticker") are tagged ai (no stock clip matches them).
    **Honest place shots** (flag `honest_place_shots`, Cloudflare-out days only): a scene where every shot shows a
    character gets its 2nd shot replaced by its own known location, empty (real_photo for a named real place in a
-   true story, else stock_video). Never invents a place; if scenes still lack images, "waiting for image quota" is
-   the correct result.
+   true story, else stock_video). After the search, a second pass gives every scene that still has no real media
+   one place shot of its own location. Never invents a place; if scenes still lack images, "waiting for image
+   quota" is the correct result (the early-stop count skips scenes that already have ANY image, real media incl.).
 4. **Render** (`render.py`, `effects.py`, `ai_motion.py`), FFmpeg 1080x1920:
    - Hook shot: real AI animation via free Hugging Face ZeroGPU Spaces (list in config `ai_motion.spaces`,
      live API discovery, never hard-wired) -> falls back to 3D parallax -> falls back to Ken Burns zoom.
