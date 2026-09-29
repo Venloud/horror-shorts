@@ -155,12 +155,14 @@ def flicker_expr(story: dict, starts: list[float], total: float) -> str | None:
     return f"-0.09*gt({on},0)*(gt(sin(t*31),0.72)+0.6*gt(sin(t*11+2),0.86))"
 
 
-def shake_expr(story: dict, starts: list[float]) -> tuple[str, str] | None:
+def shake_expr(story: dict, starts: list[float], extra: list[float] | None = None) -> tuple[str, str] | None:
+    """Camera shake on the twist (+ `extra` moments, e.g. the hook's end in fast mode)."""
     if not enabled("shake"):
         return None
     tw = int(story.get("twist_scene", -1))
-    if not 0 < tw < len(starts):
+    times = ([starts[tw]] if 0 < tw < len(starts) else []) + list(extra or [])
+    if not times:
         return None
-    a = starts[tw]
-    on = f"between(t,{a:.2f},{a + 0.45:.2f})"
+    on = "+".join(f"between(t,{a:.2f},{a + 0.45:.2f})" for a in times)
+    on = f"gt({on},0)"
     return (f"(iw-ow)/2+if({on},16*sin(t*71),0)", f"(ih-oh)/2+if({on},12*cos(t*89),0)")

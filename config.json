@@ -20,6 +20,8 @@
   "local_image_budget_minutes": 12,
   "local_image_max": 6,
   "space_images_max": 6,
+  "visual_ab": true,
+  "visual_modes": ["classic", "fast", "analog"],
   "real_media": true,
   "real_media_sources": {"pexels": true, "pixabay": true, "wikimedia": true, "smithsonian": true},
   "stock_video_max_share": 0.4,

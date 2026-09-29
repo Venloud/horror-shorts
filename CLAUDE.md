@@ -192,6 +192,14 @@ so a new session can pick up without starting over.
    - Other shots: Depth Anything V2 Small (Apache-2.0, CPU) 2.5D parallax; fog + dust overlays; light flicker
      only on scenes whose narration mentions lights; camera shake on the twist.
    - Cuts land on punctuation; min shot 1.2 s. Captions: one word at a time, white, centered (Anton font).
+   - **Visual A/B test** (flag `visual_ab`, `visual_modes` [classic, fast, analog]; `render.pick_visual_mode`
+     rotates per buffered video; build.yml input `visual_mode` / env VISUAL_MODE forces one; saved as
+     `visual_mode` in story, caption.json and history for the analytics). classic = as before. fast = a new
+     framing of the same picture every 1.5-2 s (punch-in / detail / left-right crops, never the same framing twice
+     in a row, varied moves), hard cuts on punctuation / key words, whip-pan (slide) or white flash at scene
+     changes, zoom punch on key words, shake at the hook's end + the twist, AI motion on hook + twist (max 2).
+     analog = classic cutting + VHS look (soft blur, chroma bleed, heavy grain, scanlines, camcorder timestamp +
+     "PLAY" via the captions .ass). No fake emergency-broadcast screens or alert tones.
    - Sound effects: real recordings in `assets/sfx` (BigSoundBank / Freesound CC0). `clean_sfx()` removes any
      sound the narration doesn't literally mention; max 4; never on the hook.
    - Music ducked under the voice, per-track volumes in config. Video bitrate capped (TikTok API limit 64 MB).

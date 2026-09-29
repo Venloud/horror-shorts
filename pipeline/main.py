@@ -88,7 +88,7 @@ def main() -> int:
     import media
     from captions import build_ass
     from notify import caption_text, notify
-    from render import qa_gate, render
+    from render import pick_visual_mode, qa_gate, render
     from story import mark_true_story, write_story
     from voice import narrate
 
@@ -111,10 +111,14 @@ def main() -> int:
                 checkpoint.start(story)
         # Until it's posted, a video is known by its story id (the post number is given by publish.py).
         story["story_id"] = story.get("story_id") or checkpoint.story_id(story)
+        if not story.get("visual_mode"):  # A/B test: classic -> fast -> analog (kept on a checkpoint resume)
+            story["visual_mode"] = pick_visual_mode(history)
+            if not testing:
+                checkpoint.save_story(story)
         _gh_output("story_id", story["story_id"])
         log(f"Story {story['story_id']}: '{story['title']}' (mode {story.get('mode')}, "
             f"source {story.get('source') or story.get('case') or 'rotation'}, true story: {bool(story.get('true_story'))}, "
-            f"written by {story.get('writer') or story.get('model')})")
+            f"written by {story.get('writer') or story.get('model')}, visual mode {story.get('visual_mode')})")
         (workdir / "story.json").write_text(json.dumps(story, indent=2, ensure_ascii=False))
 
         narration = None if testing else checkpoint.load_narration(story, workdir)
@@ -167,7 +171,7 @@ def main() -> int:
             "pinned_comment": story.get("pinned_comment", ""), "mode": story.get("mode", "fiction"),
             "hashtags": story.get("hashtags", []),
             "true_story": bool(story.get("true_story")), "seconds": round(narration["duration"], 1),
-            "visual_credits": visual_credits,
+            "visual_credits": visual_credits, "visual_mode": story.get("visual_mode"),
         }, indent=2, ensure_ascii=False))
 
         if testing:
@@ -198,7 +202,8 @@ def main() -> int:
             "seconds": round(narration["duration"], 1),
             "voice_speed": narration.get("speed"),
             "writer": story.get("writer") or story.get("model"),  # which provider wrote it (gemini / groq)
-            "media_ids": [a["id"] for a in story.get("media_assets") or []],  # stock clips are not reused for 20 videos
+            "media_ids": [a["id"] for a in story.get("media_assets") or []],
+            "visual_mode": story.get("visual_mode"),  # A/B test: classic / fast / analog  # stock clips are not reused for 20 videos
             "buffered": stamp,
             "tiktok": None,  # filled in by publish.py when it's posted
         })

@@ -23,17 +23,41 @@ MOTIONS = {
 }
 
 
+VISUAL_MODES = ("classic", "fast", "analog")
+# fast mode: crops of the same picture (x, y, size as fractions of the 9:16 frame; square fractions keep 9:16)
+FRAMINGS = {"full": (0.0, 0.0, 1.0), "punch": (0.14, 0.14, 0.72), "detail_top": (0.2, 0.06, 0.6),
+            "detail_low": (0.2, 0.34, 0.6), "left": (0.0, 0.18, 0.66), "right": (0.34, 0.18, 0.66)}
+FAST_SHOT = (1.5, 2.0)  # fast mode: a new framing every 1.5-2 s
+KEY_WORDS = {"never", "gone", "vanished", "missing", "dead", "died", "nobody", "no", "one", "only", "last", "first",
+             "alone", "still", "everyone", "every", "nothing", "found", "disappeared", "locked", "empty", "real", "true"}
+
+
+def pick_visual_mode(history: list[dict]) -> str:
+    """A/B test: rotate classic -> fast -> analog per buffered video (flag visual_ab; env VISUAL_MODE overrides)."""
+    import os
+    forced = (os.environ.get("VISUAL_MODE") or "").strip().lower()
+    if forced in VISUAL_MODES:
+        return forced
+    if not CONFIG.get("visual_ab", True):
+        return "classic"
+    modes = [m for m in CONFIG.get("visual_modes", list(VISUAL_MODES)) if m in VISUAL_MODES] or ["classic"]
+    return modes[sum(1 for h in history if h.get("buffered")) % len(modes)]
+
+
 def _pick_file(folder: Path) -> Path | None:
     files = [p for p in folder.glob("*") if p.suffix.lower() in {".mp3", ".wav", ".m4a", ".ogg", ".flac"}]
     return random.choice(files) if files else None
 
 
-def _scene_clip(img: Path, seconds: float, motion: str, out: Path) -> Path:
+def _scene_clip(img: Path, seconds: float, motion: str, out: Path, framing: str = "full") -> Path:
     frames = max(2, int(round(seconds * FPS)))
     z, x, y = (s.format(D=frames) for s in MOTIONS[motion])
+    fx, fy, fs = FRAMINGS.get(framing, FRAMINGS["full"])
+    box = "" if framing == "full" else (f"crop={int(W * 2 * fs)}:{int(H * 2 * fs)}:{int(W * 2 * fx)}:{int(H * 2 * fy)},"
+                                        f"scale={W * 2}:{H * 2}:flags=lanczos,")
     vf = (
         f"scale={W * 2}:{H * 2}:force_original_aspect_ratio=increase:flags=lanczos,"
-        f"crop={W * 2}:{H * 2},"
+        f"crop={W * 2}:{H * 2},{box}"
         f"zoompan=z='{z}':x='{x}':y='{y}':d={frames}:s={W}x{H}:fps={FPS},"
         f"setsar=1,format=yuv420p"
     )
@@ -61,8 +85,24 @@ def _fit_clip(src: Path, seconds: float, out: Path) -> Path:
     return out
 
 
-def _join(clips: list[Path], seg: list[float], scene_cut: list[bool], out: Path) -> Path:
-    """Crossfade all shots into one silent video. Every input is normalized first (see NORMALIZE)."""
+def _transitions(scene_cut: list[bool], mode: str) -> list[tuple[str, float]]:
+    """(xfade transition, duration) into each shot (index 0 unused). classic/analog: soft crossfades.
+    fast: hard cuts inside a scene (one frame), a whip-pan or a white flash at scene changes."""
+    out = [("fade", 0.0)]
+    for i in range(1, len(scene_cut)):
+        if mode == "fast":
+            out.append((random.choice(["slideleft", "slideup", "fadewhite"]), 0.2) if scene_cut[i] else ("fade", 1 / FPS))
+        else:
+            out.append((random.choice(["fadeblack", "fade", "fadeblack"]) if scene_cut[i]
+                        else random.choice(["fade", "dissolve"]), XFADE))
+    return out
+
+
+def _join(clips: list[Path], seg: list[float], scene_cut: list[bool], out: Path,
+          trans: list[tuple[str, float]] | None = None) -> Path:
+    """Join all shots into one silent video with xfade. Every input is normalized first (see NORMALIZE).
+    Clip k must last seg[k] + the duration of the transition after it."""
+    trans = trans or _transitions(scene_cut, "classic")
     inputs, fc = [], []
     for i, c in enumerate(clips):
         inputs += ["-i", str(c)]
@@ -70,9 +110,9 @@ def _join(clips: list[Path], seg: list[float], scene_cut: list[bool], out: Path)
     prev = "[n0]"
     for i in range(1, len(clips)):
         offset = sum(seg[:i])
-        trans = random.choice(["fadeblack", "fade", "fadeblack"]) if scene_cut[i] else random.choice(["fade", "dissolve"])
+        kind, dur = trans[i]
         label = f"[x{i}]"
-        fc.append(f"{prev}[n{i}]xfade=transition={trans}:duration={XFADE}:offset={offset:.3f}{label}")
+        fc.append(f"{prev}[n{i}]xfade=transition={kind}:duration={dur:.3f}:offset={offset:.3f}{label}")
         prev = label
     run(["ffmpeg", "-y", "-loglevel", "error", *inputs, "-filter_complex", ";".join(fc),
          "-map", prev, "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "14", "-r", str(FPS),
@@ -102,23 +142,103 @@ def _split_points(words: list[dict], scene: int, s_start: float, s_end: float, n
     return cuts
 
 
+def _next_fast_cut(t: float, end: float, words: list[dict]) -> float | None:
+    """fast mode: the next cut 1.5-2 s after t, on punctuation, else on a key word, else at ~1.75 s."""
+    lo, hi = t + FAST_SHOT[0], t + FAST_SHOT[1]
+    if end - lo < 1.0:
+        return None
+    punct = [w["end"] + 0.05 for w in words
+             if lo <= w["end"] + 0.05 <= hi and re.search(r"[.!?,;:\u2026]$", w["word"])]
+    keyw = [w["start"] for w in words if lo <= w["start"] <= hi and _is_key(w["word"])]
+    pick = min(punct) if punct else (min(keyw) if keyw else lo + 0.25)
+    return pick if end - pick >= 1.0 else None
+
+
+def _is_key(word: str) -> bool:
+    w = word.lower().strip(".,!?;:\"'\u2026")
+    return w in KEY_WORDS or any(ch.isdigit() for ch in w)
+
+
+def _fast_shots(shot_imgs, shot_starts, scene_cut, shot_scene, seg, words):
+    """fast mode: split every picture into 1.5-2 s shots with different framings of the same image (never the
+    same framing twice in a row). Stock video shots stay whole (they already move)."""
+    imgs, starts, cuts, scenes, framing = [], [], [], [], []
+    for img, st, cut, sc, dur in zip(shot_imgs, shot_starts, scene_cut, shot_scene, seg):
+        t, prev, first = st, None, True
+        while True:
+            f = "full" if first else random.choice([k for k in FRAMINGS if k not in (prev, "full")])
+            imgs.append(img); starts.append(t); cuts.append(cut if first else False); scenes.append(sc)
+            framing.append(f)
+            prev, first = f, False
+            nxt = None if Path(img).with_suffix(".mp4").exists() else _next_fast_cut(t, st + dur, words)
+            if nxt is None:
+                break
+            t = nxt
+    return imgs, starts, cuts, scenes, framing
+
+
+def _scanlines(workdir: Path) -> Path:
+    """analog mode: faint horizontal VHS scanlines (a transparent PNG laid over the whole video)."""
+    from PIL import Image
+    import numpy as np
+    rgba = np.zeros((H, W, 4), np.uint8)
+    rgba[::4, :, 3] = 38
+    rgba[1::4, :, 3] = 18
+    out = workdir / "scanlines.png"
+    Image.fromarray(rgba, "RGBA").save(out)
+    return out
+
+
+def _vhs_ass(ass_path: Path, story: dict, total: float, workdir: Path) -> Path:
+    """analog mode: a small camcorder timestamp in the bottom-left corner (a running clock, one ASS event per
+    second) and "PLAY" in the top-right, added to a copy of the captions file. No emergency-broadcast screens."""
+    import hashlib
+    seed = int(hashlib.sha1(str(story.get("story_id") or story.get("title")).encode()).hexdigest()[:8], 16)
+    month = ("JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC")[seed % 12]
+    day, year, hour, minute = 1 + seed % 28, 1987 + seed % 12, 1 + seed % 11, seed % 60
+    text = Path(ass_path).read_text(encoding="utf-8")
+    style = ("Style: VHS,DejaVu Sans Mono,46,&H00E8E8E8,&H00E8E8E8,&H00101010,&H00000000,-1,0,0,0,100,100,2,0,1,"
+             "3,1,1,70,70,150,1")
+    text = re.sub(r"(\[V4\+ Styles\][^\n]*\n(?:Format:[^\n]*\n)?)", lambda m: m.group(1) + style + "\n", text, count=1)
+
+    def ts(t: float) -> str:
+        return f"{int(t // 3600)}:{int(t % 3600 // 60):02d}:{t % 60:05.2f}"
+
+    lines = [f"Dialogue: 5,{ts(0)},{ts(min(total, 4.0))},VHS,,0,0,0,,{{\\an9}}PLAY \u25b6"]
+    for sec in range(int(total) + 1):
+        clock = f"{'PM' if seed % 2 else 'AM'} {hour}:{(minute + (sec // 60)) % 60:02d}:{sec % 60:02d}"
+        lines.append(f"Dialogue: 5,{ts(sec)},{ts(min(total, sec + 1))},VHS,,0,0,0,,"
+                     f"{{\\an1}}{clock}\\N{month}. {day:02d} {year}")
+    out = workdir / "captions_vhs.ass"
+    out.write_text(text.rstrip("\n") + "\n" + "\n".join(lines) + "\n", encoding="utf-8")
+    return out
+
+
 def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Path, workdir: Path) -> Path:
     total = narration["duration"] + TAIL
     starts = [0.0] + [st for st, _ in narration["scene_times"][1:]]
+    mode = story.get("visual_mode") if story.get("visual_mode") in VISUAL_MODES else "classic"
 
     # Build the shot list: each scene is 1 to 4 shots
-    shot_imgs, shot_starts, scene_cut = [], [], []
+    shot_imgs, shot_starts, scene_cut, shot_scene = [], [], [], []
     for i, shots in enumerate(images):
         s_start = starts[i]
         s_end = starts[i + 1] if i + 1 < len(starts) else total
         cuts = _split_points(narration["words"], i, s_start, s_end, len(shots)) if len(shots) > 1 else []
-        shot_imgs.append(shots[0]); shot_starts.append(s_start); scene_cut.append(True)
+        shot_imgs.append(shots[0]); shot_starts.append(s_start); scene_cut.append(True); shot_scene.append(i)
         if 0 < len(cuts) < len(shots) - 1:  # not enough time for every picture: spread the ones we keep
             keep = [round(j * (len(shots) - 1) / len(cuts)) for j in range(len(cuts) + 1)]
             shots = [shots[j] for j in keep]
         for j, cut in enumerate(cuts, start=1):
-            shot_imgs.append(shots[j]); shot_starts.append(cut); scene_cut.append(False)
+            shot_imgs.append(shots[j]); shot_starts.append(cut); scene_cut.append(False); shot_scene.append(i)
     seg = [shot_starts[k + 1] - shot_starts[k] for k in range(len(shot_starts) - 1)] + [total - shot_starts[-1]]
+    framings = ["full"] * len(shot_imgs)
+    if mode == "fast":
+        shot_imgs, shot_starts, scene_cut, shot_scene, framings = _fast_shots(
+            shot_imgs, shot_starts, scene_cut, shot_scene, seg, narration["words"])
+        seg = [shot_starts[k + 1] - shot_starts[k] for k in range(len(shot_starts) - 1)] + [total - shot_starts[-1]]
+    trans = _transitions(scene_cut, mode)
+    log(f"Visual mode: {mode} ({len(shot_imgs)} shots)")
 
     # 1) One moving clip per shot (each clip is XFADE longer so crossfades don't eat time)
     motions = list(MOTIONS)
@@ -129,12 +249,24 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
     hook_shots = next((j for j in range(1, len(scene_cut)) if scene_cut[j]), len(scene_cut))
     sc0 = (story.get("scenes") or [{}])[0]
     hook_prompts = [sc0.get(k2, "") for k2 in ("image_prompt", "image_prompt_2", "image_prompt_3", "image_prompt_4")]
+    ai_targets = {k: hook_prompts[k] if k < len(hook_prompts) else "" for k in range(min(ai_shots, hook_shots))}
+    if mode == "fast" and ai_shots:  # fast: AI motion on the hook AND the twist (max 2)
+        tw = int(story.get("twist_scene", -1))
+        first_tw = next((k for k, sc in enumerate(shot_scene) if sc == tw and scene_cut[k]), None)
+        ai_targets = {0: hook_prompts[0]}
+        if first_tw and 0 < tw < len(story.get("scenes", [])):
+            ai_targets[first_tw] = story["scenes"][tw].get("image_prompt", "")
     for k, (img, s) in enumerate(zip(shot_imgs, seg)):
-        length = s + (XFADE if k < len(shot_imgs) - 1 else 0)
+        length = s + (trans[k + 1][1] if k < len(shot_imgs) - 1 else 0)
         out = workdir / f"clip_{k:02d}.mp4"
-        # Real AI animation on the hook (first shots of scene 1), if a free Space is available
-        if k < min(ai_shots, hook_shots):
-            ai = ai_motion.animate(img, hook_prompts[k] if k < len(hook_prompts) else "", workdir / f"ai_{k:02d}.mp4")
+        if framings[k] != "full":  # fast mode: a punch-in / detail / pan crop of the same picture
+            m = random.choice([mm for mm in motions if mm != last]); last = m
+            clips.append(_scene_clip(img, length, m, out, framings[k]))
+            log(f"Shot {k}: {length:.1f}s {framings[k]} {m}")
+            continue
+        # Real AI animation on the hook (first shots of scene 1; fast mode: + the twist), if a free Space is available
+        if k in ai_targets:
+            ai = ai_motion.animate(img, ai_targets[k], workdir / f"ai_{k:02d}.mp4")
             if ai:
                 try:
                     clips.append(_fit_clip(ai, length, out))
@@ -165,7 +297,7 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
         log(f"Shot {k}: {length:.1f}s {m}")
 
     # 2) Chain crossfades (every clip normalized to 1080x1920 / 30 fps / yuv420p / SAR 1, audio dropped)
-    joined = _join(clips, seg, scene_cut, workdir / "joined.mp4")
+    joined = _join(clips, seg, scene_cut, workdir / "joined.mp4", trans)
 
     # 3) Final pass: colour grade, grain, vignette, captions, audio mix
     font, fontsdir = font_setup()
@@ -253,12 +385,29 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
     end_start = narration["duration"] + END_CARD_DELAY
     base = ("[0:v]eq=saturation=1.0:contrast=1.06:brightness=0.0:gamma=1.08,"
             "colorbalance=bs=0.05:bm=0.03:rh=-0.02,noise=alls=6:allf=t+u,vignette=PI/4.2")
+    if mode == "analog":  # VHS: softer, colour bleed, heavier grain (scanlines + timestamp below)
+        base = ("[0:v]eq=saturation=0.82:contrast=1.1:brightness=-0.01:gamma=1.05,gblur=sigma=0.7,"
+                "chromashift=cbh=4:crh=-4,colorbalance=rs=0.04:bs=-0.02,noise=alls=14:allf=t+u,vignette=PI/3.8")
+        ass_path = _vhs_ass(ass_path, story, total, workdir)
+        ass_arg = str(ass_path).replace("\\", "/").replace(":", "\\:")
+        ass_filter = f"ass='{ass_arg}'" + (f":fontsdir='{fontsdir}'" if fontsdir else "")
     mascot = ROOT / "assets" / "mascot.png"
     logo = ROOT / "assets" / "mascot_round.png"
     vparts, cur = [], "[vb]"
     vparts.append(f"{base}[vb]")
     # Free "alive" effects: camera shake on the twist, light flicker, drifting fog and dust
-    shake = effects.shake_expr(story, starts)
+    if mode == "fast":  # quick zoom punch on key words
+        hits, lastp = [], -9.0
+        for w in narration["words"]:
+            if _is_key(w["word"]) and w["start"] - lastp >= 2.5 and len(hits) < 12:
+                hits.append(w["start"]); lastp = w["start"]
+        if hits:
+            p = "+".join(f"between(on/{FPS},{t:.2f},{t + 0.25:.2f})" for t in hits)
+            vparts.append(f"{cur}zoompan=z='1+0.07*({p})':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:"
+                          f"s={W}x{H}:fps={FPS}[vz]"); cur = "[vz]"
+            log(f"Zoom punches on {len(hits)} key words")
+    hook_end = [max(0.0, starts[1] - 0.45)] if mode == "fast" and len(starts) > 1 else []
+    shake = effects.shake_expr(story, starts, extra=hook_end)
     if shake:
         vparts.append(f"{cur}scale={int(W * 1.04)}:{int(H * 1.04)},crop={W}:{H}:x='{shake[0]}':y='{shake[1]}'[vs]"); cur = "[vs]"
     flick = effects.flicker_expr(story, starts, total)
@@ -268,6 +417,9 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
     if "fog" in tex:
         ins += ["-loop", "1", "-framerate", str(FPS), "-t", f"{total:.2f}", "-i", str(tex["fog"])]
         vparts.append(f"{cur}[{idx}:v]overlay=x='-mod(t*22,{W})':y=0:shortest=1[vfog]"); cur = "[vfog]"; idx += 1
+    if mode == "analog":
+        ins += ["-loop", "1", "-framerate", str(FPS), "-t", f"{total:.2f}", "-i", str(_scanlines(workdir))]
+        vparts.append(f"{cur}[{idx}:v]overlay=0:0:shortest=1[vscan]"); cur = "[vscan]"; idx += 1
     if "dust" in tex:
         ins += ["-loop", "1", "-framerate", str(FPS), "-t", f"{total:.2f}", "-i", str(tex["dust"])]
         vparts.append(f"{cur}[{idx}:v]overlay=x='6*sin(t/3)':y='-mod(t*26,{H})':shortest=1[vdust]"); cur = "[vdust]"; idx += 1
