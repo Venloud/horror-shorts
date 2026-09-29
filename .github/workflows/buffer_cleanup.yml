@@ -1,0 +1,27 @@
+name: buffer_cleanup
+
+# Manual: delete buffered videos built before config "buffer_purge_before" (daily.yml also does this before posting).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: night-files
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -q requests
+      - name: Delete old buffered videos
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: cd pipeline && python buffer.py

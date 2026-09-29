@@ -89,6 +89,8 @@
 
   "mascot_intro": false,
   "tiktok_mode": "draft",
+  "buffer_purge": true,
+  "buffer_purge_before": "2026-09-29T04:47:43Z",
   "youtube_enabled": true,
   "youtube_privacy": "public",
   "direct_privacy": "SELF_ONLY",

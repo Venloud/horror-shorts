@@ -76,6 +76,7 @@ def main(from_build: bool = False) -> int:
     import youtube
     from notify import notify, notify_text
 
+    buffer.purge_old()  # never post a video made before the image fix (config buffer_purge_before)
     try:
         waiting = buffer.videos()
     except Exception as e:  # noqa: BLE001

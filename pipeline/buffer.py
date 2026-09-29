@@ -9,7 +9,7 @@ from pathlib import Path
 
 import requests
 
-from common import log
+from common import CONFIG, log
 
 TAG = "buffer"
 API = "https://api.github.com"
@@ -96,3 +96,29 @@ def remove(video: dict) -> None:
         if r.status_code not in (204, 404):
             raise RuntimeError(f"Buffer delete of {video[key]['name']}: HTTP {r.status_code}")
     log(f"Removed {video['stamp']} from the buffer")
+
+
+def purge_old() -> list[str]:
+    """Delete every buffered video built before config "buffer_purge_before" (ISO time; videos made with the old,
+    broken images). Flag "buffer_purge" (on by default). Returns the removed stamps; never raises."""
+    cutoff = CONFIG.get("buffer_purge_before") if CONFIG.get("buffer_purge", True) else None
+    if not cutoff:
+        return []
+    removed = []
+    try:
+        for v in videos():
+            built = v["mp4"].get("created_at") or ""
+            if built and built < cutoff:  # both are ISO-8601 UTC ("...Z"), so text order = time order
+                remove(v)
+                log(f"Buffer cleanup: deleted {v['stamp']} (mp4 + json, built {built}, before {cutoff})")
+                removed.append(v["stamp"])
+    except Exception as e:  # noqa: BLE001
+        log(f"Buffer cleanup skipped ({e})")
+        return removed
+    if not removed:
+        log(f"Buffer cleanup: nothing built before {cutoff}")
+    return removed
+
+
+if __name__ == "__main__":  # buffer_cleanup.yml
+    purge_old()
