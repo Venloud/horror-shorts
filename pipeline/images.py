@@ -942,6 +942,16 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
     # Every scene's "a" shot first, then every "b", then any extra cuts: if a quota or the local time budget runs
     # out we lose cuts, never whole scenes.
     jobs.sort(key=lambda j: ("abcd".index(j[1]), j[0]))
+    # Cloudflare out and only SD-Turbo left (max local_image_max): scenes with no image at all (no real media, no
+    # checkpoint) come first, so the few local images fill empty scenes instead of extra cuts of covered ones.
+    local_only = not (has_cf and not _STATE["cf_out"]) and (testing or _STATE["spaces_out"])
+    covered = {i for (i, _l, _t) in jobs if any(_is_image(outdir / f"scene_{i:02d}{x}.png") for x in "abcd")}
+    if local_only:
+        def prio(j):  # empty scenes' main shots, then the hook (frame one), then empty scenes' 2nd shots, then rest
+            if j[0] not in covered:
+                return 0 if j[1] == "a" else 2
+            return 1 if (j[0], j[1]) == (0, "a") else 3
+        jobs.sort(key=lambda j: (prio(j), "abcd".index(j[1]), j[0]))
 
     results: dict[tuple[int, str], Path | None] = {}
     rejected_files: dict[tuple[int, str], Path] = {}
@@ -1010,7 +1020,8 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
         ok, used, fallback_rejections, draws, last_kind = False, set(), 0, 0, ""
         # The hook shot (scene 0, shot a) is the thumbnail: up to 3 draws (new seed, then a simplified prompt)
         # with the last source that drew, before it is dropped.
-        extra = 2 if (i, shot) == (0, "a") else 0
+        # Local-only days: the extra draws only when scene 0 has nothing else to show (each costs 1 of the 6).
+        extra = 2 if (i, shot) == (0, "a") and not (local_only and 0 in covered) else 0
         last = None
         for k in range(len(chain) + extra):
             if k < len(chain):

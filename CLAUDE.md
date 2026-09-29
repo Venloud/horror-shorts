@@ -251,7 +251,9 @@ so a new session can pick up without starting over.
    **Honest place shots** (flag `honest_place_shots`, Cloudflare-out days only): a scene where every shot shows a
    character gets its 2nd shot replaced by its own known location, empty (real_photo for a named real place in a
    true story, else stock_video). After the search, a second pass gives every scene that still has no real media
-   one place shot of its own location. Never invents a place; if scenes still lack images, "waiting for image
+   one place shot of its own location (photo query: with the story's city first, then the plain name). On
+   local-only days SD-Turbo draws in this order: scenes with NO image at all (main shot), the hook 0a (only 1 draw,
+   not 3, when scene 0 already has real media), empty scenes' 2nd shots, then extra cuts. Never invents a place; if scenes still lack images, "waiting for image
    quota" is the correct result (the early-stop count skips scenes that already have ANY image, real media incl.).
 4. **Render** (`render.py`, `effects.py`, `ai_motion.py`), FFmpeg 1080x1920:
    - Hook shot: real AI animation via free Hugging Face ZeroGPU Spaces (list in config `ai_motion.spaces`,

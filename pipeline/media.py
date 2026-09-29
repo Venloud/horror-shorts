@@ -555,11 +555,11 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
             return
         raw_q = (sc.get(QUERY_KEYS[l]) or "").strip() or sc[PROMPT_KEYS[l]]
         # stock: 2-4 concrete nouns; archive photos keep the real name ("Cecil Hotel Los Angeles")
-        if kind == "real_photo":  # pin the real place down: "Cecil Hotel office" -> "... Los Angeles"
-            ctx = place_context(story, raw_q)
-            if ctx and ctx.lower() not in raw_q.lower():
-                raw_q = f"{raw_q} {ctx}"
         queries = [clean_query(raw_q)] if kind == "stock_video" else [raw_q]
+        if kind == "real_photo":  # pin the real place down: "Cecil Hotel office" -> "... Los Angeles" first,
+            ctx = place_context(story, raw_q)  # then the plain name (other-city titles are still skipped)
+            if ctx and ctx.lower() not in raw_q.lower():
+                queries.insert(0, f"{raw_q} {ctx}")
         if kind == "stock_video" and len(queries[0].split()) > 2:
             queries.append(" ".join(queries[0].split()[:2]))  # second, broader try: the two main nouns
         # QA asks for the concept that was searched (the stock clip only has to show "a rooftop water tank", not
