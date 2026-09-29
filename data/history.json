@@ -290,5 +290,25 @@
     "voice_speed": 1.2,
     "buffered": "2026-09-29_0119",
     "tiktok": null
+  },
+  {
+    "date": "2026-09-29_0339",
+    "story_id": "aac369911b5f",
+    "title": "The True Story of D.B. Cooper",
+    "premise": "A mysterious man hijacks a commercial flight in 1971, collects a ransom, and parachutes into the wilderness, never to be seen again.",
+    "subgenre": "creator script",
+    "mode": "inbox-script",
+    "true_story": true,
+    "case": null,
+    "source": "inbox/db_cooper.txt",
+    "prompt_file": null,
+    "setting": "Commercial airliner and the Pacific Northwest wilderness",
+    "threat": "An unidentified hijacker escaping justice in the dangerous wilderness",
+    "twist": "Most of the ransom money was never recovered, and his true identity remains completely unknown",
+    "score": null,
+    "seconds": 58.3,
+    "voice_speed": 1.1,
+    "buffered": "2026-09-29_0339",
+    "tiktok": null
   }
 ]
