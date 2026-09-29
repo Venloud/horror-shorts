@@ -135,7 +135,8 @@ def main(from_build: bool = False) -> int:
         log("YouTube: skipped (YT_CLIENT_ID / YT_CLIENT_SECRET / YT_REFRESH_TOKEN secrets not set)")
     else:
         try:
-            yt = youtube.upload(mp4, meta["title"], meta["caption_text"], meta.get("hashtags"))
+            yt = youtube.upload(mp4, meta["title"], meta["caption_text"], meta.get("hashtags"),
+                                credits=meta.get("visual_credits") or "")
         except Exception as e:  # noqa: BLE001
             traceback.print_exc()
             yt_error = f"{type(e).__name__}: {str(e)[:300]}"

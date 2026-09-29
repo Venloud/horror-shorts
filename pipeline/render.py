@@ -142,6 +142,14 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
                     continue
                 except Exception as e:  # noqa: BLE001
                     log(f"Shot {k}: AI clip unusable ({str(e)[:100]})")
+        clip = Path(img).with_suffix(".mp4")
+        if CONFIG.get("real_media", True) and clip.exists():  # stock video (media.py): real motion, not parallax
+            try:
+                clips.append(_fit_clip(clip, length, out))
+                log(f"Shot {k}: {length:.1f}s stock video")
+                continue
+            except Exception as e:  # noqa: BLE001
+                log(f"Shot {k}: stock video unusable ({str(e)[:100]}), using its still")
         if img not in depths:
             depths[img] = effects.depth_map(img)
         if depths[img] is not None:

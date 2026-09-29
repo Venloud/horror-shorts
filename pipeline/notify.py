@@ -30,6 +30,12 @@ def caption_text(story: dict) -> str:
             caption = f"{caption} (fictional story)"
         if "#fiction" not in tags.lower():
             tags = f"{tags} #fiction".strip()
+    if story.get("media_assets"):  # real stock video / archive photos used: name the sources
+        try:
+            from media import credits
+            credit += "\n" + credits(story["media_assets"])[0]
+        except Exception as e:  # noqa: BLE001
+            log(f"Visual credit line skipped ({e})")
     return f"{caption}{credit}\n\n{tags}".strip()
 
 

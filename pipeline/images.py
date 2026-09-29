@@ -789,7 +789,8 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
     outdir.mkdir(parents=True, exist_ok=True)
     testing = test_mode()
     test_cf = test_cloudflare_images()
-    if testing and not test_cf:
+    has_media = any(outdir.glob("scene_*.json")) if outdir.exists() else False
+    if testing and not test_cf and not has_media:  # real media already placed: don't overwrite it with the cache
         cached = _cached_images(story, outdir)
         if cached:
             return cached
@@ -812,7 +813,8 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
 
     results: dict[tuple[int, str], Path | None] = {}
     rejected_files: dict[tuple[int, str], Path] = {}
-    count = {"cloudflare": 0, "hf_space": 0, "local_sd": 0, "rejected": 0, "virtual_cached": 0}
+    count = {"cloudflare": 0, "hf_space": 0, "local_sd": 0, "rejected": 0, "virtual_cached": 0, "real_media": 0}
+    space_max = int(CONFIG.get("space_images_max", 6))  # ZeroGPU minutes: the hook animation comes first
     told_two = False
     done_shots: list[str] = []
 
@@ -840,10 +842,15 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
                 log("Cloudflare not available: 2 shots per scene for the rest of this run")
                 told_two = True
             continue
-        if _is_image(path):  # checkpoint from an earlier try of this same story (it passed its checks then)
-            count["virtual_cached"] += 1
+        if _is_image(path):  # real media (media.py) or a checkpoint from an earlier try (it passed its checks then)
+            side = path.with_suffix(".json")
+            if side.exists():
+                count["real_media"] += 1
+                log(f"Image {tag}: provider={json.loads(side.read_text()).get('source', 'real media')} (real media)")
+            else:
+                count["virtual_cached"] += 1
+                log(f"Image {tag}: provider=checkpoint")
             results[(i, shot)] = path
-            log(f"Image {tag}: provider=checkpoint")
             continue
         # Last guard before spending anything: a prompt nearly identical to one already made is rebuilt.
         if any(near_duplicate(raw_prompt, p) for p in done_shots):
@@ -883,6 +890,10 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
                 provider, retry = last, k - len(chain) + 1
             if (provider is _cloudflare and not cf_usable()) or (provider is _hf_space and _STATE["spaces_out"]) \
                     or (provider is _local_sd and _STATE["local_out"]):
+                continue
+            if provider is _hf_space and count["hf_space"] >= space_max:
+                _STATE["spaces_out"] = True  # keep the rest of the free GPU minutes for the hook animation
+                log(f"Free Spaces: {space_max} images this video, the rest of the GPU time stays for the hook animation")
                 continue
             if provider is _local_sd and not testing and count["local_sd"] >= local_max:
                 _STATE["local_out"] = True
@@ -955,6 +966,7 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
     log(f"Cloudflare estimated neurons: {_STATE['cf_neurons']:.0f}")
     log(f"HF images: {count['hf_space']}")
     log(f"Local SD images: {count['local_sd']}" + (f" ({_STATE['local_secs']:.0f}s)" if _STATE["local_secs"] else ""))
+    log(f"Real media (stock video / archive photos): {count['real_media']}")
     log(f"Rejected images: {count['rejected']}")
     log(f"Virtual/cached images: {count['virtual_cached']}")
     missing = len(jobs) - sum(1 for p in results.values() if p)

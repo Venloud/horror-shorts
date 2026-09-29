@@ -164,6 +164,22 @@ so a new session can pick up without starting over.
    Art style (config `image_style_cf` / `image_style_fallback`): dark painterly illustration with bold ink linework,
    NOT photoreal. "graphic novel", "comic", "panels", "storyboard" are never in a positive prompt (they caused page
    layouts / panels); the look stays the same (painterly + bold ink, warm lamp / moonlight highlights).
+   **Real media first** (`media.py`, flag `real_media`, per-source flags `real_media_sources`; runs before the AI
+   images, never stops a build): the scene plan gives each shot `image_source` (ai / stock_video / real_photo) +
+   `image_query`. stock_video = generic atmosphere, no story character: Pexels Videos (PEXELS_API_KEY,
+   /v1/videos/search, portrait, >= 1080 tall, <= 190 calls/h) -> Pixabay Videos (PIXABAY_API_KEY, vertical only;
+   never Pixabay music). real_photo = TRUE stories only (real place/building/object/document/official sketch; never
+   private people, victims, crime scenes): Wikimedia Commons (no key, NightFilesBot User-Agent, one request at a
+   time, Retry-After honored, ONLY Public domain / CC0 / CC BY) -> Smithsonian Open Access (SI_API_KEY, CC0 only).
+   Searches cached 24 h (`cache/media-search`, Actions cache `media-search-*`). Limits: <= `stock_video_max_share`
+   (0.4) stock shots, <= `real_photo_max` (3) photos; the hook shot (0a) stays AI; a stock clip isn't reused within
+   `stock_reuse_window` (20) videos (history `media_ids`). Same paced Gemini QA; fail -> next result (max 3) -> AI.
+   Graded to the channel look (dark, desaturated, teal/amber, vignette, grain). Photos = 1080x1920 PNG (parallax in
+   render); stock video = `scene_XXl.mp4` (8 s max, 1080x1920, 30 fps, no audio) next to a poster PNG, played by
+   render as real motion. `scene_XXl.json` + story["media_assets"] keep source/url/author/license/date. Credits:
+   TikTok caption line "Visuals: Pexels, Wikimedia Commons"; YouTube description "Visual credits:" (caption.json
+   `visual_credits`). Free Spaces draw at most `space_images_max` (6) images per video so ZeroGPU minutes stay
+   for the hook animation.
 4. **Render** (`render.py`, `effects.py`, `ai_motion.py`), FFmpeg 1080x1920:
    - Hook shot: real AI animation via free Hugging Face ZeroGPU Spaces (list in config `ai_motion.spaces`,
      live API discovery, never hard-wired) -> falls back to 3D parallax -> falls back to Ken Burns zoom.
@@ -275,5 +291,6 @@ UPDATE REPORT
 
 ## Secrets used
 GEMINI_API_KEY, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, TIKTOK_CLIENT_KEY, TIKTOK_CLIENT_SECRET,
-TIKTOK_REFRESH_TOKEN, NTFY_TOPIC, HF_TOKEN, FREESOUND_API_KEY, GH_PAT, YT_CLIENT_ID, YT_CLIENT_SECRET, YT_REFRESH_TOKEN. (POLLINATIONS_KEY is no longer used.)
+TIKTOK_REFRESH_TOKEN, NTFY_TOPIC, HF_TOKEN, FREESOUND_API_KEY, GH_PAT, YT_CLIENT_ID, YT_CLIENT_SECRET, YT_REFRESH_TOKEN.
+Optional (feature skipped without them): PEXELS_API_KEY, PIXABAY_API_KEY, SI_API_KEY (api.data.gov). (POLLINATIONS_KEY is no longer used.)
 build.yml/daily.yml also use the built-in `github.token` for the buffer release.

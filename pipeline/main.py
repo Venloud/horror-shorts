@@ -85,6 +85,7 @@ def main() -> int:
     import buffer
     import checkpoint
     import images
+    import media
     from captions import build_ass
     from notify import caption_text, notify
     from render import qa_gate, render
@@ -128,6 +129,7 @@ def main() -> int:
 
         log(f"Final narration: {narration['duration']:.1f}s at speed {narration.get('speed')}")
         img_dir = workdir / "images" if testing else checkpoint.IMAGES  # images are kept as soon as they exist
+        media.fill_shots(story, img_dir, history)  # real stock video / archive photos first (never raises)
         imgs = images.generate_images(story, img_dir)
         from render import END_CARD_DELAY, TAIL
         ass = build_ass(narration["words"], story.get("hook_overlay", ""),
@@ -135,7 +137,9 @@ def main() -> int:
                         end_start=narration["duration"] + END_CARD_DELAY,
                         badge="TRUE STORY" if story.get("true_story") else None)
         video = render(story, imgs, narration, ass, workdir)
+        (workdir / "story.json").write_text(json.dumps(story, indent=2, ensure_ascii=False))  # + media_assets
         caption = caption_text(story)
+        _short_credit, visual_credits = media.credits(story.get("media_assets") or [])
         (workdir / "caption.txt").write_text(caption + "\n\nPIN: " + story.get("pinned_comment", ""))
 
         problems = qa_gate(video, ass, narration)
@@ -162,6 +166,7 @@ def main() -> int:
             "pinned_comment": story.get("pinned_comment", ""), "mode": story.get("mode", "fiction"),
             "hashtags": story.get("hashtags", []),
             "true_story": bool(story.get("true_story")), "seconds": round(narration["duration"], 1),
+            "visual_credits": visual_credits,
         }, indent=2, ensure_ascii=False))
 
         if testing:
@@ -191,6 +196,7 @@ def main() -> int:
             "score": story.get("score"),
             "seconds": round(narration["duration"], 1),
             "voice_speed": narration.get("speed"),
+            "media_ids": [a["id"] for a in story.get("media_assets") or []],  # stock clips are not reused for 20 videos
             "buffered": stamp,
             "tiktok": None,  # filled in by publish.py when it's posted
         })

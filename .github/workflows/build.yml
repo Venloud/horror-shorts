@@ -79,6 +79,14 @@ jobs:
           path: ~/.cache/huggingface
           key: hf-models-v3
 
+      - name: Real media search cache (24 h, Pexels / Pixabay / Wikimedia / Smithsonian)
+        if: steps.check.outputs.build == 'true'
+        uses: actions/cache@v4
+        with:
+          path: cache/media-search
+          key: media-search-${{ github.run_id }}
+          restore-keys: media-search-
+
       - name: Restore last run's images (test mode reuses them)
         if: steps.check.outputs.build == 'true'
         uses: actions/cache/restore@v4
@@ -112,6 +120,10 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
           TEST_CF_IMAGES: ${{ inputs.test_cloudflare_images || 0 }}
+          # real media first (each source is skipped if its key is missing)
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          SI_API_KEY: ${{ secrets.SI_API_KEY }}
           # only used to make up a missed publish slot right after the build
           TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
           TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}

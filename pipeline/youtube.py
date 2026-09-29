@@ -49,7 +49,8 @@ def make_tags(hashtags: list[str], caption_text: str = "") -> list[str]:
     return out
 
 
-def upload(mp4: Path, title: str, caption_text: str, hashtags: list[str] | None = None) -> dict:
+def upload(mp4: Path, title: str, caption_text: str, hashtags: list[str] | None = None,
+           credits: str = "") -> dict:
     from google.oauth2.credentials import Credentials
     from googleapiclient.discovery import build
     from googleapiclient.http import MediaFileUpload
@@ -60,7 +61,8 @@ def upload(mp4: Path, title: str, caption_text: str, hashtags: list[str] | None 
     yt = build("youtube", "v3", credentials=creds, cache_discovery=False)
     wanted = CONFIG.get("youtube_privacy", "public")
     body = {
-        "snippet": {"title": make_title(title), "description": make_description(caption_text),
+        "snippet": {"title": make_title(title),
+                    "description": make_description(caption_text + (f"\n\nVisual credits:\n{credits}" if credits else "")),
                     "tags": make_tags(hashtags or [], caption_text), "categoryId": "24"},
         "status": {"privacyStatus": wanted, "selfDeclaredMadeForKids": False, "containsSyntheticMedia": True},
     }
