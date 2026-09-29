@@ -238,6 +238,10 @@ so a new session can pick up without starting over.
    grade fixes those). Groq vision QA is paced (`groq_vision_per_minute` 20) and a 429 waits (Retry-After, max 30 s)
    and retries up to 3 times instead of skipping. Stock queries = 2-4 concrete nouns (`media.clean_query`: no
    framing/mood/colour words), then a broader 2-noun query; a clip that failed QA is never retried.
+   Stock clips must not show a person as the main subject (QA request "NO PERSON as the main subject"; a stranger
+   walking a hotel corridor over "Elisa Lam checked in" read as the victim), and a document / report / sign as the
+   main subject fails like text. real_photo only for a proper name the NARRATION itself says (auto_tag and place
+   shots): a capitalised planner phrase ("Coroner Report") had pulled another person's toxicology report.
    Stock clips get TWO single-frame QA checks (1 s in = what viewers see first, and the middle); the first NO
    rejects the clip (a stranger's close-up face at the start slipped past the middle frame).
    Real photos are pinned to the story's place: `media.place_context` adds the city the narration gives in the same

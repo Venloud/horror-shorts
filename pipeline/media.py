@@ -432,7 +432,8 @@ def honest_place_shots(story: dict, only: set | None = None, force: bool = False
             continue
         loc = locs[name]
         proper = [m.group(1) for m in _PROPER.finditer(loc.get("name", ""))]
-        real = bool(story.get("true_story")) and bool(proper)
+        said = " ".join(sc2.get("narration") or "" for sc2 in story.get("scenes") or [])
+        real = bool(story.get("true_story")) and any(pr in said for pr in proper)  # a name the story itself says
         sc[PROMPT_KEYS["b"]] = f"{loc['look'].strip().rstrip('.')}, empty, no people"
         sc[images.LOC_KEYS["b"]] = loc["name"]
         sc[SRC_KEYS["b"]] = "real_photo" if real else "stock_video"
@@ -455,6 +456,7 @@ def auto_tag(story: dict) -> int:
     import images
     true = bool(story.get("true_story"))
     names = [c.get("name", "").lower().removeprefix("the ") for c in story.get("characters") or [] if c.get("name")]
+    narration = " ".join(sc.get("narration") or "" for sc in story.get("scenes") or [])
     changed = 0
     for i, sc in enumerate(story.get("scenes") or []):
         for l in images._letters():
@@ -469,8 +471,11 @@ def auto_tag(story: dict) -> int:
             if _PERSON.search(text) or any(nm and nm in low for nm in names) or _SCREEN_CONTENT.search(text):
                 new, query = "ai", ""  # people, or a logo / ticker / footage / brand stock video can't match
             else:
+                # a real photo only for a name the STORY itself says ("Cecil Hotel"), never a capitalised generic
+                # phrase from the planner ("Coroner Report" found another person's toxicology report)
                 proper = [m.group(1) for m in _PROPER.finditer(text)
-                          if not any(nm and nm in m.group(1).lower() for nm in names)]
+                          if not any(nm and nm in m.group(1).lower() for nm in names)
+                          and m.group(1) in narration]
                 if true and proper:
                     new, query = "real_photo", proper[0]
                 elif _ATMOS.search(text) or images._OBJECTS.search(text):
@@ -564,7 +569,9 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
             queries.append(" ".join(queries[0].split()[:2]))  # second, broader try: the two main nouns
         # QA asks for the concept that was searched (the stock clip only has to show "a rooftop water tank", not
         # the story's exact moment or lighting); a real photo may show the place from any side.
-        request = (f"{clean_query(raw_q)}" if kind == "stock_video"
+        # stock clips never show a person as the main subject: viewers read any stranger as the story's person
+        # (a woman walking a hotel corridor over "Elisa Lam checked into the Cecil Hotel")
+        request = (f"{clean_query(raw_q)}, NO PERSON as the main subject" if kind == "stock_video"
                    else f"{raw_q} (any view of it: outside, inside, an entrance or a detail)")
         budget = int(CONFIG.get("real_media_max_candidates", 4))  # per shot, all queries together
         done = False
