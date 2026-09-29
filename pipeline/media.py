@@ -472,6 +472,9 @@ def auto_tag(story: dict) -> int:
     import images
     true = bool(story.get("true_story"))
     names = [c.get("name", "").lower().removeprefix("the ") for c in story.get("characters") or [] if c.get("name")]
+    # first / last names too ("Elisa's hand" had become the stock query "elisa hand gesturing")
+    names += [w for nm in list(names) for w in re.findall(r"[a-z]+", nm) if len(w) > 2 and w not in _GENERIC_NAME
+              and w not in ("man", "woman", "worker", "guest", "officer", "police", "young", "old")]
     narration = " ".join(sc.get("narration") or "" for sc in story.get("scenes") or [])
     changed = 0
     for i, sc in enumerate(story.get("scenes") or []):
