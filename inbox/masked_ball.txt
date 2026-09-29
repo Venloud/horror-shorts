@@ -1,0 +1,8 @@
+FICTION
+NOT_BEFORE: 35
+Coldcase-style original story, invented places and people only.
+Premise: A charity masquerade at an old lakeside manor. Every guest signs in with a numbered mask.
+At midnight the host counts the masks on the ballroom floor: there is one more mask than guests.
+Hook idea: the strangest fact first ("There were 41 guests at the ball. At midnight, there were 42 masks.")
+Rules: 90% normal, 10% wrong. One central mystery. The ending must explain who the extra mask was
+and pay off the number from the first line. Adults only, no gore. Tag as fiction ("fictional story", #fiction).
