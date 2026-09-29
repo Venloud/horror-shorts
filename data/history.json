@@ -273,5 +273,25 @@
       "error": "RefreshError: ('invalid_grant: Token has been expired or revoked.', {'error': 'invalid_grant', 'error_description': 'Token has been expired or revoked.'})"
     },
     "posted": "2026-09-28_2122"
+  },
+  {
+    "date": "2026-09-29_0119",
+    "story_id": "7c4d529b3314",
+    "title": "The Legend of the Cornish Owlman",
+    "premise": "A giant, owl-like humanoid creature with glowing eyes and pincer claws was reportedly sighted hovering over church towers in Cornwall.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Owlman",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Cornwall, United Kingdom",
+    "threat": "The Owlman",
+    "twist": "The sightings might be ordinary barn owls, or something much darker.",
+    "score": null,
+    "seconds": 56.4,
+    "voice_speed": 1.2,
+    "buffered": "2026-09-29_0119",
+    "tiktok": null
   }
 ]
