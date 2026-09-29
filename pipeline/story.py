@@ -656,7 +656,7 @@ _CAPS_OK = {"i", "this", "true", "story"}
 def unsupported_details(text: str, source: str) -> list[str]:
     """Numbers (> 10), money, years, and capitalized names/places/organizations in the narration that don't
     appear in the source. Numbers match however they're written ($200,000 = two hundred thousand)."""
-    import numbers as nums
+    import spoken_numbers as nums
     src_vals, src_low = nums.values(source), source.lower()
     items = []
     for m in re.finditer(r"\b(\d+|[a-z]+(?:-[a-z]+)?)[- ]?k\b", text, re.IGNORECASE):  # slang: "20k", "twenty-k"
@@ -705,7 +705,7 @@ def fact_check(story: dict, source: str, api_key: str, exact: bool = False) -> d
 
 def speak_numbers(story: dict) -> None:
     """Digits -> spoken words in the narration ('$200,000' -> 'two hundred thousand dollars')."""
-    import numbers as nums
+    import spoken_numbers as nums
     for s in story.get("scenes", []):
         new = nums.spoken(s.get("narration", ""))
         if new != s.get("narration"):
@@ -755,7 +755,7 @@ def _write_story(history: list[dict], skipped: list[dict]) -> dict:
                 story.update({"mode": "inbox-script", "source": item["key"], "subgenre": "creator script",
                               "true_story": bool(item.get("true"))})
                 if item.get("true"):  # owner's own text: used as-is, never rewritten; just list what to double-check
-                    import numbers as nums
+                    import spoken_numbers as nums
                     vals = sorted(v for v in nums.values(text) if v > 10)
                     names = sorted({w for w in re.findall(r"(?<![.!?]\s)(?<!^)\b[A-Z][a-z]+(?:'s)?", text)})
                     log(f"TRUE SCRIPT used as-is (owner's text, not rewritten). Numbers: "

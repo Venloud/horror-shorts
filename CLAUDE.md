@@ -72,7 +72,7 @@ so a new session can pick up without starting over.
    - **TRUE-STORY FACT CHECK** (before voicing; `story.fact_check`, for `case`, `inbox-true`, `mystery`):
      `unsupported_details()` lists every number > 10, money amount, year, slang amount ("20k", "twenty-k") and
      capitalized name/place/organization in the narration that isn't in the source (numbers match however they're
-     written: `pipeline/numbers.py`); Gemini corrects them from the source; each correction is logged. Then
+     written: `pipeline/spoken_numbers.py`); Gemini corrects them from the source; each correction is logged. Then
      `speak_numbers()` writes all digits the way they're spoken ("$200,000" -> "two hundred thousand dollars",
      "1971" -> "nineteen seventy-one"). Owner's TRUE SCRIPT files are never rewritten; their numbers/names are
      only logged.
