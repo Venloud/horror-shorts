@@ -238,6 +238,18 @@ so a new session can pick up without starting over.
 - When giving updates: just list the changed files and their folders. He knows the upload flow; don't re-explain it.
 - Test renders locally before shipping when possible.
 
+## Update report (required after every change)
+End every reply that changes the repo with this block, as plain text I can copy:
+
+UPDATE REPORT
+- Commit: <short hash> - <one-line summary>
+- Files changed: <path> (<what changed>), ...
+- New secrets/config needed: <names or "none">
+- What I tested: <how, and the result>
+- Not tested / risks: <anything unverified>
+- How to check it worked: <which workflow to run and what line to look for in the log>
+- Next suggested step: <one line>
+
 ## Future ideas (not now)
 - Repost to Instagram Reels, Snapchat (YouTube Shorts is live).
 - More channels on the same bot: football facts, Bible stories, finance/side hustles ("side hustles that got
