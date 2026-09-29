@@ -71,7 +71,9 @@ DRAFT:
 
 
 HOOKS_TASK = """7. HOOK CANDIDATES: score each candidate first sentence below from 1 to 10 (strangest or most shocking
-detail in the first 6 words; no date, year or place name; under 18 words; makes you NEED the next sentence).
+detail in the first 6 words; the most ironic, specific or unbelievable real detail, not a summary of the event;
+no date, year or place name; under 18 words; makes you NEED the next sentence). A candidate that is not literally
+true per the story, or implies a cause/motive the source doesn't state, scores 0.
 Put one line per candidate in "hook_scores" as "<score> | <sentence>", and start scene 1 with the highest-scoring
 sentence, word for word.
 {candidates}
@@ -489,10 +491,11 @@ The narration must be {lo} to {hi} words in total (about {round(lo / 2.4)}-{roun
 
 REAL_STORY_IMAGES = """
 
-THIS SCRIPT IS A REAL STORY about real people. This overrides the face rules above: never depict a real person's
-face. People appear only as silhouettes against light, in deep shadow, or small in a wide shot. Prefer the real
-places, era details and objects (the museum, the empty wall, the frame, the newspaper headline without readable
-text). Match the real setting and time period."""
+THIS SCRIPT IS A REAL STORY about real people. Real people are shown with normal visible faces in the channel's
+illustrated style, matching only basic public facts (approximate age, hair, clothing, era). Do NOT try to copy a
+real private person's actual face. Historical figures (dead 100+ years) may follow known portraits. Masked or
+hooded figures are fine when the story fits (thieves, disguises). Each real person gets a "characters" entry with a
+fixed look that is reused word-for-word in every shot they appear in. Match the real places and time period."""
 
 
 def plan_scenes(script: str, api_key: str, sfx_list: str, real: bool = False) -> dict:
@@ -536,7 +539,9 @@ def _true_story(facts: str, name: str, api_key: str, sfx_list: str) -> dict:
         raise RuntimeError("source is not a real story, skipping")
     rules = (f'scene 1 = the hook sentence, then the exact words "{TRUE_OPENER}"; '
              "ONLY facts from this source, never invent details; only call someone guilty if convicted or confessed; "
-             "respectful; no gore; third person; plain English; no real faces in images.\nSOURCE:\n" + facts[:6000])
+             "respectful; no gore; third person; plain English; real people drawn in the illustrated style from basic "
+             "public facts only (never a copy of a private person's real face), each with a fixed character-sheet "
+             "look.\nSOURCE:\n" + facts[:6000])
     story = edit_story(story, api_key, sfx_list, rules)
     story = fix_hook(story, api_key, sfx_list, rules)
     log(f"True story '{story['title']}' ({len(story['scenes'])} scenes) via {story['model']}")

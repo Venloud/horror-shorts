@@ -98,6 +98,7 @@ jobs:
           pip install -q -r requirements.txt
 
       - name: Make video
+        id: make
         if: steps.check.outputs.build == 'true'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -150,7 +151,8 @@ jobs:
         if: always() && steps.check.outputs.build == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: video-${{ github.run_number }}
+          # Builds have no post number yet: named by story id (video-N only if a make-up post went out here).
+          name: ${{ steps.make.outputs.video_number && format('video-{0}', steps.make.outputs.video_number) || format('{0}-{1}', inputs.test && 'test' || 'build', steps.make.outputs.story_id || github.run_id) }}
           path: |
             output/**/final.mp4
             output/**/caption.txt

@@ -5,8 +5,10 @@ inbox/links.txt  one link per line.  "true <url>"    -> retell the real story, f
                                      a bare url      -> treated as "true"
 inbox/*.txt      any other text file = a pasted story/article. First line "TRUE", "FICTION", "SCRIPT" or "SCRIPT TRUE"
                  (default FICTION = inspiration only; SCRIPT = narrate these exact words, only add the visuals;
-                 SCRIPT TRUE = same, but it's a real story: "This is a true story." opener, TRUE STORY badge,
-                 and real people are never shown with faces).
+                 SCRIPT TRUE = same, but it's a real story: "This is a true story." line, TRUE STORY badge,
+                 and real people drawn per the real-people rule).
+                 Optional second header line "NOT_BEFORE: 31": the item waits until data/counter.json next_video
+                 is at least 31; other inbox items and the normal rotation go on meanwhile.
 Each item is used once (tracked in data/history.json). Inbox items jump the queue.
 """
 import json
@@ -104,6 +106,14 @@ def case_facts(case: dict) -> str:
 
 # ---------- the creator's inbox ----------
 
+def _next_video_number(history: list[dict]) -> int:
+    """The post number the next published video will get (data/counter.json, see publish.take_video_number)."""
+    try:
+        return int(json.loads((ROOT / "data" / "counter.json").read_text())["next_video"])
+    except Exception:  # noqa: BLE001
+        return 1 + sum(1 for h in history if h.get("video_number"))
+
+
 def next_inbox(history: list[dict]) -> dict | None:
     """The oldest unused inbox item, or None. Returns {key, kind, text?, url?}."""
     if not INBOX.exists():
@@ -132,6 +142,14 @@ def next_inbox(history: list[dict]) -> dict | None:
             lines.pop(0)
         elif first in ("TRUE", "FICTION", "SCRIPT"):
             kind = lines.pop(0).strip().lower()
+        # Optional scheduling header: "NOT_BEFORE: 31" = wait until post #31 is next (data/counter.json).
+        m = re.match(r"\s*NOT_BEFORE:\s*#?(\d+)\s*$", lines[0], re.IGNORECASE) if lines else None
+        if m:
+            lines.pop(0)
+            not_before, next_video = int(m.group(1)), _next_video_number(history)
+            if next_video < not_before:
+                log(f"Inbox {f.name}: waiting until video #{not_before} (next is #{next_video})")
+                continue
         text = "\n".join(lines).strip()
         if len(text) > 200:
             return {"key": f"inbox/{f.name}", "kind": kind, "true": true, "text": text[:9000]}

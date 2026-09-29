@@ -239,7 +239,8 @@
     "youtube": {
       "error": "RefreshError: ('unauthorized_client: Unauthorized', {'error': 'unauthorized_client', 'error_description': 'Unauthorized'})"
     },
-    "posted": "2026-09-28_1330"
+    "posted": "2026-09-28_1330",
+    "video_number": 26
   },
   {
     "date": "2026-09-28_1953",
@@ -272,7 +273,8 @@
     "youtube": {
       "error": "RefreshError: ('invalid_grant: Token has been expired or revoked.', {'error': 'invalid_grant', 'error_description': 'Token has been expired or revoked.'})"
     },
-    "posted": "2026-09-28_2122"
+    "posted": "2026-09-28_2122",
+    "video_number": 27
   },
   {
     "date": "2026-09-29_0119",

@@ -46,12 +46,15 @@ so a new session can pick up without starting over.
    - `lore`: legends/folklore with a "Did you know" hook (`data/lore.json`).
    - `inbox/`: the owner can drop links (`inbox/links.txt`: `true <url>` or `fiction <url>`) or pasted
      stories (`.txt`, first line TRUE/FICTION/SCRIPT/SCRIPT TRUE). Inbox items jump the queue and are used once.
+     Optional second header line `NOT_BEFORE: <video number>` (e.g. `NOT_BEFORE: 31`): `sources.next_inbox` skips
+     that file until `data/counter.json` next_video >= that number; other inbox items and the rotation go on.
+     (`inbox/louvre_password.txt` waits for #31.)
    - **TRUE STORY rule**: modes `case`, `mystery`, `inbox-true` and inbox `SCRIPT TRUE` files are true stories
      (NOT `lore`: legends aren't true stories; NOT fiction). For those, `story["true_story"] = True` (saved in history),
      scene 1 = hook sentence, THEN "This is a true story." (never first: slow opener; code moves/inserts it),
      captions.py shows a red "TRUE STORY" badge above the hook for 0-3.5 s, and the TikTok caption starts "TRUE STORY:".
      Inbox `.txt` first lines: `TRUE`, `FICTION`, `SCRIPT` (exact words) or `SCRIPT TRUE` (exact words, true story,
-     real people never shown with faces).
+     real people drawn per the REAL PEOPLE rule in Images).
    - **HOOK RULE**: never open with a date, a year or a place name (when/where goes in scene 2); the first words are
      the strangest/most shocking detail. Analytics: "...of south-central France" (Gevaudan) and the Jim Thompson
      opener lost most viewers at 0:01. `story.hook_problem()` checks scene 1's first 6 words (4-digit year,
@@ -87,6 +90,13 @@ so a new session can pick up without starting over.
    Cloudflare daily cap vs short rate limit are told apart (short limit = wait and retry).
    A Space quota error marks the Spaces out for the run; the local model is always the last step. The run only
    fails if more than max(1, scenes // 4) scenes have no image at all.
+   **REAL PEOPLE rule** (mystery.py prompts, scene_plan.txt, story.REAL_STORY_IMAGES, editor rules): real people
+   get normal visible faces in the illustrated style, from basic public facts only (approximate age, hair,
+   clothing, era); never an attempt to copy a real private person's actual face; historical figures (dead 100+
+   years) may follow known portraits; masked/hooded figures are fine when the story fits. Each real person has a
+   `characters` entry whose fixed look is reused word-for-word in every shot. This replaced the old
+   silhouettes-only rule; the build_prompt "seen from behind, face not visible" auto-add was removed with it.
+   The occult / all-seeing-eye / floating-eyes ban still applies.
    Consistency: the scene plan outputs `characters` and `locations` sheets; the code injects the fixed looks
    into every prompt (style first, then setting, then character looks, then the shot).
    Art style (config `image_style`): comic / storybook illustration, NOT photoreal. Owner chose to keep comic
@@ -132,6 +142,14 @@ so a new session can pick up without starting over.
   so build.yml also has the TikTok/YouTube secrets + token-save step), then delete the file; older -> just delete
   it and the next slot posts normally. Both workflows save history.json + missed_slot.json with
   `pipeline/push_state.sh` (merge_history.py + 3 push tries).
+- **Video numbers** (`data/counter.json` {"next_video": N}): GitHub run numbers are per workflow, so the bot keeps
+  its own post counter. `publish.take_video_number()` gives the number only once a video actually went out
+  (TikTok or YouTube accepted it, also for a make-up post from build.yml); test builds, failed publishes and
+  empty-buffer slots never use one. The number is in history.json (`video_number`), the ntfy title ("#26 ..."),
+  the logs and the artifact name (`video-26`). Before posting, a video is known by its story id (build
+  artifacts `build-<story_id>` / `test-<story_id>`, buffer caption.json `story_id`). push_state.sh commits
+  counter.json with history (higher next_video wins). #26 = the Louvre heist, #27 = D. B. Cooper (backfilled);
+  the counter continues at #28.
 - Note: while the repo is public, buffered (unposted) videos on the release are publicly downloadable.
 
 ## Reliability (build side)

@@ -27,6 +27,7 @@ STRUCTURE (follow exactly)
    - "A man boarded a plane with two hundred thousand dollars, then jumped out. He was never found."
    Never open with generic lines like "This is one of the strangest cases ever" or "Have you ever heard of".
    NEVER open with a date, a year, or a place name. Put when/where in scene 2. The first words must be the strangest or most shocking detail.
+   The first sentence is the most ironic, specific or unbelievable REAL detail in the source (e.g. "The password to the Louvre's security cameras was 'Louvre.'"), NOT a summary of the event. It must be literally true as the source states it, and must never imply a cause, motive or connection the source doesn't state.
 2. SCENE 2 = CONTEXT: when and where it happened, and who was involved, in plain words.
 3. SCENES 3+ = what happened, in order, with the eeriest real details. Then the main theories, clearly framed as theories ("Some believe...", "Investigators suggested...").
 4. LAST SCENE = what remains unexplained, ending with a direct question to the viewer, e.g. "What do you think really happened?"
@@ -41,12 +42,12 @@ HARD RULES
 IMAGE PROMPTS
 - A painted illustration of the place, era, objects, or atmosphere of that moment. Match the real setting and time period.
 - FOUR images per scene, one for each quarter of the narration, and each shows EXACTLY what is being said at that moment (when the words say "the bridge", show the bridge; "the windshield", show the view through the windshield): "image_prompt" = first part, "image_prompt_2" = second, "image_prompt_3" = third, "image_prompt_4" = last part. Each is a different shot, like a fast film edit: mix wide establishing shots of the place, medium shots of people, close-ups of key objects and clues, and reaction shots. A short scene may use fewer (leave the extra ones empty).
-- Never depict a real person's face. People appear only as silhouettes against light, in deep shadow, or small in a wide shot.
+- REAL PEOPLE: real people are shown with normal visible faces in the channel's illustrated style, matching only basic public facts (approximate age, hair, clothing, era). Do NOT try to copy a real private person's actual face. Historical figures (dead 100+ years) may follow known portraits. Masked or hooded figures are fine when the story fits (thieves, disguises). Each real person gets a "characters" entry with a fixed look that is reused word-for-word in every shot they appear in, so they stay consistent.
 - No text, no writing, no blood, no bodies.
 
 - No all-seeing eye, eye-in-a-triangle or Illuminati-style symbols in any image, UNLESS the story itself is about that topic (e.g. a video about the Illuminati or the eye on the dollar bill). Eyes in the dark are fine.
 - Keep every shot simple and drawable: one clear subject from a normal eye-level angle. Never ask for over-the-shoulder shots, people seen from behind, close-ups of hands or isolated body parts, or extreme low/high angles (the image AI twists bodies and puts faces on the back of heads). Prefer places, objects and wide shots.
-- CONSISTENCY: fill "locations" with the 1-3 key places (short "name" + fixed "look" matching the real place and era) and set each scene's "location". List recurring figures in "characters" (e.g. "the hijacker": "man in a dark business suit, thin black tie, sunglasses, seen only as a silhouette"). In image prompts, refer to them by that exact name; their look is added automatically.
+- CONSISTENCY: fill "locations" with the 1-3 key places (short "name" + fixed "look" matching the real place and era) and set each scene's "location". List recurring figures in "characters" (e.g. "the hijacker": "man in his 40s, short dark hair, dark business suit, thin black tie, sunglasses, 1970s"). In image prompts, refer to them by that exact name; their look is added automatically.
 - POP CULTURE HOOK: if the source says a famous movie, TV show, video game, song or book was based on or inspired by this (for example, the Beast of Gevaudan appears in Teen Wolf), add ONE short line near the end that connects it, e.g. "Sound familiar? It's the same beast from Teen Wolf." Put that title in the caption and one hashtag. ONLY use references stated in the source. Never invent or guess one; if the source has none, skip this.
 
 SOUND EFFECTS
@@ -83,6 +84,7 @@ STRUCTURE (follow exactly). It must feel like a complete mini-story with a clear
    - "People still [strange protective habit]. Because of what [creature] does."
    Never open with a vague line like "There is an old legend".
    NEVER open with a date, a year, or a place name. Put when/where in scene 2. The first words must be the strangest or most shocking detail.
+   The first sentence is the most ironic, specific or unbelievable REAL detail in the source (e.g. "The password to the Louvre's security cameras was 'Louvre.'"), NOT a summary of the event. It must be literally true as the source states it, and must never imply a cause, motive or connection the source doesn't state.
 2. SCENE 2 = CONTEXT: where the legend comes from and how old it is.
 3. What the creature/legend is, what it does, its rules (how it hunts, what attracts it), with the eeriest details.
 4. The most famous story, sighting, or belief about it (framed as "people claimed", "the legend says").
@@ -100,10 +102,11 @@ IMAGE PROMPTS
 - Painted illustrations showing the creature, the setting, the era, or the moment. The creature can be shown (it is folklore), but no gore.
 - FOUR images per scene, one for each quarter of the narration, and each shows EXACTLY what is being said at that moment (when the words say "the bridge", show the bridge; "the windshield", show the view through the windshield): "image_prompt" = first part, "image_prompt_2" = second, "image_prompt_3" = third, "image_prompt_4" = last part. Each is a different shot, like a fast film edit: mix wide establishing shots of the place, medium shots of people, close-ups of key objects and clues, and reaction shots. A short scene may use fewer (leave the extra ones empty).
 - No text or writing in the image.
+- REAL PEOPLE (if the legend involves real people): real people are shown with normal visible faces in the channel's illustrated style, matching only basic public facts (approximate age, hair, clothing, era). Do NOT try to copy a real private person's actual face. Historical figures (dead 100+ years) may follow known portraits. Masked or hooded figures are fine when the story fits. Each real person gets a "characters" entry with a fixed look that is reused word-for-word in every shot they appear in.
 
 - No all-seeing eye, eye-in-a-triangle or Illuminati-style symbols in any image, UNLESS the story itself is about that topic (e.g. a video about the Illuminati or the eye on the dollar bill). Eyes in the dark are fine.
 - Keep every shot simple and drawable: one clear subject from a normal eye-level angle. Never ask for over-the-shoulder shots, people seen from behind, close-ups of hands or isolated body parts, or extreme low/high angles (the image AI twists bodies and puts faces on the back of heads). Prefer places, objects and wide shots.
-- CONSISTENCY: fill "locations" with the 1-3 key places (short "name" + fixed "look" matching the real place and era) and set each scene's "location". List recurring figures in "characters" (e.g. "the hijacker": "man in a dark business suit, thin black tie, sunglasses, seen only as a silhouette"). In image prompts, refer to them by that exact name; their look is added automatically.
+- CONSISTENCY: fill "locations" with the 1-3 key places (short "name" + fixed "look" matching the real place and era) and set each scene's "location". List recurring figures in "characters" (e.g. "the hijacker": "man in his 40s, short dark hair, dark business suit, thin black tie, sunglasses, 1970s"). In image prompts, refer to them by that exact name; their look is added automatically.
 - POP CULTURE HOOK: if the source says a famous movie, TV show, video game, song or book was based on or inspired by this (for example, the Beast of Gevaudan appears in Teen Wolf), add ONE short line near the end that connects it, e.g. "Sound familiar? It's the same beast from Teen Wolf." Put that title in the caption and one hashtag. ONLY use references stated in the source. Never invent or guess one; if the source has none, skip this.
 
 SOUND EFFECTS
@@ -142,6 +145,7 @@ STRUCTURE (follow exactly)
    - "Eleven men walked into the most secure vault in the city and walked out with two million dollars."
    - "The man paid for his plane ticket in cash. Two hours later, he parachuted into the dark with the ransom."
    NEVER open with a date, a year, or a place name. Put when/where in scene 2. The first words must be the strangest or most shocking detail.
+   The first sentence is the most ironic, specific or unbelievable REAL detail in the source (e.g. "The password to the Louvre's security cameras was 'Louvre.'"), NOT a summary of the event. It must be literally true as the source states it, and must never imply a cause, motive or connection the source doesn't state.
 2. SCENE 2 = CONTEXT: when, where, who, in plain words.
 3. WHAT HAPPENED: the key turns in order, with the most vivid real details.
 4. HOW IT ENDED: caught, solved, escaped, or still unknown. This must pay off the hook.
@@ -157,12 +161,12 @@ HARD RULES
 IMAGE PROMPTS
 - Illustrated scenes of the real place, era, objects and moments. Match the real setting and time period.
 - FOUR images per scene, one for each quarter of the narration, and each shows EXACTLY what is being said at that moment (when the words say "the bridge", show the bridge; "the windshield", show the view through the windshield): "image_prompt" = first part, "image_prompt_2" = second, "image_prompt_3" = third, "image_prompt_4" = last part. Each is a different shot, like a fast film edit: mix wide establishing shots of the place, medium shots of people, close-ups of key objects and clues, and reaction shots. A short scene may use fewer (leave the extra ones empty).
-- Never depict a real person's face: people appear only as silhouettes against light, in deep shadow, or small in a wide shot.
+- REAL PEOPLE: real people are shown with normal visible faces in the channel's illustrated style, matching only basic public facts (approximate age, hair, clothing, era). Do NOT try to copy a real private person's actual face. Historical figures (dead 100+ years) may follow known portraits. Masked or hooded figures are fine when the story fits (thieves, disguises). Each real person gets a "characters" entry with a fixed look that is reused word-for-word in every shot they appear in, so they stay consistent.
 - Lighting gets darker and tenser as the story builds. No text, no writing, no blood, no bodies.
 
 - No all-seeing eye, eye-in-a-triangle or Illuminati-style symbols in any image, UNLESS the story itself is about that topic (e.g. a video about the Illuminati or the eye on the dollar bill). Eyes in the dark are fine.
 - Keep every shot simple and drawable: one clear subject from a normal eye-level angle. Never ask for over-the-shoulder shots, people seen from behind, close-ups of hands or isolated body parts, or extreme low/high angles (the image AI twists bodies and puts faces on the back of heads). Prefer places, objects and wide shots.
-- CONSISTENCY: fill "locations" with the 1-3 key places (short "name" + fixed "look" matching the real place and era) and set each scene's "location". List recurring figures in "characters" (e.g. "the hijacker": "man in a dark business suit, thin black tie, sunglasses, seen only as a silhouette"). In image prompts, refer to them by that exact name; their look is added automatically.
+- CONSISTENCY: fill "locations" with the 1-3 key places (short "name" + fixed "look" matching the real place and era) and set each scene's "location". List recurring figures in "characters" (e.g. "the hijacker": "man in his 40s, short dark hair, dark business suit, thin black tie, sunglasses, 1970s"). In image prompts, refer to them by that exact name; their look is added automatically.
 - POP CULTURE HOOK: if the source says a famous movie, TV show, video game, song or book was based on or inspired by this (for example, the Beast of Gevaudan appears in Teen Wolf), add ONE short line near the end that connects it, e.g. "Sound familiar? It's the same beast from Teen Wolf." Put that title in the caption and one hashtag. ONLY use references stated in the source. Never invent or guess one; if the source has none, skip this.
 
 SOUND EFFECTS

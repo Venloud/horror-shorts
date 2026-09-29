@@ -17,6 +17,29 @@ from common import CONFIG, ROOT, load_history, log, save_history
 
 MISSED = ROOT / "data" / "missed_slot.json"
 MISSED_MAX_AGE_H = 6
+COUNTER = ROOT / "data" / "counter.json"  # the channel's own post numbers (#26, #27...), not GitHub run numbers
+
+
+def take_video_number() -> int:
+    """Next post number, only called once a video really went out (test / failed / empty runs never use one).
+    push_state.sh commits the file with history.json (it keeps the higher number if main moved on)."""
+    try:
+        n = int(json.loads(COUNTER.read_text())["next_video"])
+    except Exception:  # noqa: BLE001
+        n = 1 + sum(1 for h in load_history() if h.get("video_number"))
+        log(f"counter.json missing or unreadable: continuing from #{n}")
+    COUNTER.parent.mkdir(parents=True, exist_ok=True)
+    COUNTER.write_text(json.dumps({"next_video": n + 1}) + "\n")
+    return n
+
+
+def _gh_output(key: str, value) -> None:
+    """Hand a value to later workflow steps (e.g. the artifact name video-26)."""
+    import os
+    path = os.environ.get("GITHUB_OUTPUT")
+    if path:
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(f"{key}={value}\n")
 
 
 def _slot_label(now: datetime) -> str:
@@ -127,9 +150,14 @@ def main(from_build: bool = False) -> int:
         buffer.remove(video)
     except Exception as e:  # noqa: BLE001
         log(f"Could not remove it from the buffer ({e}); delete {video['stamp']} from the release by hand")
+    number = take_video_number()
+    _gh_output("video_number", number)
+    log(f"Video #{number}: '{meta['title']}' (story {meta.get('story_id', '?')}, buffered {video['stamp']})")
     history = load_history()
     for h in reversed(history):
-        if h.get("buffered") == video["stamp"] or h.get("date") == video["stamp"]:
+        if (meta.get("story_id") and h.get("story_id") == meta.get("story_id")) \
+                or h.get("buffered") == video["stamp"] or h.get("date") == video["stamp"]:
+            h["video_number"] = number
             h["tiktok"] = result if result else {"error": tt_error}
             h["youtube"] = yt if yt else ({"error": yt_error} if yt_error else None)
             h["posted"] = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M")
@@ -146,9 +174,9 @@ def main(from_build: bool = False) -> int:
     if tt_error:
         lines.append(f"TikTok FAILED: {tt_error}. Post it by hand from the download link below.")
     notify({"title": meta["title"], "caption_text": meta["caption_text"],
-            "pinned_comment": meta.get("pinned_comment", "")}, result, note="\n".join(lines))
+            "pinned_comment": meta.get("pinned_comment", "")}, result, note="\n".join(lines), video_number=number)
     left = len(waiting) - 1
-    log(f"Done. {left} video(s) left in the buffer.")
+    log(f"Done: video #{number} posted. {left} video(s) left in the buffer.")
     if left <= 1 and not from_build:  # after a make-up post the builder is refilling anyway
         notify_text(f"Night Files: buffer low ({left} left)",
                     "build.yml refills it every 3 hours. If it stays low, check the build runs.", warn=True)

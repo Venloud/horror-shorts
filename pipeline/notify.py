@@ -34,24 +34,27 @@ def notify_text(title: str, body: str, warn: bool = False) -> None:
     _send(title, body, warn=warn, url=run_url())
 
 
-def notify(story: dict, result: dict | None, error: str | None = None, prefix: str = "", note: str = "") -> None:
+def notify(story: dict, result: dict | None, error: str | None = None, prefix: str = "", note: str = "",
+           video_number: int | None = None) -> None:
+    """video_number: the channel's own post counter (data/counter.json), only for videos that actually went out."""
     url = run_url()
     download = f"{url}#artifacts" if url else None
     caption = story.get("caption_text") or (caption_text(story) if story.get("caption") else "")
+    num = f"#{video_number} " if video_number else ""
     if error:
         title = f"{prefix}Horror video FAILED"
         body = error[:1500]
     else:
         kind = "draft" if result and result.get("mode") == "draft" else ("video" if not result else "post")
-        title = f"{prefix}New TikTok {kind}: {story['title']}"
+        title = f"{prefix}{num}New TikTok {kind}: {story['title']}"
         body = (
             (f"{note}\n\n" if note else "") +
             f"CAPTION (copy this):\n{caption}\n\n"
             f"PIN THIS COMMENT:\n{story.get('pinned_comment', '')}"
         )
         if download:  # backup in case TikTok never delivers the draft (kept 7 days)
-            body += (f"\n\nNOT IN TIKTOK? Download it (7 days): {download} "
-                     f"-> video-{os.environ.get('GITHUB_RUN_NUMBER', '')} (final.mp4 + caption.txt)")
+            name = f"video-{video_number}" if video_number else "the artifact of this run"
+            body += f"\n\nNOT IN TIKTOK? Download it (7 days): {download} -> {name} (final.mp4 + caption.txt)"
 
     _send(title, body, warn=bool(error), url=url, download=None if error else download)
 

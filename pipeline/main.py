@@ -16,6 +16,14 @@ from datetime import datetime, timezone
 from common import CONFIG, ROOT, env, load_history, log, save_history
 
 
+def _gh_output(key: str, value) -> None:
+    """Hand a value to later workflow steps (build artifacts are named by story id)."""
+    path = os.environ.get("GITHUB_OUTPUT")
+    if path:
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(f"{key}={value}\n")
+
+
 def fit_duration(story: dict, workdir, narrate, allow_rewrite: bool) -> tuple[dict, dict]:
     """Voice it, then get the narration into config target_seconds: first by voice speed (config voice_speed_range),
     then, if still outside, by asking Gemini to trim/extend by the needed word count (max 2 tries)."""
@@ -100,6 +108,10 @@ def main() -> int:
             story = write_story(history)
             if not testing:
                 checkpoint.start(story)
+        # Until it's posted, a video is known by its story id (the post number is given by publish.py).
+        story["story_id"] = story.get("story_id") or checkpoint.story_id(story)
+        _gh_output("story_id", story["story_id"])
+        log(f"Story {story['story_id']}: '{story['title']}' ({story.get('mode')})")
         (workdir / "story.json").write_text(json.dumps(story, indent=2, ensure_ascii=False))
 
         narration = None if testing else checkpoint.load_narration(story, workdir)
@@ -144,7 +156,7 @@ def main() -> int:
 
         meta = workdir / "caption.json"
         meta.write_text(json.dumps({
-            "stamp": stamp, "title": story["title"], "caption_text": caption,
+            "stamp": stamp, "story_id": story["story_id"], "title": story["title"], "caption_text": caption,
             "pinned_comment": story.get("pinned_comment", ""), "mode": story.get("mode", "fiction"),
             "hashtags": story.get("hashtags", []),
             "true_story": bool(story.get("true_story")), "seconds": round(narration["duration"], 1),

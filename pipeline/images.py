@@ -321,8 +321,6 @@ def build_prompt(story: dict, scene_i: int, shot: str, style: str) -> str:
         if k and k in text:
             parts.append(f"{ch['name']}: {ch['look']}")
     parts.append(f"Shot: {shot}")
-    if any(k in text for k in ("from behind", "back of", "over-the-shoulder", "over the shoulder", "silhouette")):
-        parts.append("seen from behind, face not visible")
     return ". ".join(p.strip().rstrip(".") for p in parts if p.strip())
 
 
