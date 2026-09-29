@@ -41,8 +41,19 @@ def fit_duration(story: dict, workdir, narrate, allow_rewrite: bool) -> tuple[di
 
     if inside(narr):
         return story, narr
-    speed = speed_for(narr)
-    if abs(speed - narr["speed"]) > 0.005:
+    # Kokoro's length doesn't scale 1:1 with speed (1.157x only took 67.7s to 61.1s), so re-voice up to 3 times,
+    # each time using the speed response measured so far, until it fits or the speed hits its limit.
+    first = narr
+    for _ in range(3):
+        speed = speed_for(narr)
+        if narr is not first and first["speed"] != narr["speed"] and first["duration"] != narr["duration"]:
+            import math  # duration ~ speed^-k, k measured from the two voicings
+            k = -math.log(narr["duration"] / first["duration"]) / math.log(narr["speed"] / first["speed"])
+            if 0.2 < k < 2:
+                want = hi - 1.5 if narr["duration"] > hi else lo + 1.5
+                speed = round(max(smin, min(smax, narr["speed"] * (narr["duration"] / want) ** (1 / k))), 3)
+        if abs(speed - narr["speed"]) <= 0.005:
+            break  # at the speed limit already
         log(f"Narration {narr['duration']:.1f}s is outside {lo}-{hi}s: re-voicing at speed {speed}")
         narr = narrate(story, workdir, speed=speed)
         if inside(narr):

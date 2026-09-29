@@ -260,8 +260,8 @@ def _photo(c: dict, png: Path) -> None:
     src.replace(_qa_frame(png))  # QA judges the clean, ungraded picture (grain / vignette confuse it)
 
 
-def _qa_frame(png: Path) -> Path:
-    return png.with_name(png.stem + ".qa.png")
+def _qa_frame(png: Path, n: int = 1) -> Path:
+    return png.with_name(png.stem + (".qa.png" if n == 1 else f".qa{n}.png"))
 
 
 def _video(c: dict, png: Path) -> Path:
@@ -282,9 +282,11 @@ def _video(c: dict, png: Path) -> Path:
         mid = 3.0
     _run(["ffmpeg", "-y", "-loglevel", "error", "-ss", f"{mid:.2f}", "-i", str(mp4), "-frames:v", "1",
           "-update", "1", str(png)])
-    # QA frame: the same single moment, fitted to 9:16 but WITHOUT our grade / grain / vignette
-    _run(["ffmpeg", "-y", "-loglevel", "error", "-ss", f"{start + mid:.2f}", "-i", str(raw), "-frames:v", "1",
-          "-vf", FIT, "-update", "1", str(_qa_frame(png))])
+    # QA frames, fitted to 9:16 but WITHOUT our grade / grain / vignette: the middle, and 1 s in (render plays
+    # the clip from its start, so that is what viewers see; a stranger's face there slipped past the middle frame)
+    for at, qa in ((mid, _qa_frame(png)), (min(1.0, mid), _qa_frame(png, 2))):
+        _run(["ffmpeg", "-y", "-loglevel", "error", "-ss", f"{start + at:.2f}", "-i", str(raw), "-frames:v", "1",
+              "-vf", FIT, "-update", "1", str(qa)])
     raw.unlink(missing_ok=True)
     return mp4
 
@@ -299,7 +301,8 @@ def _recent_ids(history: list[dict], window: int) -> set[str]:
 
 
 def _remove(png: Path) -> None:
-    for p in (png, png.with_suffix(".mp4"), png.with_suffix(".json"), _qa_frame(png), png.with_suffix(".src"),
+    for p in (png, png.with_suffix(".mp4"), png.with_suffix(".json"), _qa_frame(png), _qa_frame(png, 2),
+              png.with_suffix(".src"),
               png.with_suffix(".src.mp4"), png.with_suffix(".crop.png")):
         p.unlink(missing_ok=True)
 
@@ -356,6 +359,49 @@ def clean_query(query: str, most: int = 4) -> str:
 
 def _stock_query(text: str) -> str:
     return clean_query(text, 3)
+
+
+# Well-known cities / countries: a real photo whose title names one the story never mentions shows the wrong
+# place (the London "Hotel Cecil" of 1896 was picked for the Los Angeles Cecil Hotel).
+_WORLD_PLACES = set(("London Paris Berlin Rome Madrid Vienna Prague Moscow Dublin Edinburgh Glasgow Manchester "
+                     "Liverpool Amsterdam Brussels Lisbon Athens Istanbul Cairo Tokyo Kyoto Osaka Beijing Shanghai "
+                     "Seoul Delhi Mumbai Sydney Melbourne Toronto Vancouver Montreal Chicago Boston Philadelphia "
+                     "Seattle Miami Houston Dallas Detroit Denver Atlanta Singapore Bangkok Mexico Brazil Argentina "
+                     "India China Japan Russia Germany France Italy Spain Portugal Ireland Scotland England Wales "
+                     "Australia Canada Egypt Poland Sweden Norway Denmark Finland Netherlands Belgium Austria Greece "
+                     "Turkey Hungary Romania").split())
+
+
+def _story_text(story: dict) -> str:
+    return " ".join([story.get("title") or ""] + [sc.get("narration") or "" for sc in story.get("scenes") or []]
+                    + [json.dumps(story.get("fact_ledger") or "", ensure_ascii=False)])
+
+
+def place_context(story: dict, name: str) -> str:
+    """The city / region the story gives for a named place ("Cecil Hotel" -> "Los Angeles"), from the same
+    sentence of the narration. Empty if the story doesn't say."""
+    core = " ".join(m.group(1) for m in _PROPER.finditer(name)) or name
+    people = [c.get("name", "").lower() for c in story.get("characters") or [] if c.get("name")]
+    for sent in re.split(r"(?<=[.!?])\s+", _story_text(story)):
+        if core.lower() not in sent.lower():
+            continue
+        for m in _PROPER.finditer(sent):
+            cand = m.group(1)
+            low = cand.lower()
+            if low in core.lower() or core.lower() in low or low in name.lower():
+                continue
+            if any(p and (p in low or low in p) for p in people):
+                continue
+            return cand
+    return ""
+
+
+def _wrong_place(title: str, story_low: str) -> str:
+    """A world city / country in the photo's title that the story never mentions."""
+    for w in re.findall(r"[A-Z][a-z]+", title.replace("_", " ")):
+        if w in _WORLD_PLACES and w.lower() not in story_low:
+            return w
+    return ""
 
 
 def honest_place_shots(story: dict, only: set | None = None, force: bool = False) -> list[int]:
@@ -486,6 +532,8 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
     n = {"stock_video": 0, "real_photo": 0}
     used: set[str] = set()
     tried = 0
+    story_low = _story_text(story).lower()
+
     def attempt(i: int, l: str) -> None:
         nonlocal tried
         sc = story["scenes"][i]
@@ -507,6 +555,10 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
             return
         raw_q = (sc.get(QUERY_KEYS[l]) or "").strip() or sc[PROMPT_KEYS[l]]
         # stock: 2-4 concrete nouns; archive photos keep the real name ("Cecil Hotel Los Angeles")
+        if kind == "real_photo":  # pin the real place down: "Cecil Hotel office" -> "... Los Angeles"
+            ctx = place_context(story, raw_q)
+            if ctx and ctx.lower() not in raw_q.lower():
+                raw_q = f"{raw_q} {ctx}"
         queries = [clean_query(raw_q)] if kind == "stock_video" else [raw_q]
         if kind == "stock_video" and len(queries[0].split()) > 2:
             queries.append(" ".join(queries[0].split()[:2]))  # second, broader try: the two main nouns
@@ -527,6 +579,12 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
             if not cands:
                 log(f"Shot {i:02d}{l}: no {kind} result for '{query}'")
                 continue
+            if kind == "real_photo":
+                for c in list(cands):
+                    bad = _wrong_place(c.get("title", ""), story_low)
+                    if bad:
+                        log(f"Shot {i:02d}{l}: skipped {c['url']} (shows {bad}, not this story's place)")
+                        cands.remove(c)
             take = cands[:min(3, budget)]
             if not take:
                 break
@@ -559,9 +617,14 @@ def _try_candidates(cands, i, l, kind, query, request, png, side, assets, used, 
             _remove(png)
             continue
         # real-media QA: one frame, judged on subject / setting / text / real faces / panels, never on colour
-        qa_png = _qa_frame(png) if _qa_frame(png).exists() else png
-        verdict, why = images.check_image(qa_png, request, kind="real")
-        _qa_frame(png).unlink(missing_ok=True)
+        frames = [f for f in (_qa_frame(png), _qa_frame(png, 2)) if f.exists()] or [png]
+        verdict, why = None, ""
+        for f in frames:  # each one is a single frame; the first NO rejects the clip
+            verdict, why = images.check_image(f, request, kind="real")
+            if verdict is False:
+                break
+        for f in (_qa_frame(png), _qa_frame(png, 2)):
+            f.unlink(missing_ok=True)
         qa = "PASS" if verdict else ("FAIL" if verdict is False else "SKIPPED")
         log(f"Image {i:02d}{l}: provider={c['source']} ({c['kind']}), qa={qa}" + (f", reason={why}" if why else "")
             + f', query="{query}", url={c["url"]}')

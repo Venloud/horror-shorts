@@ -90,7 +90,8 @@ so a new session can pick up without starting over.
      sent as "ALREADY USED".
    - Length: `story_words` [120, 140] = about 50-60 s (the Kokoro voice reads ~2.2-2.4 words/sec at speed 1.1).
      **Duration fit** (`main.fit_duration`): narration must land in config `target_seconds` [50, 60]. First the voice
-     speed is adjusted within `voice_speed_range` [1.0, 1.2]; if still outside, Gemini trims/extends by the needed
+     speed is adjusted within `voice_speed_range` [1.0, 1.2] (up to 3 re-voicings; Kokoro's length isn't linear in
+     speed, so each try uses the measured speed response); if still outside, Gemini trims/extends by the needed
      word count (`story.resize_story`, keeps scene 1's first sentence + the TRUE line, max 2 tries). Exact-words
      inbox SCRIPTs only get the speed change, never a rewrite.
    - **FACT LOCK** (mystery.py MYSTERY/LORE/TRUE prompts): the model first writes a `fact_ledger` from the SOURCE
@@ -237,6 +238,11 @@ so a new session can pick up without starting over.
    grade fixes those). Groq vision QA is paced (`groq_vision_per_minute` 20) and a 429 waits (Retry-After, max 30 s)
    and retries up to 3 times instead of skipping. Stock queries = 2-4 concrete nouns (`media.clean_query`: no
    framing/mood/colour words), then a broader 2-noun query; a clip that failed QA is never retried.
+   Stock clips get TWO single-frame QA checks (1 s in = what viewers see first, and the middle); the first NO
+   rejects the clip (a stranger's close-up face at the start slipped past the middle frame).
+   Real photos are pinned to the story's place: `media.place_context` adds the city the narration gives in the same
+   sentence ("Cecil Hotel office" -> "... Los Angeles"), and a result whose title names a world city/country the
+   story never mentions is skipped (the London "Hotel Cecil 1896" had been used for the LA hotel).
    QA judges the UNGRADED frame (`scene_XXl.qa.png`, deleted after QA; grain/vignette confused it) against the
    searched concept (stock: the cleaned query; photo: "<name> (any view: outside, inside, entrance, detail)"),
    not the story's exact moment. Reflections/ripples/windows are not "panels". At most
