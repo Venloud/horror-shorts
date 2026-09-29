@@ -111,7 +111,8 @@ def main() -> int:
         # Until it's posted, a video is known by its story id (the post number is given by publish.py).
         story["story_id"] = story.get("story_id") or checkpoint.story_id(story)
         _gh_output("story_id", story["story_id"])
-        log(f"Story {story['story_id']}: '{story['title']}' ({story.get('mode')})")
+        log(f"Story {story['story_id']}: '{story['title']}' (mode {story.get('mode')}, "
+            f"source {story.get('source') or story.get('case') or 'rotation'}, true story: {bool(story.get('true_story'))})")
         (workdir / "story.json").write_text(json.dumps(story, indent=2, ensure_ascii=False))
 
         narration = None if testing else checkpoint.load_narration(story, workdir)
@@ -125,6 +126,7 @@ def main() -> int:
                 checkpoint.save_story(story)
                 checkpoint.save_narration(story, narration)
 
+        log(f"Final narration: {narration['duration']:.1f}s at speed {narration.get('speed')}")
         img_dir = workdir / "images" if testing else checkpoint.IMAGES  # images are kept as soon as they exist
         imgs = images.generate_images(story, img_dir)
         from render import END_CARD_DELAY, TAIL

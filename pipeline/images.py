@@ -140,7 +140,7 @@ def _hf_space(prompt: str, seed: int, width: int | None = None, height: int | No
                 continue
             kw = {"prompt": prompt[:1500]}
             for k, v in (("seed", seed % 2_147_483_647), ("randomize_seed", False), ("width", width),
-                         ("height", height), ("num_inference_steps", steps)):
+                         ("height", height), ("num_inference_steps", steps), ("negative_prompt", NEGATIVE)):
                 if k in names:
                     kw[k] = v
             path = _space_file(client.predict(api_name=endpoint, **kw))
@@ -181,6 +181,7 @@ def _local_sd(prompt: str, seed: int) -> bytes:
         _STATE["sd"] = pipe
         log(f"Local image model loaded in {time.time() - t0:.0f}s")
     w, h = CONFIG.get("local_image_size", [512, 896])
+    # No negative prompt: SD-Turbo runs without guidance (guidance_scale 0), where a negative prompt has no effect.
     image = _STATE["sd"](prompt=prompt, width=int(w), height=int(h), guidance_scale=0.0,
                          num_inference_steps=int(CONFIG.get("local_image_steps", 2)),
                          generator=torch.Generator("cpu").manual_seed(seed % 2_147_483_647)).images[0]
@@ -304,24 +305,103 @@ def _key(name: str) -> str:
     return n[4:] if n.startswith("the ") else n
 
 
-def build_prompt(story: dict, scene_i: int, shot: str, style: str) -> str:
-    """Style first, then the fixed location and character looks, then the shot itself,
-    so every image of a story shares the same people, places and art style."""
+SHORT_STYLE = "single full-frame dark cinematic illustration, painterly"
+NEGATIVE = "comic page, multiple panels, panel grid, collage, split screen, text, letters, speech bubbles, watermark"
+_PANEL_WORDS = re.compile(r"\b(graphic[- ]novel|comic(?:[- ]book)?s?|panels?)\b", re.IGNORECASE)
+
+
+def _looks(story: dict, scene_i: int, shot: str) -> tuple[dict | None, list[dict]]:
     text = shot.lower()
-    parts = [style]
     scene = story["scenes"][scene_i]
     loc_name = _key(scene.get("location") or "")
-    for loc in story.get("locations") or []:
-        k = _key(loc.get("name", ""))
-        if k and (k == loc_name or k in text):
-            parts.append(f"Setting: {loc['look']}")
-            break
-    for ch in story.get("characters") or []:
-        k = _key(ch.get("name", ""))
-        if k and k in text:
-            parts.append(f"{ch['name']}: {ch['look']}")
-    parts.append(f"Shot: {shot}")
+    loc = next((l for l in story.get("locations") or []
+                if _key(l.get("name", "")) and (_key(l["name"]) == loc_name or _key(l["name"]) in text)), None)
+    chars = [c for c in story.get("characters") or [] if _key(c.get("name", "")) and _key(c["name"]) in text]
+    return loc, chars
+
+
+def build_prompt(story: dict, scene_i: int, shot: str, style: str) -> str:
+    """Cloudflare prompt: the shot FIRST, then the fixed character and location looks, then the art style,
+    so every image of a story shares the same people, places and style (and the shot is never cut off)."""
+    loc, chars = _looks(story, scene_i, shot)
+    parts = [f"Shot: {shot}"] + [f"{c['name']}: {c['look']}" for c in chars]
+    if loc:
+        parts.append(f"Setting: {loc['look']}")
+    parts.append(style)
     return ". ".join(p.strip().rstrip(".") for p in parts if p.strip())
+
+
+def build_short_prompt(story: dict, scene_i: int, shot: str, max_words: int = 60) -> str:
+    """Spaces / SD-Turbo prompt (SD-Turbo's text encoder stops at 77 tokens): shot first, then 1-2 short
+    character/location cues, then a SHORT style tag. Never 'comic', 'graphic novel' or 'panels': those words
+    make these models draw comic pages and panel grids."""
+    loc, chars = _looks(story, scene_i, shot)
+    cues = [" ".join(c["look"].split()[:8]) for c in chars[:1]]
+    if loc:
+        cues.append(" ".join(loc["look"].split()[:6]))
+    shot_words = _PANEL_WORDS.sub("", shot).split()
+    room = max_words - len(shot_words) - len(SHORT_STYLE.split())
+    cue_words: list[str] = []
+    for cue in cues[:2]:
+        w = _PANEL_WORDS.sub("", cue).split()
+        if room - len(cue_words) - len(w) >= 0:
+            cue_words += w + [","]
+    text = " ".join(shot_words[:max_words - len(SHORT_STYLE.split())])
+    if cue_words:
+        text += ", " + " ".join(cue_words).strip(" ,")
+    return re.sub(r"\s+([,.])", r"\1", f"{text}, {SHORT_STYLE}").strip()
+
+
+def _virtual_shot(src: Path, dest: Path, shot: str) -> None:
+    """A second framing of an image from the same scene (75% crop, placed per shot letter)."""
+    with Image.open(src) as im:
+        im = im.convert("RGB")
+        w, h = im.size
+        cw, ch = int(w * 0.75), int(h * 0.75)
+        x = {"a": 0, "b": w - cw, "c": (w - cw) // 2, "d": 0}.get(shot, 0)
+        y = {"a": 0, "b": h - ch, "c": (h - ch) // 2, "d": h - ch}.get(shot, 0)
+        im.crop((x, y, x + cw, y + ch)).resize((w, h), Image.LANCZOS).save(dest, "PNG")
+
+
+def check_image(path: Path, shot: str) -> bool | None:
+    """Ask Gemini (vision, same free key) if the image is ONE scene showing the shot. None = check skipped."""
+    if not CONFIG.get("image_check", True) or _STATE.get("check_off"):
+        return None
+    key = env("GEMINI_API_KEY", required=False)
+    if not key:
+        return None
+    models = CONFIG.get("llm_models", [])
+    model = CONFIG.get("image_check_model") or next((m for m in models if "lite" in m), models[0] if models else "")
+    try:
+        with Image.open(path) as im:
+            im = im.convert("RGB")
+            im.thumbnail((512, 512))
+            buf = io.BytesIO()
+            im.save(buf, "JPEG", quality=85)
+        question = (f'Is this a single scene, not a grid of panels or a collage, that shows: "{shot}"? '
+                    "Answer YES or NO.")
+        r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+                          headers={"x-goog-api-key": key}, timeout=15, json={
+                              "contents": [{"role": "user", "parts": [
+                                  {"inline_data": {"mime_type": "image/jpeg",
+                                                   "data": base64.b64encode(buf.getvalue()).decode()}},
+                                  {"text": question}]}],
+                              "generationConfig": {"temperature": 0, "maxOutputTokens": 5}})
+    except Exception as e:  # noqa: BLE001
+        log(f"Image check skipped ({str(e)[:80]})")
+        return None
+    if r.status_code == 429:
+        _STATE["check_off"] = True  # rate-limited: keep the free quota for stories, stop checking this run
+        log("Image check: Gemini rate-limited, skipping the checks for the rest of this run")
+        return None
+    if r.status_code != 200:
+        log(f"Image check skipped (HTTP {r.status_code})")
+        return None
+    try:
+        answer = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip().lower()
+    except Exception:  # noqa: BLE001
+        return None
+    return answer.startswith("y")
 
 
 def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
@@ -351,6 +431,7 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
 
     results: dict[tuple[int, str], Path | None] = {}
     sources: dict[str, int] = {}
+    qa_failed: list[tuple[int, str]] = []
     told_two = False
     for n, (i, shot, raw_prompt) in enumerate(jobs):
         # Cloudflare out (or test mode): the fallbacks are slow/limited, so only 2 shots per scene from here on.
@@ -365,7 +446,8 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
             sources["checkpoint"] = sources.get("checkpoint", 0) + 1
             results[(i, shot)] = path
             continue
-        prompt = build_prompt(story, i, raw_prompt, style)
+        prompt = build_prompt(story, i, raw_prompt, style)            # Cloudflare: full prompt
+        short_prompt = build_short_prompt(story, i, raw_prompt)        # Spaces / SD-Turbo: short, no "comic"
         ok, source = False, ""
         providers = (([_cloudflare] if use_cf and not _STATE["cf_out"] else [])
                      + ([] if testing or _STATE["spaces_out"] else [_hf_space])
@@ -376,22 +458,52 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
                 _STATE["told_none"] = True
             results[(i, shot)] = None
             continue
-        for provider in providers:
-            for attempt in range(2):
-                try:
-                    _save_valid(provider(prompt, base_seed + n * 7 + attempt), path)
-                    ok, source = True, provider.__name__.lstrip("_")
-                    break
-                except Exception as e:  # noqa: BLE001
-                    log(f"Image {i}{shot} via {provider.__name__.lstrip('_')} failed: {str(e)[:150]}")
-                    if (provider is _cloudflare and _STATE["cf_out"]) or provider is _local_sd \
-                            or provider is _hf_space or any(k in str(e) for k in ("401", "403", "deprecated")):
-                        break  # no point retrying this one (Spaces already tried every Space in the list)
-            if ok:
-                break
+        def draw(chain: list) -> int:
+            """Try the sources in order; returns the index of the one that made the image, or -1."""
+            for k, provider in enumerate(chain):
+                p = prompt if provider is _cloudflare else short_prompt
+                for attempt in range(2):
+                    try:
+                        _save_valid(provider(p, base_seed + n * 7 + attempt), path)
+                        return k
+                    except Exception as e:  # noqa: BLE001
+                        log(f"Image {i}{shot} via {provider.__name__.lstrip('_')} failed: {str(e)[:150]}")
+                        if (provider is _cloudflare and _STATE["cf_out"]) or provider is _local_sd \
+                                or provider is _hf_space or any(x in str(e) for x in ("401", "403", "deprecated")):
+                            break  # no point retrying this one (Spaces already tried every Space in the list)
+            return -1
+
+        k = draw(providers)
+        if k >= 0:
+            ok, source = True, providers[k].__name__.lstrip("_")
+            # Fallback-image QA (never for Cloudflare): one yes/no vision question. "No" -> redraw once with the
+            # NEXT source; still "no" -> replaced by a virtual shot from another good image of the scene at the end.
+            verdict = None if providers[k] is _cloudflare else check_image(path, raw_prompt)
+            if verdict is not None:
+                log(f"Image {i}{shot} check: {'YES' if verdict else 'NO'}")
+            if verdict is False:
+                log(f"Image {i}{shot} ({source}) failed the check (panels/collage or wrong subject): redrawing")
+                nxt = [p for p in providers[k + 1:] if not (p is _hf_space and _STATE["spaces_out"])
+                       and not (p is _local_sd and _STATE["local_out"])]
+                k2 = draw(nxt) if nxt else -1
+                if k2 >= 0:
+                    source = nxt[k2].__name__.lstrip("_")
+                if k2 < 0 or check_image(path, raw_prompt) is False:
+                    qa_failed.append((i, shot))
         sources[source or "FAILED"] = sources.get(source or "FAILED", 0) + 1
         log(f"Image {i}{shot}: {'ok (' + source + ')' if ok else 'FAILED'}")
         results[(i, shot)] = path if ok else None
+
+    # Images that failed the check twice: use a virtual shot (crop of another good image of the same scene).
+    for i, shot in qa_failed:
+        sib = next((results[(i, s)] for s in ("a", "b", "c", "d")
+                    if s != shot and results.get((i, s)) and (i, s) not in qa_failed), None)
+        if sib:
+            _virtual_shot(sib, outdir / f"scene_{i:02d}{shot}.png", shot)
+            sources["virtual"] = sources.get("virtual", 0) + 1
+            log(f"Image {i}{shot}: replaced by a virtual shot of {sib.name}")
+        else:
+            log(f"Image {i}{shot}: failed the check but no other image in the scene, keeping it")
 
     n_scenes = len(story["scenes"])
     empty = sum(1 for i in range(n_scenes) if not any(results.get((i, s)) for s in ("a", "b", "c", "d")))

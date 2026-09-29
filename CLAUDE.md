@@ -69,6 +69,17 @@ so a new session can pick up without starting over.
      speed is adjusted within `voice_speed_range` [1.0, 1.2]; if still outside, Gemini trims/extends by the needed
      word count (`story.resize_story`, keeps scene 1's first sentence + the TRUE line, max 2 tries). Exact-words
      inbox SCRIPTs only get the speed change, never a rewrite.
+   - **TRUE-STORY FACT CHECK** (before voicing; `story.fact_check`, for `case`, `inbox-true`, `mystery`):
+     `unsupported_details()` lists every number > 10, money amount, year, slang amount ("20k", "twenty-k") and
+     capitalized name/place/organization in the narration that isn't in the source (numbers match however they're
+     written: `pipeline/numbers.py`); Gemini corrects them from the source; each correction is logged. Then
+     `speak_numbers()` writes all digits the way they're spoken ("$200,000" -> "two hundred thousand dollars",
+     "1971" -> "nineteen seventy-one"). Owner's TRUE SCRIPT files are never rewritten; their numbers/names are
+     only logged.
+   - **Inbox failures**: a Gemini 503/429/quota/network error (or ANY failure of an owner's SCRIPT) never skips an
+     item: it stays queued for the next build and the log says why. Only a permanent problem (e.g. a link with no
+     article) skips it, with the reason in history. (inbox/elisa_lam.txt had been skipped by a 503 while its scenes
+     were planned; it's back in the queue.)
    - **Hook candidates**: the real-story prompts return `hook_candidates` (3 first sentences); the editor pass
      scores them (`hook_scores`, "score | sentence") and `use_best_hook()` makes scene 1 start with the best one
      that passes `hook_problem()`; then `fix_hook()` still runs as a safety net.
@@ -97,6 +108,17 @@ so a new session can pick up without starting over.
    `characters` entry whose fixed look is reused word-for-word in every shot. This replaced the old
    silhouettes-only rule; the build_prompt "seen from behind, face not visible" auto-add was removed with it.
    The occult / all-seeing-eye / floating-eyes ban still applies.
+   **Image prompts**: Cloudflare = `build_prompt`: shot FIRST, then character/location looks, then `image_style`.
+   Spaces + SD-Turbo = `build_short_prompt`: shot first, 1-2 short character/location cues, then
+   "single full-frame dark cinematic illustration, painterly", max ~60 words, and never "graphic novel", "comic" or
+   "panels" (long style-first prompts made them draw comic-page grids; SD-Turbo also cuts prompts at 77 tokens).
+   Negative prompt (`images.NEGATIVE`: comic page, multiple panels, panel grid, collage, split screen, text,
+   letters, speech bubbles, watermark) is passed to any Space that exposes `negative_prompt`; today none of the
+   three sources uses one (Cloudflare FLUX / FLUX Spaces have no such input, SD-Turbo runs at guidance 0).
+   **Fallback-image QA** (`check_image`, never for Cloudflare images): Gemini vision (lite model, 15 s timeout)
+   answers "Is this a single scene, not a grid of panels or a collage, that shows: <shot>? YES/NO". NO -> redraw
+   once with the next source; still NO -> a "virtual shot" (75% crop of another good image of the same scene).
+   Skipped for the rest of the run on a Gemini 429; never blocks the build. Log: provider, YES/NO, redraws.
    Consistency: the scene plan outputs `characters` and `locations` sheets; the code injects the fixed looks
    into every prompt (style first, then setting, then character looks, then the shot).
    Art style (config `image_style`): comic / storybook illustration, NOT photoreal. Owner chose to keep comic

@@ -147,6 +147,8 @@ def resize_story(story: dict, api_key: str, want_words: int) -> dict:
                       api_key, temperature=0.4)
     for k, v in story.items():  # keep everything the resize doesn't return (mode, source, flags...)
         new.setdefault(k, v)
+    if new.get("mode") != "inbox-script":
+        speak_numbers(new)
     got = sum(len(s["narration"].split()) for s in new["scenes"])
     log(f"Script resized: {now} -> {got} words (asked for {want_words})")
     return new
@@ -544,6 +546,7 @@ def _true_story(facts: str, name: str, api_key: str, sfx_list: str) -> dict:
              "look.\nSOURCE:\n" + facts[:6000])
     story = edit_story(story, api_key, sfx_list, rules)
     story = fix_hook(story, api_key, sfx_list, rules)
+    story = fact_check(story, facts, api_key)
     log(f"True story '{story['title']}' ({len(story['scenes'])} scenes) via {story['model']}")
     return story
 
@@ -632,10 +635,96 @@ def mark_true_story(story: dict) -> dict:
     return story
 
 
+FACT_PROMPT = """You are the fact checker of a TRUE-story video. These details in the narration are NOT found in the
+SOURCE: {items}.
+Fix each one from the SOURCE: use the exact number, amount, date, year, name, place or organization the source
+gives, or drop the detail if the source doesn't have it. Change nothing else: same scenes, same order, about the
+same length; keep scene 1's first sentence unless it contains one of these details; keep the exact sentence
+"This is a true story."; keep image prompts unless the detail is in them. Write numbers the way they are spoken
+("two hundred thousand dollars", "nineteen seventy-one"), never digits or slang ("twenty-k").
+Return the whole story in the SAME JSON format.
+
+SOURCE:
+{source}
+
+STORY:
+{draft}
+"""
+_CAPS_OK = {"i", "this", "true", "story"}
+
+
+def unsupported_details(text: str, source: str) -> list[str]:
+    """Numbers (> 10), money, years, and capitalized names/places/organizations in the narration that don't
+    appear in the source. Numbers match however they're written ($200,000 = two hundred thousand)."""
+    import numbers as nums
+    src_vals, src_low = nums.values(source), source.lower()
+    items = []
+    for m in re.finditer(r"\b(\d+|[a-z]+(?:-[a-z]+)?)[- ]?k\b", text, re.IGNORECASE):  # slang: "20k", "twenty-k"
+        if m.group(1).isdigit() or nums.values(m.group(1).replace("-", " ")):
+            items.append(f'the slang amount "{m.group(0)}" (say the full amount from the source)')
+    for v in sorted(nums.values(text)):
+        if v > 10 and v not in src_vals:
+            items.append(f"the number {int(v) if v == int(v) else v:,}")
+    for sent in re.split(r"(?<=[.!?])\s+", text):
+        for w in re.findall(r"[A-Za-z][A-Za-z'.-]*", sent)[1:]:   # skip the sentence's first word
+            name = re.sub(r"'s$|[.'-]+$", "", w)
+            if name[:1].isupper() and name.lower() not in _CAPS_OK and name.lower() not in src_low:
+                items.append(f'the name "{name}"')
+    return list(dict.fromkeys(items))
+
+
+def fact_check(story: dict, source: str, api_key: str, exact: bool = False) -> dict:
+    """True stories, BEFORE voicing: every number/amount/date/year/name/place/organization must be in the source.
+    Unsupported ones are corrected from the source by Gemini. exact=True (owner's TRUE SCRIPT): only log them."""
+    text = " ".join(s["narration"] for s in story.get("scenes", []))
+    items = unsupported_details(text, source)
+    if not items:
+        log("Fact check: every number and name in the narration is in the source")
+        return story
+    if exact:
+        log(f"Fact check (owner's script, NOT changed), please double-check: {', '.join(items)}")
+        return story
+    log(f"Fact check: not in the source: {', '.join(items)}; correcting from the source")
+    draft = {k: story[k] for k in SCHEMA["properties"] if k in story}
+    try:
+        fixed = _run_models(FACT_PROMPT.format(items=", ".join(items), source=source[:8000],
+                                               draft=json.dumps(draft, ensure_ascii=False, indent=1)),
+                            api_key, temperature=0.2)
+    except Exception as e:  # noqa: BLE001
+        log(f"Fact check correction failed ({str(e)[:150]}), keeping the story as it is")
+        return story
+    for k, v in story.items():
+        fixed.setdefault(k, v)
+    for old, new in zip(story["scenes"], fixed["scenes"]):
+        if old["narration"] != new["narration"]:
+            log(f"Fact check correction: '{old['narration']}' -> '{new['narration']}'")
+    left = unsupported_details(" ".join(s["narration"] for s in fixed["scenes"]), source)
+    log("Fact check: all fixed" if not left else f"Fact check: still not found in the source: {', '.join(left)}")
+    return fixed
+
+
+def speak_numbers(story: dict) -> None:
+    """Digits -> spoken words in the narration ('$200,000' -> 'two hundred thousand dollars')."""
+    import numbers as nums
+    for s in story.get("scenes", []):
+        new = nums.spoken(s.get("narration", ""))
+        if new != s.get("narration"):
+            s["narration"] = new
+
+
+def _transient(e: Exception) -> bool:
+    """API overload / quota / network trouble: try again later, never a reason to drop a story for good."""
+    msg = str(e).lower()
+    return any(k in msg for k in ("503", "429", "high demand", "quota", "timed out", "timeout", "connection",
+                                  "temporarily", "unavailable", "could not write a story"))
+
+
 def write_story(history: list[dict]) -> dict:
     skipped: list[dict] = []
     story = _write_story(history, skipped)
     mark_true_story(story)
+    if story.get("mode") != "inbox-script":  # the owner's exact words are never changed
+        speak_numbers(story)
     clean_sfx(story)
     story["_skipped"] = skipped
     return story
@@ -665,6 +754,12 @@ def _write_story(history: list[dict], skipped: list[dict]) -> dict:
                 story = plan_scenes(text, api_key, sfx_list, real=item.get("true", False))
                 story.update({"mode": "inbox-script", "source": item["key"], "subgenre": "creator script",
                               "true_story": bool(item.get("true"))})
+                if item.get("true"):  # owner's own text: used as-is, never rewritten; just list what to double-check
+                    import numbers as nums
+                    vals = sorted(v for v in nums.values(text) if v > 10)
+                    names = sorted({w for w in re.findall(r"(?<![.!?]\s)(?<!^)\b[A-Z][a-z]+(?:'s)?", text)})
+                    log(f"TRUE SCRIPT used as-is (owner's text, not rewritten). Numbers: "
+                        f"{', '.join(f'{int(v):,}' for v in vals) or 'none'}; names: {', '.join(names) or 'none'}")
                 return story
             if item["kind"] == "true":
                 try:
@@ -675,9 +770,15 @@ def _write_story(history: list[dict], skipped: list[dict]) -> dict:
                     log("Too sensitive to retell as true: turning it into an original story instead")
             inspiration = text
         except Exception as e:  # noqa: BLE001
-            log(f"Inbox item {item['key']} failed ({str(e)[:200]}); skipping it")
-            history = history + [{"source": item["key"]}]
-            skipped.append({"source": item["key"], "skipped": True})
+            reason = f"{type(e).__name__}: {str(e)[:300]}"
+            history = history + [{"source": item["key"]}]  # not again in this run
+            if _transient(e) or item.get("kind") == "script":
+                # Gemini busy / quota / network, or the owner's own script: keep it queued for the next build.
+                log(f"Inbox item {item['key']} NOT made this time, it stays queued for the next build. "
+                    f"Reason: {reason}")
+            else:
+                log(f"Inbox item {item['key']} SKIPPED for good. Reason: {reason}")
+                skipped.append({"source": item["key"], "skipped": True, "reason": reason})
             item = None
 
     # 2) FBI case files
@@ -694,9 +795,13 @@ def _write_story(history: list[dict], skipped: list[dict]) -> dict:
                 inspiration = e.facts
                 break
             except Exception as e:  # noqa: BLE001
-                log(f"Case mode failed ({str(e)[:200]}); trying another case")
+                reason = f"{type(e).__name__}: {str(e)[:300]}"
                 history = history + [{"case": case["title"]}]
-                skipped.append({"case": case["title"], "skipped": True})
+                if _transient(e):
+                    log(f"Case '{case['title']}' not made this time (stays available). Reason: {reason}")
+                else:
+                    log(f"Case '{case['title']}' skipped for good. Reason: {reason}")
+                    skipped.append({"case": case["title"], "skipped": True, "reason": reason})
         log("Falling back to fiction today")
 
     # 3) Original fake case file (fiction; never gets the TRUE STORY label)
@@ -748,6 +853,8 @@ def _real_story(history: list[dict], mode: str, api_key: str, sfx_list: str) -> 
                          "no accusing real people; respectful; no gore; third person; plain English.\nSOURCE:\n" + facts[:6000])
                 story = edit_story(story, api_key, sfx_list, rules)
                 story = fix_hook(story, api_key, sfx_list, rules)
+                if mode == "mystery":  # real events: fact check (lore = legends, not checked)
+                    story = fact_check(story, facts, api_key)
                 story.update({"mode": mode, "case": case,
                               "subgenre": "real unsolved mystery" if mode == "mystery" else "legend / folklore"})
                 log(f"{mode.title()} '{story['title']}' ({len(story['scenes'])} scenes) via {story['model']}")
