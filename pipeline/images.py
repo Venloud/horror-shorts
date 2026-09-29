@@ -765,7 +765,9 @@ NO: <reason in 2-5 words>
 Answer NO only if: the main subject or setting is clearly different (e.g. a flag when a water tank was asked for);
 it shows readable or garbled text, a logo or a watermark as a main element (a document, report, form, sign or page
 of text as the main subject counts); a real person's face is clearly visible in close-up; the request says NO
-PERSON and a person is the main subject (small, far-away or out-of-focus people are fine); or the frame itself is visibly cut into separate pictures by straight borders (a split screen).
+PERSON and a person is the main subject (small, far-away or out-of-focus people are fine); the request gives a
+STORY SETTING and the frame's setting or era clearly doesn't fit it (e.g. a modern luxury living room for a 2013
+coroner scene, a sunny beach for a snowy forest, a sci-fi lab for a 1920s farm); or the frame itself is visibly cut into separate pictures by straight borders (a split screen).
 Reflections, ripples, windows, doors, shelves, tiles, frames on a wall or several objects side by side are NOT
 panels.
 NEVER answer NO for colour, lighting, warm vs cold tones, time of day, weather, art style or image quality: those

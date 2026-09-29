@@ -512,6 +512,21 @@ def auto_tag(story: dict) -> int:
     return changed
 
 
+def _setting_note(story: dict, i: int, l: str) -> str:
+    """The story's place/era for stock-clip QA ("STORY SETTING: Los Angeles, 2013; old downtown hotel"), so a clip
+    whose setting or era clearly doesn't fit fails (a modern luxury living room for a 2013 coroner scene)."""
+    import images
+    parts = [(story.get("setting") or "").strip()]
+    name = (story["scenes"][i].get(images.LOC_KEYS.get(l, "")) or story["scenes"][i].get("location") or "")
+    name = name.lower().removeprefix("the ").strip()
+    for loc in story.get("locations") or []:
+        if name and loc.get("name", "").lower().removeprefix("the ").strip() == name:
+            parts.append(" ".join((loc.get("look") or "").split()[:14]))
+            break
+    note = "; ".join(p for p in parts if p)
+    return f"; STORY SETTING: {note}" if note else ""
+
+
 def _cloudflare_out() -> bool:
     """Is Cloudflare unusable for this run (daily limit, no token, or a test build without Cloudflare images)?"""
     import images
@@ -590,7 +605,8 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
         # the story's exact moment or lighting); a real photo may show the place from any side.
         # stock clips never show a person as the main subject: viewers read any stranger as the story's person
         # (a woman walking a hotel corridor over "Elisa Lam checked into the Cecil Hotel")
-        request = (f"{clean_query(raw_q)}, NO PERSON as the main subject" if kind == "stock_video"
+        request = (f"{clean_query(raw_q)}, NO PERSON as the main subject{_setting_note(story, i, l)}"
+                   if kind == "stock_video"
                    else f"{raw_q} (any view of it: outside, inside, an entrance or a detail)")
         budget = int(CONFIG.get("real_media_max_candidates", 4))  # per shot, all queries together
         done = False

@@ -85,6 +85,44 @@ def _fit_clip(src: Path, seconds: float, out: Path) -> Path:
     return out
 
 
+AI_MIN_WIDTH = 400  # narrower AI clips look like mush at 1080x1920: use the parallax still instead
+AI_MAX_SECONDS = 2.0
+AI_FADE = 0.5
+
+
+def _ai_into_still(ai: Path, img: Path, depth, length: float, out: Path, move: str) -> Path | None:
+    """The hook's AI clip, then the ORIGINAL high-res still it was made from: max ~2 s of the clip (upscaled with
+    lanczos + a light sharpen; the final pass puts the same grain on it as on every still), a 0.5 s crossfade into
+    the still, which carries on with the normal parallax. None = clip too small / broken: caller uses parallax."""
+    width = ai_motion._width(ai)
+    if width < AI_MIN_WIDTH:
+        log(f"AI clip is only {width} px wide (< {AI_MIN_WIDTH}): using the 3D still instead")
+        return None
+    have = media_duration(ai)
+    a = min(AI_MAX_SECONDS, have, max(0.8, length - AI_FADE - 0.3))
+    up = out.with_name(out.stem + "_ai.mp4")
+    vf = (f"scale={W}:{H}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{H},"
+          f"unsharp=5:5:0.6:5:5:0.0,setsar=1,fps={FPS},format=yuv420p")
+    run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(ai), "-map", "0:v:0", "-an", "-t", f"{a:.3f}", "-vf", vf,
+         "-c:v", "libx264", "-preset", "veryfast", "-crf", "14", str(up)])
+    rest = length - a + AI_FADE  # the still overlaps the clip by the crossfade
+    if rest < AI_FADE + 0.2:  # shot too short for a handover: just the clip, held on its last frame
+        return _fit_clip(up, length, out)
+    still = out.with_name(out.stem + "_still.mp4")
+    if depth is not None:
+        effects.parallax_clip(img, depth, rest, move, still)
+    else:
+        _scene_clip(img, rest, next(iter(MOTIONS)), still)
+    run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(up), "-i", str(still), "-filter_complex",
+         f"[0:v]{NORMALIZE}[a];[1:v]{NORMALIZE}[b];"
+         f"[a][b]xfade=transition=fade:duration={AI_FADE}:offset={a - AI_FADE:.3f},format=yuv420p[v]",
+         "-map", "[v]", "-an", "-t", f"{length:.3f}", "-c:v", "libx264", "-preset", "veryfast", "-crf", "14",
+         "-r", str(FPS), str(out)])
+    up.unlink(missing_ok=True)
+    still.unlink(missing_ok=True)
+    return out
+
+
 def _transitions(scene_cut: list[bool], mode: str) -> list[tuple[str, float]]:
     """(xfade transition, duration) into each shot (index 0 unused). classic/analog: soft crossfades.
     fast: hard cuts inside a scene (one frame), a whip-pan or a white flash at scene changes."""
@@ -269,9 +307,14 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
             ai = ai_motion.animate(img, ai_targets[k], workdir / f"ai_{k:02d}.mp4")
             if ai:
                 try:
-                    clips.append(_fit_clip(ai, length, out))
-                    log(f"Shot {k}: {length:.1f}s AI animated")
-                    continue
+                    if img not in depths:
+                        depths[img] = effects.depth_map(img)
+                    m = random.choice([mm for mm in effects.PARALLAX_MOVES if mm != last]); last = m
+                    done = _ai_into_still(ai, img, depths[img], length, out, m)
+                    if done:
+                        clips.append(done)
+                        log(f"Shot {k}: {length:.1f}s AI animated (max {AI_MAX_SECONDS:.0f}s) -> still with 3D {m}")
+                        continue
                 except Exception as e:  # noqa: BLE001
                     log(f"Shot {k}: AI clip unusable ({str(e)[:100]})")
         clip = Path(img).with_suffix(".mp4")

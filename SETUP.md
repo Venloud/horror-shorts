@@ -81,7 +81,7 @@ All settings and on/off flags are in `config.json` (edit on GitHub with the penc
 
 - Story: `story_modes`, `llm_models`, `groq_backup` / `groq_model`, `story_upgrade`, `critic_pass`,
   `trend_picking`, `discovery`.
-- Voice: `voice` (`bm_george`), `voice_lang`, `voice_speed_range`, `target_seconds`.
+- Voice: `voice` (`am_michael`), `voice_lang`, `voice_speed_range`, `target_seconds`.
 - Images: `shots_per_scene` (2), `real_media` + `real_media_sources`, `local_image_max` (6), `image_check`,
   `image_style_cf` / `image_style_fallback`.
 - Video: `visual_ab` + `visual_modes`, `ai_motion`, music volumes.

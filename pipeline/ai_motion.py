@@ -47,8 +47,37 @@ def _find_endpoint(info: dict):
     return (best[1], best[2]) if best else (None, None)
 
 
-def _fill(params: list, image: Path, prompt: str, seconds: float) -> dict:
-    """Fill the parameters we recognise; everything else keeps the Space's own default."""
+def _limit(p: dict) -> float | None:
+    """The highest value a size parameter accepts, from the Space's own API info (JSON-schema "maximum", or a
+    slider description like "numeric value between 256 and 1280"). None if the Space doesn't say."""
+    for t in (p.get("type"), p.get("python_type")):
+        if isinstance(t, dict):
+            if isinstance(t.get("maximum"), (int, float)):
+                return float(t["maximum"])
+            m = re.search(r"between\s+[\d.]+\s+and\s+([\d.]+)", str(t.get("description") or ""))
+            if m:
+                return float(m.group(1))
+    return None
+
+
+def _size(params: list) -> tuple[int, int] | None:
+    """Highest 9:16 size the Space supports (sides multiples of 32, height capped at 1280). None = the Space
+    publishes no limits: then we ask for 1024x576 and, if it refuses, use its defaults."""
+    by = {(p.get("parameter_name") or "").lower(): p for p in params}
+    if "height" not in by or "width" not in by:
+        return None
+    hmax, wmax = _limit(by["height"]), _limit(by["width"])
+    if hmax is None and wmax is None:
+        return (1024, 576)
+    h = min(1280.0, hmax or 1280.0, (wmax or 1e9) * 16 / 9)
+    h = int(h // 32 * 32)
+    w = int(h * 9 / 16 // 32 * 32)
+    return (h, w)
+
+
+def _fill(params: list, image: Path, prompt: str, seconds: float, size: tuple[int, int] | None) -> dict:
+    """Fill the parameters we recognise; everything else keeps the Space's own default. size = (height, width)
+    to ask for, or None to keep the Space's own default size."""
     from gradio_client import handle_file
     kw, image_done = {}, False
     for p in params:
@@ -64,13 +93,24 @@ def _fill(params: list, image: Path, prompt: str, seconds: float) -> dict:
             kw[name] = "blurry, distorted face, deformed hands, extra limbs, text, watermark, fast chaotic motion, low quality"
         elif "prompt" in low:
             kw[name] = prompt
-        elif low == "height":
-            kw[name] = 832
-        elif low == "width":
-            kw[name] = 480
+        elif low == "height" and size:
+            kw[name] = size[0]
+        elif low == "width" and size:
+            kw[name] = size[1]
         elif "duration" in low or low in ("seconds", "length_seconds"):
             kw[name] = seconds
     return kw
+
+
+def _width(path: Path) -> int:
+    """Width of the clip's first video stream (0 if unknown)."""
+    import subprocess
+    try:
+        return int(subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
+                                   "stream=width", "-of", "csv=p=0", str(path)],
+                                  capture_output=True, text=True, timeout=30).stdout.strip().split()[0])
+    except Exception:  # noqa: BLE001
+        return 0
 
 
 def _video_path(result) -> str | None:
@@ -126,17 +166,27 @@ def animate(image: Path, shot_prompt: str, out: Path) -> Path | None:
             if not endpoint:
                 log(f"AI animation: {space} has no image+prompt endpoint, skipping")
                 continue
-            kwargs = _fill(params, image, prompt, float(s["seconds"]))
-            log(f"AI animation: trying {space} {endpoint} ({', '.join(kwargs)})")
-            job = client.submit(api_name=endpoint, **kwargs)
-            try:
-                result = job.result(timeout=s["timeout"])
-            except Exception:
+            size = _size(params)
+            result = None
+            for attempt_size in ([size, None] if size else [None]):
+                kwargs = _fill(params, image, prompt, float(s["seconds"]), attempt_size)
+                log(f"AI animation: trying {space} {endpoint} ({', '.join(kwargs)})"
+                    + (f" at {attempt_size[1]}x{attempt_size[0]}" if attempt_size else " at the Space's default size"))
+                job = client.submit(api_name=endpoint, **kwargs)
                 try:
-                    job.cancel()  # don't leave a queued job eating GPU quota
-                except Exception:  # noqa: BLE001
-                    pass
-                raise
+                    result = job.result(timeout=s["timeout"])
+                    break
+                except Exception as e:
+                    try:
+                        job.cancel()  # don't leave a queued job eating GPU quota
+                    except Exception:  # noqa: BLE001
+                        pass
+                    # a size the Space refuses: once more at its own default size; anything else (quota...) is raised
+                    if attempt_size and re.search(r"height|width|resolution|size|dimension|divisible|multiple",
+                                                  str(e), re.IGNORECASE) and not QUOTA_RE.search(str(e)):
+                        log(f"AI animation: {space} refused {attempt_size[1]}x{attempt_size[0]} ({str(e)[:100]})")
+                        continue
+                    raise
             path = _video_path(result)
             if not path:
                 log(f"AI animation: {space} returned no video ({json.dumps(str(result))[:120]})")
@@ -145,7 +195,7 @@ def animate(image: Path, shot_prompt: str, out: Path) -> Path | None:
             if media_duration(out) < 0.8:
                 log(f"AI animation: {space} clip too short, skipping")
                 continue
-            log(f"AI animation: got a {media_duration(out):.1f}s clip from {space}")
+            log(f"AI animation: got a {media_duration(out):.1f}s clip from {space} ({_width(out)} px wide)")
             return out
         except Exception as e:  # noqa: BLE001
             msg = str(e)

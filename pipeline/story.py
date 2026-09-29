@@ -902,7 +902,23 @@ def mark_true_story(story: dict) -> dict:
     if story.get("mode") in ("coldcase", "fiction", "lore"):
         story["true_story"] = False  # made-up stories and legends are never labelled true
     if story.get("true_story") and story.get("scenes"):
-        story["scenes"][0]["narration"] = with_true_opener(story["scenes"][0].get("narration", ""))
+        scenes = story["scenes"]
+        # Never said twice: if ANY scene already says it (an owner's script split by the planner put it in scene 2),
+        # nothing is added; extra copies after the first are removed.
+        pat = re.compile(r"\s*this is a true story[.!]?", re.IGNORECASE)
+        seen = False
+        for sc in scenes:
+            text = sc.get("narration", "")
+            parts = pat.split(text)
+            hits = pat.findall(text)
+            if not hits:
+                continue
+            keep = "" if seen else hits[0]
+            out = parts[0] + keep + "".join(parts[1:])
+            sc["narration"] = re.sub(r"\s{2,}", " ", out).strip()
+            seen = True
+        if not seen:
+            scenes[0]["narration"] = with_true_opener(scenes[0].get("narration", ""))
     return story
 
 

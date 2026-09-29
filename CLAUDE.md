@@ -77,6 +77,8 @@ so a new session can pick up without starting over.
      (NOT `lore`: legends aren't true stories; NOT fiction). For those, `story["true_story"] = True` (saved in history),
      scene 1 = hook sentence, THEN "This is a true story." (never first: slow opener; code moves/inserts it),
      captions.py shows a red "TRUE STORY" badge above the hook for 0-3.5 s, and the TikTok caption starts "TRUE STORY:".
+     NEVER said twice: `mark_true_story` adds the line only if NO scene says "this is a true story" yet (an owner's
+     script split by the planner had it in scene 2 and got a second copy in scene 1); extra copies are removed.
      Inbox `.txt` first lines: `TRUE`, `FICTION`, `SCRIPT` (exact words) or `SCRIPT TRUE` (exact words, true story,
      real people drawn per the REAL PEOPLE rule in Images).
    - **HOOK RULE**: never open with a date, a year or a place name (when/where goes in scene 2); the first words are
@@ -127,7 +129,7 @@ so a new session can pick up without starting over.
    - **Hook candidates**: the real-story prompts return `hook_candidates` (3 first sentences); the editor pass
      scores them (`hook_scores`, "score | sentence") and `use_best_hook()` makes scene 1 start with the best one
      that passes `hook_problem()`; then `fix_hook()` still runs as a safety net.
-2. **Voice**: Kokoro TTS `bm_george` (`voice_lang` "b", start speed 1.0, fitted within 1.0-1.2), word timings
+2. **Voice**: Kokoro TTS `am_michael` (`voice_lang` "a", start speed 1.1, fitted within 1.0-1.2; the original voice, back after a bm_george test), word timings
    tagged by scene. `voice_samples.yml` renders the same hook in several voices for comparison.
 3. **Images** (`images.py`), all free: Cloudflare Workers AI FLUX schnell (10,000 neurons/day, resets 00:00 UTC =
    8 PM New York; no size option, 1024x1024 = 4 tiles x 4.8 + 4 steps x 9.6 = ~57.6 neurons, logged per image)
@@ -242,6 +244,9 @@ so a new session can pick up without starting over.
    walking a hotel corridor over "Elisa Lam checked in" read as the victim), and a document / report / sign as the
    main subject fails like text. real_photo only for a proper name the NARRATION itself says (auto_tag and place
    shots): a capitalised planner phrase ("Coroner Report") had pulled another person's toxicology report.
+   Stock-clip QA also gets the story's place/era ("STORY SETTING: Los Angeles, 2013; <the shot's location look>",
+   `media._setting_note`) and fails a clip whose setting or era clearly doesn't fit (a modern luxury living room
+   for a 2013 coroner scene).
    Stock clips get TWO single-frame QA checks (1 s in = what viewers see first, and the middle); the first NO
    rejects the clip (a stranger's close-up face at the start slipped past the middle frame).
    Real photos are pinned to the story's place: `media.place_context` adds the city the narration gives in the same
@@ -264,6 +269,11 @@ so a new session can pick up without starting over.
 4. **Render** (`render.py`, `effects.py`, `ai_motion.py`), FFmpeg 1080x1920:
    - Hook shot: real AI animation via free Hugging Face ZeroGPU Spaces (list in config `ai_motion.spaces`,
      live API discovery, never hard-wired) -> falls back to 3D parallax -> falls back to Ken Burns zoom.
+     The Space is asked for its HIGHEST 9:16 size (`ai_motion._size`: the max its API publishes, height <= 1280;
+     1024x576 if it publishes none; a refused size -> once more at its default). `render._ai_into_still`: a clip
+     under 400 px wide is skipped (parallax); else max 2 s of it (lanczos upscale + light unsharp; the final pass
+     adds the same grain as every still), then a 0.5 s crossfade into the ORIGINAL high-res still it came from,
+     which continues with the normal parallax ("the clip freezes into the picture").
    - Other shots: Depth Anything V2 Small (Apache-2.0, CPU) 2.5D parallax; fog + dust overlays; light flicker
      only on scenes whose narration mentions lights; camera shake on the twist.
    - Cuts land on punctuation; min shot 1.2 s. Captions: one word at a time, white, centered (Anton font).
