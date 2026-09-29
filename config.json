@@ -56,9 +56,9 @@
     "small town with a secret everyone keeps"
   ],
 
-  "voice": "am_michael",
-  "voice_speed": 1.1,
-  "voice_lang": "a",
+  "voice": "bm_george",
+  "voice_speed": 1.0,
+  "voice_lang": "b",
 
   "caption_font": "Anton",
   "caption_font_file": "assets/fonts/Anton-Regular.ttf",

@@ -1,0 +1,66 @@
+name: voice_samples
+
+# Manual: the same hook in several Kokoro voices at speeds 1.0 and 1.1, uploaded as one artifact of mp3s.
+on:
+  workflow_dispatch:
+
+jobs:
+  samples:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install system tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg espeak-ng > /dev/null
+      - name: Restore cached models
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-models-v3
+      - name: Install Kokoro
+        run: |
+          pip install -q torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -q "kokoro>=0.9.4" soundfile numpy \
+            "en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl"
+      - name: Generate samples
+        shell: python
+        run: |
+          import subprocess
+          from pathlib import Path
+          import numpy as np
+          import soundfile as sf
+          from kokoro import KPipeline
+
+          HOOK = ("The last photo on her phone was taken from inside her own closet. "
+                  "She lived alone, and the door had been locked from the outside.")
+          VOICES = ["bm_george", "bm_fable", "bm_lewis", "bm_daniel", "am_michael"]
+          SPEEDS = [1.0, 1.1]
+          out = Path("samples")
+          out.mkdir()
+          pipes = {}
+          for voice in VOICES:
+              lang = "b" if voice.startswith("b") else "a"
+              if lang not in pipes:
+                  pipes[lang] = KPipeline(lang_code=lang)
+              for speed in SPEEDS:
+                  parts = []
+                  for r in pipes[lang](HOOK, voice=voice, speed=speed):
+                      if r.audio is not None:
+                          a = r.audio.detach().cpu().numpy() if hasattr(r.audio, "detach") else np.asarray(r.audio)
+                          parts.append(a.astype(np.float32).flatten())
+                  audio = np.concatenate(parts)
+                  wav = out / f"{voice}_{speed}.wav"
+                  sf.write(wav, audio, 24000)
+                  mp3 = wav.with_suffix(".mp3")
+                  subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(wav),
+                                  "-codec:a", "libmp3lame", "-b:a", "192k", str(mp3)], check=True)
+                  wav.unlink()
+                  print(f"{mp3.name}: {len(audio) / 24000:.2f} s")
+      - uses: actions/upload-artifact@v4
+        with:
+          name: voice-samples
+          path: samples/*.mp3
