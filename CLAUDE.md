@@ -126,7 +126,8 @@ so a new session can pick up without starting over.
    - **Hook candidates**: the real-story prompts return `hook_candidates` (3 first sentences); the editor pass
      scores them (`hook_scores`, "score | sentence") and `use_best_hook()` makes scene 1 start with the best one
      that passes `hook_problem()`; then `fix_hook()` still runs as a safety net.
-2. **Voice**: Kokoro TTS `am_michael`, speed 1.1, word timings tagged by scene.
+2. **Voice**: Kokoro TTS `bm_george` (`voice_lang` "b", start speed 1.0, fitted within 1.0-1.2), word timings
+   tagged by scene. `voice_samples.yml` renders the same hook in several voices for comparison.
 3. **Images** (`images.py`), all free: Cloudflare Workers AI FLUX schnell (10,000 neurons/day, resets 00:00 UTC =
    8 PM New York; no size option, 1024x1024 = 4 tiles x 4.8 + 4 steps x 9.6 = ~57.6 neurons, logged per image)
    -> free HF ZeroGPU Spaces running FLUX.1-schnell (config `image_spaces`, 576x1024, gradio_client like ai_motion;
@@ -184,7 +185,9 @@ so a new session can pick up without starting over.
    three sources uses one (Cloudflare FLUX / FLUX Spaces have no such input, SD-Turbo runs at guidance 0).
    **Image QA** (`check_image`, Gemini vision lite model): passes if the image clearly shows the requested subject
    and action in a setting that fits, is one frame and has no garbled text; it does NOT require a real landmark /
-   brand / person identity (a painterly "old downtown hotel" is fine for the Cecil Hotel). "YES / NO: reason". Paced to
+   brand / person identity (a painterly "old downtown hotel" is fine for the Cecil Hotel), and NEVER fails an image
+   for its art style or quality alone; NO only for wrong subject/action/setting, several panels, garbled text or
+   broken anatomy. "YES / NO: reason". Paced to
    `image_check_per_minute` (10); a 429 skips QA for that image only (qa=SKIPPED); never fails the build.
    Fallback images always get QA (waits a few s for the slot); Cloudflare images only when a slot is free right now
    (`image_check_cloudflare`), so fallbacks keep the quota. NO = rejected (file renamed `*.rejected*.png`, never
@@ -263,7 +266,8 @@ so a new session can pick up without starting over.
    averageViewPercentage, likes, comments, shares, subscribersGained, matched by YouTube id to history
    (video_number, mode, visual_mode, story_shape, writer) -> `data/analytics.json` (+ by_mode / by_visual_mode
    summaries). Needs the yt-analytics.readonly scope (connect_youtube.py now asks for it; re-run once and update
-   YT_REFRESH_TOKEN); without it the log says "analytics scope missing" and it exits 0.
+   YT_REFRESH_TOKEN); without it the log says "analytics scope missing" and it exits 0. Any other API / token
+   failure prints the exact error and exits 1 (red run).
 
 ## Buffer (build.yml fills it, daily.yml posts from it)
 - `build.yml` runs every 3 h: if fewer than 3 (`BUFFER_SIZE`) videos wait on the GitHub Release **"buffer"**
@@ -294,6 +298,8 @@ so a new session can pick up without starting over.
   counter.json with history (higher next_video wins). #26 = the Louvre heist, #27 = D. B. Cooper (backfilled);
   the counter continues at #28.
 - Note: while the repo is public, buffered (unposted) videos on the release are publicly downloadable.
+- README.md (overview) and SETUP.md (secrets, one-time connections, tests) are kept in line with this file;
+  CLAUDE.md stays the main source.
 
 ## Reliability (build side)
 - **Render join**: every clip (AI motion, parallax, Ken Burns) is normalized to 1080x1920 / 30 fps / yuv420p /

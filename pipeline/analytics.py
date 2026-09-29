@@ -2,7 +2,8 @@
 own history (video_number, mode, visual_mode, story shape, writer), saved to data/analytics.json.
 
 Needs the refresh token to include the scope https://www.googleapis.com/auth/yt-analytics.readonly (re-run
-connect_youtube.py once; it now asks for it). Without it: logs "analytics scope missing" and exits 0.
+connect_youtube.py once; it now asks for it). Without it: logs "analytics scope missing" and exits 0. Any other
+API / token failure: prints the exact error and exits 1 (red run).
 Flag analytics (on). Never touches history.json, the buffer or any posting.
 """
 import json
@@ -35,7 +36,7 @@ def _report(token: str, start: str, end: str) -> dict:
     if r.status_code == 403 and any(k in r.text for k in ("insufficient", "SCOPE", "scope", "Permission")):
         raise PermissionError(r.text[:300])
     if r.status_code != 200:
-        raise RuntimeError(f"YouTube Analytics HTTP {r.status_code}: {r.text[:300]}")
+        raise RuntimeError(f"YouTube Analytics HTTP {r.status_code}: {r.text[:3000]}")
     return r.json()
 
 
@@ -67,9 +68,9 @@ def main() -> int:
     except PermissionError as e:
         log(f"analytics scope missing: re-run connect_youtube.py to add yt-analytics.readonly ({str(e)[:160]})")
         return 0
-    except Exception as e:  # noqa: BLE001
-        log(f"Analytics failed ({type(e).__name__}: {str(e)[:300]}); nothing saved")
-        return 0
+    except Exception as e:  # noqa: BLE001 (a real failure: red run with the exact error)
+        log(f"Analytics FAILED, nothing saved. {type(e).__name__}: {e}")
+        return 1
     cols = [c["name"] for c in data.get("columnHeaders", [])]
     by_id = {}
     for h in load_history():
