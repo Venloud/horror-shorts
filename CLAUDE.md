@@ -246,7 +246,9 @@ so a new session can pick up without starting over.
    rejects the clip (a stranger's close-up face at the start slipped past the middle frame).
    Real photos are pinned to the story's place: `media.place_context` adds the city the narration gives in the same
    sentence ("Cecil Hotel office" -> "... Los Angeles"), and a result whose title names a world city/country the
-   story never mentions is skipped (the London "Hotel Cecil 1896" had been used for the LA hotel).
+   story never mentions is skipped (the London "Hotel Cecil 1896" had been used for the LA hotel), and the photo's
+   title must contain the query's distinctive name word (`media._missing_name`: "Cecil"; a London "roof, showing
+   Waterloo Bridge" photo had passed QA as "Cecil Hotel roof").
    QA judges the UNGRADED frame (`scene_XXl.qa.png`, deleted after QA; grain/vignette confused it) against the
    searched concept (stock: the cleaned query; photo: "<name> (any view: outside, inside, entrance, detail)"),
    not the story's exact moment. Reflections/ripples/windows are not "panels". At most

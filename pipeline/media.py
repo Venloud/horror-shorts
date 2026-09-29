@@ -396,6 +396,22 @@ def place_context(story: dict, name: str) -> str:
     return ""
 
 
+_GENERIC_NAME = set(("hotel motel inn house building tower church cathedral hall school hospital station bridge "
+                     "street road avenue park lake river mountain island museum library prison bank airport "
+                     "interior exterior roof rooftop lobby office bathroom room the of los las san").split())
+
+
+def _missing_name(title: str, query: str) -> str:
+    """The query's distinctive proper name ("Cecil") must be in the photo's title, or it is some other place
+    (a London "roof, showing Waterloo Bridge" photo had passed QA as "Cecil Hotel roof")."""
+    words = {w.lower() for m in _PROPER.finditer(query) for w in m.group(1).split()} - _GENERIC_NAME
+    words = {w for w in words if len(w) > 2}
+    if not words:
+        return ""
+    t = title.replace("_", " ").lower()
+    return "" if any(w in t for w in words) else "/".join(sorted(words))
+
+
 def _wrong_place(title: str, story_low: str) -> str:
     """A world city / country in the photo's title that the story never mentions."""
     for w in re.findall(r"[A-Z][a-z]+", title.replace("_", " ")):
@@ -589,8 +605,10 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
             if kind == "real_photo":
                 for c in list(cands):
                     bad = _wrong_place(c.get("title", ""), story_low)
-                    if bad:
-                        log(f"Shot {i:02d}{l}: skipped {c['url']} (shows {bad}, not this story's place)")
+                    miss = _missing_name(c.get("title", ""), query)
+                    if bad or miss:
+                        why = f"shows {bad}" if bad else f"title doesn't name {miss}"
+                        log(f"Shot {i:02d}{l}: skipped {c['url']} ({why}, not this story's place)")
                         cands.remove(c)
             take = cands[:min(3, budget)]
             if not take:
