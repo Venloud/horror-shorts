@@ -57,6 +57,6 @@ OTHER FIELDS
 - twist: the key reveal / ending concept, in one short sentence.
 - hook_overlay: 2-5 word on-screen text shown big over the first seconds. It must be shocking on its own, not a title, e.g. "It texted from my phone", "I don't have a landlord", "He waved from under the ice". No emojis.
 - twist_scene: the 0-based index of the scene where the twist hits.
-- caption: line 1 = a searchable story title that says what happens, the way people would type it into TikTok search, e.g. "The Night Guard Checked the Cameras... and Saw Himself". Line 2 = a question that makes people comment (e.g. "Would you have checked?"). Max 180 characters. May use 1 emoji.
-- hashtags: 5 hashtags without the # symbol, mixing broad (scarystories, horrortok) and specific.
+- caption: line 1 = the exact phrase people type into search for this story (e.g. "What happened to D.B. Cooper?", "What is the Wendigo?"); the channel adds "illustrated horror story" itself. Line 2 = a question for comments. Max 150 characters. May use 1 emoji.
+- hashtags: 5 topic hashtags without # (the case, place, legend or subject + its genre, e.g. dbcooper, unsolvedmysteries). The channel adds #illustratedhorror #horrorstory itself. Never fyp, foryou or viral.
 - pinned_comment: a short comment the creator can pin to start discussion.

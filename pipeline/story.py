@@ -194,6 +194,7 @@ def _call_gemini(model: str, prompt: str, api_key: str, temperature: float = 1.0
             "HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH",
             "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT")],
     }
+    _gemini_pace()
     r = requests.post(GEMINI_URL.format(model=model), json=body, timeout=120,
                       headers={"x-goog-api-key": api_key})
     if r.status_code != 200:
@@ -435,6 +436,189 @@ def score_script(script: str, api_key: str) -> tuple[int, dict]:
 class StoryBelowBar(Exception):
     pass
 
+# ---------- story upgrade (flags story_upgrade, critic_pass) ----------
+
+UPGRADE_TRUE = """
+STORY UPGRADE (true story)
+- The hook is the strangest TRUE detail in the source. Never distort a fact to make it stronger.
+- After watching, the viewer must be able to explain in one sentence what happened.
+- Something new every 5-8 seconds: every scene adds at least one new verified fact (a detail, a number, a
+  discovery). No filler, no repeating what was already said.
+- Say the case, person or place name out loud early (scene 1 or 2), the way people search for it.
+- No invented twists: a twist or reveal must be a real fact from the source.
+- Caption line 1 = the phrase people type into search, e.g. "What happened to D.B. Cooper?"."""
+
+UPGRADE_LORE = """
+STORY UPGRADE (legend)
+- The hook is the strangest detail of the legend as it is actually told. Never invent new lore.
+- The viewer must be able to retell the legend in one sentence afterwards.
+- Something new every 5-8 seconds: every scene adds one new detail of the legend or its real-world history.
+- Say the legend's name out loud early (scene 1 or 2), the way people search for it.
+- Caption line 1 = the phrase people type into search, e.g. "What is the Wendigo?"."""
+
+STORY_SHAPES = {
+    "discovery": "Someone finds something that should not exist; each detail about it makes it worse.",
+    "strange rule": "An ordinary place or job has one strange rule; the story shows why the rule exists.",
+    "gradual realization": "Small normal-looking details slowly add up to one horrifying realization.",
+    "investigation": "Someone follows clues about one odd event; the last clue answers the hook.",
+    "reversal": "The situation we think we understand flips: the victim, helper or threat was the opposite.",
+    "uncanny normal": "Everything looks exactly normal, but one detail is wrong, and it keeps being wrong.",
+}
+
+UPGRADE_FICTION = """
+## STORY UPGRADE
+- The story is 90% normal, 10% wrong: an ordinary, believable situation with ONE thing that is wrong.
+- Story shape for this one: {shape_name}: {shape}
+- Build on this premise (already checked for clarity): {premise}
+- The ending explains what happened (the viewer can say it in one sentence) and pays off the hook's first line.
+- Caption line 1 = the phrase people would search, e.g. "The Guest Who Wasn't on the List"."""
+
+PREMISE_PROMPT = """You pitch premises for a 50-second illustrated horror story ({kind}).
+Story shape: {shape_name}: {shape}
+{inspiration}
+Already used (don't repeat): {recent}
+Give 3 DIFFERENT premises. Each: ONE clear sentence with a concrete visual and a question the viewer needs
+answered. 90% normal situation, 10% wrong. Adults only, no gore, no real people or real named towns.
+Then judge each one strictly: "clarity" 1-10 (10 = crystal clear sentence, one burning question, one strong visual;
+vague ones like "strange things happen in a house" get 3 or less) and "reason".
+Return JSON: {{"premises": [{{"premise": "...", "question": "...", "visual": "...", "clarity": 0, "reason": "..."}}]}}"""
+
+CRITIC_PROMPT = """You are a strict critic for a short illustrated horror / true-crime channel. Score this {kind}
+story (JSON below) and give concrete reasons.
+{rules}
+Score (whole numbers): hook (max 20): the first sentence is the strangest {truth} detail, no date/place opener;
+clarity (max 20): the viewer can explain what happened in one sentence; pacing (max 20): something new every 5-8
+seconds, no filler; name_early (max 10): the case/legend/place name is said in scene 1 or 2; payoff (max 15): the
+ending answers the hook; integrity (max 15): {integrity}.
+Return JSON: {{"hook": 0, "clarity": 0, "pacing": 0, "name_early": 0, "payoff": 0, "integrity": 0,
+"what_happened": "one sentence", "reasons": ["concrete problem + concrete fix", ...]}}
+
+STORY:
+{draft}"""
+
+CRITIC_MAX = {"hook": 20, "clarity": 20, "pacing": 20, "name_early": 10, "payoff": 15, "integrity": 15}
+
+CRITIC_REWRITE = """Rewrite this story (same JSON format) to fix these critic notes. Keep every fact, name, number
+and the fact_ledger exactly; keep the number of scenes; keep scene 1's opening unless a note is about the hook.
+{rules}
+CRITIC NOTES:
+{notes}
+
+STORY:
+{draft}"""
+
+
+class StoryDiscarded(Exception):
+    """The critic rejected a story after the allowed rewrites: throw it away, the next attempt tries again."""
+
+
+def _json_call(prompt: str, api_key: str, temperature: float = 0.3) -> dict:
+    """A small JSON answer (premise pitch, critic scores) from the model chain."""
+    last = None
+    for model in model_chain():
+        try:
+            if model.startswith("groq:"):
+                return _call_groq(model[5:], prompt, temperature, True, {"type": "OBJECT"})
+            gen = {"temperature": temperature, "responseMimeType": "application/json"}
+            _gemini_pace()
+            r = requests.post(GEMINI_URL.format(model=model), timeout=90, headers={"x-goog-api-key": api_key},
+                              json={"contents": [{"role": "user", "parts": [{"text": prompt}]}], "generationConfig": gen})
+            if r.status_code != 200:
+                raise RuntimeError(f"{model} HTTP {r.status_code}")
+            parts = r.json()["candidates"][0]["content"]["parts"]
+            return json.loads("".join(p.get("text", "") for p in parts))
+        except Exception as e:  # noqa: BLE001
+            last = e
+    raise RuntimeError(f"no model answered: {str(last)[:200]}")
+
+
+_PACE = {"last": 0.0}
+
+
+def _gemini_pace() -> None:
+    """Free-tier friendly: at least config gemini_min_interval seconds (4) between Gemini text calls."""
+    gap = float(CONFIG.get("gemini_min_interval", 4)) - (time.time() - _PACE["last"])
+    if gap > 0:
+        time.sleep(gap)
+    _PACE["last"] = time.time()
+
+
+def pick_shape(history: list[dict]) -> str:
+    """Rotate story shapes: the least recently used one (history `story_shape`)."""
+    last_seen = {name: -1 for name in STORY_SHAPES}
+    for n, h in enumerate(history):
+        if h.get("story_shape") in last_seen:
+            last_seen[h["story_shape"]] = n
+    return min(STORY_SHAPES, key=lambda k: (last_seen[k], random.random()))
+
+
+def pick_premise(history: list[dict], api_key: str, shape: str, kind: str, inspiration: str | None) -> dict:
+    """Premise check before writing: one clear sentence with a question and a visual. Vague ones are rejected
+    (clarity < 7); two rounds, then StoryDiscarded."""
+    for round_ in range(2):
+        ask = PREMISE_PROMPT.format(kind=kind, shape_name=shape, shape=STORY_SHAPES[shape],
+                                    recent=recent_list(history)[-1500:],
+                                    inspiration=("Inspired by (new original story, don't copy):\n" + inspiration[:1500])
+                                    if inspiration else "")
+        pitches = _json_call(ask, api_key, 0.9).get("premises") or []
+        good = []
+        for p in pitches:
+            sent = str(p.get("premise", "")).strip()
+            # one clear sentence (a two-beat line like "41 guests. 42 masks." is fine), a question, a visual
+            ok = (sent and len(re.findall(r"[.!?](\s|$)", sent)) <= 2 and len(sent.split()) <= 40
+                  and str(p.get("question", "")).strip() and len(str(p.get("visual", "")).split()) >= 3)
+            score = int(p.get("clarity", 0) or 0) if ok else 0
+            log(f"Premise ({score}/10): {sent[:140]}" + ("" if ok else " [rejected: not one clear sentence with a "
+                                                                          "question and a visual]"))
+            if score >= 7:
+                good.append((score, p))
+        if good:
+            return max(good, key=lambda x: x[0])[1]
+        log(f"Premise check round {round_ + 1}: all premises too vague")
+    raise StoryDiscarded("no clear premise (every pitch was vague)")
+
+
+def critic_pass(story: dict, api_key: str, kind: str, rules: str) -> dict:
+    """One critic pass with scores + concrete reasons; up to 2 rewrites; still failing -> StoryDiscarded.
+    kind: "true" (real events) or "legend". Rewrites keep every fact (the fact check runs after this)."""
+    if not CONFIG.get("critic_pass", True):
+        return story
+    bar = int(CONFIG.get("critic_min_score", 75))
+    truth = "TRUE" if kind == "true" else "legend's"
+    integrity = ("only facts from the source, nothing invented, theories labelled" if kind == "true"
+                 else "the legend as actually told, nothing invented")
+    extra = UPGRADE_TRUE if kind == "true" else UPGRADE_LORE
+    for rnd in range(3):  # score, then up to 2 rewrites
+        draft = json.dumps({k: story[k] for k in SCHEMA["properties"] if k in story}, ensure_ascii=False)
+        try:
+            r = _json_call(CRITIC_PROMPT.format(kind=kind, rules=extra, truth=truth, integrity=integrity,
+                                                draft=draft), api_key, 0.2)
+        except Exception as e:  # noqa: BLE001
+            log(f"Critic unavailable ({str(e)[:120]}); keeping the story")
+            return story
+        total = sum(max(0, min(int(r.get(k, 0) or 0), mx)) for k, mx in CRITIC_MAX.items())
+        reasons = [str(x) for x in (r.get("reasons") or [])][:5]
+        log(f"Critic {rnd + 1}: {total}/100 ({', '.join(f'{k} {r.get(k)}' for k in CRITIC_MAX)}). "
+            f"What happened: {str(r.get('what_happened', ''))[:120]}. Notes: {' | '.join(reasons)[:400]}")
+        story["critic_score"] = total
+        if total >= bar:
+            return story
+        if rnd == 2:
+            break
+        try:
+            new = _run_models(CRITIC_REWRITE.format(rules=rules[:6500], notes="\n".join(f"- {x}" for x in reasons),
+                                                    draft=draft), api_key, temperature=0.5)
+            for k in ("characters", "locations", "fact_ledger", "hook_candidates"):
+                if story.get(k) and not new.get(k):
+                    new[k] = story[k]
+            story = {**story, **new}
+            log(f"Critic rewrite {rnd + 1} done")
+        except Exception as e:  # noqa: BLE001
+            log(f"Critic rewrite failed ({str(e)[:120]}); keeping the story")
+            return story
+    raise StoryDiscarded(f"critic score {story.get('critic_score')}/100 after 2 rewrites (needs {bar})")
+
+
 
 COLD_CASE_FILE = "fiction_cold_case.txt"
 
@@ -505,6 +689,21 @@ The narration must be {lo} to {hi} words in total (about {round(lo / 2.4)}-{roun
     prompt = prompt.replace("{place_note}", (
         "- Do not open with the location, date, year, job title or background. Open with the strangest thing that "
         "happened. Reveal where and when after the hook.\n"))
+    shape, premise = None, None
+    if CONFIG.get("story_upgrade", True):
+        shape = pick_shape(history)
+        try:
+            premise = pick_premise(history, api_key, shape, "original cold case file" if cold_case else subgenre,
+                                   inspiration)
+        except StoryDiscarded:
+            raise
+        except Exception as e:  # noqa: BLE001 (premise check unavailable: write as before)
+            log(f"Premise check unavailable ({str(e)[:120]}); writing without it")
+        if premise:
+            log(f"Shape: {shape}. Premise: {premise.get('premise')}")
+            prompt += UPGRADE_FICTION.format(shape_name=shape, shape=STORY_SHAPES[shape],
+                                             premise=f"{premise.get('premise')} (question: {premise.get('question')}; "
+                                                     f"visual: {premise.get('visual')})")
     if inspiration:
         prompt += ("\n## INSPIRATION\nTake only the core idea and the feeling of this piece and write a NEW, ORIGINAL story "
                    "from it: new characters, names, setting details, twist and ending. Never copy its sentences.\n\"\"\"\n"
@@ -544,7 +743,8 @@ The narration must be {lo} to {hi} words in total (about {round(lo / 2.4)}-{roun
 
     story = plan_scenes(script, api_key, sfx_list)
     story.update({"mode": "coldcase" if cold_case else "fiction", "subgenre": subgenre, "prompt_file": file.name, "script_model": model, "writer": _writer(model),
-                  "score": score, "what_happened": review.get("what_happened", "")})
+                  "score": score, "what_happened": review.get("what_happened", ""), "story_shape": shape,
+                  "checked_premise": (premise or {}).get("premise")})
     return story
 
 
@@ -590,6 +790,8 @@ def _true_story(facts: str, name: str, api_key: str, sfx_list: str) -> dict:
     """Fact-locked retelling of a real story; the model may refuse unsafe topics with title SKIP."""
     import mystery
     prompt = mystery.TRUE_PROMPT.format(channel=CONFIG["channel_name"], case=name, facts=facts, sfx_list=sfx_list)
+    if CONFIG.get("story_upgrade", True):
+        prompt += UPGRADE_TRUE
     story = _run_models(prompt, api_key, temperature=0.6)
     flag = story.get("title", "").strip().upper()
     if flag == "INSPIRATION":
@@ -603,6 +805,7 @@ def _true_story(facts: str, name: str, api_key: str, sfx_list: str) -> dict:
              "look.\nSOURCE:\n" + facts[:6000])
     story = edit_story(story, api_key, sfx_list, rules)
     story = fix_hook(story, api_key, sfx_list, rules)
+    story = critic_pass(story, api_key, "true", rules)  # before the fact check, which then checks any rewrite
     story = fact_check(story, facts, api_key)
     log(f"True story '{story['title']}' ({len(story['scenes'])} scenes) via {story['model']}")
     return story
@@ -777,7 +980,10 @@ def speak_numbers(story: dict) -> None:
 
 
 def _transient(e: Exception) -> bool:
-    """API overload / quota / network trouble: try again later, never a reason to drop a story for good."""
+    """API overload / quota / network trouble (or a critic discard): try again later, never a reason to drop a
+    story for good."""
+    if isinstance(e, StoryDiscarded):
+        return True
     msg = str(e).lower()
     return any(k in msg for k in ("503", "429", "high demand", "quota", "timed out", "timeout", "connection",
                                   "temporarily", "unavailable", "could not write a story"))
@@ -911,12 +1117,15 @@ def _real_story(history: list[dict], mode: str, api_key: str, sfx_list: str) -> 
             case = mystery.pick_case(history, mode)
             try:
                 prompt, facts = mystery.build_prompt(CONFIG["channel_name"], case, sfx_list, mode)
+                if CONFIG.get("story_upgrade", True):
+                    prompt += UPGRADE_TRUE if mode == "mystery" else UPGRADE_LORE
                 story = _run_models(prompt, api_key, temperature=0.6)
                 rules = ((f'scene 1 = the hook sentence, then the exact words "{TRUE_OPENER}"; ' if mode == "mystery" else "")
                          + "ONLY facts from this source, never invent details; theories/legends clearly labelled; "
                          "no accusing real people; respectful; no gore; third person; plain English.\nSOURCE:\n" + facts[:6000])
                 story = edit_story(story, api_key, sfx_list, rules)
                 story = fix_hook(story, api_key, sfx_list, rules)
+                story = critic_pass(story, api_key, "true" if mode == "mystery" else "legend", rules)
                 if mode == "mystery":  # real events: fact check (lore = legends, not checked)
                     story = fact_check(story, facts, api_key)
                 story.update({"mode": mode, "case": case,

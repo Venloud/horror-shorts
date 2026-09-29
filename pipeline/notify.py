@@ -18,7 +18,30 @@ def is_fiction(story: dict) -> bool:
     return mode in FICTION_MODES or mode.endswith("fiction")
 
 
+SPAM_TAGS = {"fyp", "foryou", "foryoupage", "foryourpage", "fy", "viral", "trending", "xyzbca", "tiktok", "explore",
+             "blowthisup", "goviral"}
+SEARCH_SUFFIX = "illustrated horror story"
+
+
+def normalize_caption(story: dict) -> None:
+    """Flag caption_search_style: caption line 1 = search phrase + "illustrated horror story"; hashtags = topic tags
+    + #illustratedhorror #horrorstory (+ #truestory only for true stories); no #fyp spam. Changes story in place,
+    so caption.json and the YouTube tags get the same list."""
+    if not CONFIG.get("caption_search_style", True) or not story.get("caption"):
+        return
+    tags = [str(t).lstrip("#").replace(" ", "") for t in story.get("hashtags") or []]
+    tags = [t for t in tags if t and t.lower() not in SPAM_TAGS and t.lower() not in
+            ("truestory", "illustratedhorror", "horrorstory")][:5]
+    tags += ["illustratedhorror", "horrorstory"] + (["truestory"] if story.get("true_story") else [])
+    story["hashtags"] = list(dict.fromkeys(tags))
+    lines = story["caption"].strip().split("\n")
+    if SEARCH_SUFFIX not in lines[0].lower():
+        lines[0] = f"{lines[0].rstrip()} | {SEARCH_SUFFIX}"
+    story["caption"] = "\n".join(lines)
+
+
 def caption_text(story: dict) -> str:
+    normalize_caption(story)
     tags = " ".join("#" + t.lstrip("#").replace(" ", "") for t in story.get("hashtags", []))
     credit = CONFIG.get("music_credits", {}).get(story.get("music_file") or "", "")
     credit = f"\n{credit}" if credit else ""

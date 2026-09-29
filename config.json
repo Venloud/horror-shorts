@@ -43,6 +43,11 @@
 
   "story_modes": ["lore", "mystery", "lore", "case", "coldcase"],
 
+  "story_upgrade": true,
+  "critic_pass": true,
+  "critic_min_score": 75,
+  "gemini_min_interval": 4,
+  "caption_search_style": true,
   "groq_backup": true,
   "groq_model": "openai/gpt-oss-120b",
   "groq_vision_qa": true,

@@ -93,6 +93,18 @@ so a new session can pick up without starting over.
      item: it stays queued for the next build and the log says why. Only a permanent problem (e.g. a link with no
      article) skips it, with the reason in history. (inbox/elisa_lam.txt had been skipped by a 503 while its scenes
      were planned; it's back in the queue.)
+   - **Story upgrade** (flags `story_upgrade`, `critic_pass`, `critic_min_score` 75, `gemini_min_interval` 4 s
+     between Gemini text calls): true stories get UPGRADE_TRUE (strangest true detail, viewer can explain it, a new
+     verified fact every 5-8 s, case/place name said early, no invented twists), lore gets UPGRADE_LORE. Then
+     `critic_pass` (scores hook/clarity/pacing/name_early/payoff/integrity + concrete reasons, max 2 rewrites,
+     BEFORE the fact check); still failing = `StoryDiscarded` (next topic / next build; an inbox item or case stays
+     queued). Fiction/coldcase: `pick_shape` rotates discovery / strange rule / gradual realization /
+     investigation / reversal / uncanny normal (history `story_shape`), `pick_premise` pitches 3 premises and
+     rejects vague ones (clarity < 7; one clear sentence + question + visual), "90% normal, 10% wrong", the
+     ending explains what happened; the existing 80/100 score loop (3 drafts) is its critic.
+   - **Captions** (flag `caption_search_style`, `notify.normalize_caption`): line 1 = the search phrase ("What
+     happened to D.B. Cooper?") + " | illustrated horror story"; hashtags = 5 topic tags + #illustratedhorror
+     #horrorstory (+ #truestory only for true stories); fyp/foryou/viral removed.
    - **Hook candidates**: the real-story prompts return `hook_candidates` (3 first sentences); the editor pass
      scores them (`hook_scores`, "score | sentence") and `use_best_hook()` makes scene 1 start with the best one
      that passes `hook_problem()`; then `fix_hook()` still runs as a safety net.

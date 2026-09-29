@@ -203,7 +203,9 @@ def main() -> int:
             "voice_speed": narration.get("speed"),
             "writer": story.get("writer") or story.get("model"),  # which provider wrote it (gemini / groq)
             "media_ids": [a["id"] for a in story.get("media_assets") or []],
-            "visual_mode": story.get("visual_mode"),  # A/B test: classic / fast / analog  # stock clips are not reused for 20 videos
+            "visual_mode": story.get("visual_mode"),  # A/B test: classic / fast / analog
+            "story_shape": story.get("story_shape"),  # fiction shape rotation
+            "critic_score": story.get("critic_score"),  # stock clips are not reused for 20 videos
             "buffered": stamp,
             "tiktok": None,  # filled in by publish.py when it's posted
         })

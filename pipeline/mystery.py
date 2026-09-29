@@ -70,8 +70,8 @@ OTHER FIELDS
 - hook_overlay: 2-5 word shocking on-screen text, e.g. "They cut the tent open", "Never found. Still unsolved."
 - hook_candidates: 3 DIFFERENT candidate first sentences for scene 1 (each max 18 words, strangest or most shocking detail first, never a date, year or place name). Scene 1 must start with the best one.
 - twist_scene: 0-based index of the scene with the strangest reveal.
-- caption: 1-2 short lines ending with a question for comments. Max 150 characters. May use 1 emoji.
-- hashtags: 5 hashtags without #, e.g. unsolvedmysteries, truecrime, mystery, plus 2 specific to the case.
+- caption: line 1 = the exact phrase people type into search for this story (e.g. "What happened to D.B. Cooper?", "What is the Wendigo?"); the channel adds "illustrated horror story" itself. Line 2 = a question for comments. Max 150 characters. May use 1 emoji.
+- hashtags: 5 topic hashtags without # (the case, place, legend or subject + its genre, e.g. dbcooper, unsolvedmysteries). The channel adds #illustratedhorror #horrorstory itself. Never fyp, foryou or viral.
 - pinned_comment: a question that invites theories.
 """
 
@@ -138,8 +138,8 @@ OTHER FIELDS
 - hook_overlay: 2-5 word shocking on-screen text, e.g. "It mimics your mother's voice".
 - hook_candidates: 3 DIFFERENT candidate first sentences for scene 1 (each max 18 words, strangest or most shocking detail first, never a date, year or place name). Scene 1 must start with the best one.
 - twist_scene: 0-based index of the creepiest reveal.
-- caption: 1-2 short lines ending with a question for comments. Max 150 characters. May use 1 emoji.
-- hashtags: 5 hashtags without #, e.g. folklore, legends, creepy, plus 2 specific.
+- caption: line 1 = the exact phrase people type into search for this story (e.g. "What happened to D.B. Cooper?", "What is the Wendigo?"); the channel adds "illustrated horror story" itself. Line 2 = a question for comments. Max 150 characters. May use 1 emoji.
+- hashtags: 5 topic hashtags without # (the case, place, legend or subject + its genre, e.g. dbcooper, unsolvedmysteries). The channel adds #illustratedhorror #horrorstory itself. Never fyp, foryou or viral.
 - pinned_comment: a question that invites people to share their own local legends.
 """
 
@@ -208,8 +208,8 @@ OTHER FIELDS
 - hook_overlay: 2-5 word shocking on-screen text, e.g. "The perfect crime. Almost."
 - hook_candidates: 3 DIFFERENT candidate first sentences for scene 1 (each max 18 words, strangest or most shocking detail first, never a date, year or place name). Scene 1 must start with the best one.
 - twist_scene: 0-based index of the biggest turn.
-- caption: line 1 = a searchable title the way people type it into TikTok search (e.g. "The Brink's Robbery: The Perfect Crime That Almost Worked"). Line 2 = a question for comments. Max 180 characters. May use 1 emoji.
-- hashtags: 5 hashtags without #, e.g. truecrime, truestory, crimestory, plus 2 specific to the case.
+- caption: line 1 = the exact phrase people type into search for this story (e.g. "What happened to D.B. Cooper?", "What is the Wendigo?"); the channel adds "illustrated horror story" itself. Line 2 = a question for comments. Max 150 characters. May use 1 emoji.
+- hashtags: 5 topic hashtags without # (the case, place, legend or subject + its genre, e.g. dbcooper, unsolvedmysteries). The channel adds #illustratedhorror #horrorstory itself. Never fyp, foryou or viral.
 - pinned_comment: a question that starts a discussion.
 """
 
