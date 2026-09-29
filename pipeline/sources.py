@@ -88,7 +88,9 @@ def wiki_text(query: str, limit: int = 9000) -> str:
 
 def next_case(history: list[dict]) -> dict:
     used = {h.get("case") for h in history if h.get("case")}
-    fresh = [c for c in json.loads(CASES_FILE.read_text()) if c["title"] not in used]
+    import discover
+    pool = json.loads(CASES_FILE.read_text()) + discover.aviation_cases()  # + strange NTSB aviation cases
+    fresh = [c for c in pool if c["title"] not in used]
     if not fresh:
         raise RuntimeError("All FBI cases have been used. Add more to data/cases.json.")
     import trends

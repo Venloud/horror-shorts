@@ -51,6 +51,15 @@ so a new session can pick up without starting over.
      Wikipedia fallback). Sensitive stories (harm to a child, sexual crime, suicide) are NOT skipped: they
      become inspiration for an original fictional story instead (owner's request: "make it safe").
    - `mystery`: real unsolved mysteries (`data/mysteries.json`, Wikipedia facts).
+   - **Discovery sources** (`discover.py`, flag `discovery`, per-source `discovery_sources`, `discovery_share`
+     0.25 = how often a lore/mystery pick tries a lead first). Discovery only: the lead's readable source page is the
+     ONLY source for the fact ledger. ntsb = `data/aviation.json` (7 strange NTSB aviation incidents, Wikipedia
+     source) mixed into the case pool; newspapers = Chronicling America via the loc.gov API (old API retired 2025),
+     pages 1850-1928 for `newspaper_queries`, text = the page's ALTO OCR around the match, only if it reads
+     cleanly, told as "a newspaper reported..."; serialized fiction and missing/kidnap stories skipped. lore:
+     LOC Folklife Today "legends" posts (blogs.loc.gov; returned 403 from the dev sandbox, untested on runners) and
+     Dúchas (only with DUCHAS_API_KEY + config `duchas_topic_ids`; its texts are CC BY-NC: facts/retelling only).
+     Leads are deduped by source url (history `source`).
    - **Trend picking** (`trends.py`, flag `trend_picking`): lore / mystery / case picks check up to `trend_sample`
      (25) unused topics on the Wikimedia pageviews API (NightFilesBot User-Agent, one request at a time, cached 24 h
      in cache/media-search/trends.json) and take the one whose last-7-day views are >= `trend_min_ratio` (1.5x)

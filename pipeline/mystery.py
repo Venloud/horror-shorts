@@ -225,7 +225,16 @@ def _split_wiki(text: str, limit: int) -> str:
     main = main[: limit - len(pop) - 40]
     return main + (f"\n\nIN POPULAR CULTURE:\n{pop}" if pop else "")
 
-def pick_case(history: list[dict], kind: str = "mystery") -> str:
+def pick_case(history: list[dict], kind: str = "mystery") -> str | dict:
+    """A topic title from the lists, or sometimes (discovery_share) a discovery lead dict with its own readable
+    source text (old newspapers for mystery, LOC folklore / Dúchas for lore)."""
+    try:
+        import discover
+        found = discover.lead(kind, history)
+        if found:
+            return found
+    except Exception as e:  # noqa: BLE001
+        log(f"Discovery skipped ({str(e)[:120]})")
     file = LORE_FILE if kind == "lore" else CASES_FILE
     used = {h.get("case") for h in history if h.get("case")}
     fresh = [c for c in json.loads(file.read_text()) if c not in used]
@@ -248,8 +257,12 @@ def fetch_facts(title: str, limit: int = 9000) -> str:
     return _split_wiki(text, limit)
 
 
-def build_prompt(channel: str, case: str, sfx_list: str = "none", kind: str = "mystery") -> tuple[str, str]:
-    facts = fetch_facts(case)
+def build_prompt(channel: str, case: str | dict, sfx_list: str = "none", kind: str = "mystery") -> tuple[str, str]:
+    if isinstance(case, dict):  # discovery lead: its readable source page is the only source
+        facts = f"SOURCE: {case.get('source')} - {case.get('url')}\n{case['text'][:9000]}"
+        case = case["title"]
+    else:
+        facts = fetch_facts(case)
     log(f"Topic: {case} ({len(facts)} chars of source)")
     template = LORE_PROMPT if kind == "lore" else MYSTERY_PROMPT
     return template.format(channel=channel, case=case, facts=facts, sfx_list=sfx_list), facts

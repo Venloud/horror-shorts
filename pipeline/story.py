@@ -1128,11 +1128,15 @@ def _real_story(history: list[dict], mode: str, api_key: str, sfx_list: str) -> 
                 story = critic_pass(story, api_key, "true" if mode == "mystery" else "legend", rules)
                 if mode == "mystery":  # real events: fact check (lore = legends, not checked)
                     story = fact_check(story, facts, api_key)
-                story.update({"mode": mode, "case": case,
+                lead = case if isinstance(case, dict) else None  # discovery lead: keep its source page
+                story.update({"mode": mode, "case": lead["title"] if lead else case,
                               "subgenre": "real unsolved mystery" if mode == "mystery" else "legend / folklore"})
+                if lead:
+                    story.update({"source": lead["url"], "source_name": lead.get("source")})
                 log(f"{mode.title()} '{story['title']}' ({len(story['scenes'])} scenes) via {story['model']}")
                 return story
             except Exception as e:  # noqa: BLE001
                 log(f"{mode} mode failed ({str(e)[:200]}); trying another topic")
-                history = history + [{"case": case}]
+                history = history + ([{"case": case["title"], "source": case["url"]}] if isinstance(case, dict)
+                                     else [{"case": case}])
     return None
