@@ -28,6 +28,18 @@ jobs:
           if missing:
               print("Missing secrets: " + ", ".join(missing))
               sys.exit(1)
+          # Shape checks only (no secret values are printed).
+          cid, sec, tok = (os.environ[k] for k in ("YT_CLIENT_ID", "YT_CLIENT_SECRET", "YT_REFRESH_TOKEN"))
+          for name, v in (("YT_CLIENT_ID", cid), ("YT_CLIENT_SECRET", sec), ("YT_REFRESH_TOKEN", tok)):
+              extra = []
+              if v != v.strip():
+                  extra.append("has leading/trailing spaces or newline")
+              if v.strip()[:1] in "\"'=" or v.strip()[-1:] in "\"'":
+                  extra.append("starts/ends with a quote or '='")
+              print(f"{name}: {len(v)} chars" + (" - " + "; ".join(extra) if extra else ""))
+          print("client id ends with .apps.googleusercontent.com:", cid.strip().endswith(".apps.googleusercontent.com"))
+          print("client secret starts with GOCSPX-:", sec.strip().startswith("GOCSPX-"))
+          print("refresh token starts with 1//:", tok.strip().startswith("1//"))
           creds = Credentials(None, refresh_token=os.environ["YT_REFRESH_TOKEN"],
                               client_id=os.environ["YT_CLIENT_ID"],
                               client_secret=os.environ["YT_CLIENT_SECRET"],
