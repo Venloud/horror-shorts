@@ -43,6 +43,8 @@ jobs:
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
           ARTIFACT: ${{ inputs.artifact }}
+          # shell: python runs the script from runner/_temp, so put the repo's pipeline/ on the import path
+          PYTHONPATH: ${{ github.workspace }}/pipeline
         working-directory: pipeline
         shell: python
         run: |
