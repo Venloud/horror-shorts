@@ -360,5 +360,55 @@
       "wanted": "public"
     },
     "posted": "2026-09-30_0612"
+  },
+  {
+    "date": "2026-09-30_2022",
+    "story_id": "0a983614816e",
+    "title": "Bloody Mary Mirror Legend",
+    "premise": "A whispered name summons a ghostly figure in the mirror.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Bloody Mary (folklore)",
+    "source": null,
+    "prompt_file": null,
+    "setting": "dim mirror ritual",
+    "threat": "Bloody Mary",
+    "twist": "The love‑divination ritual became a death warning",
+    "score": null,
+    "seconds": 50.6,
+    "voice_speed": 1.1,
+    "writer": "groq (openai/gpt-oss-120b)",
+    "media_ids": [
+      "pexels:34807184",
+      "pexels:8063918",
+      "pexels:38923528",
+      "pexels:9709009",
+      "pexels:36298433"
+    ],
+    "visual_mode": "analog",
+    "render_style": "classic",
+    "story_shape": null,
+    "critic_score": null,
+    "visuals": {
+      "distinct": 14,
+      "longest_s": 5.8,
+      "longest_share": 0.107,
+      "longest_name": "scene_06b.png"
+    },
+    "buffered": "2026-09-30_2022",
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7691429694926800927",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "video_number": 29,
+    "youtube": {
+      "id": "03EE6zzqf04",
+      "url": "https://youtube.com/shorts/03EE6zzqf04",
+      "privacy": "public",
+      "wanted": "public"
+    },
+    "posted": "2026-09-30_2037"
   }
 ]
