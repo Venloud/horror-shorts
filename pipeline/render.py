@@ -7,6 +7,7 @@ from pathlib import Path
 from common import CONFIG, ROOT, log, media_duration, run
 from captions import font_setup
 import ai_motion
+import cutout
 import effects
 
 W, H, FPS = 1080, 1920, 30
@@ -318,6 +319,15 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
     for k, (img, s) in enumerate(zip(shot_imgs, seg)):
         length = s + (trans[k + 1][1] if k < len(shot_imgs) - 1 else 0)
         out = workdir / f"clip_{k:02d}.mp4"
+        spec = cutout.spec_for(img)  # cutout mode: an animated stage (plate + character) or a drawn screen
+        if spec:
+            try:
+                clips.append(cutout.render_shot(spec, length, out))
+                log(f"Shot {k}: {length:.1f}s cutout {spec['type']}"
+                    + (f" ({spec.get('pose_name')}, {spec.get('action')})" if spec.get("pose") else ""))
+                continue
+            except Exception as e:  # noqa: BLE001
+                log(f"Shot {k}: cutout shot failed ({str(e)[:100]}), using its preview still")
         if framings[k] != "full":  # fast mode: a punch-in / detail / pan crop of the same picture
             m = random.choice([mm for mm in motions if mm != last]); last = m
             clips.append(_scene_clip(img, length, m, out, framings[k]))

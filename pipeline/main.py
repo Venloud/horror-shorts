@@ -95,6 +95,7 @@ def main() -> int:
 
     import buffer
     import checkpoint
+    import cutout
     import images
     import media
     from captions import build_ass
@@ -145,14 +146,31 @@ def main() -> int:
 
         log(f"Final narration: {narration['duration']:.1f}s at speed {narration.get('speed')}")
         img_dir = workdir / "images" if testing else checkpoint.IMAGES  # images are kept as soon as they exist
-        media.fill_shots(story, img_dir, history)  # real stock video / archive photos first (never raises)
-        imgs = images.generate_images(story, img_dir)
+        imgs = None
+        if cutout.style_for(story) == "cutout":  # EXPERIMENTAL: pose-set characters on background plates
+            try:
+                if story.get("visual_mode") == "fast":
+                    story["visual_mode"] = "classic"  # fast mode's crops would cut the characters apart
+                imgs = cutout.build(story, img_dir, workdir)
+            except Exception as e:  # noqa: BLE001
+                traceback.print_exc()
+                log(f"Cutout mode failed ({type(e).__name__}: {str(e)[:200]}); rendering this video classic")
+                imgs = None
+        if imgs is None:
+            story["render_style"] = "classic"
+            media.fill_shots(story, img_dir, history)  # real stock video / archive photos first (never raises)
+            imgs = images.generate_images(story, img_dir)
         from render import END_CARD_DELAY, TAIL
         ass = build_ass(narration["words"], story.get("hook_overlay", ""),
                         narration["duration"] + TAIL, workdir / "captions.ass",
                         end_start=narration["duration"] + END_CARD_DELAY,
                         badge="TRUE STORY" if story.get("true_story") else None)
         video = render(story, imgs, narration, ass, workdir)
+        if story.get("render_style") == "cutout":  # review sheet for the owner (artifact)
+            try:
+                cutout.contact_sheet(video, workdir / "contact_sheet.png")
+            except Exception as e:  # noqa: BLE001
+                log(f"Contact sheet failed ({e})")
         (workdir / "story.json").write_text(json.dumps(story, indent=2, ensure_ascii=False))  # + media_assets
         caption = caption_text(story)
         _short_credit, visual_credits = media.credits(story.get("media_assets") or [])
@@ -183,6 +201,7 @@ def main() -> int:
             "hashtags": story.get("hashtags", []),
             "true_story": bool(story.get("true_story")), "seconds": round(narration["duration"], 1),
             "visual_credits": visual_credits, "visual_mode": story.get("visual_mode"),
+            "render_style": story.get("render_style", "classic"),
         }, indent=2, ensure_ascii=False))
 
         if testing:
@@ -215,6 +234,7 @@ def main() -> int:
             "writer": story.get("writer") or story.get("model"),  # which provider wrote it (gemini / groq)
             "media_ids": [a["id"] for a in story.get("media_assets") or []],
             "visual_mode": story.get("visual_mode"),  # A/B test: classic / fast / analog
+            "render_style": story.get("render_style", "classic"),  # classic / cutout (experimental)
             "story_shape": story.get("story_shape"),  # fiction shape rotation
             "critic_score": story.get("critic_score"),
             "visuals": story.get("_visuals"),  # distinct pictures + the longest one on screen

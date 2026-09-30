@@ -45,13 +45,16 @@ def _log_neurons(raw: bytes, headers) -> None:
         log(f"Cloudflare neuron headers: {extra}")
 
 
-def _cloudflare(prompt: str, seed: int) -> bytes:
+def _cloudflare(prompt: str, seed: int, fixed_seed: bool = False) -> bytes:
+    """fixed_seed=True sends the seed (cutout pose sets: same seed = same character); otherwise Cloudflare picks."""
     acct = env("CLOUDFLARE_ACCOUNT_ID")
     token = env("CLOUDFLARE_API_TOKEN")
+    body = {"prompt": prompt[:2000], "steps": int(CONFIG.get("image_steps", 4))}
+    if fixed_seed:
+        body["seed"] = int(seed) % 2_147_483_647
     for wait in (5, 15, 30, 0):
         r = requests.post(CF_URL.format(acct=acct), timeout=120,
-                          headers={"Authorization": f"Bearer {token}"},
-                          json={"prompt": prompt[:2000], "steps": int(CONFIG.get("image_steps", 4))})
+                          headers={"Authorization": f"Bearer {token}"}, json=body)
         if r.status_code == 200:
             break  # success: never scan the body, the base64 image can contain "4006" or anything else
         body = r.text[:300]
@@ -853,6 +856,75 @@ def check_image(path: Path, request: str, wait: bool = True, kind: str = "ai") -
     if answer.upper().startswith("NO"):
         return False, re.sub(r"^NO\W*", "", answer, flags=re.IGNORECASE).strip().lower()[:60] or "mismatch"
     return None, "unclear_answer"
+
+
+SAME_QUESTION = """Image 1 is the REFERENCE pose of a character. Image 2 is another pose.
+Is image 2 the same person (same face, hair, body type), in the same outfit, drawn in the same art style as image 1?
+Pose, angle and framing are allowed to differ. Answer exactly one:
+YES
+NO: <reason in 2-5 words>"""
+
+
+def _jpeg(path: Path, size: int = 512) -> bytes:
+    with Image.open(path) as im:
+        im = im.convert("RGB")
+        im.thumbnail((size, size))
+        buf = io.BytesIO()
+        im.save(buf, "JPEG", quality=85)
+        return buf.getvalue()
+
+
+def same_character(ref: Path, img: Path) -> tuple[bool | None, str]:
+    """Cutout pose sets: is img the same person / outfit / art style as ref? Gemini vision with both images,
+    Groq vision as backup. (True, "") / (False, reason) / (None, reason) = could not check."""
+    key = env("GEMINI_API_KEY", required=False)
+    gap = 60 / max(1, float(CONFIG.get("image_check_per_minute", 10))) - (time.time() - _STATE.get("qa_last", 0))
+    if gap > 0:
+        time.sleep(gap)
+    _STATE["qa_last"] = time.time()
+    a, b = _jpeg(ref), _jpeg(img)
+    models = CONFIG.get("llm_models", [])
+    model = CONFIG.get("image_check_model") or next((m for m in models if "lite" in m), models[0] if models else "")
+
+    def parse(answer: str, tag: str = "") -> tuple[bool | None, str]:
+        answer = re.sub(r"(?s)<think>.*?</think>", "", answer or "").strip()
+        if answer.upper().startswith("YES"):
+            return True, tag
+        if answer.upper().startswith("NO"):
+            return False, tag + (re.sub(r"^NO\W*", "", answer, flags=re.IGNORECASE).strip().lower()[:60] or "mismatch")
+        return None, "unclear_answer"
+
+    if key and not gemini_out():
+        try:
+            r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+                              headers={"x-goog-api-key": key}, timeout=20, json={
+                                  "contents": [{"role": "user", "parts": [
+                                      {"inline_data": {"mime_type": "image/jpeg", "data": base64.b64encode(a).decode()}},
+                                      {"inline_data": {"mime_type": "image/jpeg", "data": base64.b64encode(b).decode()}},
+                                      {"text": SAME_QUESTION}]}],
+                                  "generationConfig": {"temperature": 0, "maxOutputTokens": 20}})
+            if r.status_code == 200:
+                return parse(r.json()["candidates"][0]["content"]["parts"][0]["text"])
+            if r.status_code == 429:
+                note_gemini_429(r.text)
+        except Exception as e:  # noqa: BLE001
+            log(f"Pose consistency check (Gemini) failed ({str(e)[:80]})")
+    gkey = env("GROQ_API_KEY", required=False)
+    if not gkey or not CONFIG.get("groq_vision_qa", True):
+        return None, "no_checker"
+    try:
+        r = requests.post("https://api.groq.com/openai/v1/chat/completions", timeout=40,
+                          headers={"Authorization": f"Bearer {gkey}"}, json={
+                              "model": CONFIG.get("groq_vision_model", "qwen/qwen3.8-27b"), "temperature": 0,
+                              "max_tokens": 400, "messages": [{"role": "user", "content": [
+                                  {"type": "text", "text": SAME_QUESTION},
+                                  {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64," + base64.b64encode(a).decode()}},
+                                  {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64," + base64.b64encode(b).decode()}}]}]})
+        if r.status_code == 200:
+            return parse(r.json()["choices"][0]["message"]["content"], "groq: ")
+        return None, f"groq_http_{r.status_code}"
+    except Exception as e:  # noqa: BLE001
+        return None, f"groq_error {str(e)[:60]}"
 
 
 def _groq_check(jpeg: bytes, question: str) -> tuple[bool | None, str] | None:

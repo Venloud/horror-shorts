@@ -21,6 +21,10 @@ on:
         description: "Test build only: use this many real Cloudflare images (0-12) to check actual quality"
         type: number
         default: 0
+      render_style:
+        description: "EXPERIMENTAL: classic / cutout (pose-set characters on background plates); empty = config"
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -113,6 +117,27 @@ jobs:
           pip install -q torch --index-url https://download.pytorch.org/whl/cpu
           pip install -q -r requirements.txt
 
+      - name: Is cutout mode on for this build?
+        if: steps.check.outputs.build == 'true'
+        id: cutout
+        run: |
+          on=$(python -c "import json;c=json.load(open('config.json'));print('true' if c.get('render_style')=='cutout' or c.get('cutout_for_modes') else 'false')")
+          if [ "${{ inputs.render_style }}" = "cutout" ]; then on=true; fi
+          if [ "${{ inputs.render_style }}" = "classic" ]; then on=false; fi
+          echo "on=$on" >> "$GITHUB_OUTPUT"
+
+      - name: Cache cut-out models (rembg)
+        if: steps.check.outputs.build == 'true' && steps.cutout.outputs.on == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.u2net
+          key: rembg-models-v1
+
+      - name: Install cut-out tools (rembg; the code falls back to a gray-background key without it)
+        if: steps.check.outputs.build == 'true' && steps.cutout.outputs.on == 'true'
+        run: |
+          pip install -q rembg onnxruntime || echo "rembg install failed, the gray-background key is used"
+
       - name: Make video
         id: make
         if: steps.check.outputs.build == 'true'
@@ -125,6 +150,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           TEST_CF_IMAGES: ${{ inputs.test_cloudflare_images || 0 }}
           VISUAL_MODE: ${{ inputs.visual_mode || '' }}
+          RENDER_STYLE: ${{ inputs.render_style || '' }}
           # real media first (each source is skipped if its key is missing)
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
@@ -180,5 +206,8 @@ jobs:
             output/**/final.mp4
             output/**/caption.txt
             output/**/story.json
+            output/**/poses_sheet.png
+            output/**/plates_sheet.png
+            output/**/contact_sheet.png
           retention-days: 7
           if-no-files-found: ignore
