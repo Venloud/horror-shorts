@@ -28,7 +28,8 @@ def fit_duration(story: dict, workdir, narrate, allow_rewrite: bool) -> tuple[di
     """Voice it, then get the narration into config target_seconds: first by voice speed (config voice_speed_range),
     then, if still outside, by asking Gemini to trim/extend by the needed word count (max 2 tries)."""
     from story import resize_story
-    lo, hi = CONFIG.get("target_seconds", [50, 60])
+    from render import narration_window
+    lo, hi = narration_window()  # the video's target minus the end card
     smin, smax = CONFIG.get("voice_speed_range", [1.0, 1.2])
     narr = narrate(story, workdir)
 
@@ -175,9 +176,9 @@ def main() -> int:
             story["render_style"] = "classic"
             media.fill_shots(story, img_dir, history)  # real stock video / archive photos first (never raises)
             imgs = images.generate_images(story, img_dir)
-        from render import END_CARD_DELAY, TAIL
+        from render import END_CARD_DELAY, tail_for
         ass = build_ass(narration["words"], story.get("hook_overlay", ""),
-                        narration["duration"] + TAIL, workdir / "captions.ass",
+                        narration["duration"] + tail_for(narration["duration"]), workdir / "captions.ass",
                         end_start=narration["duration"] + END_CARD_DELAY,
                         badge="TRUE STORY" if story.get("true_story") else None)
         video = render(story, imgs, narration, ass, workdir)

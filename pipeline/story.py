@@ -103,7 +103,7 @@ def edit_story(story: dict, api_key: str, sfx_list: str, rules: str) -> dict:
     cands = [c.strip() for c in story.get("hook_candidates") or [] if c.strip()]
     hooks = HOOKS_TASK.format(candidates="\n".join(f"- {c}" for c in cands)) if len(cands) >= 2 else ""
     prompt = EDITOR_PROMPT.format(draft=json.dumps(draft, ensure_ascii=False, indent=1),
-                                  sfx_list=sfx_list, rules=rules, words="120 to 140", hooks=hooks)
+                                  sfx_list=sfx_list, rules=rules, words="{} to {}".format(*CONFIG.get("story_words", [138, 152])), hooks=hooks)
     try:
         edited = _run_models(prompt, api_key, temperature=0.5)
         for k in ("characters", "locations", "fact_ledger"):  # keep the sheets + fact ledger if the editor dropped them
@@ -490,7 +490,7 @@ SCORE_SCHEMA = {
 SCORE_MAX = {"grab": 15, "curiosity_gap": 10, "relatable_setup": 10, "one_wrong_thing": 10, "pressure_loop": 20,
              "choice": 10, "reframe": 10, "payoff_clarity": 10, "final_image": 5}
 
-SCORE_PROMPT = """You are a tough judge for a horror TikTok channel. Score this 50-60 second narration script.
+SCORE_PROMPT = """You are a tough judge for a horror TikTok channel. Score this one-minute (61-68 second) narration script.
 Be strict: most first drafts deserve 55-75. Only a genuinely gripping, clear, complete story scores 80+.
 
 SCORING (give each category a whole number up to its maximum):
@@ -764,7 +764,7 @@ def _creator_story(history: list[dict], api_key: str, sfx_list: str, inspiration
     prompt = file.read_text(encoding="utf-8").strip().replace("{subgenre}", subgenre) + f"""
 
 ## LENGTH
-The narration must be {lo} to {hi} words in total (about {round(lo / 2.4)}-{round(hi / 2.4)} seconds read aloud). Count them.
+The narration must be {lo} to {hi} words in total (about {round(lo / 2.3)}-{round(hi / 2.3)} seconds read aloud). Count them.
 
 ## STORYTELLING NOTES
 {{place_note}}- If the story builds up to a physical piece of proof (an object left behind, a photo, a mark), end on that proof so the viewer can see it. If it doesn't, don't force it.
@@ -882,6 +882,7 @@ def _true_story(facts: str, name: str, api_key: str, sfx_list: str) -> dict:
     """Fact-locked retelling of a real story; the model may refuse unsafe topics with title SKIP."""
     import mystery
     prompt = mystery.TRUE_PROMPT.format(channel=CONFIG["channel_name"], case=name, facts=mark_source(facts),
+                                        words="{} to {}".format(*CONFIG.get("story_words", [138, 152])),
                                         sfx_list=sfx_list)
     if CONFIG.get("story_upgrade", True):
         prompt += UPGRADE_TRUE

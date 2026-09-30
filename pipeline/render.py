@@ -14,6 +14,20 @@ W, H, FPS = 1080, 1920, 30
 XFADE = 0.4      # transition length between scenes
 MIN_SHOT = 1.2   # shortest a single picture stays on screen (seconds)
 TAIL = 3.4       # seconds after the last word (end card lives here)
+# config target_seconds = the FINISHED VIDEO's length (TikTok Creator Rewards needs > 60 s): [61, 68]. The narration
+# gets that minus the end-card tail; a narration that is still too short gets a longer end card, never a video
+# under the minimum.
+
+
+def narration_window() -> tuple[float, float]:
+    lo, hi = CONFIG.get("target_seconds", [61, 68])
+    return lo - TAIL, hi - TAIL
+
+
+def tail_for(narration_seconds: float) -> float:
+    """End-card tail: TAIL, or longer if the narration alone would leave the video under the minimum length."""
+    lo = CONFIG.get("target_seconds", [61, 68])[0]
+    return max(TAIL, lo + 0.3 - narration_seconds)
 END_CARD_DELAY = 0.7  # end card appears this long after the last word
 
 MOTIONS = {
@@ -274,7 +288,7 @@ def _vhs_ass(ass_path: Path, story: dict, total: float, workdir: Path) -> Path:
 
 
 def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Path, workdir: Path) -> Path:
-    total = narration["duration"] + TAIL
+    total = narration["duration"] + tail_for(narration["duration"])
     starts = [0.0] + [st for st, _ in narration["scene_times"][1:]]
     mode = story.get("visual_mode") if story.get("visual_mode") in VISUAL_MODES else "classic"
 
@@ -613,11 +627,13 @@ def visual_problems(path: Path, story: dict | None, dur: float) -> list[str]:
 def qa_gate(path: Path, ass_path: Path, narration: dict, story: dict | None = None) -> list[str]:
     """Checks a finished video must pass before it may enter the buffer. Returns the problems (empty = pass)."""
     problems = []
-    lo, hi = CONFIG.get("target_seconds", [50, 60])
+    lo, hi = CONFIG.get("target_seconds", [61, 68])
     dur = media_duration(path)
     problems += visual_problems(path, story, dur)
-    if not lo <= dur <= hi + TAIL + 0.5:  # narration target + the end-card tail
-        problems.append(f"duration {dur:.1f}s (want {lo}-{hi + TAIL + 0.5:.1f}s)")
+    if dur < lo:  # hard floor: never a video under the minimum (TikTok Creator Rewards: > 60 s)
+        problems.append(f"duration {dur:.1f}s is under the {lo}s minimum")
+    elif dur > hi + 0.5:
+        problems.append(f"duration {dur:.1f}s (want {lo}-{hi}s)")
     streams = run(["ffprobe", "-v", "error", "-show_entries", "stream=codec_type,width,height",
                    "-of", "csv=p=0", str(path)])
     if f"{W},{H}" not in streams:

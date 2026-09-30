@@ -12,7 +12,7 @@ TikTok (drafts) and YouTube Shorts, built and posted by GitHub Actions. The full
 - **Story.** Rotation `lore, mystery, lore, case, coldcase` (+ the owner's `inbox/`), written by Gemini with
   **Groq** (gpt-oss-120b) as backup. True stories are fact-locked to their source (fact ledger + fact check), get a
   critic pass, and never show a real victim's body. Trending topics (Wikipedia pageviews) are picked first.
-- **Voice.** Kokoro TTS (`am_michael`), fitted to 50-60 s.
+- **Voice.** Kokoro TTS (`am_michael`), fitted so every video is 61-68 s (TikTok Creator Rewards: over 60 s).
 - **Visuals.** Real media first (Pexels / Pixabay stock video, Wikimedia Commons / Smithsonian archive photos,
   credited), then AI images: Cloudflare FLUX -> free Hugging Face Spaces -> local SD-Turbo (max 6). Every image
   gets a vision QA check (Gemini, Groq as backup).

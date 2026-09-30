@@ -99,8 +99,13 @@ so a new session can pick up without starting over.
      states it (e.g. Beast of Gevaudan -> Teen Wolf). Never invent references.
    - Anti-repeat: `data/history.json` stores title, premise, setting, threat, twist; the last 40 are
      sent as "ALREADY USED".
-   - Length: `story_words` [120, 140] = about 50-60 s (the Kokoro voice reads ~2.2-2.4 words/sec at speed 1.1).
-     **Duration fit** (`main.fit_duration`): narration must land in config `target_seconds` [50, 60]. First the voice
+   - Length: TikTok Creator Rewards needs videos OVER 60 s. Config `target_seconds` [61, 68] = the FINISHED VIDEO
+     (narration + the 3.4 s end-card tail); `story_words` [138, 152] (prompts get the range from config; the
+     Kokoro voice reads ~2.2-2.4 words/sec at speed 1.1). NEVER under 61 s: `render.tail_for()` holds the end card
+     longer if a narration (e.g. an owner's exact-words script) is still too short, and the QA gate rejects any
+     video under 61.0 s (or over 68.5 s). (Until Sept 30 it was 50-60 s narration: #29 was ~54 s.)
+     **Duration fit** (`main.fit_duration`): narration must land in `render.narration_window()` = target_seconds
+     minus the tail (57.6-64.6 s). First the voice
      speed is adjusted within `voice_speed_range` [1.0, 1.2] (up to 3 re-voicings; Kokoro's length isn't linear in
      speed, so each try uses the measured speed response); if still outside, Gemini trims/extends by the needed
      word count (`story.resize_story`, keeps scene 1's first sentence + the TRUE line, max 2 tries). Exact-words
@@ -362,7 +367,7 @@ so a new session can pick up without starting over.
   (wav + timings, tied to a hash of the text + speed) and every finished image in `cache/checkpoint/`. A failed
   build's next try resumes the same story and only makes what's missing. Success writes `done.json`, so an older
   cache entry is never resumed; a story already in history is never resumed. Test builds skip checkpoints.
-- **QA gate** (`render.qa_gate`) before the buffer: 1080x1920, duration within target + end-card tail, audio
+- **QA gate** (`render.qa_gate`) before the buffer: 1080x1920, video 61-68 s (hard floor 61.0 s), audio
   stream, integrated loudness -18..-12 LUFS (ffmpeg ebur128; the mix is loudnormed to -14), caption lines in the
   burned-in .ass cover the words, 5-64 MB.
   **Visual variety** (`render.visual_problems`, after video #28 froze on ONE gavel frame for 56 of 62 s):
