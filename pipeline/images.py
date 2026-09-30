@@ -16,7 +16,7 @@ from pathlib import Path
 import requests
 from PIL import Image
 
-from common import CONFIG, ROOT, env, gemini_out, log, note_gemini_429
+from common import CONFIG, ROOT, env, gemini_model_out, gemini_out, log, note_gemini_429, strip_marks
 
 _STATE = {"cf_out": False, "spaces_out": False, "local_out": False, "cf_neurons": 0.0, "local_secs": 0.0,
           "clients": {}, "sd": None}
@@ -222,9 +222,8 @@ def cloudflare_has_quota() -> bool | None:
 def preflight() -> str | None:
     """Before spending Gemini + voice time: make sure at least one image source works. Returns a problem or None."""
     if test_mode():
-        n = test_cloudflare_images()
-        log(f"TEST MODE: {n} real Cloudflare image(s), then the local model" if n else
-            "TEST MODE: images come from the last run's cache or the local model (Cloudflare is never called)")
+        log("TEST MODE: fresh story + real Cloudflare images (not buffered)" if test_cloudflare_images() else
+            "TEST MODE: reusing the last saved story + images (Cloudflare is never called)")
         return None
     cf = cloudflare_has_quota()
     if cf is not False:
@@ -258,7 +257,11 @@ def save_cache(story: dict, images: list[list[Path]]) -> None:
         for p in shots:
             if p and p.exists():
                 shutil.copy(p, CACHE_DIR / p.name)
-    (CACHE_DIR / "story.json").write_text(json.dumps({"scenes": len(story.get("scenes", []))}))
+                for side in (p.with_suffix(".mp4"), p.with_suffix(".json")):  # stock clip + its credits
+                    if side.exists():
+                        shutil.copy(side, CACHE_DIR / side.name)
+    keep = {k: v for k, v in story.items() if not k.startswith("_")}
+    (CACHE_DIR / "story.json").write_text(json.dumps(keep, ensure_ascii=False))  # the whole story: tests reuse it
 
 
 def _cached_images(story: dict, outdir: Path) -> list[list[Path]] | None:
@@ -268,7 +271,8 @@ def _cached_images(story: dict, outdir: Path) -> list[list[Path]] | None:
         log("TEST MODE: no cached images yet")
         return None
     n = len(story["scenes"])
-    if json.loads(meta.read_text()).get("scenes") != n:
+    saved = json.loads(meta.read_text()).get("scenes")
+    if (len(saved) if isinstance(saved, list) else saved) != n:
         log(f"TEST MODE: cached images are for a different number of scenes, not {n}")
         return None
     per_scene = []
@@ -278,6 +282,9 @@ def _cached_images(story: dict, outdir: Path) -> list[list[Path]] | None:
             src = CACHE_DIR / f"scene_{i:02d}{s}.png"
             if src.exists():
                 shutil.copy(src, outdir / src.name)
+                for side in (src.with_suffix(".mp4"), src.with_suffix(".json")):
+                    if side.exists():
+                        shutil.copy(side, outdir / side.name)
                 shots.append(outdir / src.name)
         if not shots:
             return None
@@ -614,15 +621,17 @@ def _gemini_json(prompt: str, models: list[str] | None = None) -> dict | None:
     """Small JSON answer (duplicate-shot rewrite, shot shortening): Gemini, else the Groq writer model."""
     key = env("GEMINI_API_KEY", required=False)
     for model in (models or (CONFIG.get("llm_models") or [])[:2]) if key and not gemini_out() else []:
+        if gemini_model_out(model):
+            continue
         try:
             r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
                               headers={"x-goog-api-key": key}, timeout=60, json={
-                                  "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                                  "contents": [{"role": "user", "parts": [{"text": strip_marks(prompt)}]}],
                                   "generationConfig": {"temperature": 0.7, "responseMimeType": "application/json"}})
             if r.status_code == 200:
                 return json.loads(r.json()["candidates"][0]["content"]["parts"][0]["text"])
             log(f"Gemini ({model}) HTTP {r.status_code}")
-            if r.status_code == 429 and note_gemini_429(r.text):
+            if r.status_code == 429 and note_gemini_429(r.text, model):
                 break
         except Exception as e:  # noqa: BLE001
             log(f"Gemini ({model}) failed ({str(e)[:80]})")
@@ -830,7 +839,7 @@ def check_image(path: Path, request: str, wait: bool = True, kind: str = "ai") -
     except Exception as e:  # noqa: BLE001
         return None, f"error {str(e)[:60]}"
     question = (REAL_QA_QUESTION if kind == "real" else QA_QUESTION).format(request=request)
-    if gemini_out() or not key:  # Gemini's daily quota is gone (or no key): Groq vision right away
+    if gemini_model_out(model) or not key:  # this model's daily quota is gone (or no key): Groq vision right away
         return _groq_check(buf.getvalue(), question) or (None, "groq_unavailable")
     try:
         r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
@@ -843,7 +852,7 @@ def check_image(path: Path, request: str, wait: bool = True, kind: str = "ai") -
     except Exception as e:  # noqa: BLE001 (timeout / network: Groq instead, else skip)
         return _groq_check(buf.getvalue(), question) or (None, f"error {str(e)[:60]}")
     if r.status_code == 429:  # Gemini rate-limited: ask Groq's vision model instead (if set up), else skip
-        note_gemini_429(r.text)
+        note_gemini_429(r.text, model)
         return _groq_check(buf.getvalue(), question) or (None, "rate_limited")
     if r.status_code != 200:
         return None, f"http_{r.status_code}"
@@ -894,7 +903,7 @@ def same_character(ref: Path, img: Path) -> tuple[bool | None, str]:
             return False, tag + (re.sub(r"^NO\W*", "", answer, flags=re.IGNORECASE).strip().lower()[:60] or "mismatch")
         return None, "unclear_answer"
 
-    if key and not gemini_out():
+    if key and not gemini_model_out(model):
         try:
             r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
                               headers={"x-goog-api-key": key}, timeout=20, json={
@@ -906,7 +915,7 @@ def same_character(ref: Path, img: Path) -> tuple[bool | None, str]:
             if r.status_code == 200:
                 return parse(r.json()["candidates"][0]["content"]["parts"][0]["text"])
             if r.status_code == 429:
-                note_gemini_429(r.text)
+                note_gemini_429(r.text, model)
         except Exception as e:  # noqa: BLE001
             log(f"Pose consistency check (Gemini) failed ({str(e)[:80]})")
     gkey = env("GROQ_API_KEY", required=False)
@@ -980,11 +989,22 @@ class ImageQuotaWait(RuntimeError):
 
 
 def test_cloudflare_images() -> int:
-    """Test builds: how many real Cloudflare images to use (build.yml input test_cloudflare_images, 0-12)."""
+    """Test builds: 0 = reuse the last saved story + images (default, zero config); a large number = draw fresh
+    images like a real build (build.yml checkbox fresh_images, or nothing cached yet -> main.py sets TEST_FRESH)."""
+    fresh = (os.environ.get("TEST_FRESH") or "").strip().lower() in ("1", "true", "yes")
+    return 999 if test_mode() and fresh else 0
+
+
+def cached_story() -> dict | None:
+    """Test builds: the full story.json saved with the last built video's images, if there is one."""
+    meta = CACHE_DIR / "story.json"
     try:
-        return max(0, min(12, int(os.environ.get("TEST_CF_IMAGES") or 0))) if test_mode() else 0
-    except ValueError:
-        return 0
+        story = json.loads(meta.read_text())
+    except (OSError, ValueError):
+        return None
+    if not isinstance(story.get("scenes"), list) or not story.get("title"):
+        return None  # older cache: only the scene count was kept
+    return story
 
 
 def _quota_stop(detail: str) -> None:
@@ -1060,7 +1080,7 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
     told_two = False
     done_shots: list[str] = []
 
-    def cf_usable() -> bool:  # test builds: only the first `test_cloudflare_images` images
+    def cf_usable() -> bool:  # test builds: only with fresh_images (TEST_FRESH)
         return has_cf and not _STATE["cf_out"] and (not testing or count["cloudflare"] < test_cf)
 
     for n, (i, shot, raw_prompt) in enumerate(jobs):

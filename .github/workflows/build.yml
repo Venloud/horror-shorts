@@ -10,17 +10,17 @@ on:
   workflow_dispatch:
     inputs:
       test:
-        description: "Test build: no Cloudflare, not added to the buffer, no history (mp4 kept as an artifact)"
+        description: "Test build: not added to the buffer, no history (mp4 kept as an artifact); reuses the last story + images"
         type: boolean
         default: false
       visual_mode:
         description: "Force a visual mode for this build (classic / fast / analog); empty = the A/B rotation"
         type: string
         default: ""
-      test_cloudflare_images:
-        description: "Test build only: use this many real Cloudflare images (0-12) to check actual quality"
-        type: number
-        default: 0
+      fresh_images:
+        description: "Test build only: write a NEW story with fresh (Cloudflare) images. Off = reuse the last story + images"
+        type: boolean
+        default: false
       render_style:
         description: "EXPERIMENTAL: classic / cutout (pose-set characters on background plates); empty = config"
         type: string
@@ -148,7 +148,7 @@ jobs:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
-          TEST_CF_IMAGES: ${{ inputs.test_cloudflare_images || 0 }}
+          TEST_FRESH: ${{ inputs.fresh_images && 'true' || '' }}
           VISUAL_MODE: ${{ inputs.visual_mode || '' }}
           RENDER_STYLE: ${{ inputs.render_style || '' }}
           # real media first (each source is skipped if its key is missing)

@@ -23,21 +23,30 @@ so a new session can pick up without starting over.
 
 ## Pipeline (pipeline/main.py runs it in order)
 1. **Story** (`story.py`, `mystery.py`, `sources.py`) with the Gemini API (free tier). Models in `config.json` `llm_models`,
-   automatic fallback on 404/429/503/safety blocks. On 503 (overloaded) the FIRST model is retried up to 5 times
-   (~2 min wait, `_run_models(patient=True)`) because the backup model writes much worse image prompts.
+   automatic fallback on 404/429/503/safety blocks (see **Retries** below).
    Modes rotate by position through `story_modes` (a mode can repeat), currently `[lore, mystery, lore, case, coldcase]`;
    inbox runs don't count toward the rotation. Made-up fiction was dropped from the rotation on purpose: real
    legends with a pop-culture tie-in perform best (the Strigoi video got 232 views and 47% average watch time).
    Fiction is only the fallback when a mode fails (still behind the 80/100 quality gate).
    **Groq backup writer** (flag `groq_backup`, `groq_model` openai/gpt-oss-120b, only if GROQ_API_KEY):
-   `story.model_chain()` = first Gemini model -> Groq (OpenAI-compatible JSON mode, schema spelled out in the
-   prompt, same prompts + fact lock) -> the other Gemini models. One Groq failure = next model at once. Every story
+   `story.model_chain()` = every Gemini model in llm_models (minus ones whose DAILY quota is used up) -> Groq LAST
+   (OpenAI-compatible JSON mode, schema spelled out in the prompt, same prompts + fact lock).
+   **Retries** (`story._with_models`, used by every writer/JSON call): 500/503 "high demand" = the SAME model again
+   after 10 s, 30 s, 60 s, then the next Gemini model, then Groq; a Gemini per-minute 429 waits its retryDelay
+   (max 65 s, 3x); a per-DAY quota = next model at once. Groq 429 tokens/requests per MINUTE (TPM/RPM) = wait
+   Retry-After / "try again in Xs" (max 65 s) and resend the same request up to 3x; only per-DAY (TPD/RPD) counts
+   as exhausted. Groq gets a shorter source (`groq_source_chars` 3500; source text is wrapped in invisible markers
+   by `common.mark_source`, Gemini gets it whole) and `groq_max_tokens` 8000. If every writer failed only on rate
+   limits / overload -> `ApiBusy`: NOT a topic problem, no topic/mode switching; the build stops, the next one
+   retries (inbox items / cases stay queued). (Test build 15:37 on Sept 30: two 503s were misread as the daily
+   quota, then Groq TPM 429s made it hop through 4 topics in 15 s.) Every story
    logs "Written by gemini (...)" / "groq (...)"; history `writer`. Cloudflare text models are never used.
    Groq vision (`groq_vision_model` qwen/qwen3.8-27b, flag `groq_vision_qa`) is the backup image-QA checker when
    Gemini answers 429 or errors (log reason "groq..."); without it that image's QA is skipped as before.
-   **Gemini daily quota** (flag `gemini_quota_switch`, `common.note_gemini_429`): a 429 "exceeded your current
-   quota" that isn't a per-minute limit marks Gemini out for the rest of the run: model_chain() = Groq only, image
-   QA goes straight to Groq vision, dedupe/shorten helpers use Groq; no per-call retries.
+   **Gemini daily quota** (flag `gemini_quota_switch`, `common.note_gemini_429(body, model)`): ONLY a 429 whose body
+   names a per-DAY quota ("PerDay" quota id / "per day") counts, and only for THAT model ("exceeded your current
+   quota" alone is also the per-minute text; a 503 never counts). When every Gemini model is out: Groq only, image
+   QA straight to Groq vision, dedupe/shorten helpers use Groq.
    - `fiction` (fallback only): written with the OWNER'S OWN instructions in `prompts/fiction_*.txt` (Reddit-style
      thriller/suspense/mystery). `fiction_creepy_job.txt` is his text verbatim; `fiction_reddit_thriller.txt` is a
      widened version with `{subgenre}`. `subgenre_prompts` in config maps subgenres to files.
@@ -315,10 +324,14 @@ so a new session can pick up without starting over.
   Inbox items / cases / history are marked used when the video enters the buffer. A failed build exits quietly
   (next run retries); the phone alert only fires when the buffer is empty. The images + story are saved to the
   Actions cache (`last-images-*`) after each build.
-- `build.yml` "test" input (workflow_dispatch): no Cloudflare (reuses the cached images if the scene count
-  matches, else local SD-Turbo), not added to the buffer, no history, mp4 kept as an artifact, ntfy "[TEST]".
-  `test_cloudflare_images` input (0-12, default 0; env TEST_CF_IMAGES): a test build uses that many real
-  Cloudflare images first (no cache reuse then) to check actual quality.
+- `build.yml` "test" input (workflow_dispatch): not added to the buffer, no history, mp4 kept as an artifact,
+  ntfy "[TEST]". ZERO CONFIG: a test reuses the last built video's full story.json + images (`images.save_cache` /
+  `cached_story`; log "Test: reused story <id>"; no Cloudflare, no story writing). Checkbox `fresh_images`
+  (default off; env TEST_FRESH) = a NEW story with real Cloudflare images like a production build; the same
+  happens automatically when nothing is cached (older caches only kept the scene count). The old
+  `test_cloudflare_images` count input is gone.
+- `notify.notify` never crashes on a missing story (a failure while writing it): clean "FAILED" alert with the
+  error text.
 - `daily.yml` (`pipeline/publish.py`) does NO generation: oldest buffered video -> TikTok + YouTube Shorts ->
   delete from buffer -> both results + "posted" time saved in history -> phone alert with the YouTube link
   (+ "buffer low" alert at 1 left). Only if both platforms fail does the video stay in the buffer.
@@ -372,6 +385,19 @@ so a new session can pick up without starting over.
   + push, 3 tries;
   no rebase conflicts. Note: GitHub keeps only ONE pending run per concurrency group; a newer queued run
   replaces an older pending one.
+
+## EXPERIMENTAL: cutout render style (`cutout.py`, off by default)
+- Switch: config `render_style` (classic | cutout), build.yml input `render_style` (env RENDER_STYLE),
+  `cutout_for_modes` (e.g. ["coldcase"]). Any cutout failure -> logged, the video renders classic.
+- Characters (max 2, adults) = a pose set drawn once (Cloudflare, fixed seed, look word-for-word, plain gray
+  background), each pose checked against pose 1 (`images.same_character`, Gemini / Groq vision; NO -> redraw up to
+  2x, else dropped -> fallback pose), cut out with rembg (isnet-anime, u2net; gray-key fallback; a nearly empty
+  cut-out drops the pose), composited on empty plates (wide/medium/detail per location, reused). Inserts = AI
+  object close-ups; screens (phone chat / note / laptop) drawn by code with only words the narration says.
+  Compositor: plate 80% brightness/saturation, character 107%, room tint, rim light, contact shadow, breathing,
+  enter/walk/turn moves. Budget `cutout_max_images` 22 (hard `cutout_hard_max_images` 26). Review artifacts:
+  poses_sheet.png, plates_sheet.png, contact_sheet.png. STATUS: offline test found a degenerate-cut-out bug (now
+  guarded); not yet verified end to end; not used in production.
 
 ## Schedule
 - 2 videos a day, **11:40 AM and 8:40 PM New York**. GitHub's own cron was unreliable (4 h late / skipped),

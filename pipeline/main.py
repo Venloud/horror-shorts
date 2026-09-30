@@ -116,7 +116,18 @@ def main() -> int:
         if problem:
             raise RuntimeError(problem)
 
-        story = None if testing else checkpoint.resume(history)
+        story, reused = None, False
+        if testing and not images.test_cloudflare_images():  # zero-config test: the last built story + images
+            story = images.cached_story()
+            if story:
+                reused = True
+                log(f"Test: reused story {story.get('story_id') or checkpoint.story_id(story)} "
+                    f"('{story.get('title')}'); tick fresh_images for a new story + images")
+            else:
+                os.environ["TEST_FRESH"] = "true"  # nothing cached yet: a new story with real images
+                log("Test: nothing cached yet, writing a new story with fresh images")
+        elif not testing:
+            story = checkpoint.resume(history)
         if story is None:
             story = write_story(history)
             if not testing:
@@ -156,6 +167,10 @@ def main() -> int:
                 traceback.print_exc()
                 log(f"Cutout mode failed ({type(e).__name__}: {str(e)[:200]}); rendering this video classic")
                 imgs = None
+        if imgs is None and reused:  # test build: the cached images belong to this very story
+            story["render_style"] = "classic"
+            img_dir.mkdir(parents=True, exist_ok=True)
+            imgs = images._cached_images(story, img_dir)
         if imgs is None:
             story["render_style"] = "classic"
             media.fill_shots(story, img_dir, history)  # real stock video / archive photos first (never raises)

@@ -268,4 +268,5 @@ def build_prompt(channel: str, case: str | dict, sfx_list: str = "none", kind: s
         facts = fetch_facts(case)
     log(f"Topic: {case} ({len(facts)} chars of source)")
     template = LORE_PROMPT if kind == "lore" else MYSTERY_PROMPT
-    return template.format(channel=channel, case=case, facts=facts, sfx_list=sfx_list), facts
+    from common import mark_source
+    return template.format(channel=channel, case=case, facts=mark_source(facts), sfx_list=sfx_list), facts

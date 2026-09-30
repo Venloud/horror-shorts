@@ -68,8 +68,9 @@ it. `TIKTOK_REFRESH_TOKEN` is saved for you.
 ## 6. Test
 
 - **Build video (buffer) -> Run workflow** with **test** ticked: nothing goes into the buffer or history; the mp4 is
-  kept as a run artifact. Optional inputs: `test_cloudflare_images` (0-12 real Cloudflare images) and
-  `visual_mode` (classic / fast / analog).
+  kept as a run artifact. By default it re-renders the last built story with its saved images (no API cost).
+  Tick **fresh_images** for a new story with real images. Optional: `visual_mode` (classic / fast / analog),
+  `render_style` (classic / cutout, experimental).
 - **YouTube analytics -> Run workflow**: `Analytics: N Shorts saved`, or `analytics scope missing` (redo step 5).
   An API failure turns the run red with the exact error.
 

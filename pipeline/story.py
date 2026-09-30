@@ -7,7 +7,8 @@ from collections import Counter
 
 import requests
 
-from common import CONFIG, env, gemini_out, log, note_gemini_429
+from common import (CONFIG, env, gemini_model_out, gemini_out, log, mark_source, note_gemini_429, strip_marks,
+                    trim_sources)
 
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
@@ -194,13 +195,19 @@ def _call_gemini(model: str, prompt: str, api_key: str, temperature: float = 1.0
             "HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH",
             "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT")],
     }
-    if gemini_out() and any(m.startswith("groq:") for m in model_chain()):
-        raise RuntimeError(f"{model} skipped: Gemini daily quota used up (429)")
+    if gemini_model_out(model):
+        raise DailyLimit(f"{model} skipped: its daily quota is used up")
+    body["contents"][0]["parts"][0]["text"] = strip_marks(prompt)
     _gemini_pace()
     r = requests.post(GEMINI_URL.format(model=model), json=body, timeout=120,
                       headers={"x-goog-api-key": api_key})
     if r.status_code == 429:
-        note_gemini_429(r.text)
+        note_gemini_429(r.text, model)
+        if gemini_model_out(model):
+            raise DailyLimit(f"{model} HTTP 429 daily quota: {r.text[:300]}")
+        raise RateLimited(f"{model} HTTP 429 (per-minute limit): {r.text[:300]}", _retry_after(r))
+    if r.status_code in (500, 502, 503, 504):
+        raise Overloaded(f"{model} HTTP {r.status_code}: {r.text[:300]}")
     if r.status_code != 200:
         raise RuntimeError(f"{model} HTTP {r.status_code}: {r.text[:400]}")
     data = r.json()
@@ -215,16 +222,54 @@ def _call_gemini(model: str, prompt: str, api_key: str, temperature: float = 1.0
     return json.loads(text) if as_json else text.strip()
 
 
+class ApiBusy(RuntimeError):
+    """Every writer is rate-limited / overloaded right now. NOT a topic problem: never switch topics on it; the
+    build stops and the next one (or the checkpoint) tries again."""
+
+
+class Overloaded(RuntimeError):
+    """HTTP 500/502/503/504 ("model is currently experiencing high demand"): retry the same model with backoff."""
+
+
+class RateLimited(RuntimeError):
+    """A short rate limit (Gemini per-minute 429, Groq tokens/requests per MINUTE): wait and retry."""
+
+    def __init__(self, msg: str, wait: float | None = None):
+        super().__init__(msg)
+        self.wait = wait
+
+
+class DailyLimit(RuntimeError):
+    """A per-DAY quota (Gemini PerDay 429, Groq TPD/RPD): this model is done for the run, next model."""
+
+
+def _retry_after(r) -> float | None:
+    """Seconds to wait from a Retry-After header, Gemini's retryDelay ("37s") or Groq's "try again in 1m2.5s"."""
+    try:
+        h = r.headers.get("retry-after")
+        if h:
+            return float(h)
+    except (TypeError, ValueError):
+        pass
+    text = getattr(r, "text", "") or ""
+    m = re.search(r'retryDelay"?\s*:\s*"(\d+(?:\.\d+)?)s"', text)
+    if m:
+        return float(m.group(1))
+    m = re.search(r"try again in\s+(?:(\d+)m)?\s*(\d+(?:\.\d+)?)\s*(ms|s)\b", text, re.IGNORECASE)
+    if m:
+        secs = float(m.group(2)) / (1000 if m.group(3).lower() == "ms" else 1)
+        return secs + 60 * int(m.group(1) or 0)
+    return None
+
+
 def model_chain() -> list[str]:
-    """Story writers in order: config llm_models, with Groq (flag groq_backup, only if GROQ_API_KEY is set) right
-    after the first Gemini model. Cloudflare's text models are never used."""
-    models = list(CONFIG["llm_models"])
-    groq = CONFIG.get("groq_backup", True) and env("GROQ_API_KEY", required=False)
-    if groq:
-        models.insert(1, "groq:" + CONFIG.get("groq_model", "openai/gpt-oss-120b"))
-    if gemini_out():  # daily quota used up earlier in this run: Groq only, no more Gemini calls
-        models = [m for m in models if m.startswith("groq:")] or models
-    return models
+    """Story writers in order: every Gemini model in config llm_models (skipping ones whose DAILY quota is used
+    up), then Groq (flag groq_backup, only if GROQ_API_KEY is set) as the last resort. Cloudflare's text models
+    are never used."""
+    models = [m for m in CONFIG["llm_models"] if not gemini_model_out(m)]
+    if CONFIG.get("groq_backup", True) and env("GROQ_API_KEY", required=False):
+        models.append("groq:" + CONFIG.get("groq_model", "openai/gpt-oss-120b"))
+    return models or list(CONFIG["llm_models"])
 
 
 def _call_model(model: str, prompt: str, api_key: str, temperature: float = 1.0, as_json: bool = True, schema=None):
@@ -239,11 +284,28 @@ def _call_groq(model: str, prompt: str, temperature: float = 1.0, as_json: bool 
     if as_json:
         prompt += ("\n\nReply with ONLY one JSON object (no markdown) that follows this JSON schema exactly, "
                    "same field names:\n" + json.dumps(schema or SCHEMA))
+    # Groq's free tier counts tokens per MINUTE: send a shorter source text (instructions stay whole)
+    prompt = strip_marks(trim_sources(prompt, int(CONFIG.get("groq_source_chars", 3500))))
     body = {"model": model, "messages": [{"role": "user", "content": prompt}], "temperature": min(1.0, temperature),
-            "max_tokens": 16000}  # gpt-oss reasons before it answers: leave room for both
+            "max_tokens": int(CONFIG.get("groq_max_tokens", 8000))}  # gpt-oss reasons first: room for both
     if as_json:
         body["response_format"] = {"type": "json_object"}
-    r = requests.post(GROQ_URL, json=body, timeout=120, headers={"Authorization": f"Bearer {env('GROQ_API_KEY')}"})
+    for attempt in range(4):
+        r = requests.post(GROQ_URL, json=body, timeout=120,
+                          headers={"Authorization": f"Bearer {env('GROQ_API_KEY')}"})
+        if r.status_code != 429:
+            break
+        text = r.text or ""
+        # Only a per-DAY limit (tokens/requests per day) means Groq is done; per-MINUTE limits = wait + retry.
+        if re.search(r"per day|\bTPD\b|\bRPD\b|tokens_per_day|requests_per_day", text, re.IGNORECASE):
+            raise DailyLimit(f"groq:{model} HTTP 429 daily limit: {text[:300]}")
+        wait = min(65.0, max(2.0, _retry_after(r) or 20.0 * (attempt + 1)))
+        if attempt == 3:
+            raise RateLimited(f"groq:{model} HTTP 429 (per-minute limit, 3 retries): {text[:300]}", wait)
+        log(f"Groq rate limit (per minute): waiting {wait:.0f}s, then the same request again ({attempt + 1}/3)")
+        time.sleep(wait)
+    if r.status_code in (500, 502, 503, 504):
+        raise Overloaded(f"groq:{model} HTTP {r.status_code}: {r.text[:300]}")
     if r.status_code != 200:
         raise RuntimeError(f"groq:{model} HTTP {r.status_code}: {r.text[:300]}")
     text = r.json()["choices"][0]["message"]["content"] or ""
@@ -273,38 +335,67 @@ def pick_mode(history: list[dict]) -> str:
     return modes[count % len(modes)]
 
 
-def _run_models(prompt: str, api_key: str, temperature: float, patient: bool = True) -> dict:
-    errors = []
-    for idx, model in enumerate(model_chain()):
-        # The first model writes far better image prompts: when it's only overloaded (503), wait for it (~2 min).
-        wait_503 = patient and idx == 0
-        for attempt in range(5 if wait_503 else 3):
+BACKOFF_503 = (10, 30, 60)  # overloaded model: retry the SAME model after 10 s, 30 s, 60 s, then the next model
+
+
+def _with_models(call, what: str = "story"):
+    """Run call(model) down model_chain() (every Gemini model first, Groq last):
+    - 500/503 "high demand": same model again after 10 s, 30 s, 60 s, then the next model;
+    - per-minute 429: wait the time the API asks for (max 65 s) and retry the same model (max 3 times);
+    - per-DAY quota: next model at once; 404 / other errors: up to 3 tries; BLOCKED twice: next model.
+    If every model failed only on rate limits / overload, raise ApiBusy (not a topic problem)."""
+    errors, busy_only = [], True
+    for model in model_chain():
+        overloads = rates = attempt = 0
+        while True:
+            attempt += 1
             try:
-                story = _call_model(model, prompt, api_key, temperature)
-                _validate(story)
-                story["model"] = model
-                story["writer"] = _writer(model)
-                log(f"Written by {story['writer']}")
-                return story
+                return call(model)
             except Exception as e:  # noqa: BLE001
-                errors.append(f"{model}#{attempt + 1}: {str(e)[:300]}")
-                log(f"Story attempt failed: {str(e)[:200]}")
-                if "404" in str(e) or model.startswith("groq:"):
-                    break  # model retired / Groq backup failed once: skip straight to the next one
-                if "429" in str(e):
-                    break  # daily free quota used up for this model: go straight to the next one
-                if "BLOCKED" in str(e) and attempt >= 1:
-                    break  # topic refused twice: try the next model once, then give up on this topic
-                if "503" in str(e) and wait_503:
-                    if attempt < 4:
-                        time.sleep(min(40, 10 * (attempt + 1)))
-                    continue  # best model overloaded: wait for it, up to 5 tries
-                if "503" in str(e) and attempt >= 1:
-                    break  # backup model overloaded: don't wait, move to the next model
-                if attempt >= 2:
-                    break  # other errors: 3 tries per model, as before
-                time.sleep(8 * (attempt + 1))
-    raise RuntimeError("Could not write a story:\n" + "\n".join(errors))
+                msg = str(e)
+                errors.append(f"{model}#{attempt}: {msg[:300]}")
+                log(f"{what.capitalize()} attempt failed: {msg[:200]}")
+                if isinstance(e, Overloaded) or ("503" in msg and "high demand" in msg.lower()):
+                    if overloads < len(BACKOFF_503):
+                        wait = BACKOFF_503[overloads]
+                        overloads += 1
+                        log(f"{model} is overloaded: trying it again in {wait}s ({overloads}/{len(BACKOFF_503)})")
+                        time.sleep(wait)
+                        continue
+                    break
+                if isinstance(e, RateLimited):
+                    if rates < 3 and not model.startswith("groq:"):  # Groq already waited + retried 3 times
+                        rates += 1
+                        wait = min(65.0, max(2.0, e.wait or 20.0))
+                        log(f"{model} rate limit: waiting {wait:.0f}s, then again ({rates}/3)")
+                        time.sleep(wait)
+                        continue
+                    break
+                if isinstance(e, DailyLimit):
+                    break
+                busy_only = False
+                if "404" in msg or (model.startswith("groq:") and attempt >= 2):
+                    break
+                if "BLOCKED" in msg and attempt >= 2:
+                    break
+                if attempt >= 3:
+                    break
+                time.sleep(6 * attempt)
+    detail = "\n".join(errors)
+    if busy_only and errors:
+        raise ApiBusy(f"Every writer is rate-limited or overloaded right now (not a topic problem):\n{detail}")
+    raise RuntimeError(f"Could not write a {what}:\n{detail}")
+
+
+def _run_models(prompt: str, api_key: str, temperature: float, patient: bool = True) -> dict:
+    def call(model):
+        story = _call_model(model, prompt, api_key, temperature)
+        _validate(story)
+        story["model"] = model
+        story["writer"] = _writer(model)
+        log(f"Written by {story['writer']}")
+        return story
+    return _with_models(call)
 
 
 def sfx_names() -> str:
@@ -521,26 +612,28 @@ class StoryDiscarded(Exception):
 
 def _json_call(prompt: str, api_key: str, temperature: float = 0.3) -> dict:
     """A small JSON answer (premise pitch, critic scores) from the model chain."""
-    last = None
-    for model in model_chain():
-        try:
-            if model.startswith("groq:"):
-                return _call_groq(model[5:], prompt, temperature, True, {"type": "OBJECT"})
-            if gemini_out():
-                continue
-            gen = {"temperature": temperature, "responseMimeType": "application/json"}
-            _gemini_pace()
-            r = requests.post(GEMINI_URL.format(model=model), timeout=90, headers={"x-goog-api-key": api_key},
-                              json={"contents": [{"role": "user", "parts": [{"text": prompt}]}], "generationConfig": gen})
-            if r.status_code == 429:
-                note_gemini_429(r.text)
-            if r.status_code != 200:
-                raise RuntimeError(f"{model} HTTP {r.status_code}")
-            parts = r.json()["candidates"][0]["content"]["parts"]
-            return json.loads("".join(p.get("text", "") for p in parts))
-        except Exception as e:  # noqa: BLE001
-            last = e
-    raise RuntimeError(f"no model answered: {str(last)[:200]}")
+    def call(model):
+        if model.startswith("groq:"):
+            return _call_groq(model[5:], prompt, temperature, True, {"type": "OBJECT"})
+        if gemini_model_out(model):
+            raise DailyLimit(f"{model}: daily quota used up")
+        gen = {"temperature": temperature, "responseMimeType": "application/json"}
+        _gemini_pace()
+        r = requests.post(GEMINI_URL.format(model=model), timeout=90, headers={"x-goog-api-key": api_key},
+                          json={"contents": [{"role": "user", "parts": [{"text": strip_marks(prompt)}]}],
+                                "generationConfig": gen})
+        if r.status_code == 429:
+            note_gemini_429(r.text, model)
+            if gemini_model_out(model):
+                raise DailyLimit(f"{model} HTTP 429 daily quota")
+            raise RateLimited(f"{model} HTTP 429 (per-minute limit)", _retry_after(r))
+        if r.status_code in (500, 502, 503, 504):
+            raise Overloaded(f"{model} HTTP {r.status_code}: {r.text[:200]}")
+        if r.status_code != 200:
+            raise RuntimeError(f"{model} HTTP {r.status_code}")
+        parts = r.json()["candidates"][0]["content"]["parts"]
+        return json.loads("".join(p.get("text", "") for p in parts))
+    return _with_models(call, "JSON answer")
 
 
 _PACE = {"last": 0.0}
@@ -641,25 +734,13 @@ def _prompt_files() -> list:
 
 
 def _run_text(prompt: str, api_key: str, lo: int, hi: int, patient: bool = True) -> tuple[str, str]:
-    errors = []
-    for idx, model in enumerate(model_chain()):
-        # The first model writes far better image prompts: when it's only overloaded (503), wait for it (~2 min).
-        wait_503 = patient and idx == 0
-        for attempt in range(5 if wait_503 else 3):
-            try:
-                text = _call_model(model, prompt, api_key, 1.0, as_json=False)
-                n = len(text.split())
-                if not lo * 0.8 <= n <= hi * 1.3:
-                    raise ValueError(f"story length {n} words, wanted {lo}-{hi}")
-                return text, model
-            except Exception as e:  # noqa: BLE001
-                errors.append(f"{model}#{attempt + 1}: {str(e)[:200]}")
-                log(f"Story attempt failed: {str(e)[:200]}")
-                if "404" in str(e) or "429" in str(e) or ("BLOCKED" in str(e) and attempt >= 1) or \
-                        ("503" in str(e) and attempt >= 1) or model.startswith("groq:"):
-                    break
-                time.sleep(6 * (attempt + 1))
-    raise RuntimeError("Could not write a story:\n" + "\n".join(errors))
+    def call(model):
+        text = _call_model(model, prompt, api_key, 1.0, as_json=False)
+        n = len(text.split())
+        if not lo * 0.8 <= n <= hi * 1.3:
+            raise ValueError(f"story length {n} words, wanted {lo}-{hi}")
+        return text, model
+    return _with_models(call)
 
 
 def _creator_story(history: list[dict], api_key: str, sfx_list: str, inspiration: str | None,
@@ -718,7 +799,7 @@ The narration must be {lo} to {hi} words in total (about {round(lo / 2.4)}-{roun
     if inspiration:
         prompt += ("\n## INSPIRATION\nTake only the core idea and the feeling of this piece and write a NEW, ORIGINAL story "
                    "from it: new characters, names, setting details, twist and ending. Never copy its sentences.\n\"\"\"\n"
-                   + inspiration[:6000] + "\n\"\"\"\n")
+                   + mark_source(inspiration[:6000]) + "\n\"\"\"\n")
     bar = int(CONFIG.get("story_min_score", 80))
     tries = int(CONFIG.get("story_max_drafts", 3))
     best = None  # (score, script, model, review)
@@ -800,7 +881,8 @@ class UseAsInspiration(Exception):
 def _true_story(facts: str, name: str, api_key: str, sfx_list: str) -> dict:
     """Fact-locked retelling of a real story; the model may refuse unsafe topics with title SKIP."""
     import mystery
-    prompt = mystery.TRUE_PROMPT.format(channel=CONFIG["channel_name"], case=name, facts=facts, sfx_list=sfx_list)
+    prompt = mystery.TRUE_PROMPT.format(channel=CONFIG["channel_name"], case=name, facts=mark_source(facts),
+                                        sfx_list=sfx_list)
     if CONFIG.get("story_upgrade", True):
         prompt += UPGRADE_TRUE
     story = _run_models(prompt, api_key, temperature=0.6)
@@ -813,7 +895,7 @@ def _true_story(facts: str, name: str, api_key: str, sfx_list: str) -> dict:
              "ONLY facts from this source, never invent details; only call someone guilty if convicted or confessed; "
              "respectful; no gore; third person; plain English; real people drawn in the illustrated style from basic "
              "public facts only (never a copy of a private person's real face), each with a fixed character-sheet "
-             "look.\nSOURCE:\n" + facts[:6000])
+             "look.\nSOURCE:\n" + mark_source(facts[:6000]))
     story = edit_story(story, api_key, sfx_list, rules)
     story = fix_hook(story, api_key, sfx_list, rules)
     story = critic_pass(story, api_key, "true", rules)  # before the fact check, which then checks any rewrite
@@ -981,7 +1063,7 @@ def fact_check(story: dict, source: str, api_key: str, exact: bool = False) -> d
     log(f"Fact check: not in the source: {', '.join(items)}; correcting from the source")
     draft = {k: story[k] for k in SCHEMA["properties"] if k in story}
     try:
-        fixed = _run_models(FACT_PROMPT.format(items=", ".join(items), source=source[:8000],
+        fixed = _run_models(FACT_PROMPT.format(items=", ".join(items), source=mark_source(source[:8000]),
                                                draft=json.dumps(draft, ensure_ascii=False, indent=1)),
                             api_key, temperature=0.2)
     except Exception as e:  # noqa: BLE001
@@ -1013,6 +1095,7 @@ def _transient(e: Exception) -> bool:
         return True
     msg = str(e).lower()
     return any(k in msg for k in ("503", "429", "high demand", "quota", "timed out", "timeout", "connection",
+                                  "rate-limited", "overloaded",
                                   "temporarily", "unavailable", "could not write a story"))
 
 
@@ -1073,6 +1156,8 @@ def _write_story(history: list[dict], skipped: list[dict]) -> dict:
                 # Gemini busy / quota / network, or the owner's own script: keep it queued for the next build.
                 log(f"Inbox item {item['key']} NOT made this time, it stays queued for the next build. "
                     f"Reason: {reason}")
+                if isinstance(e, ApiBusy):
+                    raise
             else:
                 log(f"Inbox item {item['key']} SKIPPED for good. Reason: {reason}")
                 skipped.append({"source": item["key"], "skipped": True, "reason": reason})
@@ -1086,6 +1171,9 @@ def _write_story(history: list[dict], skipped: list[dict]) -> dict:
                 story = _true_story(sources.case_facts(case), case["title"], api_key, sfx_list)
                 story.update({"mode": "case", "case": case["title"], "subgenre": "true crime case file"})
                 return story
+            except ApiBusy:
+                log(f"Case '{case['title']}' not made now (writers rate-limited / overloaded); it stays available")
+                raise
             except UseAsInspiration as e:
                 log(f"'{case['title']}' is too sensitive to retell: using it as inspiration for an original story")
                 skipped.append({"case": case["title"], "skipped": True})
@@ -1108,6 +1196,9 @@ def _write_story(history: list[dict], skipped: list[dict]) -> dict:
             words = sum(len(s["narration"].split()) for s in story["scenes"])
             log(f"Cold case '{story['title']}' ({words} words, {len(story['scenes'])} scenes) via {story['model']}")
             return story
+        except ApiBusy:
+            log("Cold case: the writers are rate-limited / overloaded: stopping (not a reason to switch topics)")
+            raise
         except Exception as e:  # noqa: BLE001 (below the bar or failed): make a legend instead
             log(f"Cold case failed ({str(e)[:200]}): making a legend video instead")
             story = _real_story(history, "lore", api_key, sfx_list)
@@ -1149,7 +1240,7 @@ def _real_story(history: list[dict], mode: str, api_key: str, sfx_list: str) -> 
                 story = _run_models(prompt, api_key, temperature=0.6)
                 rules = ((f'scene 1 = the hook sentence, then the exact words "{TRUE_OPENER}"; ' if mode == "mystery" else "")
                          + "ONLY facts from this source, never invent details; theories/legends clearly labelled; "
-                         "no accusing real people; respectful; no gore; third person; plain English.\nSOURCE:\n" + facts[:6000])
+                         "no accusing real people; respectful; no gore; third person; plain English.\nSOURCE:\n" + mark_source(facts[:6000]))
                 story = edit_story(story, api_key, sfx_list, rules)
                 story = fix_hook(story, api_key, sfx_list, rules)
                 story = critic_pass(story, api_key, "true" if mode == "mystery" else "legend", rules)
@@ -1162,6 +1253,10 @@ def _real_story(history: list[dict], mode: str, api_key: str, sfx_list: str) -> 
                     story.update({"source": lead["url"], "source_name": lead.get("source")})
                 log(f"{mode.title()} '{story['title']}' ({len(story['scenes'])} scenes) via {story['model']}")
                 return story
+            except ApiBusy:
+                log(f"{mode}: the writers are rate-limited / overloaded, not a topic problem: stopping here "
+                    "(the next build tries again)")
+                raise
             except Exception as e:  # noqa: BLE001
                 log(f"{mode} mode failed ({str(e)[:200]}); trying another topic")
                 history = history + ([{"case": case["title"], "source": case["url"]}] if isinstance(case, dict)

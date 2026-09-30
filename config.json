@@ -75,6 +75,8 @@
   "groq_vision_qa": true,
   "groq_vision_model": "qwen/qwen3.8-27b",
   "groq_vision_per_minute": 20,
+  "groq_source_chars": 3500,
+  "groq_max_tokens": 8000,
   "llm_models": ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-flash-latest"],
 
   "subgenres": [

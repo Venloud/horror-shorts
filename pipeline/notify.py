@@ -95,26 +95,31 @@ def notify_text(title: str, body: str, warn: bool = False) -> None:
 def notify(story: dict, result: dict | None, error: str | None = None, prefix: str = "", note: str = "",
            video_number: int | None = None) -> None:
     """video_number: the channel's own post counter (data/counter.json), only for videos that actually went out."""
+    story = story if isinstance(story, dict) else {}  # a failure before any story existed (e.g. writing it)
     url = run_url()
     download = f"{url}#artifacts" if url else None
-    caption = story.get("caption_text") or (caption_text(story) if story.get("caption") else "")
     num = f"#{video_number} " if video_number else ""
     if error:
         title = f"{prefix}Horror video FAILED"
-        body = error[:1500]
-    else:
-        kind = "draft" if result and result.get("mode") == "draft" else ("video" if not result else "post")
-        title = f"{prefix}{num}New TikTok {kind}: {story['title']}"
-        body = (
-            (f"{note}\n\n" if note else "") +
-            f"CAPTION (copy this):\n{caption}\n\n"
-            f"PIN THIS COMMENT:\n{story.get('pinned_comment', '')}"
-        )
-        if download:  # backup in case TikTok never delivers the draft (kept 7 days)
-            name = f"video-{video_number}" if video_number else "the artifact of this run"
-            body += f"\n\nNOT IN TIKTOK? Download it (7 days): {download} -> {name} (final.mp4 + caption.txt)"
-
-    _send(title, body, warn=bool(error), url=url, download=None if error else download)
+        name = story.get("title")
+        body = (f"Story: {name}\n\n" if name and name != "(no story yet)" else "") + str(error)[:1500]
+        _send(title, body, warn=True, url=url)
+        return
+    try:
+        caption = story.get("caption_text") or (caption_text(story) if story.get("caption") else "")
+    except Exception as e:  # noqa: BLE001 (never let the alert itself crash the run)
+        caption = f"(caption unavailable: {e})"
+    kind = "draft" if result and result.get("mode") == "draft" else ("video" if not result else "post")
+    title = f"{prefix}{num}New TikTok {kind}: {story.get('title', '(untitled)')}"
+    body = (
+        (f"{note}\n\n" if note else "") +
+        f"CAPTION (copy this):\n{caption}\n\n"
+        f"PIN THIS COMMENT:\n{story.get('pinned_comment', '')}"
+    )
+    if download:  # backup in case TikTok never delivers the draft (kept 7 days)
+        name = f"video-{video_number}" if video_number else "the artifact of this run"
+        body += f"\n\nNOT IN TIKTOK? Download it (7 days): {download} -> {name} (final.mp4 + caption.txt)"
+    _send(title, body, url=url, download=download)
 
 
 def _send(title: str, body: str, warn: bool = False, url: str | None = None, download: str | None = None) -> None:
