@@ -320,5 +320,45 @@
     "case": null,
     "skipped": true,
     "reason": "QA gate: duration 64.5s (want 50-63.9s)"
+  },
+  {
+    "date": "2026-09-30_0603",
+    "story_id": "c9c9bd6186d4",
+    "title": "Unabomber Sketches: Missed Faces",
+    "premise": "How two FBI sketches of the Unabomber shaped the hunt but never caught him.",
+    "subgenre": "true crime case file",
+    "mode": "case",
+    "true_story": true,
+    "case": "The Unabomber Sketch",
+    "source": null,
+    "prompt_file": null,
+    "setting": "United States, 1980s‑1990s",
+    "threat": "Domestic terrorist known as the Unabomber",
+    "twist": "The widely shared 1994 sketch never led to a tip, and the bomber was caught years later in a remote cabin.",
+    "score": null,
+    "seconds": 58.5,
+    "voice_speed": 1.2,
+    "writer": "groq (openai/gpt-oss-120b)",
+    "media_ids": [
+      "pexels:7857395",
+      "pexels:6101348"
+    ],
+    "visual_mode": "fast",
+    "story_shape": null,
+    "critic_score": null,
+    "buffered": "2026-09-30_0603",
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7691206713441060894",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "video_number": 28,
+    "youtube": {
+      "id": "zJW9LJSUZ_M",
+      "url": "https://youtube.com/shorts/zJW9LJSUZ_M",
+      "privacy": "public",
+      "wanted": "public"
+    },
+    "posted": "2026-09-30_0612"
   }
 ]
