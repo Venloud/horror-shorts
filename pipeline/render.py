@@ -145,17 +145,37 @@ def _join(clips: list[Path], seg: list[float], scene_cut: list[bool], out: Path,
     for i, c in enumerate(clips):
         inputs += ["-i", str(c)]
         fc.append(f"[{i}:v]{NORMALIZE}[n{i}]")
-    prev = "[n0]"
+    # Offsets come from the clips' REAL frame counts, never from summed word timings: every clip is rounded to whole
+    # frames, and over 30 fast-mode cuts that drift put an offset past the end of the stream built so far. ffmpeg
+    # 6.1's xfade then ends the whole chain there (video #28: joined.mp4 stopped at ~6 s and the final pass held the
+    # last frame, one gavel picture, for 56 s). Transitions are whole frames too (>= 1).
+    frames = [_frame_count(c) for c in clips]
+    prev, acc = "[n0]", frames[0]
     for i in range(1, len(clips)):
-        offset = sum(seg[:i])
         kind, dur = trans[i]
+        d = max(1, min(int(round(dur * FPS)), frames[i] - 1, acc - 1))
+        offset = acc - d  # the transition starts d frames before the end of what is joined so far
         label = f"[x{i}]"
-        fc.append(f"{prev}[n{i}]xfade=transition={kind}:duration={dur:.3f}:offset={offset:.3f}{label}")
-        prev = label
+        fc.append(f"{prev}[n{i}]xfade=transition={kind}:duration={d / FPS:.6f}:offset={offset / FPS:.6f}{label}")
+        prev, acc = label, acc + frames[i] - d
     run(["ffmpeg", "-y", "-loglevel", "error", *inputs, "-filter_complex", ";".join(fc),
          "-map", prev, "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "14", "-r", str(FPS),
          "-pix_fmt", "yuv420p", str(out)])
+    want, got = acc / FPS, media_duration(out)
+    if got < want - 0.5:  # never hand a cut-short video to the final pass (it would freeze on the last frame)
+        raise RuntimeError(f"joined video is {got:.1f}s but the shots add up to {want:.1f}s: xfade chain broke")
     return out
+
+
+def _frame_count(path: Path) -> int:
+    """Exact number of video frames in a clip (counted packets; falls back to duration x FPS)."""
+    try:
+        out = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-count_packets", "-show_entries",
+                              "stream=nb_read_packets", "-of", "csv=p=0", str(path)],
+                             capture_output=True, text=True, timeout=60).stdout.strip()
+        return max(2, int(out.split()[0]))
+    except Exception:  # noqa: BLE001
+        return max(2, int(round(media_duration(path) * FPS)))
 
 
 def _split_points(words: list[dict], scene: int, s_start: float, s_end: float, n: int) -> list[float]:
@@ -277,6 +297,7 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
         seg = [shot_starts[k + 1] - shot_starts[k] for k in range(len(shot_starts) - 1)] + [total - shot_starts[-1]]
     trans = _transitions(scene_cut, mode)
     log(f"Visual mode: {mode} ({len(shot_imgs)} shots)")
+    story["_visuals"] = visual_summary(shot_imgs, seg, total)
 
     # 1) One moving clip per shot (each clip is XFADE longer so crossfades don't eat time)
     motions = list(MOTIONS)
@@ -503,11 +524,88 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
     return out
 
 
-def qa_gate(path: Path, ass_path: Path, narration: dict) -> list[str]:
+def visual_summary(shot_imgs: list, seg: list[float], total: float) -> dict:
+    """Seconds each SOURCE picture is on screen (virtual crops, fast-mode framings, borrowed and copied files all
+    count as their source) -> distinct visuals and the longest one. Logged for every video."""
+    import images
+    secs: dict[str, float] = {}
+    names: dict[str, str] = {}
+    for img, s in zip(shot_imgs, seg):
+        key = images.source_key(Path(img))
+        secs[key] = secs.get(key, 0.0) + s
+        names.setdefault(key, images.source_of(Path(img)).name)
+    top = max(secs, key=secs.get) if secs else ""
+    out = {"distinct": len(secs), "longest_s": round(secs.get(top, 0.0), 1),
+           "longest_share": round(secs.get(top, 0.0) / max(total, 0.1), 3), "longest_name": names.get(top, "")}
+    log(f"Visuals: {out['distinct']} distinct picture(s); longest on screen: {out['longest_name']} "
+        f"{out['longest_s']:.1f}s ({out['longest_share']:.0%} of {total:.1f}s)")
+    return out
+
+
+def frame_visuals(path: Path, fps: float = 2.0) -> dict:
+    """What viewers actually see: frames sampled from the FINISHED video (2 per second, captions / logo / bottom
+    strip masked, contrast-normalised) grouped into near-identical pictures. Catches render bugs a shot list can't
+    (video #28 froze on one frame for 56 s although its shot list had 14 different images)."""
+    import numpy as np
+    w, h = 36, 64
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-i", str(path), "-vf", f"fps={fps},scale={w}:{h},format=rgb24",
+                          "-f", "rawvideo", "-"], capture_output=True, check=True).stdout
+    fr = np.frombuffer(raw, np.uint8).reshape(-1, h, w, 3).astype(np.float32)  # colour too: same layout != same picture
+    rows = np.r_[int(h * .15):int(h * .38), int(h * .62):int(h * .88)]
+    reps, counts, prev, run_n, best_run, blank = [], [], None, 0, 0, 0
+    for f in fr:
+        f = f[rows]
+        sd = float(f.std())
+        if sd < 4:  # black / blank frame (fade to black): not a picture
+            blank += 1; prev = None; run_n = 0
+            continue
+        z = (f - f.mean()) / sd
+        run_n = run_n + 1 if prev is not None and float(np.abs(z - prev).mean()) < 0.35 else 1
+        best_run, prev = max(best_run, run_n), z
+        for k, r in enumerate(reps):
+            if float(np.abs(z - r).mean()) < 0.35:
+                counts[k] += 1
+                break
+        else:
+            reps.append(z); counts.append(1)
+    n = max(1, len(fr))
+    return {"distinct": len(reps), "top_share": round(max(counts) / n, 3) if counts else 1.0,
+            "longest_run_s": best_run / fps, "blank_s": blank / fps}
+
+
+def visual_problems(path: Path, story: dict | None, dur: float) -> list[str]:
+    """No single picture may be on screen > qa_max_visual_share (20%) of the video, and a ~60 s video needs
+    >= qa_min_visuals (8) distinct pictures: checked on the shot list (source pictures) AND on the final frames."""
+    share = float(CONFIG.get("qa_max_visual_share", 0.2))
+    need = max(4, round(float(CONFIG.get("qa_min_visuals", 8)) * dur / 60))
+    problems = []
+    v = (story or {}).get("_visuals")
+    if v:
+        if v["longest_share"] > share:
+            problems.append(f"one picture ({v['longest_name']}) is on screen {v['longest_s']:.1f}s = "
+                            f"{v['longest_share']:.0%} of the video (max {share:.0%})")
+        if v["distinct"] < need:
+            problems.append(f"only {v['distinct']} distinct pictures (need {need})")
+    try:
+        f = frame_visuals(path)
+        log(f"Final frames: {f['distinct']} distinct looks, biggest {f['top_share']:.0%} of the video, "
+            f"longest unchanged {f['longest_run_s']:.1f}s, blank {f['blank_s']:.1f}s")
+        if f["top_share"] > share or f["longest_run_s"] > share * dur:
+            problems.append(f"the finished video shows the same picture for {f['top_share']:.0%} of it "
+                            f"(longest unchanged {f['longest_run_s']:.1f}s): frozen or one-image video")
+        if f["distinct"] < need:
+            problems.append(f"the finished video has only {f['distinct']} distinct looks (need {need})")
+    except Exception as e:  # noqa: BLE001 (the check itself must never be skipped silently)
+        problems.append(f"visual check failed to run ({str(e)[:100]})")
+    return problems
+
+
+def qa_gate(path: Path, ass_path: Path, narration: dict, story: dict | None = None) -> list[str]:
     """Checks a finished video must pass before it may enter the buffer. Returns the problems (empty = pass)."""
     problems = []
     lo, hi = CONFIG.get("target_seconds", [50, 60])
     dur = media_duration(path)
+    problems += visual_problems(path, story, dur)
     if not lo <= dur <= hi + TAIL + 0.5:  # narration target + the end-card tail
         problems.append(f"duration {dur:.1f}s (want {lo}-{hi + TAIL + 0.5:.1f}s)")
     streams = run(["ffprobe", "-v", "error", "-show_entries", "stream=codec_type,width,height",

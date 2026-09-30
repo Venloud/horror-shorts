@@ -728,7 +728,8 @@ def dedupe_shots(story: dict) -> int:
 
 
 def _virtual_shot(src: Path, dest: Path, shot: str) -> None:
-    """A second framing of an image from the same scene (75% crop, placed per shot letter)."""
+    """A second framing of an image from the same scene (75% crop, placed per shot letter). Its source is written
+    next to it (`.origin`), so the QA gate counts the crop as the SAME picture."""
     with Image.open(src) as im:
         im = im.convert("RGB")
         w, h = im.size
@@ -736,6 +737,30 @@ def _virtual_shot(src: Path, dest: Path, shot: str) -> None:
         x = {"a": 0, "b": w - cw, "c": (w - cw) // 2, "d": 0}.get(shot, 0)
         y = {"a": 0, "b": h - ch, "c": (h - ch) // 2, "d": h - ch}.get(shot, 0)
         im.crop((x, y, x + cw, y + ch)).resize((w, h), Image.LANCZOS).save(dest, "PNG")
+    dest.with_suffix(".origin").write_text(str(Path(src).resolve()))
+
+
+def source_of(path: Path) -> Path:
+    """The picture a shot really shows: follows virtual-shot `.origin` links back to the original file."""
+    p, seen = Path(path), set()
+    while p.with_suffix(".origin").exists() and p not in seen:
+        seen.add(p)
+        nxt = Path(p.with_suffix(".origin").read_text().strip())
+        if not nxt.exists():
+            break
+        p = nxt
+    return p
+
+
+def source_key(path: Path) -> str:
+    """Identity of a shot's picture: the original's content hash (a copy, a virtual crop or a borrowed file of the
+    same picture all get the same key)."""
+    import hashlib
+    src = source_of(path)
+    try:
+        return hashlib.sha1(src.read_bytes()).hexdigest()[:16]
+    except OSError:
+        return str(src)
 
 
 QA_QUESTION = """Does this image clearly show the requested subject and action, in a setting that fits the request?
@@ -1122,22 +1147,42 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
     if len(empty) > max(1, n_scenes // 4):
         raise RuntimeError(f"{len(empty)} of {n_scenes} scenes have no image; not rendering a broken video.")
 
+    # How many scenes each picture fills (virtual crops count as their source). One picture may fill at most
+    # MAX_FILLS scenes: more empty scenes = "waiting for image quota", never one image stretched over the video.
+    fills: dict[str, int] = {}
+    for i in range(n_scenes):
+        for key in {source_key(results[(i, s)]) for s in "abcd" if results.get((i, s))}:
+            fills[key] = fills.get(key, 0) + 1
+
+    def free(p: Path) -> bool:
+        return fills.get(source_key(p), 0) < MAX_FILLS
+
     per_scene: list[list[Path]] = []
     for i in range(n_scenes):
         shots = [results[(i, s)] for s in "abcd" if results.get((i, s))]
         if not shots:  # emergency only (the run already allows at most max(1, scenes // 4) of these)
             near = sorted((j for j in range(n_scenes) if j != i), key=lambda j: abs(j - i))
             pick = next((results[(j, s)] for j in near for s in "abcd"
-                         if results.get((j, s)) and _fits(story, i, "a", j, s)), None)
+                         if results.get((j, s)) and _fits(story, i, "a", j, s) and free(results[(j, s)])), None)
             own_bad = next((rejected_files[(i, s)] for s in "abcd" if (i, s) in rejected_files), None)
             if pick is None and own_bad:
                 pick = own_bad
                 log(f"Scene {i}: EMERGENCY, no fitting image anywhere; keeping its rejected image {pick.name}")
-            if pick is None:
-                pick = per_scene[-1][-1] if per_scene else next(p for p in results.values() if p)
+            elif pick is None:
+                last = per_scene[-1][-1] if per_scene else None
+                pick = last if last is not None and free(last) else next(
+                    (p for p in results.values() if p and free(p)), None)
+                if pick is None:
+                    _quota_stop(f"scene {i} has no image and every usable picture already fills {MAX_FILLS} scenes "
+                                "(one image may never cover the video). Stopped; the next build continues it.")
                 log(f"Scene {i}: EMERGENCY, borrowing {pick.name} (no image of this scene or its place exists)")
             else:
                 log(f"Scene {i}: no image of its own, using {pick.name} (same place)")
+            key = source_key(pick)
+            fills[key] = fills.get(key, 0) + 1
             shots = [pick]
         per_scene.append(shots)
     return per_scene
+
+
+MAX_FILLS = 2  # one picture (incl. its virtual crops) may fill at most 2 scenes of a video

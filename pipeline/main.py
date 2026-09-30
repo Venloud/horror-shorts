@@ -158,7 +158,7 @@ def main() -> int:
         _short_credit, visual_credits = media.credits(story.get("media_assets") or [])
         (workdir / "caption.txt").write_text(caption + "\n\nPIN: " + story.get("pinned_comment", ""))
 
-        problems = qa_gate(video, ass, narration)
+        problems = qa_gate(video, ass, narration, story)
         if problems:  # never let a broken video into the buffer
             reason = "; ".join(problems)
             if testing:
@@ -216,7 +216,8 @@ def main() -> int:
             "media_ids": [a["id"] for a in story.get("media_assets") or []],
             "visual_mode": story.get("visual_mode"),  # A/B test: classic / fast / analog
             "story_shape": story.get("story_shape"),  # fiction shape rotation
-            "critic_score": story.get("critic_score"),  # stock clips are not reused for 20 videos
+            "critic_score": story.get("critic_score"),
+            "visuals": story.get("_visuals"),  # distinct pictures + the longest one on screen
             "buffered": stamp,
             "tiktok": None,  # filled in by publish.py when it's posted
         })

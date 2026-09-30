@@ -351,7 +351,20 @@ so a new session can pick up without starting over.
   cache entry is never resumed; a story already in history is never resumed. Test builds skip checkpoints.
 - **QA gate** (`render.qa_gate`) before the buffer: 1080x1920, duration within target + end-card tail, audio
   stream, integrated loudness -18..-12 LUFS (ffmpeg ebur128; the mix is loudnormed to -14), caption lines in the
-  burned-in .ass cover the words, 5-64 MB. Fail = not buffered + ntfy alert; a duration failure drops the saved
+  burned-in .ass cover the words, 5-64 MB.
+  **Visual variety** (`render.visual_problems`, after video #28 froze on ONE gavel frame for 56 of 62 s):
+  (1) shot list: seconds per SOURCE picture (`images.source_key`: content hash; virtual crops point to their
+  source via `scene_XXl.origin`, fast-mode framings / borrowed / copied files are the same picture) -> fail if
+  one picture > `qa_max_visual_share` (0.2) of the video or fewer than `qa_min_visuals` (8 per 60 s) distinct;
+  (2) the FINISHED mp4 (`render.frame_visuals`: 2 frames/s, captions/logo/bottom masked, contrast-normalised,
+  near-identical frames grouped) -> fail if one look > 20% or unchanged for > 20% of the duration, or too few
+  looks. Every video logs "Visuals: N distinct picture(s); longest on screen ..." and "Final frames: ...";
+  history saves `visuals`. Emergency borrowing: one picture may fill at most `images.MAX_FILLS` (2) scenes;
+  beyond that -> "waiting for image quota".
+  **Join** (`render._join`): xfade offsets come from each clip's REAL frame count (not summed word timings) and
+  transitions are whole frames; a joined video shorter than its shots raises. Cause of #28: rounding drift over
+  31 fast-mode cuts put an offset past the stream end, ffmpeg 6.1's xfade ended the chain at ~6 s, and the
+  final pass (looping logo overlays) held the last frame (the gavel stock clip) for the rest. Fail = not buffered + ntfy alert; a duration failure drops the saved
   narration so it's re-fitted; the SAME story failing QA twice is skipped for good (history `skipped` + reason).
 - **Concurrency**: build.yml and daily.yml share the group `night-files` (never write history.json at the same
   time); build cron is :50 every 3 h, just after the publish slots. Pushing history uses
