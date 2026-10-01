@@ -764,11 +764,17 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
         if kind == "stock_video" and archive_ok and n["archive_print"] < max_archive:
             aq = archive_query(story, sc[PROMPT_KEYS[l]])
             cands = []
-            for provider in PROVIDERS["archive_print"]:
-                try:
-                    cands += provider(aq)
-                except Exception as e:  # noqa: BLE001
-                    log(f"Shot {i:02d}{l}: {provider.__name__} search failed ({str(e)[:120]})")
+            # full query first, then a broader one (the main noun + the print term): archive titles are short
+            broad = f"{aq.split()[0]} {aq.split()[-1]}"  # "coffin engraving", "coin woodcut"
+            for q in dict.fromkeys([aq, broad]):
+                for provider in PROVIDERS["archive_print"]:
+                    try:
+                        cands += provider(q)
+                    except Exception as e:  # noqa: BLE001
+                        log(f"Shot {i:02d}{l}: {provider.__name__} search failed ({str(e)[:120]})")
+                if cands:
+                    aq = q
+                    break
             cands = [c for c in cands if c["id"] not in used and c["id"] not in recent][:3]
             req = (f"{clean_query(raw_q)} (an old print, engraving or illustration of it is fine; FAIL if a colour "
                    f"calibration chart, ruler, grey scale or scan border is visible){_setting_note(story, i, l)}")

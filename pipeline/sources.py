@@ -13,7 +13,7 @@ inbox/*.txt      any other text file = a pasted story/article. First line "TRUE"
                    "REMAKE: <topic>" = a NEW lore video about a topic we already made (new angle / hook / images),
                    "LORE: <topic>"   = a legend,   "TRUE: <topic>" = a real story (TRUE STORY rules).
                  Optional header lines: "SOURCES: Title; es:Spanish title" (Wikipedia pages; default = the topic),
-                 "ANGLE: ...", "HOOK: ...", "AVOID: ..." (repeatable), "NOT_BEFORE: 33", "QUEUE: 1" (lower = sooner;
+                 "ANGLE: ...", "HOOK: ...", "AVOID: ..." (repeatable), "BAN: phrase; phrase" (never in the narration), "NOT_BEFORE: 33", "QUEUE: 1" (lower = sooner;
                  topic files without it come before other inbox files), "NO_CHILDREN: yes" (no child in any image).
                  Other lines = owner notes (instructions, not facts).
 Each item is used once (tracked in data/history.json). Inbox items jump the queue.
@@ -158,10 +158,10 @@ def next_inbox(history: list[dict]) -> dict | None:
         m = re.match(r"\s*(REMAKE|LORE|TRUE):\s*(.+?)\s*$", lines[0], re.IGNORECASE)
         if m:  # topic file: the bot researches the topic itself (story.topic_story)
             item = {"key": f"inbox/{f.name}", "kind": m.group(1).lower(), "topic": m.group(2), "sources": [],
-                    "angle": "", "hook": "", "avoid": [], "text": "", "no_children": False}
+                    "angle": "", "hook": "", "avoid": [], "ban": [], "text": "", "no_children": False}
             notes, wait = [], None
             for ln in lines[1:]:
-                h = re.match(r"\s*(SOURCES|ANGLE|AVOID|HOOK|NOT_BEFORE|QUEUE|NO_CHILDREN):\s*(.*)$", ln, re.IGNORECASE)
+                h = re.match(r"\s*(SOURCES|ANGLE|AVOID|BAN|HOOK|NOT_BEFORE|QUEUE|NO_CHILDREN):\s*(.*)$", ln, re.IGNORECASE)
                 key = h.group(1).upper() if h else ""
                 if not h:
                     notes.append(ln)
@@ -169,6 +169,8 @@ def next_inbox(history: list[dict]) -> dict | None:
                     item["sources"] = [x.strip() for x in h.group(2).split(";") if x.strip()]
                 elif key == "AVOID":
                     item["avoid"].append(h.group(2).strip())
+                elif key == "BAN":  # phrases the narration must never contain (e.g. an unsourced detail)
+                    item["ban"] += [x.strip().lower() for x in h.group(2).split(";") if x.strip()]
                 elif key == "NOT_BEFORE":
                     wait = int(re.sub(r"\D", "", h.group(2)) or 0)
                 elif key == "NO_CHILDREN":

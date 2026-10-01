@@ -147,7 +147,7 @@
   "asset_library_max": 800,
   "archive_max": 3,
   "loc_accept_no_known_restrictions": true,
-  "research": true,
+  "research": false,
   "research_models": ["gemini-2.5-flash", "gemini-2.5-flash-lite"],
   "research_daily_limit": 400,
   "direct_privacy": "SELF_ONLY",

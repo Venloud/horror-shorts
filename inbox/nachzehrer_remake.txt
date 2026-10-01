@@ -1,9 +1,10 @@
 REMAKE: Nachzehrer
 QUEUE: 1
 SOURCES: Nachzehrer; Vampire burial
-ANGLE: What people put in the mouths of the dead, and why the mouth mattered: a corpse with an open mouth was a sign of a nachzehrer, the shroud-eater said to chew its burial clothes in the grave while its family wasted away. Elsewhere in Europe, coins, stones or iron were placed in the mouths of the dead so they could not return. If a RESEARCH line supports it, the 2009 find in a plague mass grave on Lazzaretto Nuovo (Venice lagoon): a woman's skull with a brick in its mouth, linked by researchers to the "shroud-eater" belief; say it is linked to that belief, never that it proves a nachzehrer existed.
+BAN: brick; 2009; medieval woman
+ANGLE: What people put in the mouths of the dead, and why the mouth mattered: a corpse with an open mouth was a sign of a nachzehrer, the shroud-eater said to chew its burial clothes in the grave while its family wasted away. Elsewhere in Europe, coins, stones or iron were placed in the mouths of the dead so they could not return.
 AVOID: Could a buried relative really drain your life from afar?
 AVOID: Buried relatives were once believed to slowly consume their own funeral shrouds to kill the living.
 AVOID: Buried relatives are eating their shrouds to kill you.
 AVOID: Old structure: shroud-eating opener -> northern Germany and Bavaria -> drains family life-force -> list of physical signs -> grave goods and names on burial clothes -> chewing while victims waste away -> "check those name tags, the chewing has already begun" ending.
-Owner notes: our best TikTok so far (234 views, 8 likes), so it gets a second, different video. Hook in the first second (never open with a date, year or place). Coins / stones / iron in the mouth come from the "Vampire burial" article about revenants in general: say so, don't call them nachzehrer customs. The Venice skull only if research backs it, worded as "linked to the shroud-eater belief". No gore, no occult symbols.
+Owner notes: our best TikTok so far (234 views, 8 likes), so it gets a second, different video. Hook in the first second (never open with a date, year or place). Coins / stones / iron in the mouth come from the "Vampire burial" article about revenants in general: say so, don't call them nachzehrer customs. Do NOT mention the 2009 Venice 'brick in the mouth' skull: neither source has it (a test draft used it without a source). No gore, no occult symbols.

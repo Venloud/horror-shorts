@@ -170,6 +170,10 @@ def _limit_emoji(s: str, n: int = 1) -> str:
     return re.sub(r"\s{2,}", " ", EMOJI.sub(keep, s)).strip()
 
 
+def _squash_words(text: str) -> list[str]:
+    return [w for w in (_squash(x) for x in (text or "").split()) if len(w) > 2 and w not in ("the", "and", "its")]
+
+
 def make_title(hook: str, subject: str, place: str, category: str, story: dict, limit: int = 70) -> str:
     suffix = " #shorts"
     room = limit - len(suffix)
@@ -180,6 +184,9 @@ def make_title(hook: str, subject: str, place: str, category: str, story: dict, 
         place = ""
     tail = f"{subject} of {place}" if subject and place else subject
     cands = []
+    hw, sw = set(_squash_words(hook)), set(_squash_words(subject))
+    if hw and len(hw & sw) / len(hw) > 0.6:  # "A Brick In Its Mouth... The Corpse With A Brick In Its Mouth"
+        hook = ""
     if hook and tail:
         cands.append(f"{hook}... {tail}")
     if hook and subject and tail != subject:

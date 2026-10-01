@@ -262,11 +262,14 @@ def _retry_after(r) -> float | None:
     return None
 
 
+_OVERLOADED: set = set()  # a model that stayed 503 through a full 10/30/60 s backoff: skipped for the rest of the run
+
+
 def model_chain() -> list[str]:
     """Story writers in order: every Gemini model in config llm_models (skipping ones whose DAILY quota is used
     up), then Groq (flag groq_backup, only if GROQ_API_KEY is set) as the last resort. Cloudflare's text models
     are never used."""
-    models = [m for m in CONFIG["llm_models"] if not gemini_model_out(m)]
+    models = [m for m in CONFIG["llm_models"] if not gemini_model_out(m) and m not in _OVERLOADED]
     if CONFIG.get("groq_backup", True) and env("GROQ_API_KEY", required=False):
         models.append("groq:" + CONFIG.get("groq_model", "openai/gpt-oss-120b"))
     return models or list(CONFIG["llm_models"])
@@ -362,6 +365,8 @@ def _with_models(call, what: str = "story"):
                         log(f"{model} is overloaded: trying it again in {wait}s ({overloads}/{len(BACKOFF_503)})")
                         time.sleep(wait)
                         continue
+                    _OVERLOADED.add(model)  # still 503 after the whole backoff: don't wait on it again this run
+                    log(f"{model} stayed overloaded through the backoff: skipping it for the rest of this run")
                     break
                 if isinstance(e, RateLimited):
                     if rates < 3 and not model.startswith("groq:"):  # Groq already waited + retried 3 times
@@ -1248,6 +1253,8 @@ OLD VERSION (never reuse its hook, its opening line, its title, its ending or it
 NEW ANGLE: {angle}
 - Open on the new angle's strangest detail (a different first sentence, different hook overlay, different title).
 - Build the scenes around the new angle; do not walk through the old video's beats in the old order.
+- ANGLE / HOOK / OWNER NOTES are instructions, never facts: a detail they mention may only be used if the SOURCE
+  (Wikipedia + RESEARCH lines) states it too; otherwise leave it out.
 - Facts only from the SOURCE. If a source describes a custom for revenants/vampires in general, say so; never
   claim it was specific to this legend unless the source says that.
 {notes}"""
@@ -1264,7 +1271,9 @@ def _too_close(a: str, b: str, limit: float = 0.6) -> bool:
 LORE_TOPIC_BLOCK = """
 ## OWNER'S TOPIC
 ANGLE: {angle}
-{hook}- Facts only from the SOURCE (Wikipedia + RESEARCH lines). RUMOR lines only as rumor. If a source describes a
+{hook}- ANGLE / HOOK / OWNER NOTES are instructions, never facts: a detail they mention may only be used if the
+  SOURCE (Wikipedia + RESEARCH lines) states it too; otherwise leave it out.
+- Facts only from the SOURCE (Wikipedia + RESEARCH lines). RUMOR lines only as rumor. If a source describes a
   custom for revenants / spirits in general, say so; never claim it belongs to this legend unless a source says so.
 {notes}"""
 
@@ -1365,6 +1374,13 @@ def topic_story(history: list[dict], item: dict, api_key: str, sfx_list: str) ->
         reused = [x for x in avoid if _too_close(opening, x) or _too_close(story.get("hook_overlay", ""), x)
                   or _too_close(story.get("title", ""), x, 0.85)]  # a title may share the legend's name
         harm = child_harm(story) if item.get("no_children") else ""
+        said = " ".join(sc.get("narration", "") for sc in story.get("scenes") or []).lower()
+        banned = [b for b in item.get("ban", []) if b in said]
+        if banned:
+            log(f"Draft {attempt + 1} uses a banned (unsourced) detail ({banned[0]!r}); writing it again")
+            extra = (f"\n\nYOUR LAST DRAFT MENTIONED {banned[0]!r}, which is NOT in the source. Leave it out "
+                     "completely; use only facts the SOURCE states.")
+            continue
         if not reused and not harm:
             break
         if harm:
@@ -1377,7 +1393,7 @@ def topic_story(history: list[dict], item: dict, api_key: str, sfx_list: str) ->
         extra = (f"\n\nYOUR LAST DRAFT REUSED THE OLD VIDEO: {reused[0]!r}. Use a different first sentence, "
                  "hook overlay and title built on the NEW ANGLE.")
     else:
-        raise RuntimeError(f"{topic}: every draft reused the old video or described harm to a child")
+        raise RuntimeError(f"{topic}: every draft reused the old video, described harm to a child or used a banned detail")
     story.update({"mode": "lore", "case": topic, "subgenre": "legend / folklore", "source": item["key"],
                   "true_story": False, "sources": holder.get("sources", []),
                   "no_child_images": item.get("no_children", False)})
