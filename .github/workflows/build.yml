@@ -50,7 +50,12 @@ jobs:
           waiting=$(gh release view buffer --repo "${{ github.repository }}" --json assets \
             -q '[.assets[].name | select(endswith(".mp4"))] | length' 2>/dev/null || echo 0)
           echo "Videos waiting in the buffer: $waiting (target $BUFFER_SIZE)"
-          if [ "${{ inputs.test }}" = "true" ] || [ "$waiting" -lt "$BUFFER_SIZE" ]; then
+          # data/hold_builds.txt on main = production builds on hold (untested changes must not reach the buffer);
+          # test builds still run. Delete the file to release the hold.
+          hold=$(gh api "repos/${{ github.repository }}/contents/data/hold_builds.txt" --jq .name 2>/dev/null || true)
+          if [ -n "$hold" ] && [ "${{ inputs.test }}" != "true" ]; then
+            echo "Production builds are ON HOLD (data/hold_builds.txt exists): nothing built."
+          elif [ "${{ inputs.test }}" = "true" ] || [ "$waiting" -lt "$BUFFER_SIZE" ]; then
             echo "build=true" >> "$GITHUB_OUTPUT"
           else
             echo "Buffer is full, nothing to build."
