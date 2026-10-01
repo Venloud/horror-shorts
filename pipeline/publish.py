@@ -20,6 +20,7 @@ MISSED = ROOT / "data" / "missed_slot.json"
 MISSED_MAX_AGE_H = float(CONFIG.get("missed_slot_max_hours", 24))
 MIN_GAP_H = float(CONFIG.get("min_post_gap_hours", 3))  # never two posts within 3 hours
 SLOTS_UTC = CONFIG.get("publish_slots_utc", ["15:40", "00:40"])
+_SLOT_SLACK = __import__("datetime").timedelta(minutes=10)
 COUNTER = ROOT / "data" / "counter.json"  # the channel's own post numbers (#26, #27...), not GitHub run numbers
 
 
@@ -95,6 +96,32 @@ def _next_slot(now: datetime) -> datetime:
         t = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
         cands.append(t if t > now else t + timedelta(days=1))
     return min(cands)
+
+
+def _last_slot(now: datetime) -> datetime:
+    """The latest regular slot time at or before now."""
+    from datetime import timedelta
+    cands = []
+    for s in SLOTS_UTC:
+        hh, mm = (int(x) for x in s.split(":"))
+        t = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
+        cands.append(t if t <= now else t - timedelta(days=1))
+    return max(cands)
+
+
+def _late_slot_served(now: datetime | None = None) -> None:
+    """A slot run that posts late (GitHub's cron or a manual run) serves the most recent regular slot: if that
+    slot is the one recorded as missed, it's done now and must not be made up a second time."""
+    if not MISSED.exists():
+        return
+    now = now or datetime.now(timezone.utc)
+    try:
+        at = datetime.fromisoformat(json.loads(MISSED.read_text())["at"])
+    except Exception:  # noqa: BLE001
+        return
+    if at >= _last_slot(now) - _SLOT_SLACK:
+        log("This post served the missed slot (a late slot run): no make-up needed")
+        MISSED.unlink(missing_ok=True)
 
 
 def makeup_blocker(now: datetime | None = None, waiting: int | None = None) -> str:
@@ -214,6 +241,8 @@ def main(from_build: bool = False) -> int:
                 h["yt_title"], h["hashtags"], h["yt_tags"] = meta["yt_title"], meta.get("hashtags"), meta.get("yt_tags")
             break
     save_history(history)
+    if not from_build:
+        _late_slot_served()
 
     lines = []
     if yt:

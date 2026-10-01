@@ -439,7 +439,9 @@ so a new session can pick up without starting over.
 - **Missed-slot make-up** (`publish.makeup_blocker`): a missed slot (data/missed_slot.json, max
   `missed_slot_max_hours` 24 h old) is made up by a build only when the buffer then holds 2+ videos (the next
   regular slot keeps one) and no post is within `min_post_gap_hours` (3) before (history `posted`) or after (next
-  slot in `publish_slots_utc`); otherwise the file waits for a later build. (Oct 1: GitHub's cron skipped the 15:40
+  slot in `publish_slots_utc`); otherwise the file waits for a later build. A slot run that posts late (cron delay or a
+  manual daily.yml run) serves the most recent regular slot: if that is the recorded missed slot, the file is
+  deleted (`publish._late_slot_served`), so one missed slot is never posted twice. (Oct 1: GitHub's cron skipped the 15:40
   daily run entirely; its missed_slot.json was written by hand.)
 - **Empty buffer at a slot**: the publisher does NOT fail. It writes `data/missed_slot.json` {"slot", "at"}, sends
   "Buffer empty: building now, will post when ready", and daily.yml starts build.yml at once (`gh workflow run`,
