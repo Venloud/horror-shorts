@@ -415,7 +415,9 @@ so a new session can pick up without starting over.
   Actions cache (`last-images-*`) after each build.
 - `build.yml` "test" input (workflow_dispatch): not added to the buffer, no history, mp4 kept as an artifact,
   ntfy "[TEST]". ZERO CONFIG: a test reuses the last built video's full story.json + images (`images.save_cache` /
-  `cached_story`; log "Test: reused story <id>"; no Cloudflare, no story writing). Checkbox `fresh_images`
+  `cached_story`; log "Test: reused story <id>"; no Cloudflare, no story writing). Input `inbox_file` (test builds
+  only, env INBOX_FILE) forces one inbox file even if it was already used (same story for an A/B render test).
+  Checkbox `fresh_images`
   (default off; env TEST_FRESH) = a NEW story with real Cloudflare images like a production build; the same
   happens automatically when nothing is cached (older caches only kept the scene count). The old
   `test_cloudflare_images` count input is gone.
@@ -478,16 +480,25 @@ so a new session can pick up without starting over.
 
 ## EXPERIMENTAL: cutout render style (`cutout.py`, off by default)
 - Switch: config `render_style` (classic | cutout), build.yml input `render_style` (env RENDER_STYLE),
-  `cutout_for_modes` (e.g. ["coldcase"]). Any cutout failure -> logged, the video renders classic.
-- Characters (max 2, adults) = a pose set drawn once (Cloudflare, fixed seed, look word-for-word, plain gray
+  `cutout_for_modes` (e.g. ["coldcase"]). Any cutout failure -> logged, the video renders classic; a FORCED
+  cutout (RENDER_STYLE=cutout) never ships classic: the build fails with "Cutout render was forced but failed in
+  <where>: <why>", and stops before the story if Cloudflare's daily limit is already used up (cutout is
+  Cloudflare-only). Legends whose shots name no figure get their creature (+ one adult witness) as the cast
+  (`derive_characters`, aliases corpse/creature/revenant...); a character-less stage never repeats an empty plate.
+- Characters (max 2, adults) = a pose set drawn once (Cloudflare, NO seed: FLUX schnell on Workers AI answers 400
+  "'/seed' not allowed"; config `cloudflare_seed` re-enables it; look word-for-word, plain gray
   background), each pose checked against pose 1 (`images.same_character`, Gemini / Groq vision; NO -> redraw up to
   2x, else dropped -> fallback pose), cut out with rembg (isnet-anime, u2net; gray-key fallback; a nearly empty
   cut-out drops the pose), composited on empty plates (wide/medium/detail per location, reused). Inserts = AI
   object close-ups; screens (phone chat / note / laptop) drawn by code with only words the narration says.
   Compositor: plate 80% brightness/saturation, character 107%, room tint, rim light, contact shadow, breathing,
   enter/walk/turn moves. Budget `cutout_max_images` 22 (hard `cutout_hard_max_images` 26). Review artifacts:
-  poses_sheet.png, plates_sheet.png, contact_sheet.png. STATUS: offline test found a degenerate-cut-out bug (now
-  guarded); not yet verified end to end; not used in production.
+  poses_sheet.png (labelled "Who: pose"), plates_sheet.png ("location / kind"), contact_sheet.png, summary.txt.
+  Inserts/plates: no text requests (`images._no_text`), "blank unmarked surfaces", QA fails visible letters (run
+  36848613329 had garbled sign/tombstone lettering). STATUS (Oct 1): offline end-to-end passes; runner test runs:
+  36847389674 = seed 400, 36848613329 = QA fail (one empty plate 27%, fixed), 36850352869 = Cloudflare daily
+  limit used up; next test after
+  00:00 UTC with `inbox_file=nachzehrer_remake.txt`. Not used in production.
 
 ## Schedule
 - 2 videos a day, **11:40 AM and 8:40 PM New York**. GitHub's own cron was unreliable (4 h late / skipped),
