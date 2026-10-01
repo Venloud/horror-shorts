@@ -126,6 +126,49 @@ def plan(story: dict) -> list[list[dict]]:
     return out
 
 
+_FIGURES = re.compile(r"\b(gravedigger|villager|priest|monk|nun|widow|farmer|old woman|old man|woman|man|"
+                      r"hunter|soldier|watchman|innkeeper|traveler|traveller|stranger|figure|corpse|ghost|"
+                      r"mourner|doctor|nurse|guard|sailor|fisherman|witch|creature)\b", re.IGNORECASE)
+
+
+def derive_characters(story: dict) -> list[dict]:
+    """A legend often has no character sheet. For cutout, up to 2 recurring ADULT figures the shots already show
+    (e.g. "a gravedigger", "the shrouded corpse") get a fixed look: LLM first, a word count fallback. Only figures
+    the image prompts actually name; never a child, never a real person's name."""
+    import images
+    prompts = " ".join(sc.get(k) or "" for sc in story.get("scenes") or []
+                       for k in ("image_prompt", "image_prompt_2", "image_prompt_3", "image_prompt_4"))
+    low = prompts.lower()
+    out: list[dict] = []
+    ans = None
+    try:
+        ans = images._gemini_json(
+            "These are the image prompts of a short illustrated legend video. Name up to 2 recurring ADULT figures "
+            "they show (not children, not real named people), using the words the prompts use, and give each a fixed "
+            "look of 15-20 words (age, build, hair, clothing, era) that fits the story's setting: "
+            f"{story.get('setting', '')}.\nPROMPTS: {prompts[:3000]}\n"
+            'Return JSON {"characters": [{"name": "the gravedigger", "look": "..."}]}')
+    except Exception:  # noqa: BLE001
+        ans = None
+    for c in (ans or {}).get("characters") or []:
+        name, look = str(c.get("name", "")).strip(), str(c.get("look", "")).strip()
+        key = name.lower().removeprefix("the ").removeprefix("a ").strip()
+        if name and look and key and key.split()[-1] in low and not _CHILD.search(f"{name} {look}"):
+            out.append({"name": key, "look": look})  # no article: shots are matched by the name's first word
+    if not out:  # no LLM: the most frequent figure word in the shots
+        counts: dict = {}
+        for m in _FIGURES.finditer(prompts):
+            w = m.group(1).lower()
+            counts[w] = counts.get(w, 0) + 1
+        for w, n in sorted(counts.items(), key=lambda x: -x[1])[:2]:
+            if n >= 2:
+                out.append({"name": w, "look": f"{w}, adult, plain period clothing fitting "
+                                                       f"{(story.get('setting') or 'the story')[:60]}"})
+    if out:
+        log("Cutout: no character sheet; derived from the shots: " + ", ".join(c["name"] for c in out[:2]))
+    return out[:2]
+
+
 def _main_characters(story: dict) -> list[dict]:
     """Up to 2 adult characters, the ones the image prompts / narration mention most."""
     text = " ".join(f"{sc.get('narration', '')} " + " ".join(sc.get(k) or "" for k in
@@ -525,6 +568,10 @@ def build(story: dict, img_dir: Path, workdir: Path) -> list[list[Path]]:
     out = img_dir / "cutout"
     out.mkdir(parents=True, exist_ok=True)
     images.sanitize_victim_shots(story)
+    if not _main_characters(story):  # legends: no character sheet -> the recurring figures of the shots
+        derived = derive_characters(story)
+        if derived:
+            story["characters"] = list(story.get("characters") or []) + derived
     shots = plan(story)
     chars = _main_characters(story)
     budget = Budget(int(CONFIG.get("cutout_max_images", 22)), int(CONFIG.get("cutout_hard_max_images", 26)))

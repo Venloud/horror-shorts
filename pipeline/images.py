@@ -46,15 +46,20 @@ def _log_neurons(raw: bytes, headers) -> None:
 
 
 def _cloudflare(prompt: str, seed: int, fixed_seed: bool = False) -> bytes:
-    """fixed_seed=True sends the seed (cutout pose sets: same seed = same character); otherwise Cloudflare picks."""
+    """fixed_seed=True would send the seed, but FLUX schnell on Workers AI has no seed input (400), so only with
+    config cloudflare_seed; pose sets stay consistent through the word-for-word look + the same-character check."""
     acct = env("CLOUDFLARE_ACCOUNT_ID")
     token = env("CLOUDFLARE_API_TOKEN")
     body = {"prompt": prompt[:2000], "steps": int(CONFIG.get("image_steps", 4))}
-    if fixed_seed:
-        body["seed"] = int(seed) % 2_147_483_647
+    if fixed_seed and CONFIG.get("cloudflare_seed", False):  # FLUX schnell on Workers AI rejects "seed" (HTTP 400
+        body["seed"] = int(seed) % 2_147_483_647           # "'/seed' not allowed", test build 36847389674)
     for wait in (5, 15, 30, 0):
         r = requests.post(CF_URL.format(acct=acct), timeout=120,
                           headers={"Authorization": f"Bearer {token}"}, json=body)
+        if r.status_code == 400 and "seed" in body and "/seed" in r.text:
+            body.pop("seed")  # the model's schema has no seed: same request without it
+            r = requests.post(CF_URL.format(acct=acct), timeout=120,
+                              headers={"Authorization": f"Bearer {token}"}, json=body)
         if r.status_code == 200:
             break  # success: never scan the body, the base64 image can contain "4006" or anything else
         body = r.text[:300]
