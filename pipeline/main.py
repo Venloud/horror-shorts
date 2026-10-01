@@ -147,9 +147,18 @@ def main() -> int:
         problem = images.preflight()  # don't spend Gemini + voice time if no image source works
         if problem:
             raise RuntimeError(problem)
-        if (os.environ.get("RENDER_STYLE") or "").strip().lower() == "cutout" and images.cloudflare_has_quota() is False:
-            # cutout draws its pose sets on Cloudflare only: stop before spending Gemini + voice on a story
-            raise RuntimeError("Cutout render was forced but Cloudflare's daily limit is used up (resets 00:00 UTC)")
+        if (os.environ.get("RENDER_STYLE") or "").strip().lower() == "cutout":
+            # cutout draws everything on Cloudflare: check before spending Gemini + voice on a story
+            import cf_budget
+            need = int(CONFIG.get("cutout_max_images", 22)) * cf_budget.IMAGE_NEURONS
+            cf_out = images.cloudflare_has_quota() is False
+            if testing and (cf_out or cf_budget.test_room() < need):
+                why = ("Cloudflare's daily limit is used up" if cf_out else
+                       f"it needs ~{need:.0f} neurons and tests have {cf_budget.test_room():.0f} left today")
+                defer_test(workdir, why)
+                return 0
+            if cf_out:
+                raise RuntimeError("Cutout render was forced but Cloudflare's daily limit is used up (resets 00:00 UTC)")
 
         story, reused = None, False
         if testing and not images.test_cloudflare_images():  # zero-config test: the last built story + images
@@ -212,6 +221,13 @@ def main() -> int:
             imgs = images._cached_images(story, img_dir)
         if imgs is None:
             story["render_style"] = "classic"
+            if testing and images.test_cloudflare_images() and not images._STATE["cf_out"]:
+                import cf_budget  # tests may use 35% of the day's neurons; the rest is production's
+                need = len(story["scenes"]) * int(CONFIG.get("shots_per_scene", 2)) * cf_budget.IMAGE_NEURONS
+                if cf_budget.test_room() < need:
+                    images._STATE["cf_out"] = True
+                    log(f"Test cap: this video needs ~{need:.0f} neurons, tests have {cf_budget.test_room():.0f} "
+                        f"left ({cf_budget.line()}): no Cloudflare, real media + library + local gap fillers only")
             import library
             library.fill_shots(story, img_dir, history)  # 1) asset library reuse (never raises)
             media.fill_shots(story, img_dir, history)  # 2) stock video / archive photos + prints (never raises)
@@ -219,6 +235,9 @@ def main() -> int:
             vs = library.summary(img_dir)
             story["_visual_sources"] = vs
             log(f"Visual sources: {vs['reused']} reused, {vs['archive_stock']} archive/stock, {vs['ai']} AI")
+            if images._STATE["cf_out"]:
+                story["_low_quota"] = True
+                log(f"Low-quota build: {vs['reused'] + vs['archive_stock']} real, {vs['ai']} AI")
         from render import END_CARD_DELAY, tail_for
         ass = build_ass(narration["words"], story.get("hook_overlay", ""),
                         narration["duration"] + tail_for(narration["duration"]), workdir / "captions.ass",
@@ -246,6 +265,19 @@ def main() -> int:
             if testing:
                 notify(story, None, prefix=prefix, error=f"QA gate failed: {reason}")
                 return 1
+            visual = ("one picture", "only ", "the finished video", "visual check")
+            if story.get("_low_quota") and all(p.startswith(visual) for p in problems):
+                # a low-quota video that isn't good enough: wait for the quota (not counted against the story);
+                # SD-Turbo gap fillers are dropped so Cloudflare redraws those shots next time
+                for tag, prov in (story.get("_shot_provider") or {}).items():
+                    if prov == "local_sd":
+                        (img_dir / f"scene_{tag}.png").unlink(missing_ok=True)
+                try:
+                    images._quota_stop(f"low-quota build failed the QA gate ({reason}); the story is kept and "
+                                       "the next build (with Cloudflare) continues it.")
+                except images.ImageQuotaWait:
+                    pass
+                return 0
             fails = checkpoint.qa_failed(story, problems)
             if fails >= 2:  # same story failed twice: skip it for good so the builder can't loop on it
                 history.append({"date": stamp, "story_id": story.get("story_id"), "title": story["title"],
@@ -307,6 +339,7 @@ def main() -> int:
             "story_shape": story.get("story_shape"),  # fiction shape rotation
             "research_sources": [x.get("domain") or x.get("url") for x in story.get("sources") or []],
             "visual_sources": story.get("_visual_sources"),  # reused / archive+stock / AI shots
+            "low_quota": bool(story.get("_low_quota")),  # built with Cloudflare out (real media + gap fillers)
             "remake_of": story.get("remake_of"),  # inbox REMAKE: the old video's title
             "remake_angle": story.get("remake_angle"),
             "critic_score": story.get("critic_score"),
@@ -322,7 +355,7 @@ def main() -> int:
         checkpoint.finish(story)
         (ROOT / ".built").write_text(stamp)  # tells build.yml to save the image cache
         log(f"Done: '{story['title']}' is in the buffer.")
-        try:  # a publish slot found the buffer empty in the last 6 h: post this video right away
+        try:  # a publish slot found the buffer empty: make it up if the buffer has 2+ and no post is within 3 h
             import publish
             publish.post_missed_slot()
         except Exception as e:  # noqa: BLE001
@@ -346,6 +379,22 @@ def main() -> int:
             return 1
         log(f"Build failed, but {waiting} video(s) are still in the buffer: trying again next time, no alert.")
         return 0
+
+
+def defer_test(workdir: Path, why: str) -> None:
+    """A forced cutout test that doesn't fit today's Cloudflare test share: hand its inputs to deferred_test.yml
+    (build.yml commits output/*/deferred_test.json to data/), which starts it right after 00:00 UTC."""
+    inputs = {"test": "true", "fresh_images": os.environ.get("TEST_FRESH") or "false",
+              "render_style": os.environ.get("RENDER_STYLE") or "", "visual_mode": os.environ.get("VISUAL_MODE") or "",
+              "inbox_file": os.environ.get("INBOX_FILE") or ""}
+    (workdir / "deferred_test.json").write_text(json.dumps({k: v for k, v in inputs.items() if v}, indent=1))
+    log(f"Cutout test deferred: {why}. It starts automatically right after 00:00 UTC (deferred_test.yml).")
+    try:
+        from notify import notify_text
+        notify_text("[TEST] Night Files: cutout test deferred",
+                    f"{why}. It starts automatically right after 00:00 UTC (8 PM New York).")
+    except Exception as e:  # noqa: BLE001
+        log(f"Deferral alert not sent ({e})")
 
 
 if __name__ == "__main__":

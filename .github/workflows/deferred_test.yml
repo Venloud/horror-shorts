@@ -1,0 +1,39 @@
+name: Deferred test build
+
+# A forced test build that didn't fit the day's Cloudflare test share (35%) leaves data/deferred_test.json
+# (its build.yml inputs). Right after Cloudflare's reset (00:00 UTC) this starts it once and deletes the file.
+# Several times, because GitHub's cron can skip a run; only the first one that finds the file starts the test.
+on:
+  schedule:
+    - cron: "3 0 * * *"
+    - cron: "23 0 * * *"
+    - cron: "13 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  start:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Start the deferred test build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          R="${{ github.repository }}"
+          if ! gh api "repos/$R/contents/data/deferred_test.json" > req.json 2>/dev/null; then
+            echo "No deferred test waiting."; exit 0
+          fi
+          jq -r .content req.json | base64 -d > inputs.json
+          cat inputs.json
+          args=()
+          for k in $(jq -r 'keys[]' inputs.json); do
+            args+=(-f "$k=$(jq -r --arg k "$k" '.[$k]' inputs.json)")
+          done
+          gh workflow run build.yml --repo "$R" --ref main "${args[@]}"
+          gh api -X DELETE "repos/$R/contents/data/deferred_test.json" \
+            -f message="Deferred test build started" -f sha="$(jq -r .sha req.json)" > /dev/null
+          echo "Started build.yml with: ${args[*]}"

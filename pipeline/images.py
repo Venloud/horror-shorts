@@ -40,6 +40,8 @@ def _log_neurons(raw: bytes, headers) -> None:
     steps = int(CONFIG.get("image_steps", 4))
     neurons = tiles * 4.8 + steps * 9.6
     _STATE["cf_neurons"] += neurons
+    import cf_budget
+    cf_budget.add(neurons)  # per-UTC-day ledger shared by every build (tests capped at 35%)
     extra = {k: v for k, v in headers.items() if "neuron" in k.lower()}
     if extra:  # the per-image line in generate_images shows the estimate; log Cloudflare's own figure if it sends one
         log(f"Cloudflare neuron headers: {extra}")
@@ -227,30 +229,31 @@ def cloudflare_has_quota() -> bool | None:
 def preflight() -> str | None:
     """Before spending Gemini + voice time: make sure at least one image source works. Returns a problem or None."""
     if test_mode():
+        import cf_budget
+        log(cf_budget.line())
         log("TEST MODE: fresh story + real Cloudflare images (not buffered)" if test_cloudflare_images() else
             "TEST MODE: reusing the last saved story + images (Cloudflare is never called)")
         return None
+    import cf_budget
+    log(cf_budget.line())
     cf = cloudflare_has_quota()
     if cf is not False:
         log(f"Cloudflare: {'has quota' if cf else 'status unknown, will try it'}")
         return None
     _STATE["cf_out"] = True
+    _STATE["low_quota"] = True
     log("Cloudflare daily limit is used up (resets 00:00 UTC = 8 PM New York); 2 shots per scene this run")
     try:
         _hf_space("a foggy forest at night, illustration", 1, width=256, height=256, steps=1)
         log("Free FLUX Spaces: working")
-        return None
     except Exception as e:  # noqa: BLE001
-        spaces_err = str(e)[:200]
-        log(f"Free FLUX Spaces not usable: {spaces_err}")
-    _STATE["spaces_out"] = True
-    # Local SD-Turbo alone is a gap filler (local_image_max per video), never enough for a whole video: wait for
-    # the quota instead of spending Gemini + voice + 12 minutes of CPU on a weak video. The buffer covers the gap.
-    try:
-        _quota_stop(f"Cloudflare daily limit used up and the free Spaces are out ({spaces_err[:120]}). "
-                    "No story was written; inbox items stay queued.")
-    except ImageQuotaWait as e:
-        return str(e)
+        log(f"Free FLUX Spaces not usable: {str(e)[:200]}")
+        _STATE["spaces_out"] = True
+    # No slot is skipped for quota alone: real media first (library / stock / archive), the Spaces, max
+    # local_image_max SD-Turbo gap fillers. The video ships only if it passes the full QA gate; a QA failure on
+    # such a build = "waiting for image quota" (main.py).
+    log("Low-quota build: Cloudflare is out; real media + " + ("" if _STATE["spaces_out"] else "free Spaces + ")
+        + f"max {int(CONFIG.get('local_image_max', 6))} SD-Turbo gap fillers; ships only if the full QA gate passes")
     return None
 
 
@@ -1113,25 +1116,20 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
     told_two = False
     done_shots: list[str] = []
 
-    def cf_usable() -> bool:  # test builds: only with fresh_images (TEST_FRESH)
+    import cf_budget
+
+    def cf_usable() -> bool:  # test builds: only with fresh_images (TEST_FRESH), and within their 35% daily share
+        if testing and has_cf and not _STATE["cf_out"] and not cf_budget.test_allowed():
+            _STATE["cf_out"] = True
+            log(f"Test cap reached ({cf_budget.line()}): this test continues without Cloudflare")
         return has_cf and not _STATE["cf_out"] and (not testing or count["cloudflare"] < test_cf)
 
     for n, (i, shot, raw_prompt) in enumerate(jobs):
         tag = f"{i:02d}{shot}"
         path = outdir / f"scene_{i:02d}{shot}.png"
         use_cf = cf_usable()
-        # SD-Turbo is only a gap filler (local_image_max, 6 per video, test builds too). With Cloudflare and the Spaces
-        # out, more local images than that = stop now (story + narration stay in the checkpoint) instead of
-        # burning the time budget; the buffer covers the gap.
-        if not use_cf and (testing or _STATE["spaces_out"]):  # test builds never use the Spaces
-            # scenes that already have ANY image (drawn this run, real media, checkpoint) need nothing more
-            have = {j for (j, _s), p in results.items() if p} | {
-                j for (j, _s, _) in jobs if any(_is_image(outdir / f"scene_{j:02d}{x}.png") for x in "abcd")}
-            needed = len({j for (j, s2, _) in jobs[n:] if j not in have})
-            if needed > local_max - count["local_sd"]:
-                _quota_stop(f"Cloudflare and the free Spaces are out; {needed} scenes still need an image but "
-                            f"local SD-Turbo is a gap filler only ({local_max - count['local_sd']} of {local_max} "
-                            "left). Stopped early; the story is kept and the next build continues it.")
+        # SD-Turbo is only a gap filler (local_image_max, 6 per video, test builds too). No early stop when it can't
+        # cover every empty scene: the empty-scene check below and the full QA gate decide (low-quota builds).
         # Cloudflare out (or test mode): the fallbacks are slow/limited, so at most 2 shots per scene from here on.
         if shot in ("c", "d") and not use_cf and not _is_image(path):
             if not told_two:
@@ -1266,6 +1264,7 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
     empty = [i for i in range(n_scenes) if not any(results.get((i, s)) for s in "abcd")]
     log(f"Cloudflare images: {count['cloudflare']}")
     log(f"Cloudflare estimated neurons: {_STATE['cf_neurons']:.0f}")
+    log(cf_budget.line())
     log(f"HF images: {count['hf_space']}")
     log(f"Local SD images: {count['local_sd']}" + (f" ({_STATE['local_secs']:.0f}s)" if _STATE["local_secs"] else ""))
     log(f"Real media (stock video / archive photos): {count['real_media']}")
@@ -1275,6 +1274,9 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
     if missing or empty:
         log(f"Missing {missing} of {len(jobs)} shots; {len(empty)} of {n_scenes} scenes have no image at all")
     if len(empty) > max(1, n_scenes // 4):
+        if _STATE["cf_out"]:  # low-quota build that can't fill its scenes: wait for the quota, keep the story
+            _quota_stop(f"{len(empty)} of {n_scenes} scenes have no image with Cloudflare out; the story is kept "
+                        "and the next build continues it.")
         raise RuntimeError(f"{len(empty)} of {n_scenes} scenes have no image; not rendering a broken video.")
 
     # How many scenes each picture fills (virtual crops count as their source). One picture may fill at most

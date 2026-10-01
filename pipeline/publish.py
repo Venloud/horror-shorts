@@ -5,8 +5,9 @@ Shorts, independently -> delete it from the buffer if at least one worked -> rec
 -> phone alert with the YouTube link (+ warning when the buffer is low). Takes about a minute or two.
 
 Empty buffer: no failure. It writes data/missed_slot.json, alerts "building now", and daily.yml starts build.yml
-right away (ROOT/.trigger_build tells it to). When that build (or any build within 6 h) puts a video in the buffer,
-main.py calls post_missed_slot(), which posts it at once and deletes missed_slot.json.
+right away (ROOT/.trigger_build tells it to). When a build (within 24 h) puts a video in the buffer, main.py calls
+post_missed_slot(): it makes the slot up only if the buffer then holds 2+ videos (the next regular slot keeps one)
+and no post is within 3 h before or after (last post / next slot); else the file waits for a later build.
 """
 import json
 import sys
@@ -16,7 +17,9 @@ from datetime import datetime, timezone
 from common import CONFIG, ROOT, load_history, log, save_history
 
 MISSED = ROOT / "data" / "missed_slot.json"
-MISSED_MAX_AGE_H = 6
+MISSED_MAX_AGE_H = float(CONFIG.get("missed_slot_max_hours", 24))
+MIN_GAP_H = float(CONFIG.get("min_post_gap_hours", 3))  # never two posts within 3 hours
+SLOTS_UTC = CONFIG.get("publish_slots_utc", ["15:40", "00:40"])
 COUNTER = ROOT / "data" / "counter.json"  # the channel's own post numbers (#26, #27...), not GitHub run numbers
 
 
@@ -65,9 +68,50 @@ def post_missed_slot() -> None:
         log(f"Missed slot ({info.get('slot')}) is {age_h:.1f} h old: not posting now, the next slot posts normally")
         MISSED.unlink(missing_ok=True)
         return
+    wait = makeup_blocker()
+    if wait:
+        log(f"Missed slot ({info.get('slot')}) not made up yet: {wait}; a later build tries again")
+        return
     log(f"Making up the missed slot ({info.get('slot')}, {age_h:.1f} h ago): posting now")
     main(from_build=True)
     MISSED.unlink(missing_ok=True)
+
+
+def _last_post() -> datetime | None:
+    times = []
+    for h in load_history():
+        try:
+            times.append(datetime.strptime(h["posted"], "%Y-%m-%d_%H%M").replace(tzinfo=timezone.utc))
+        except (KeyError, TypeError, ValueError):
+            pass
+    return max(times, default=None)
+
+
+def _next_slot(now: datetime) -> datetime:
+    from datetime import timedelta
+    cands = []
+    for s in SLOTS_UTC:
+        hh, mm = (int(x) for x in s.split(":"))
+        t = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
+        cands.append(t if t > now else t + timedelta(days=1))
+    return min(cands)
+
+
+def makeup_blocker(now: datetime | None = None, waiting: int | None = None) -> str:
+    """Why a missed slot can't be made up right now ("" = it can): the buffer must hold 2+ videos so the next
+    regular slot still has one, and no post may be within MIN_GAP_H hours before or after."""
+    import buffer
+    now = now or datetime.now(timezone.utc)
+    waiting = buffer.count() if waiting is None else waiting
+    if waiting < 2:
+        return f"the buffer has {waiting} video(s), a make-up needs 2+ so the next slot keeps one"
+    last = _last_post()
+    if last and (now - last).total_seconds() < MIN_GAP_H * 3600:
+        return f"the last post was {(now - last).total_seconds() / 3600:.1f} h ago (min {MIN_GAP_H:g} h)"
+    nxt = _next_slot(now)
+    if (nxt - now).total_seconds() < MIN_GAP_H * 3600:
+        return f"the next slot is in {(nxt - now).total_seconds() / 3600:.1f} h (min {MIN_GAP_H:g} h)"
+    return ""
 
 
 def main(from_build: bool = False) -> int:
@@ -94,7 +138,8 @@ def main(from_build: bool = False) -> int:
         (ROOT / ".trigger_build").write_text(slot)  # daily.yml starts build.yml right away
         log(f"Buffer empty at the {slot} slot: starting a build, it posts as soon as the video is ready")
         notify_text("Night Files: buffer empty",
-                    "Buffer empty: building now, will post when ready (if it's ready within 6 hours).")
+                    "Buffer empty: building now. The slot is made up once the buffer holds 2+ videos, never "
+                    "within 3 h of another post.")
         return 0
 
     video = waiting[0]

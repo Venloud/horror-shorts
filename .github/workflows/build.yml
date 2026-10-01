@@ -106,6 +106,14 @@ jobs:
           key: media-search-${{ github.run_id }}
           restore-keys: media-search-
 
+      - name: Cloudflare neurons used today (tests may use 35%; every build adds to it)
+        if: steps.check.outputs.build == 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: cache/cf-usage
+          key: cf-usage-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: cf-usage-
+
       - name: Restore last run's images (test mode reuses them)
         if: steps.check.outputs.build == 'true'
         uses: actions/cache/restore@v4
@@ -176,6 +184,30 @@ jobs:
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
         run: cd pipeline && python main.py ${{ inputs.test && '--test' || '' }}
+
+      - name: Save today's Cloudflare usage (also when the build failed)
+        if: always() && steps.check.outputs.build == 'true' && hashFiles('cache/cf-usage/usage.json') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: cache/cf-usage
+          key: cf-usage-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Hand a deferred test to deferred_test.yml (starts it after 00:00 UTC)
+        if: always() && inputs.test && hashFiles('output/*/deferred_test.json') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          f=$(ls output/*/deferred_test.json | head -1)
+          R="${{ github.repository }}"
+          sha=""
+          # exit code, not output: a 404 still prints JSON
+          if gh api "repos/$R/contents/data/deferred_test.json" > /tmp/old.json 2>/dev/null; then
+            sha=$(jq -r .sha /tmp/old.json)
+          fi
+          gh api -X PUT "repos/$R/contents/data/deferred_test.json" \
+            -f message="Deferred test build (starts after 00:00 UTC)" \
+            -f content="$(base64 -w0 "$f")" ${sha:+-f sha=$sha} > /dev/null
+          echo "Deferred test saved to data/deferred_test.json:"; cat "$f"
 
       - name: Save new TikTok token if TikTok rotated it (make-up post)
         if: always() && hashFiles('.new_refresh_token') != ''

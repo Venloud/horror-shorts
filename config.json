@@ -151,5 +151,10 @@
   "research_models": ["gemini-2.5-flash", "gemini-2.5-flash-lite"],
   "research_daily_limit": 400,
   "direct_privacy": "SELF_ONLY",
-  "tiktok_ai_label": true
+  "tiktok_ai_label": true,
+  "cloudflare_daily_neurons": 10000,
+  "cloudflare_test_share": 0.35,
+  "missed_slot_max_hours": 24,
+  "min_post_gap_hours": 3,
+  "publish_slots_utc": ["15:40", "00:40"]
 }

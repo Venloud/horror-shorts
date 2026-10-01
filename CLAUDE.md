@@ -191,7 +191,17 @@ so a new session can pick up without starting over.
    $1M/yr revenue, register once at stability.ai/community-license). Pollinations and the paid HF router were
    removed (always 402). The render upscales everything to 1080x1920 with lanczos. Log shows the source of every
    image and the local model's total time. `preflight()` runs BEFORE the story: tiny Cloudflare quota check; if
-   it's out, test the Spaces, then the local model; only if all fail, stop with a phone alert (nothing wasted).
+   it's out, it tests the Spaces and goes on as a **low-quota build** (never skips a slot for quota alone).
+   **Neuron ledger** (`pipeline/cf_budget.py`, cache/cf-usage/usage.json, Actions cache `cf-usage-*` saved even on
+   failed builds): neurons per UTC day split tests / production; log "Cloudflare today: N/10000 (tests N,
+   production N)". Test builds may use `cloudflare_test_share` (0.35) of `cloudflare_daily_neurons`; a fresh test
+   whose video wouldn't fit (scenes x shots x 57.6) runs without Cloudflare (real media + library + local gap
+   fillers; tests never use the Spaces), and a test that hits the cap mid-run switches off Cloudflare.
+   **Low-quota build** (Cloudflare out in production, at preflight or mid-run): real media first (library / stock /
+   archive) + Spaces + max 6 SD-Turbo gap fillers, no early stop; log "Low-quota build: N real, N AI", history
+   `low_quota`. It ships only if the full QA gate passes. A QA failure that is only visual (variety) = "waiting
+   for image quota" alert: not counted toward the 2-strikes skip, the story stays in the checkpoint and its SD-Turbo
+   shots are deleted so Cloudflare redraws them; more empty scenes than max(1, scenes // 4) = the same wait.
    If Cloudflare is out (or hits its limit mid-run), at most 2 shots per scene for the rest of the run.
    **2 images per scene** (`shots_per_scene` 2, was 4; 3-4 still work if configured): shot a = the narration's
    main visual, shot b = a DIFFERENT subject/action/angle of the same words (render motion covers the rest).
@@ -426,6 +436,11 @@ so a new session can pick up without starting over.
 - `daily.yml` (`pipeline/publish.py`) does NO generation: oldest buffered video -> TikTok + YouTube Shorts ->
   delete from buffer -> both results + "posted" time saved in history -> phone alert with the YouTube link
   (+ "buffer low" alert at 1 left). Only if both platforms fail does the video stay in the buffer.
+- **Missed-slot make-up** (`publish.makeup_blocker`): a missed slot (data/missed_slot.json, max
+  `missed_slot_max_hours` 24 h old) is made up by a build only when the buffer then holds 2+ videos (the next
+  regular slot keeps one) and no post is within `min_post_gap_hours` (3) before (history `posted`) or after (next
+  slot in `publish_slots_utc`); otherwise the file waits for a later build. (Oct 1: GitHub's cron skipped the 15:40
+  daily run entirely; its missed_slot.json was written by hand.)
 - **Empty buffer at a slot**: the publisher does NOT fail. It writes `data/missed_slot.json` {"slot", "at"}, sends
   "Buffer empty: building now, will post when ready", and daily.yml starts build.yml at once (`gh workflow run`,
   github.token with actions: write; GH_PAT only as fallback: the
@@ -433,7 +448,8 @@ so a new session can pick up without starting over.
   `publish.post_missed_slot()`: missed slot < 6 h old -> post it right away (same publish code, TikTok + YouTube,
   so build.yml also has the TikTok/YouTube secrets + token-save step), then delete the file; older -> just delete
   it and the next slot posts normally. Both workflows save history.json + missed_slot.json with
-  `pipeline/push_state.sh` (merge_history.py + 3 push tries).
+  `pipeline/push_state.sh` (merge_history.py + 3 push tries). The 6 h make-up window was replaced by the
+  make-up rules above.
 - **Video numbers** (`data/counter.json` {"next_video": N}): GitHub run numbers are per workflow, so the bot keeps
   its own post counter. `publish.take_video_number()` gives the number only once a video actually went out
   (TikTok or YouTube accepted it, also for a make-up post from build.yml); test builds, failed publishes and
@@ -483,7 +499,10 @@ so a new session can pick up without starting over.
   `cutout_for_modes` (e.g. ["coldcase"]). Any cutout failure -> logged, the video renders classic; a FORCED
   cutout (RENDER_STYLE=cutout) never ships classic: the build fails with "Cutout render was forced but failed in
   <where>: <why>", and stops before the story if Cloudflare's daily limit is already used up (cutout is
-  Cloudflare-only). Legends whose shots name no figure get their creature (+ one adult witness) as the cast
+  Cloudflare-only). A forced cutout TEST that doesn't fit the tests' share (`cutout_max_images` x 57.6 neurons) or
+  finds Cloudflare out is deferred instead of failing: main.py writes output/*/deferred_test.json, build.yml commits
+  it to data/deferred_test.json, and `deferred_test.yml` (00:03 / 00:23 / 02:13 UTC) starts build.yml with the same
+  inputs once and deletes the file. Legends whose shots name no figure get their creature (+ one adult witness) as the cast
   (`derive_characters`, aliases corpse/creature/revenant...); a character-less stage never repeats an empty plate.
 - Characters (max 2, adults) = a pose set drawn once (Cloudflare, NO seed: FLUX schnell on Workers AI answers 400
   "'/seed' not allowed"; config `cloudflare_seed` re-enables it; look word-for-word, plain gray
@@ -497,8 +516,7 @@ so a new session can pick up without starting over.
   Inserts/plates: no text requests (`images._no_text`), "blank unmarked surfaces", QA fails visible letters (run
   36848613329 had garbled sign/tombstone lettering). STATUS (Oct 1): offline end-to-end passes; runner test runs:
   36847389674 = seed 400, 36848613329 = QA fail (one empty plate 27%, fixed), 36850352869 = Cloudflare daily
-  limit used up; next test after
-  00:00 UTC with `inbox_file=nachzehrer_remake.txt`. Not used in production.
+  limit used up; next test right after 00:00 UTC with `inbox_file=nachzehrer_remake.txt`. Not used in production.
 
 ## Schedule
 - 2 videos a day, **11:40 AM and 8:40 PM New York**. GitHub's own cron was unreliable (4 h late / skipped),
