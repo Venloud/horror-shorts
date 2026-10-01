@@ -307,7 +307,7 @@ def too_close(now: datetime) -> str | None:
 # ---------- upload ----------
 
 def upload_one(state: dict) -> None:
-    import packaging
+    import yt_packaging as packaging
     import render
     import youtube
 

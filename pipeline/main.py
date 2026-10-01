@@ -14,7 +14,7 @@ import traceback
 from datetime import datetime, timezone
 
 from common import CONFIG, ROOT, env, load_history, log, save_history
-import packaging
+import yt_packaging as packaging  # NOT "packaging": that name shadows the pip package transformers needs
 
 
 def _gh_output(key: str, value) -> None:

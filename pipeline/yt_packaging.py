@@ -364,7 +364,7 @@ def count_hashtags(*texts: str) -> int:
     return len({m.lower() for t in texts for m in re.findall(r"#(\w+)", t)})
 
 
-if __name__ == "__main__":  # quick look: python packaging.py story.json
+if __name__ == "__main__":  # quick look: python yt_packaging.py story.json
     import sys
     s = json.load(open(sys.argv[1], encoding="utf-8"))
     pk = package(s, use_llm=len(sys.argv) < 3)

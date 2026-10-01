@@ -53,8 +53,8 @@ def make_tags(hashtags: list[str], caption_text: str = "") -> list[str]:
 
 def upload(mp4: Path, title: str, caption_text: str, hashtags: list[str] | None = None,
            credits: str = "", tags: list[str] | None = None) -> dict:
-    """caption_text = the description (packaging.youtube_description for new videos); tags = search phrases
-    (packaging yt_tags) for snippet.tags, else the hashtags."""
+    """caption_text = the description (yt_packaging.youtube_description for new videos); tags = search phrases
+    (yt_packaging yt_tags) for snippet.tags, else the hashtags."""
     from google.oauth2.credentials import Credentials
     from googleapiclient.discovery import build
     from googleapiclient.http import MediaFileUpload

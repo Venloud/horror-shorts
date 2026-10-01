@@ -161,7 +161,7 @@ so a new session can pick up without starting over.
      investigation / reversal / uncanny normal (history `story_shape`), `pick_premise` pitches 3 premises and
      rejects vague ones (clarity < 7; one clear sentence + question + visual), "90% normal, 10% wrong", the
      ending explains what happened; the existing 80/100 score loop (3 drafts) is its critic.
-   - **Packaging** (flag `packaging`, `pipeline/packaging.py`; replaces the caption style below for new videos and
+   - **Packaging** (flag `packaging`, `pipeline/yt_packaging.py` (NOT packaging.py: that shadowed the pip `packaging` module and broke `import transformers`); replaces the caption style below for new videos and
      backfill uploads): one small LLM call (`story._json_call`) proposes title hook / subject / place / category /
      hook sentence / topic tags / 2 niche tags (whitelist `packaging.NICHE` per kind: lore / true / fiction) / 12
      search phrases; code validates everything, deterministic fallback ("<Subject> | <Category>") if the call fails.
@@ -345,7 +345,7 @@ so a new session can pick up without starting over.
    submitted, but TikTok's guidelines reject "tools that upload to your own/team accounts", so expect rejection.
    Plan if needed: an approved third-party posting service, or turn this into a public product later.
    **YouTube Shorts** (`youtube.py`, Data API v3, scope youtube.upload): the same mp4 right after TikTok, in
-   publish.py. Title / description / tags from packaging.py (caption.json yt_title / yt_description / yt_tags;
+   publish.py. Title / description / tags from yt_packaging.py (caption.json yt_title / yt_description / yt_tags;
    older buffer entries: story title + " #Shorts" and the TikTok caption), category 24, containsSyntheticMedia true, not made for kids, privacy from
    config `youtube_privacy` (`youtube_enabled` switches it off). Uploads from an UNVERIFIED Google Cloud project
    are forced private until YouTube's API audit passes; the log/alert shows the privacy YouTube returned.
@@ -365,7 +365,7 @@ so a new session can pick up without starting over.
    `data/backfill.json`): uploads the videos that were on TikTok before YouTube upload worked. Every run first copies
    queued videos out of their 7-day build artifacts into the release **"backfill"** (`<stamp>.mp4` + `<stamp>.json`),
    then uploads ONE (max `yt_backfill_per_day` 3/day; oldest first; public; same title/description/tags as daily
-   posts via packaging.py + youtube.upload; yt_backfill.yml has GEMINI/GROQ keys for it). Only videos the owner PUBLISHED on TikTok: `data/tiktok_posted.txt`
+   posts via yt_packaging.py + youtube.upload; yt_backfill.yml has GEMINI/GROQ keys for it). Only videos the owner PUBLISHED on TikTok: `data/tiktok_posted.txt`
    (one title or caption per line, fuzzy-matched; unmatched lines in backfill.json `unmatched_lines`); no file =
    nothing uploads. Waits within 60 min of a publish slot / post or while daily.yml runs; skips titles already on the
    channel (history, backfill.json, channel list when the token allows); `render.qa_gate(backfill=True)` (no 61 s
