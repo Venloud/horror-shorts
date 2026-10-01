@@ -329,7 +329,8 @@ def upload_one(state: dict) -> None:
         log("YouTube secrets missing: nothing uploaded")
         return
 
-    todo = [v for v in state["videos"] if v["status"] == "queued" and v.get("tiktok_published")]
+    todo = [v for v in state["videos"] if v["status"] == "queued" and v.get("tiktok_published")
+            and not v.get("remade")]  # remade topics: the new video replaces the old one, never upload the old
     todo.sort(key=lambda v: v["stamp"])  # oldest first
     if not todo:
         log("Backfill: nothing left to upload")
@@ -401,7 +402,8 @@ def upload_one(state: dict) -> None:
 def finish_if_done(state: dict, have_list: bool) -> None:
     if not have_list:
         return
-    left = [v for v in state["videos"] if v["status"] == "queued" and v.get("tiktok_published")]
+    left = [v for v in state["videos"] if v["status"] == "queued" and v.get("tiktok_published")
+            and not v.get("remade")]
     if left:
         log(f"Backfill queue: {len(left)} left: " + ", ".join(v["title"] for v in left))
         return

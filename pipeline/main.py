@@ -259,6 +259,8 @@ def main() -> int:
             "visual_mode": story.get("visual_mode"),  # A/B test: classic / fast / analog
             "render_style": story.get("render_style", "classic"),  # classic / cutout (experimental)
             "story_shape": story.get("story_shape"),  # fiction shape rotation
+            "remake_of": story.get("remake_of"),  # inbox REMAKE: the old video's title
+            "remake_angle": story.get("remake_angle"),
             "critic_score": story.get("critic_score"),
             "visuals": story.get("_visuals"),  # distinct pictures + the longest one on screen
             "yt_title": (story.get("packaging") or {}).get("yt_title"),  # packaging, for tag/title analytics

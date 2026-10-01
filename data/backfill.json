@@ -93,11 +93,12 @@
       "artifact_expires": "2026-10-03T03:34Z",
       "duration": 61.3,
       "tiktok_publish_id": "v_inbox_file~v2.7689681595833632798",
-      "status": "queued",
-      "reason": null,
+      "status": "skipped",
+      "reason": "remade: inbox/nachzehrer_remake.txt makes a new Nachzehrer video; the old one never goes to YouTube",
       "qa": "passed (local check 2026-10-01)",
       "stashed": true,
-      "note": "one shot with a garbled name plate"
+      "note": "one shot with a garbled name plate",
+      "remade": true
     },
     {
       "stamp": "2026-09-26_0443",

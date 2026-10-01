@@ -331,7 +331,7 @@ def pick_mode(history: list[dict]) -> str:
     """Position-based rotation through config story_modes, so a mode can repeat (e.g. lore, mystery, lore, case)."""
     modes = CONFIG.get("story_modes", ["lore"])
     count = sum(1 for h in history if h.get("title") and not h.get("skipped")
-                and not str(h.get("mode", "")).startswith("inbox"))
+                and not str(h.get("mode", "")).startswith("inbox") and not h.get("remake_of"))
     return modes[count % len(modes)]
 
 
@@ -1128,6 +1128,8 @@ def _write_story(history: list[dict], skipped: list[dict]) -> dict:
         try:
             text = sources.inbox_text(item)
             log(f"Inbox item: {item['key']} ({item['kind']}, {len(text)} chars)")
+            if item["kind"] == "remake":
+                return remake_story(history, item, api_key, sfx_list)
             if item["kind"] == "script":
                 log("Inbox SCRIPT: narrating it exactly as written, only adding visuals")
                 if item.get("true"):
@@ -1153,7 +1155,7 @@ def _write_story(history: list[dict], skipped: list[dict]) -> dict:
         except Exception as e:  # noqa: BLE001
             reason = f"{type(e).__name__}: {str(e)[:300]}"
             history = history + [{"source": item["key"]}]  # not again in this run
-            if _transient(e) or item.get("kind") == "script":
+            if _transient(e) or item.get("kind") in ("script", "remake"):
                 # Gemini busy / quota / network, or the owner's own script: keep it queued for the next build.
                 log(f"Inbox item {item['key']} NOT made this time, it stays queued for the next build. "
                     f"Reason: {reason}")
@@ -1225,6 +1227,76 @@ def _write_story(history: list[dict], skipped: list[dict]) -> dict:
         story["source"] = item["key"]
     words = sum(len(s["narration"].split()) for s in story["scenes"])
     log(f"Story '{story['title']}' ({words} words, {len(story['scenes'])} scenes) via {story['model']}")
+    return story
+
+
+REMAKE_BLOCK = """
+## REMAKE: THIS TOPIC WAS ALREADY MADE ONCE
+Make a NEW video about the same legend. Same facts, a completely different story angle.
+OLD VERSION (never reuse its hook, its opening line, its title, its ending or its scene-by-scene structure):
+{old}
+NEW ANGLE: {angle}
+- Open on the new angle's strangest detail (a different first sentence, different hook overlay, different title).
+- Build the scenes around the new angle; do not walk through the old video's beats in the old order.
+- Facts only from the SOURCE. If a source describes a custom for revenants/vampires in general, say so; never
+  claim it was specific to this legend unless the source says that.
+{notes}"""
+
+
+def _too_close(a: str, b: str) -> bool:
+    from difflib import SequenceMatcher
+    na, nb = re.sub(r"[^a-z0-9 ]", "", a.lower()).split(), re.sub(r"[^a-z0-9 ]", "", b.lower()).split()
+    if not na or not nb:
+        return False
+    return SequenceMatcher(None, na, nb).ratio() > 0.6 or na[:5] == nb[:5]
+
+
+def remake_story(history: list[dict], item: dict, api_key: str, sfx_list: str) -> dict:
+    """Inbox REMAKE: a fresh lore video about a topic we already made (new angle / hook / structure / images).
+    Bypasses the "topic already used" pick (the topic comes from the file, not mystery.pick_case)."""
+    import mystery
+    topic = item["topic"]
+    old = next((h for h in reversed(history) if not h.get("skipped") and (
+        str(h.get("case") or "").lower() == topic.lower() or topic.lower() in str(h.get("title", "")).lower())), {})
+    old_title = old.get("title") or topic
+    num = f"#{old['video_number']}" if old.get("video_number") else f"posted {old.get('date', '?')}"
+    avoid = [x for x in [old.get("title"), old.get("premise"), old.get("twist")] + item.get("avoid", []) if x]
+    angle = item.get("angle") or "a different detail of the legend than the old video led with"
+    log(f"Remake of {old_title} ({num}): new angle '{angle[:110]}{'...' if len(angle) > 110 else ''}'")
+    facts = ""
+    for src in item.get("sources") or [topic]:
+        try:
+            facts += f"\n\n=== SOURCE: Wikipedia - {src} ===\n" + mystery.fetch_facts(src, 6000)
+        except Exception as e:  # noqa: BLE001
+            log(f"Remake source '{src}' skipped ({str(e)[:120]})")
+    if not facts:
+        raise RuntimeError(f"Remake of {topic}: no source text")
+    prompt, _ = mystery.build_prompt(CONFIG["channel_name"], {"title": topic, "source": "Wikipedia",
+                                                              "url": "", "text": facts}, sfx_list, "lore")
+    block = REMAKE_BLOCK.format(old="\n".join(f"- {x}" for x in avoid), angle=angle,
+                                notes=("OWNER NOTES:\n" + item["text"]) if item.get("text") else "")
+    rules = ("ONLY facts from this source, never invent details; legends clearly labelled as legends; respectful; "
+             "no gore; third person; plain English; NEW angle, never the old video's hook or opening."
+             "\nSOURCE:\n" + mark_source(facts[:7000]))
+    extra = ""
+    for attempt in range(3):
+        story = _run_models(prompt + UPGRADE_LORE + block + extra, api_key, temperature=0.8)
+        story = edit_story(story, api_key, sfx_list, rules)
+        story = fix_hook(story, api_key, sfx_list, rules)
+        story = critic_pass(story, api_key, "legend", rules)
+        opening = re.split(r"(?<=[.!?])\s+", story["scenes"][0]["narration"].strip())[0]
+        reused = [x for x in avoid if _too_close(opening, x) or _too_close(story.get("hook_overlay", ""), x)
+                  or _too_close(story.get("title", ""), x)]
+        if not reused:
+            break
+        log(f"Remake draft {attempt + 1} reused the old version ({reused[0][:80]!r}); writing it again")
+        extra = (f"\n\nYOUR LAST DRAFT REUSED THE OLD VIDEO: {reused[0]!r}. Use a different first sentence, "
+                 "hook overlay and title built on the NEW ANGLE.")
+    else:
+        raise RuntimeError(f"Remake of {topic}: every draft reused the old video's hook/opening")
+    story.update({"mode": "lore", "case": topic, "subgenre": "legend / folklore", "source": item["key"],
+                  "remake_of": old_title, "remake_angle": angle, "true_story": False})
+    log(f"Remake '{story['title']}' ({len(story['scenes'])} scenes) via {story.get('model')}; opening: {opening!r}")
     return story
 
 

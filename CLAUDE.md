@@ -82,6 +82,17 @@ so a new session can pick up without starting over.
      Optional second header line `NOT_BEFORE: <video number>` (e.g. `NOT_BEFORE: 31`): `sources.next_inbox` skips
      that file until `data/counter.json` next_video >= that number; other inbox items and the rotation go on.
      (`inbox/louvre_password.txt` waits for #31.)
+     **REMAKE** (`inbox/<x>.txt` first line `REMAKE: <topic>`; optional `SOURCES: title; title`, `ANGLE: ...`,
+     repeatable `AVOID: ...`, free notes): `story.remake_story` writes a NEW lore video about an already-used topic
+     (bypasses mystery.pick_case's used-topic check), fact-locked to the listed Wikipedia pages, with the old
+     version's title/premise/twist + AVOID lines in a REMAKE block; a draft whose opening, hook overlay or title is
+     too close to any of them (`_too_close`) is rewritten (max 3 drafts). New story id = new images (nothing
+     cached is reused). REMAKE files go before every other inbox item; a failure keeps them queued (like SCRIPT).
+     Log "Remake of <old title> (#N / posted <date>): new angle '...'"; history `remake_of` / `remake_angle`;
+     remakes don't count toward the story_modes rotation. The old video is marked `remade` in data/backfill.json
+     (never uploaded to YouTube). First one: `inbox/nachzehrer_remake.txt` (best TikTok, 234 views / 8 likes):
+     mouth-of-the-dead angle; sources Nachzehrer + Vampire burial (the 2009 Venice "brick" skull is in neither,
+     so it's left out).
    - **TRUE STORY rule**: modes `case`, `mystery`, `inbox-true` and inbox `SCRIPT TRUE` files are true stories
      (NOT `lore`: legends aren't true stories; NOT fiction). For those, `story["true_story"] = True` (saved in history),
      scene 1 = hook sentence, THEN "This is a true story." (never first: slow opener; code moves/inserts it),

@@ -9,6 +9,10 @@ inbox/*.txt      any other text file = a pasted story/article. First line "TRUE"
                  and real people drawn per the real-people rule).
                  Optional second header line "NOT_BEFORE: 31": the item waits until data/counter.json next_video
                  is at least 31; other inbox items and the normal rotation go on meanwhile.
+                 First line "REMAKE: <topic>" = a NEW lore video about a topic we already made (new angle, new hook,
+                 new images; story.remake_story). Optional header lines: "SOURCES: Wikipedia title; another title",
+                 "ANGLE: ...", "AVOID: ..." (repeatable: old hook / opening lines it must not reuse). REMAKE files
+                 go before every other inbox item.
 Each item is used once (tracked in data/history.json). Inbox items jump the queue.
 """
 import json
@@ -132,12 +136,37 @@ def next_inbox(history: list[dict]) -> dict | None:
             url = url.strip()
             if url.startswith("http") and url not in used:
                 return {"key": url, "kind": kind.lower(), "url": url}
-    for f in sorted(INBOX.glob("*.txt")):
+    def remake_first(f):
+        try:
+            head = f.read_text(encoding="utf-8").lstrip()[:12].upper()
+        except OSError:
+            head = ""
+        return (not head.startswith("REMAKE:"), f.name)
+
+    for f in sorted(INBOX.glob("*.txt"), key=remake_first):
         if f.name == "links.txt" or f"inbox/{f.name}" in used:
             continue
         lines = f.read_text(encoding="utf-8").strip().splitlines()
         if not lines:
             continue
+        m = re.match(r"\s*REMAKE:\s*(.+?)\s*$", lines[0], re.IGNORECASE)
+        if m:
+            item = {"key": f"inbox/{f.name}", "kind": "remake", "topic": m.group(1), "sources": [], "angle": "",
+                    "avoid": [], "text": ""}
+            notes = []
+            for ln in lines[1:]:
+                h = re.match(r"\s*(SOURCES|ANGLE|AVOID):\s*(.*)$", ln, re.IGNORECASE)
+                if not h:
+                    notes.append(ln)
+                elif h.group(1).upper() == "SOURCES":
+                    item["sources"] = [x.strip() for x in h.group(2).split(";") if x.strip()]
+                elif h.group(1).upper() == "ANGLE":
+                    item["angle"] = h.group(2).strip()
+                else:
+                    item["avoid"].append(h.group(2).strip())
+            item["text"] = "\n".join(notes).strip()
+            item["sources"] = item["sources"] or [item["topic"]]
+            return item
         kind, true = "fiction", False
         first = " ".join(lines[0].upper().split())
         if first in ("SCRIPT TRUE", "TRUE SCRIPT"):
@@ -160,4 +189,6 @@ def next_inbox(history: list[dict]) -> dict | None:
 
 
 def inbox_text(item: dict) -> str:
+    if item.get("kind") == "remake":
+        return item.get("text", "")
     return item.get("text") or page_text(item["url"])
