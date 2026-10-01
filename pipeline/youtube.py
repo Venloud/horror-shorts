@@ -24,6 +24,8 @@ def make_title(title: str, limit: int = 100) -> str:
     """Story title + " #Shorts", max 100 chars, cut at a word boundary (never mid-emoji or mid-word)."""
     suffix = " #Shorts"
     title = _clean(title).strip()
+    if "#shorts" in title.lower():  # packaging.py titles already end with #shorts (and are <= 70 chars)
+        return title[:limit]
     room = limit - len(suffix)
     if len(title) > room:
         cut = title[:room]
@@ -50,7 +52,9 @@ def make_tags(hashtags: list[str], caption_text: str = "") -> list[str]:
 
 
 def upload(mp4: Path, title: str, caption_text: str, hashtags: list[str] | None = None,
-           credits: str = "") -> dict:
+           credits: str = "", tags: list[str] | None = None) -> dict:
+    """caption_text = the description (packaging.youtube_description for new videos); tags = search phrases
+    (packaging yt_tags) for snippet.tags, else the hashtags."""
     from google.oauth2.credentials import Credentials
     from googleapiclient.discovery import build
     from googleapiclient.http import MediaFileUpload
@@ -63,7 +67,8 @@ def upload(mp4: Path, title: str, caption_text: str, hashtags: list[str] | None 
     body = {
         "snippet": {"title": make_title(title),
                     "description": make_description(caption_text + (f"\n\nVisual credits:\n{credits}" if credits else "")),
-                    "tags": make_tags(hashtags or [], caption_text), "categoryId": "24"},
+                    "tags": [_clean(x) for x in tags] if tags else make_tags(hashtags or [], caption_text),
+                    "categoryId": "24"},
         "status": {"privacyStatus": wanted, "selfDeclaredMadeForKids": False, "containsSyntheticMedia": True},
     }
     media = MediaFileUpload(str(mp4), mimetype="video/mp4", chunksize=8 * 1024 * 1024, resumable=True)

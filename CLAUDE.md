@@ -135,7 +135,19 @@ so a new session can pick up without starting over.
      investigation / reversal / uncanny normal (history `story_shape`), `pick_premise` pitches 3 premises and
      rejects vague ones (clarity < 7; one clear sentence + question + visual), "90% normal, 10% wrong", the
      ending explains what happened; the existing 80/100 score loop (3 drafts) is its critic.
-   - **Captions** (flag `caption_search_style`, `notify.normalize_caption`): line 1 = the search phrase ("What
+   - **Packaging** (flag `packaging`, `pipeline/packaging.py`; replaces the caption style below for new videos and
+     backfill uploads): one small LLM call (`story._json_call`) proposes title hook / subject / place / category /
+     hook sentence / topic tags / 2 niche tags (whitelist `packaging.NICHE` per kind: lore / true / fiction) / 12
+     search phrases; code validates everything, deterministic fallback ("<Subject> | <Category>") if the call fails.
+     YouTube title <= 70 chars "<hook>... <Subject> of <Place> #shorts" (no ALL CAPS, max 1 emoji, no clickbait
+     words; "true"/"unsolved" never on legends/fiction/solved cases). Description: line 1 hook sentence (different
+     wording from the title), line 2 "TRUE STORY" / "Fictional story." (only when it applies), music credit,
+     then #topic #place #niche #niche #shorts (<= 8 hashtags with the title). snippet.tags = 10-15 search phrases
+     (< 400 chars). Tags: lowercase letters/digits, topic/place tags must appear in the story, no spam (#fyp/#viral),
+     no other creators' names, no #truecrime etc. on non-true stories, no #unsolved on solved cases. TikTok caption =
+     hook (+ label) + credits + 3-5 hashtags (no #shorts). caption.json carries yt_title / yt_description / yt_tags;
+     history + analytics.json store yt_title / hashtags / yt_tags (analytics `by_hashtag`).
+   - **Captions** (flag `caption_search_style`, `notify.normalize_caption`; used only when `packaging` is off): line 1 = the search phrase ("What
      happened to D.B. Cooper?") + " | illustrated horror story"; hashtags = 5 topic tags + #illustratedhorror
      #horrorstory (+ #truestory only for true stories); fyp/foryou/viral removed. True stories whose own facts
      show an official ruling or a solved case (`notify.is_resolved`: ruled, convicted, confessed, cause of death,
@@ -307,8 +319,8 @@ so a new session can pick up without starting over.
    submitted, but TikTok's guidelines reject "tools that upload to your own/team accounts", so expect rejection.
    Plan if needed: an approved third-party posting service, or turn this into a public product later.
    **YouTube Shorts** (`youtube.py`, Data API v3, scope youtube.upload): the same mp4 right after TikTok, in
-   publish.py. Title = story title + " #Shorts" (<=100 chars, cut at a word), description = the TikTok caption
-   text + #Shorts, tags from hashtags, category 24, containsSyntheticMedia true, not made for kids, privacy from
+   publish.py. Title / description / tags from packaging.py (caption.json yt_title / yt_description / yt_tags;
+   older buffer entries: story title + " #Shorts" and the TikTok caption), category 24, containsSyntheticMedia true, not made for kids, privacy from
    config `youtube_privacy` (`youtube_enabled` switches it off). Uploads from an UNVERIFIED Google Cloud project
    are forced private until YouTube's API audit passes; the log/alert shows the privacy YouTube returned.
    TikTok and YouTube are independent: the video leaves the buffer if at least one worked (never double-posted);
@@ -327,7 +339,7 @@ so a new session can pick up without starting over.
    `data/backfill.json`): uploads the videos that were on TikTok before YouTube upload worked. Every run first copies
    queued videos out of their 7-day build artifacts into the release **"backfill"** (`<stamp>.mp4` + `<stamp>.json`),
    then uploads ONE (max `yt_backfill_per_day` 3/day; oldest first; public; same title/description/tags as daily
-   posts via notify.caption_text + youtube.upload). Only videos the owner PUBLISHED on TikTok: `data/tiktok_posted.txt`
+   posts via packaging.py + youtube.upload; yt_backfill.yml has GEMINI/GROQ keys for it). Only videos the owner PUBLISHED on TikTok: `data/tiktok_posted.txt`
    (one title or caption per line, fuzzy-matched; unmatched lines in backfill.json `unmatched_lines`); no file =
    nothing uploads. Waits within 60 min of a publish slot / post or while daily.yml runs; skips titles already on the
    channel (history, backfill.json, channel list when the token allows); `render.qa_gate(backfill=True)` (no 61 s

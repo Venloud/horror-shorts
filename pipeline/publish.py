@@ -135,8 +135,10 @@ def main(from_build: bool = False) -> int:
         log("YouTube: skipped (YT_CLIENT_ID / YT_CLIENT_SECRET / YT_REFRESH_TOKEN secrets not set)")
     else:
         try:
-            yt = youtube.upload(mp4, meta["title"], meta["caption_text"], meta.get("hashtags"),
-                                credits=meta.get("visual_credits") or "")
+            # packaging.py fields (new videos); older buffer entries fall back to the title + TikTok caption
+            yt = youtube.upload(mp4, meta.get("yt_title") or meta["title"],
+                                meta.get("yt_description") or meta["caption_text"], meta.get("hashtags"),
+                                credits=meta.get("visual_credits") or "", tags=meta.get("yt_tags"))
         except Exception as e:  # noqa: BLE001
             traceback.print_exc()
             yt_error = f"{type(e).__name__}: {str(e)[:300]}"
@@ -163,6 +165,8 @@ def main(from_build: bool = False) -> int:
             h["tiktok"] = result if result else {"error": tt_error}
             h["youtube"] = yt if yt else ({"error": yt_error} if yt_error else None)
             h["posted"] = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M")
+            if meta.get("yt_title"):
+                h["yt_title"], h["hashtags"], h["yt_tags"] = meta["yt_title"], meta.get("hashtags"), meta.get("yt_tags")
             break
     save_history(history)
 

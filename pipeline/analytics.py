@@ -83,13 +83,16 @@ def main() -> int:
         h = by_id.get(row.get("video"), {})
         row.update({"video_number": h.get("video_number"), "title": h.get("title"), "mode": h.get("mode"),
                     "visual_mode": h.get("visual_mode"), "story_shape": h.get("story_shape"),
-                    "writer": h.get("writer"), "true_story": h.get("true_story"), "posted": h.get("posted")})
+                    "writer": h.get("writer"), "true_story": h.get("true_story"), "posted": h.get("posted"),
+                    "yt_title": h.get("yt_title"), "hashtags": h.get("hashtags")})
         rows.append(row)
     OUT.write_text(json.dumps({
         "updated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "videos": rows,
         "by_mode": _summary(rows, "mode"),
         "by_visual_mode": _summary(rows, "visual_mode"),
+        # one row per hashtag a video carried (packaging.py videos only): which tags go with more views
+        "by_hashtag": _summary([{**r, "tag": t} for r in rows for t in r.get("hashtags") or []], "tag"),
     }, indent=2, ensure_ascii=False) + "\n")
     log(f"Analytics: {len(rows)} Shorts saved to data/analytics.json "
         f"({sum(1 for r in rows if r.get('video_number'))} matched to our video numbers)")

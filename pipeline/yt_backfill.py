@@ -307,7 +307,7 @@ def too_close(now: datetime) -> str | None:
 # ---------- upload ----------
 
 def upload_one(state: dict) -> None:
-    import notify
+    import packaging
     import render
     import youtube
 
@@ -365,16 +365,21 @@ def upload_one(state: dict) -> None:
                 log(f"Skip {v['stamp']}: QA failed ({v['reason']})")
                 continue
             story = {k: val for k, val in meta.items() if not k.startswith("_")}
-            if story.get("caption"):
+            search = None
+            if story.get("scenes") or story.get("caption"):  # same packaging as daily posts (packaging.py)
                 story.setdefault("true_story", story.get("mode") in ("case", "mystery", "inbox-true"))
-                text = notify.caption_text(story)
-                tags = story.get("hashtags") or []
+                story.setdefault("title", v["title"])
+                pack = packaging.package(story)
+                title, text, tags, search = (pack["yt_title"], packaging.youtube_description(story),
+                                             pack["hashtags"], pack["yt_tags"])
+                v.update(yt_title=title, hashtags=tags, yt_tags=search)
             else:  # no story.json in the artifact: the posted caption as it was
+                title = v["title"]
                 text = meta.get("_caption_txt", "").split("\n\nPIN: ")[0].strip()
                 tags = re.findall(r"#(\w+)", text)
-            log(f"Uploading {v['stamp']} {v['title']!r}")
+            log(f"Uploading {v['stamp']} {title!r}")
             try:
-                yt = youtube.upload(mp4, v["title"], text, tags)
+                yt = youtube.upload(mp4, title, text, tags, tags=search)
             except Exception as e:  # noqa: BLE001
                 if _quota_error(e):
                     log(f"YouTube quota/limit reached, the next run retries: {str(e)[:200]}")

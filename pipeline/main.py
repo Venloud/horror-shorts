@@ -14,6 +14,7 @@ import traceback
 from datetime import datetime, timezone
 
 from common import CONFIG, ROOT, env, load_history, log, save_history
+import packaging
 
 
 def _gh_output(key: str, value) -> None:
@@ -188,7 +189,11 @@ def main() -> int:
             except Exception as e:  # noqa: BLE001
                 log(f"Contact sheet failed ({e})")
         (workdir / "story.json").write_text(json.dumps(story, indent=2, ensure_ascii=False))  # + media_assets
-        caption = caption_text(story)
+        if CONFIG.get("packaging", True):  # curiosity title + hook description + validated tags (packaging.py)
+            packaging.package(story)
+            caption = packaging.tiktok_caption(story)
+        else:
+            caption = caption_text(story)
         _short_credit, visual_credits = media.credits(story.get("media_assets") or [])
         (workdir / "caption.txt").write_text(caption + "\n\nPIN: " + story.get("pinned_comment", ""))
 
@@ -215,6 +220,8 @@ def main() -> int:
             "stamp": stamp, "story_id": story["story_id"], "title": story["title"], "caption_text": caption,
             "pinned_comment": story.get("pinned_comment", ""), "mode": story.get("mode", "fiction"),
             "hashtags": story.get("hashtags", []),
+            **({"yt_title": story["packaging"]["yt_title"], "yt_tags": story["packaging"]["yt_tags"],
+                "yt_description": packaging.youtube_description(story)} if story.get("packaging") else {}),
             "true_story": bool(story.get("true_story")), "seconds": round(narration["duration"], 1),
             "visual_credits": visual_credits, "visual_mode": story.get("visual_mode"),
             "render_style": story.get("render_style", "classic"),
@@ -254,6 +261,9 @@ def main() -> int:
             "story_shape": story.get("story_shape"),  # fiction shape rotation
             "critic_score": story.get("critic_score"),
             "visuals": story.get("_visuals"),  # distinct pictures + the longest one on screen
+            "yt_title": (story.get("packaging") or {}).get("yt_title"),  # packaging, for tag/title analytics
+            "hashtags": story.get("hashtags"),
+            "yt_tags": (story.get("packaging") or {}).get("yt_tags"),
             "buffered": stamp,
             "tiktok": None,  # filled in by publish.py when it's posted
         })
