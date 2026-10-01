@@ -19,6 +19,7 @@ inbox/*.txt      any other text file = a pasted story/article. First line "TRUE"
 Each item is used once (tracked in data/history.json). Inbox items jump the queue.
 """
 import json
+import os
 import random
 import re
 
@@ -129,8 +130,14 @@ def next_inbox(history: list[dict]) -> dict | None:
     if not INBOX.exists():
         return None
     used = {h.get("source") for h in history if h.get("source")}
+    forced = (os.environ.get("INBOX_FILE") or "").strip().removeprefix("inbox/")
+    if forced:  # test builds only (build.yml input inbox_file): that one file, even if it was used already
+        if not (INBOX / forced).is_file():
+            raise RuntimeError(f"inbox_file {forced} not found in inbox/")
+        log(f"Test: inbox file forced: {forced}")
+        used = set()
     links = INBOX / "links.txt"
-    if links.exists():
+    if links.exists() and not forced:
         for line in links.read_text(encoding="utf-8").splitlines():
             line = line.strip()
             if not line or line.startswith("#"):
@@ -150,7 +157,7 @@ def next_inbox(history: list[dict]) -> dict | None:
         return (int(q.group(1)) if q else (50 if topic_file else 100), f.name)
 
     for f in sorted(INBOX.glob("*.txt"), key=order):
-        if f.name == "links.txt" or f"inbox/{f.name}" in used:
+        if f.name == "links.txt" or f"inbox/{f.name}" in used or (forced and f.name != forced):
             continue
         lines = f.read_text(encoding="utf-8").strip().splitlines()
         if not lines:

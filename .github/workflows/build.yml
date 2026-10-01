@@ -25,6 +25,10 @@ on:
         description: "EXPERIMENTAL: classic / cutout (pose-set characters on background plates); empty = config"
         type: string
         default: ""
+      inbox_file:
+        description: "Test build + fresh_images only: use this inbox file (e.g. nachzehrer_remake.txt), even if already used"
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -156,6 +160,7 @@ jobs:
           TEST_FRESH: ${{ inputs.fresh_images && 'true' || '' }}
           VISUAL_MODE: ${{ inputs.visual_mode || '' }}
           RENDER_STYLE: ${{ inputs.render_style || '' }}
+          INBOX_FILE: ${{ inputs.test && inputs.inbox_file || '' }}
           # real media first (each source is skipped if its key is missing)
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
