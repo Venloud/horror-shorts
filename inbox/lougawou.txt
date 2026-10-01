@@ -1,0 +1,7 @@
+LORE: Lougawou
+QUEUE: 3
+NOT_BEFORE: 33
+NO_CHILDREN: yes
+SOURCES: Loogaroo
+ANGLE: Haitian folklore: someone in the village (often an elder) who is said to shed their skin at night, fly over the rooftops as a ball of fire, and drain the life of the living; the folk protections people used (salt, if the sources say so, and any others they name). The night, the village, the fire in the sky, the skin left behind, the protections.
+Owner notes: Haitian folklore, told with respect: it's a legend, never "Vodou is evil", no vèvè or real religious symbols as horror props, no occult symbols. The legend says it preys on infants: NEVER describe or show harm to a child, no babies or children in any image; keep victims off-screen or adult. Mention the Lagahoo (our video #30) or the Soucouyant only if a source links them. Hook in the first second.

@@ -672,10 +672,38 @@ _PLACE_THINGS = re.compile(r"\b(tank|hatch|water|lid|roof|rooftop|door|doorway|r
                            r"stairs|elevator|window|field|forest|road|house|shore|grave|cemetery)\b", re.IGNORECASE)
 
 
+_CHILD = re.compile(r"\b(bab(y|ies)|infants?|newborns?|toddlers?|child(ren)?|kids?|cradles?|cribs?|nursery|"
+                    r"little (boy|girl)s?|young (boy|girl)s?)\b", re.IGNORECASE)
+
+
+def sanitize_child_shots(story: dict) -> int:
+    """Stories flagged no_child_images (inbox NO_CHILDREN: yes, e.g. a legend that preys on infants): no child,
+    baby, cradle or nursery in any shot; the shot becomes its place, empty, with no people."""
+    if not story.get("no_child_images"):
+        return 0
+    n = 0
+    for i, sc in enumerate(story.get("scenes") or []):
+        for l, k in PROMPT_KEYS.items():
+            shot = sc.get(k) or ""
+            if not shot or not _CHILD.search(shot):
+                continue
+            loc = _shot_location(story, i, l, _clean_shot(_CHILD.sub("", shot)))
+            place = loc["look"].strip().rstrip(".") if loc else "a dark village house at night, a lantern in the window"
+            sc[k] = _join([place, "empty and still, no people, moonlight"])
+            n += 1
+            log(f"No-children rule: scene {i + 1}{l} rewritten to an empty place ({shot[:60]!r})")
+    for c in list(story.get("characters") or []):
+        if _CHILD.search(f"{c.get('name', '')} {c.get('look', '')}"):
+            story["characters"].remove(c)
+            log(f"No-children rule: character sheet '{c.get('name')}' removed")
+    return n
+
+
 def sanitize_victim_shots(story: dict) -> int:
     """True stories (flag no_victim_images): never draw a real victim's death, body, body parts, injuries or remains
     (e.g. "Elisa floats in the tank", "a pale hand breaks the water"). Such a shot is rewritten to the place / object instead (the tank, the open hatch,
     the water), with no people in it. Returns how many were rewritten."""
+    sanitize_child_shots(story)  # every caller of this also gets the no-children rule
     if not CONFIG.get("no_victim_images", True) or not (story.get("true_story") or
                                                          story.get("mode") in ("case", "mystery", "inbox-true")):
         return 0

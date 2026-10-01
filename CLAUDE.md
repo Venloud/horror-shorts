@@ -82,17 +82,32 @@ so a new session can pick up without starting over.
      Optional second header line `NOT_BEFORE: <video number>` (e.g. `NOT_BEFORE: 31`): `sources.next_inbox` skips
      that file until `data/counter.json` next_video >= that number; other inbox items and the rotation go on.
      (`inbox/louvre_password.txt` waits for #31.)
-     **REMAKE** (`inbox/<x>.txt` first line `REMAKE: <topic>`; optional `SOURCES: title; title`, `ANGLE: ...`,
-     repeatable `AVOID: ...`, free notes): `story.remake_story` writes a NEW lore video about an already-used topic
-     (bypasses mystery.pick_case's used-topic check), fact-locked to the listed Wikipedia pages, with the old
-     version's title/premise/twist + AVOID lines in a REMAKE block; a draft whose opening, hook overlay or title is
-     too close to any of them (`_too_close`) is rewritten (max 3 drafts). New story id = new images (nothing
-     cached is reused). REMAKE files go before every other inbox item; a failure keeps them queued (like SCRIPT).
-     Log "Remake of <old title> (#N / posted <date>): new angle '...'"; history `remake_of` / `remake_angle`;
-     remakes don't count toward the story_modes rotation. The old video is marked `remade` in data/backfill.json
-     (never uploaded to YouTube). First one: `inbox/nachzehrer_remake.txt` (best TikTok, 234 views / 8 likes):
-     mouth-of-the-dead angle; sources Nachzehrer + Vampire burial (the 2009 Venice "brick" skull is in neither,
-     so it's left out).
+     **Topic files** (`sources.next_inbox` -> `story.topic_story`): first line `REMAKE: <topic>` (new lore video about
+     a topic we already made), `LORE: <topic>` (a legend) or `TRUE: <topic>` (real story, TRUE STORY rules). Header
+     lines: `SOURCES: Title; es:Spanish title` (Wikipedia pages, `xx:` = that language; default the topic),
+     `ANGLE:`, `HOOK:` (scene 1 opens with it if sourced; a multi-sentence hook keeps "This is a true story." after
+     the whole hook), repeatable `AVOID:`, `NOT_BEFORE: N`, `QUEUE: n` (lower = sooner; topic files without it come
+     before other inbox files), `NO_CHILDREN: yes`; other lines = owner notes (instructions, not facts). The topic
+     comes from the file, so the used-topic check (mystery.pick_case) is bypassed for that topic only; a failure
+     keeps the file queued. REMAKE: old history title/premise/twist + AVOID lines; a draft whose opening / hook
+     overlay (or a near-identical title) matches them is rewritten (max 3 drafts); new story id = new images.
+     Log "Remake of <old title> (#N): new angle '...'"; history `remake_of` / `remake_angle`; remakes don't count
+     toward the story_modes rotation; the old video is marked `remade` in data/backfill.json (never uploaded).
+     NO_CHILDREN (`images.sanitize_child_shots`, run with sanitize_victim_shots): any shot with a child / baby /
+     cradle becomes its place, empty; child character sheets dropped; a draft putting a child together with harm
+     words (`story.child_harm`) is rewritten. Queue (Oct 1): nachzehrer_remake (1), bloody_mary_remake (2),
+     lougawou (3, NOT_BEFORE 33, NO_CHILDREN), chalino_sanchez (4, TRUE, en+es Wikipedia, owner HOOK), then
+     louvre_password etc. The 2009 Venice "brick" skull is in neither Wikipedia page: only used if research backs it.
+   - **Research** (flag `research`, `pipeline/research.py`): before writing case / mystery / lore / inbox TRUE / topic
+     stories, Gemini with Google Search grounding (`tools: google_search`) finds 3-6 sources beyond Wikipedia. FREE
+     only on gemini-2.5-flash / 2.5-flash-lite (500 requests/day shared; the 3.x writer models have no free
+     grounding), so `research_models` = those two; the writer + critic chain is unchanged (Gemini 3.x first, Groq
+     last). Only FACT/RUMOR lines backed by the grounding metadata are kept; they're appended to the Wikipedia text
+     as a RESEARCH block (so they reach the fact ledger and, for true stories, the fact check); RUMOR = only as
+     rumor. story.json `sources[]` (Wikipedia pages + research URLs), history `research_sources` (domains). Usage
+     counted in cache/media-search/research_usage.json (`research_daily_limit` 400); a per-day 429, the budget,
+     no key or any error = Wikipedia only for the rest of the run, never a failed build.
+     Log "Research: N sources (domains...), M grounded lines via <model> (K grounded calls today)".
    - **TRUE STORY rule**: modes `case`, `mystery`, `inbox-true` and inbox `SCRIPT TRUE` files are true stories
      (NOT `lore`: legends aren't true stories; NOT fiction). For those, `story["true_story"] = True` (saved in history),
      scene 1 = hook sentence, THEN "This is a true story." (never first: slow opener; code moves/inserts it),

@@ -9,10 +9,13 @@ inbox/*.txt      any other text file = a pasted story/article. First line "TRUE"
                  and real people drawn per the real-people rule).
                  Optional second header line "NOT_BEFORE: 31": the item waits until data/counter.json next_video
                  is at least 31; other inbox items and the normal rotation go on meanwhile.
-                 First line "REMAKE: <topic>" = a NEW lore video about a topic we already made (new angle, new hook,
-                 new images; story.remake_story). Optional header lines: "SOURCES: Wikipedia title; another title",
-                 "ANGLE: ...", "AVOID: ..." (repeatable: old hook / opening lines it must not reuse). REMAKE files
-                 go before every other inbox item.
+                 Topic files (the bot researches the topic itself, story.topic_story):
+                   "REMAKE: <topic>" = a NEW lore video about a topic we already made (new angle / hook / images),
+                   "LORE: <topic>"   = a legend,   "TRUE: <topic>" = a real story (TRUE STORY rules).
+                 Optional header lines: "SOURCES: Title; es:Spanish title" (Wikipedia pages; default = the topic),
+                 "ANGLE: ...", "HOOK: ...", "AVOID: ..." (repeatable), "NOT_BEFORE: 33", "QUEUE: 1" (lower = sooner;
+                 topic files without it come before other inbox files), "NO_CHILDREN: yes" (no child in any image).
+                 Other lines = owner notes (instructions, not facts).
 Each item is used once (tracked in data/history.json). Inbox items jump the queue.
 """
 import json
@@ -136,34 +139,45 @@ def next_inbox(history: list[dict]) -> dict | None:
             url = url.strip()
             if url.startswith("http") and url not in used:
                 return {"key": url, "kind": kind.lower(), "url": url}
-    def remake_first(f):
+    def order(f):
+        """QUEUE: n header first (lower = sooner); topic files (REMAKE / LORE / TRUE: <topic>) before the rest."""
         try:
-            head = f.read_text(encoding="utf-8").lstrip()[:12].upper()
+            head = f.read_text(encoding="utf-8").lstrip()[:600]
         except OSError:
             head = ""
-        return (not head.startswith("REMAKE:"), f.name)
+        q = re.search(r"^\s*QUEUE:\s*(\d+)", head, re.IGNORECASE | re.MULTILINE)
+        topic_file = re.match(r"(REMAKE|LORE|TRUE):", head, re.IGNORECASE)
+        return (int(q.group(1)) if q else (50 if topic_file else 100), f.name)
 
-    for f in sorted(INBOX.glob("*.txt"), key=remake_first):
+    for f in sorted(INBOX.glob("*.txt"), key=order):
         if f.name == "links.txt" or f"inbox/{f.name}" in used:
             continue
         lines = f.read_text(encoding="utf-8").strip().splitlines()
         if not lines:
             continue
-        m = re.match(r"\s*REMAKE:\s*(.+?)\s*$", lines[0], re.IGNORECASE)
-        if m:
-            item = {"key": f"inbox/{f.name}", "kind": "remake", "topic": m.group(1), "sources": [], "angle": "",
-                    "avoid": [], "text": ""}
-            notes = []
+        m = re.match(r"\s*(REMAKE|LORE|TRUE):\s*(.+?)\s*$", lines[0], re.IGNORECASE)
+        if m:  # topic file: the bot researches the topic itself (story.topic_story)
+            item = {"key": f"inbox/{f.name}", "kind": m.group(1).lower(), "topic": m.group(2), "sources": [],
+                    "angle": "", "hook": "", "avoid": [], "text": "", "no_children": False}
+            notes, wait = [], None
             for ln in lines[1:]:
-                h = re.match(r"\s*(SOURCES|ANGLE|AVOID):\s*(.*)$", ln, re.IGNORECASE)
+                h = re.match(r"\s*(SOURCES|ANGLE|AVOID|HOOK|NOT_BEFORE|QUEUE|NO_CHILDREN):\s*(.*)$", ln, re.IGNORECASE)
+                key = h.group(1).upper() if h else ""
                 if not h:
                     notes.append(ln)
-                elif h.group(1).upper() == "SOURCES":
+                elif key == "SOURCES":
                     item["sources"] = [x.strip() for x in h.group(2).split(";") if x.strip()]
-                elif h.group(1).upper() == "ANGLE":
-                    item["angle"] = h.group(2).strip()
-                else:
+                elif key == "AVOID":
                     item["avoid"].append(h.group(2).strip())
+                elif key == "NOT_BEFORE":
+                    wait = int(re.sub(r"\D", "", h.group(2)) or 0)
+                elif key == "NO_CHILDREN":
+                    item["no_children"] = h.group(2).strip().lower() in ("yes", "true", "1")
+                elif key in ("ANGLE", "HOOK"):
+                    item[key.lower()] = h.group(2).strip()
+            if wait and _next_video_number(history) < wait:
+                log(f"Inbox {f.name}: waiting until video #{wait} (next is #{_next_video_number(history)})")
+                continue
             item["text"] = "\n".join(notes).strip()
             item["sources"] = item["sources"] or [item["topic"]]
             return item
@@ -189,6 +203,6 @@ def next_inbox(history: list[dict]) -> dict | None:
 
 
 def inbox_text(item: dict) -> str:
-    if item.get("kind") == "remake":
+    if item.get("kind") in ("remake", "lore") or item.get("topic"):
         return item.get("text", "")
     return item.get("text") or page_text(item["url"])

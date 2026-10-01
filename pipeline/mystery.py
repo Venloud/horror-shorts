@@ -2,6 +2,7 @@
 import json
 import random
 import re
+import time
 
 import requests
 
@@ -247,11 +248,28 @@ def pick_case(history: list[dict], kind: str = "mystery") -> str | dict:
     return trends.pick(fresh)  # prefer a topic whose Wikipedia views just jumped
 
 
+def wiki_url(title: str) -> str:
+    """'es:Chalino Sánchez' -> the Spanish article's URL; a plain title = English Wikipedia."""
+    lang, _, name = title.partition(":") if re.match(r"^[a-z]{2}:", title) else ("en", "", title)
+    return f"https://{lang}.wikipedia.org/wiki/{name.strip().replace(' ', '_')}"
+
+
 def fetch_facts(title: str, limit: int = 9000) -> str:
-    r = requests.get(WIKI_API, headers=HEADERS, timeout=30, params={
-        "action": "query", "format": "json", "prop": "extracts", "explaintext": 1,
-        "redirects": 1, "titles": title,
-    })
+    """Wikipedia article text; 'es:Title' reads another language's Wikipedia (Retry-After honored on 429)."""
+    api = WIKI_API
+    if re.match(r"^[a-z]{2}:", title):
+        lang, title = title[:2], title[3:].strip()
+        api = f"https://{lang}.wikipedia.org/w/api.php"
+    for attempt in range(3):
+        r = requests.get(api, headers=HEADERS, timeout=30, params={
+            "action": "query", "format": "json", "prop": "extracts", "explaintext": 1,
+            "redirects": 1, "titles": title,
+        })
+        if r.status_code != 429:
+            break
+        wait = min(60, int(r.headers.get("Retry-After") or 20 * (attempt + 1)))
+        log(f"Wikipedia 429 for '{title}': waiting {wait}s")
+        time.sleep(wait)
     r.raise_for_status()
     pages = r.json()["query"]["pages"]
     text = next(iter(pages.values())).get("extract", "")
@@ -260,12 +278,20 @@ def fetch_facts(title: str, limit: int = 9000) -> str:
     return _split_wiki(text, limit)
 
 
-def build_prompt(channel: str, case: str | dict, sfx_list: str = "none", kind: str = "mystery") -> tuple[str, str]:
-    if isinstance(case, dict):  # discovery lead: its readable source page is the only source
-        facts = f"SOURCE: {case.get('source')} - {case.get('url')}\n{case['text'][:9000]}"
+def build_prompt(channel: str, case: str | dict, sfx_list: str = "none", kind: str = "mystery",
+                 holder: dict | None = None) -> tuple[str, str]:
+    """holder: a dict that collects story["sources"] (Wikipedia page + research sources)."""
+    if isinstance(case, dict):  # discovery lead / topic file: its readable source text is the base
+        facts = f"SOURCE: {case.get('source')} - {case.get('url')}\n{case['text'][:12000]}"
         case = case["title"]
     else:
         facts = fetch_facts(case)
+        if holder is not None:
+            holder.setdefault("sources", []).append({"title": f"Wikipedia: {case}", "url": wiki_url(case),
+                                                     "domain": "en.wikipedia.org"})
+    if holder is not None:  # Gemini + Google Search grounding: 3-6 more sources (Wikipedia stays the base)
+        import research
+        facts = research.add_to(facts, holder, case, "legend / folklore" if kind == "lore" else "real mystery")
     log(f"Topic: {case} ({len(facts)} chars of source)")
     template = LORE_PROMPT if kind == "lore" else MYSTERY_PROMPT
     from common import mark_source
