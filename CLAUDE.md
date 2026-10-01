@@ -323,6 +323,18 @@ so a new session can pick up without starting over.
    YT_REFRESH_TOKEN); without it the log says "analytics scope missing" and it exits 0. Any other API / token
    failure prints the exact error and exits 1 (red run).
 
+8. **YouTube backfill** (`yt_backfill.yml` 04:20 / 08:20 / 20:20 UTC, `pipeline/yt_backfill.py`, state
+   `data/backfill.json`): uploads the videos that were on TikTok before YouTube upload worked. Every run first copies
+   queued videos out of their 7-day build artifacts into the release **"backfill"** (`<stamp>.mp4` + `<stamp>.json`),
+   then uploads ONE (max `yt_backfill_per_day` 3/day; oldest first; public; same title/description/tags as daily
+   posts via notify.caption_text + youtube.upload). Only videos the owner PUBLISHED on TikTok: `data/tiktok_posted.txt`
+   (one title or caption per line, fuzzy-matched; unmatched lines in backfill.json `unmatched_lines`); no file =
+   nothing uploads. Waits within 60 min of a publish slot / post or while daily.yml runs; skips titles already on the
+   channel (history, backfill.json, channel list when the token allows); `render.qa_gate(backfill=True)` (no 61 s
+   floor, no TikTok size cap). Known bad: #27 airplane-cabin D.B. Cooper (panel grids), #28 frozen gavel. #26 Louvre
+   was uploaded by hand (yt_upload_test, Khcw2HPvxTU). When nothing is left: drafts not in the list are skipped,
+   `done` is set and the workflow disables itself (re-enable + remove `done` to run again).
+
 ## Buffer (build.yml fills it, daily.yml posts from it)
 - `build.yml` runs every 3 h: if fewer than 3 (`BUFFER_SIZE`) videos wait on the GitHub Release **"buffer"**
   (assets `<stamp>.mp4` + `<stamp>.json`), it makes one (`pipeline/main.py`) and uploads it (`pipeline/buffer.py`).

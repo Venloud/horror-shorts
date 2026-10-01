@@ -624,13 +624,20 @@ def visual_problems(path: Path, story: dict | None, dur: float) -> list[str]:
     return problems
 
 
-def qa_gate(path: Path, ass_path: Path, narration: dict, story: dict | None = None) -> list[str]:
-    """Checks a finished video must pass before it may enter the buffer. Returns the problems (empty = pass)."""
+def qa_gate(path: Path, ass_path: Path | None, narration: dict, story: dict | None = None,
+            backfill: bool = False) -> list[str]:
+    """Checks a finished video must pass before it may enter the buffer. Returns the problems (empty = pass).
+
+    backfill=True (yt_backfill.py, videos already posted on TikTok before YouTube worked): no 61 s floor and no
+    TikTok size cap (Shorts take up to 180 s); captions are checked only when the render's .ass still exists."""
     problems = []
     lo, hi = CONFIG.get("target_seconds", [61, 68])
     dur = media_duration(path)
     problems += visual_problems(path, story, dur)
-    if dur < lo:  # hard floor: never a video under the minimum (TikTok Creator Rewards: > 60 s)
+    if backfill:
+        if not 15 <= dur <= 180:
+            problems.append(f"duration {dur:.1f}s (Shorts: 15-180s)")
+    elif dur < lo:  # hard floor: never a video under the minimum (TikTok Creator Rewards: > 60 s)
         problems.append(f"duration {dur:.1f}s is under the {lo}s minimum")
     elif dur > hi + 0.5:
         problems.append(f"duration {dur:.1f}s (want {lo}-{hi}s)")
@@ -649,12 +656,12 @@ def qa_gate(path: Path, ass_path: Path, narration: dict, story: dict | None = No
             problems.append(f"loudness {lufs} LUFS (want -18..-12)")
     # Captions: the render always burns in this .ass file; check it really has the word captions in it.
     cap_lines = sum(1 for ln in Path(ass_path).read_text(encoding="utf-8").splitlines()
-                    if ln.startswith("Dialogue:") and ",Cap," in ln) if Path(ass_path).exists() else 0
+                    if ln.startswith("Dialogue:") and ",Cap," in ln) if ass_path and Path(ass_path).exists() else 0
     n_words = len(narration.get("words") or [])
     if n_words and cap_lines < 0.8 * n_words:
         problems.append(f"captions: {cap_lines} caption lines for {n_words} words")
     size = path.stat().st_size
-    if not 5_000_000 < size < 64_000_000:
+    if not 5_000_000 < size < (256_000_000 if backfill else 64_000_000):
         problems.append(f"file size {size / 1e6:.1f} MB (want 5-64 MB)")
     log("QA gate: " + ("passed" if not problems else "FAILED: " + "; ".join(problems))
         + f" ({dur:.1f}s, {size / 1e6:.1f} MB)")

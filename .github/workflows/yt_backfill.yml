@@ -1,0 +1,68 @@
+name: yt_backfill
+
+# Uploads old Night Files videos (posted on TikTok before the YouTube upload worked) to YouTube Shorts:
+# 1 video per run, 3 runs a day (max config yt_backfill_per_day = 3), oldest first, only videos listed in
+# data/tiktok_posted.txt. Every run first copies queued videos out of their 7-day build artifacts into the
+# "backfill" release. Progress: data/backfill.json. Disables itself when done.
+# Run times keep >= 3.5 h away from the publish slots (15:40 / 00:40 UTC); the script also waits within 60 min
+# of a slot or a post. Quota: 3 x ~1600 units + 2 daily posts stays under YouTube's 10,000/day.
+on:
+  schedule:
+    - cron: "20 4 * * *"
+    - cron: "20 8 * * *"
+    - cron: "20 20 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "upload (stash + 1 upload) or stash (only copy artifacts into the backfill release)"
+        default: "upload"
+
+permissions:
+  contents: write   # backfill release + data/backfill.json
+  actions: write    # read artifacts, check daily.yml runs, disable this workflow when done
+
+concurrency:
+  group: yt-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null
+          pip install -q requests numpy Pillow google-api-python-client google-auth
+
+      - name: Stash + upload one old video
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+        run: cd pipeline && python yt_backfill.py "${{ inputs.mode || 'upload' }}"
+
+      - name: Save data/backfill.json
+        if: always()
+        run: |
+          git config user.name "horror-bot"
+          git config user.email "horror-bot@users.noreply.github.com"
+          [ -z "$(git status --porcelain -- data/backfill.json)" ] && { echo "Nothing to save"; exit 0; }
+          cp data/backfill.json "$RUNNER_TEMP/backfill.json"
+          for i in 1 2 3; do
+            git fetch -q origin main
+            git reset -q --mixed origin/main
+            cp "$RUNNER_TEMP/backfill.json" data/backfill.json
+            git add data/backfill.json
+            git commit -q -m "YouTube backfill progress" || { echo "Nothing to save"; exit 0; }
+            git push -q origin HEAD:main && exit 0
+            sleep $((i * 5))
+          done
+          echo "::error::could not push data/backfill.json"; exit 1

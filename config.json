@@ -137,6 +137,7 @@
   "analytics": true,
   "analytics_start": "2026-09-01",
   "youtube_privacy": "public",
+  "yt_backfill_per_day": 3,
   "direct_privacy": "SELF_ONLY",
   "tiktok_ai_label": true
 }
