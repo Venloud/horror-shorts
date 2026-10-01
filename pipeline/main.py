@@ -12,6 +12,7 @@ import os
 import sys
 import traceback
 from datetime import datetime, timezone
+from pathlib import Path
 
 from common import CONFIG, ROOT, env, load_history, log, save_history
 import yt_packaging as packaging  # NOT "packaging": that name shadows the pip package transformers needs
@@ -84,6 +85,35 @@ def fit_duration(story: dict, workdir, narrate, allow_rewrite: bool) -> tuple[di
     if not inside(narr):
         log(f"Narration is {narr['duration']:.1f}s after all tries; the QA gate will decide")
     return story, narr
+
+
+def write_summary(workdir: Path, story: dict, video: Path, problems: list[str]) -> None:
+    """summary.txt next to final.mp4 (build artifact): mode, duration, visual sources, QA, fallbacks."""
+    try:
+        from common import media_duration
+        cut = story.get("cutout") or {}
+        vs = story.get("_visual_sources") or {}
+        lines = [f"story: {story.get('title')} ({story.get('story_id')}, mode {story.get('mode')})",
+                 f"render style: {story.get('render_style', 'classic')}  visual mode: {story.get('visual_mode')}",
+                 f"duration: {media_duration(video):.1f}s",
+                 "QA gate: " + ("PASSED" if not problems else "FAILED: " + "; ".join(problems))]
+        if story.get("render_style") == "cutout":
+            lines += [f"cutout shots: {cut.get('counts')}", f"Cloudflare images: {cut.get('cloudflare_images')}",
+                      f"characters / poses: {cut.get('poses')}", f"plates: {cut.get('plates')}",
+                      "cutout fallbacks: " + ("; ".join(cut.get("fallbacks") or []) or "none")]
+        else:
+            lines.append(f"visual sources: {vs.get('reused', 0)} reused, {vs.get('archive_stock', 0)} archive/stock, "
+                         f"{vs.get('ai', 0)} AI")
+        if story.get("_cutout_error"):
+            lines.append(f"CUTOUT FAILED, rendered classic instead: {story['_cutout_error']}")
+        lines.append(f"visuals: {story.get('_visuals')}")
+        lines.append(f"research sources: {[s.get('domain') for s in story.get('sources') or []]}")
+        if story.get("remake_of"):
+            lines.append(f"remake of: {story['remake_of']} (angle: {story.get('remake_angle', '')[:120]})")
+        (workdir / "summary.txt").write_text("\n".join(lines) + "\n")
+        log("summary.txt: " + " | ".join(lines[:4]))
+    except Exception as e:  # noqa: BLE001
+        log(f"summary.txt failed ({e})")
 
 
 def main() -> int:
@@ -167,7 +197,11 @@ def main() -> int:
                 imgs = cutout.build(story, img_dir, workdir)
             except Exception as e:  # noqa: BLE001
                 traceback.print_exc()
-                log(f"Cutout mode failed ({type(e).__name__}: {str(e)[:200]}); rendering this video classic")
+                story["_cutout_error"] = f"{type(e).__name__}: {str(e)[:300]}"
+                if (os.environ.get("RENDER_STYLE") or "").strip().lower() == "cutout":
+                    # a FORCED cutout run (test build input) never ships a classic video in its place
+                    raise RuntimeError(f"Cutout render was forced but failed in cutout.build: {story['_cutout_error']}")
+                log(f"Cutout mode failed ({story['_cutout_error']}); rendering this video classic")
                 imgs = None
         if imgs is None and reused:  # test build: the cached images belong to this very story
             story["render_style"] = "classic"
@@ -203,6 +237,7 @@ def main() -> int:
         (workdir / "caption.txt").write_text(caption + "\n\nPIN: " + story.get("pinned_comment", ""))
 
         problems = qa_gate(video, ass, narration, story)
+        write_summary(workdir, story, video, problems)
         if problems:  # never let a broken video into the buffer
             reason = "; ".join(problems)
             if testing:

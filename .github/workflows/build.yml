@@ -214,5 +214,6 @@ jobs:
             output/**/poses_sheet.png
             output/**/plates_sheet.png
             output/**/contact_sheet.png
+            output/**/summary.txt
           retention-days: 7
           if-no-files-found: ignore

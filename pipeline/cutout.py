@@ -332,8 +332,13 @@ def cut_out(src: Path, dest: Path) -> Path:
                 log(f"Cutout: rembg {model} failed ({str(e)[:80]})")
     except ImportError:
         pass
+    if alpha is not None and not _mask_ok(alpha):
+        log(f"Cutout: rembg mask for {src.name} is weak (semi-transparent figure); using the gray-background key")
+        alpha = None
     if alpha is None:
         alpha = _key_gray(im)
+        if not _mask_ok(alpha):
+            raise ValueError(f"cut-out of {src.name}: no clean mask (rembg and the gray key both weak)")
     alpha = alpha.convert("L").filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(1.2))
     rgba = im.copy()
     rgba.putalpha(alpha)
@@ -345,6 +350,16 @@ def cut_out(src: Path, dest: Path) -> Path:
 
 
 _SESS: dict = {}
+
+
+def _mask_ok(mask: Image.Image) -> bool:
+    """A usable cut-out mask is decisive (almost every pixel clearly in or out) and the figure is neither a
+    sliver nor the whole frame. rembg sometimes returns a uniformly weak mask: a ghost-like, see-through figure."""
+    import numpy as np
+    a = np.asarray(mask.convert("L"), dtype="float32")
+    fg = (a > 128).mean()
+    decisive = ((a > 200) | (a < 40)).mean()
+    return decisive > 0.9 and 0.02 < fg < 0.9
 
 
 def _key_gray(im: Image.Image) -> Image.Image:
@@ -537,8 +552,11 @@ def build(story: dict, img_dir: Path, workdir: Path) -> list[list[Path]]:
     plates = make_plates(story, plates_needed, out, budget)
     if not plates:
         raise CutoutUnavailable("no background plate could be made")
-    sheet(sorted(p for d in poses.values() for p in d.values()), workdir / "poses_sheet.png", "poses")
-    sheet(sorted(plates.values()), workdir / "plates_sheet.png", "plates")
+    sheet([(p, f"{who.split()[0]}: {pose}") for who, d in poses.items() for pose, p in sorted(d.items())],
+          workdir / "poses_sheet.png", "poses")
+    sheet([(p, f"{loc[:18]} / {kind}") for (loc, kind), p in sorted(plates.items())],
+          workdir / "plates_sheet.png", "plates")
+    fallbacks: list[str] = []
 
     per_scene: list[list[Path]] = []
     for i, sc in enumerate(shots):
@@ -552,6 +570,7 @@ def build(story: dict, img_dir: Path, workdir: Path) -> list[list[Path]]:
                 if got:
                     row.append(got)
                     continue
+                fallbacks.append(f"{tag}: insert '{s.get('prompt', '')[:40]}' could not be drawn -> empty plate")
                 loc = s.get("location") or _scene_location(story, i, [l for l, _ in plates])
                 s = {"type": "stage", "character": "", "location": loc, "plate": "wide", "pose": "standing_front",
                      "position": "center", "scale": "full", "action": "stand", "facing": "left"}
@@ -572,6 +591,7 @@ def build(story: dict, img_dir: Path, workdir: Path) -> list[list[Path]]:
                     pose_png = poses[who].get(pose) if pose else None
                     if pose and pose != s["pose"]:
                         log(f"Cutout {tag}: pose {s['pose']} missing, using {pose}")
+                        fallbacks.append(f"{tag}: {who} pose {s['pose']} missing -> {pose}")
                         s["pose"] = pose
                 spec = {"type": "stage", "plate": str(plate), "pose": str(pose_png) if pose_png else "",
                         "pose_name": s["pose"], "position": s["position"], "scale": s["scale"],
@@ -583,7 +603,9 @@ def build(story: dict, img_dir: Path, workdir: Path) -> list[list[Path]]:
     story["render_style"] = "cutout"
     story["cutout"] = {"cloudflare_images": budget.used, "characters": list(poses),
                        "poses": {k: sorted(v) for k, v in poses.items()},
-                       "plates": [f"{l}/{k}" for l, k in plates], "shots": shots}
+                       "plates": [f"{l}/{k}" for l, k in plates], "shots": shots, "fallbacks": fallbacks,
+                       "counts": {t: sum(1 for sc in shots for x in sc if x["type"] == t)
+                                  for t in ("stage", "insert", "screen")}}
     log(f"Cutout: {budget.used} Cloudflare images; {sum(len(v) for v in poses.values())} poses, "
         f"{len(plates)} plates; {sum(len(r) for r in per_scene)} shots")
     return per_scene
@@ -711,8 +733,12 @@ def render_shot(spec: dict, length: float, out: Path) -> Path:
 
 # ---------------------------------------------------------------- review sheets
 
-def sheet(paths: list[Path], dest: Path, title: str, cols: int = 4, cell: tuple = (270, 480)) -> Path | None:
-    paths = [p for p in paths if Path(p).exists()]
+def sheet(paths: list, dest: Path, title: str, cols: int = 4, cell: tuple = (270, 480)) -> Path | None:
+    """paths: Path or (Path, label) items; each cell is labelled (default: the file name)."""
+    items = [(Path(p[0]), p[1]) if isinstance(p, tuple) else (Path(p), Path(p).stem[:34]) for p in paths]
+    items = [(p, lab) for p, lab in items if p.exists()]
+    paths = [p for p, _ in items]
+    labels = [lab for _, lab in items]
     if not paths:
         return None
     rows = math.ceil(len(paths) / cols)
@@ -728,7 +754,7 @@ def sheet(paths: list[Path], dest: Path, title: str, cols: int = 4, cell: tuple 
         t = ImageOps.contain(src.convert("RGB"), cell)
         x, y = (k % cols) * cell[0], (k // cols) * (cell[1] + 40)
         im.paste(t, (x + (cell[0] - t.width) // 2, y))
-        d.text((x + 6, y + cell[1] + 8), Path(p).stem[:34], font=f, fill=(220, 220, 220))
+        d.text((x + 6, y + cell[1] + 8), labels[k][:30], font=f, fill=(220, 220, 220))
     im.save(dest)
     log(f"Review sheet: {dest.name} ({len(paths)} {title})")
     return dest
