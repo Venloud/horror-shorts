@@ -164,8 +164,35 @@ def derive_characters(story: dict) -> list[dict]:
             if n >= 2:
                 out.append({"name": w, "look": f"{w}, adult, plain period clothing fitting "
                                                        f"{(story.get('setting') or 'the story')[:60]}"})
+    narration = " ".join(sc.get("narration", "") for sc in story.get("scenes") or []).lower()
+    creature = str(story.get("case") or "").strip()
+    if not out and story.get("mode") == "lore" and creature and creature.lower() in narration:
+        # a legend whose shots show no figure at all: its own creature (+ one adult witness) becomes the cast
+        try:
+            ans = images._gemini_json(
+                f"A short illustrated legend video about the {creature}. Give the {creature} ONE fixed look of 15-20 "
+                "words exactly as the legend describes it (no gore, no blood, no occult symbols), and optionally ONE "
+                "adult witness from the story (villager, gravedigger...) with a 15-20 word period look fitting "
+                f"{story.get('setting', '')}.\nNARRATION: {narration[:2000]}\n"
+                'Return JSON {"characters": [{"name": "' + creature.lower() + '", "look": "..."}, '
+                '{"name": "villager", "look": "..."}]}') or {}
+        except Exception:  # noqa: BLE001
+            ans = {}
+        for c in ans.get("characters") or []:
+            name = str(c.get("name", "")).lower().removeprefix("the ").removeprefix("a ").strip()
+            look = str(c.get("look", "")).strip()
+            if name and look and not _CHILD.search(f"{name} {look}") and not re.search(
+                    r"\b(blood|gore|gory|pentagram|occult|sigil)\b", look, re.I):
+                out.append({"name": name, "look": look})
+        for c in out:
+            if c["name"] == creature.lower():  # how the narration refers to it in later scenes
+                c["aliases"] = ["corpse", "creature", "revenant", "the dead", "body", "it"]
+        if not out:
+            out.append({"name": creature.lower(), "look": f"the {creature} of the legend, a pale gaunt figure in a "
+                                                          "linen burial shroud, dark hollow eyes, no gore",
+                        "aliases": ["corpse", "creature", "revenant", "the dead", "body", "it"]})
     if out:
-        log("Cutout: no character sheet; derived from the shots: " + ", ".join(c["name"] for c in out[:2]))
+        log("Cutout: no character sheet; derived cast: " + ", ".join(c["name"] for c in out[:2]))
     return out[:2]
 
 
@@ -258,6 +285,10 @@ def _keyword_plan(story: dict, i: int, chars: list[dict], locs: list[str], n: in
     for k in ("image_prompt", "image_prompt_2", "image_prompt_3")[:n]:
         shot = (sc.get(k) or "").strip() or narr
         who = next((c["name"] for c in chars if c["name"].lower().split()[0] in shot.lower()), "")
+        if not who and not out:  # the scene's first shot: a character the NARRATION names (a legend's creature)
+            nl = narr.lower()
+            who = next((c["name"] for c in chars if any(re.search(rf"\b{re.escape(a)}\b", nl) for a in
+                                                         [c["name"].lower().split()[0]] + c.get("aliases", []))), "")
         loc = _scene_location(story, i, locs)
         if who and loc:
             pose = next((p for p, rx in _POSE_WORDS if re.search(rx, shot + " " + narr, re.IGNORECASE)),
@@ -604,6 +635,7 @@ def build(story: dict, img_dir: Path, workdir: Path) -> list[list[Path]]:
     sheet([(p, f"{loc[:18]} / {kind}") for (loc, kind), p in sorted(plates.items())],
           workdir / "plates_sheet.png", "plates")
     fallbacks: list[str] = []
+    empty_used: set = set()
 
     per_scene: list[list[Path]] = []
     for i, sc in enumerate(shots):
@@ -629,6 +661,14 @@ def build(story: dict, img_dir: Path, workdir: Path) -> list[list[Path]]:
             else:
                 plate = plates.get((s["location"], s["plate"])) or next(
                     (p for (l, _k), p in plates.items() if l == s["location"]), None) or next(iter(plates.values()))
+                if not s.get("character"):  # an empty plate twice = the same picture twice: take an unused plate
+                    if plate in empty_used:
+                        alt = next((p for (l, _k), p in plates.items() if l == s["location"] and p not in empty_used),
+                                   None) or next((p for p in plates.values() if p not in empty_used), None)
+                        if alt:
+                            fallbacks.append(f"{tag}: empty plate {Path(plate).stem} already shown -> {Path(alt).stem}")
+                            plate = alt
+                    empty_used.add(plate)
                 pose_png = None
                 who = s.get("character")
                 if who in poses:
