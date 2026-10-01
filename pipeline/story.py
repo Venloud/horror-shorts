@@ -265,11 +265,14 @@ def _retry_after(r) -> float | None:
 _OVERLOADED: set = set()  # a model that stayed 503 through a full 10/30/60 s backoff: skipped for the rest of the run
 
 
-def model_chain() -> list[str]:
-    """Story writers in order: every Gemini model in config llm_models (skipping ones whose DAILY quota is used
-    up), then Groq (flag groq_backup, only if GROQ_API_KEY is set) as the last resort. Cloudflare's text models
-    are never used."""
+def model_chain(light: bool = False) -> list[str]:
+    """Story writers in order: every Gemini model in config llm_models, strongest first (skipping ones whose DAILY
+    quota is used up), then Groq (flag groq_backup, only if GROQ_API_KEY is set) as the last resort. Cloudflare's
+    text models are never used. light=True (critic scores, premise pitches, packaging...): the "lite" models first,
+    so small JSON calls don't use up the strong model's small free daily quota the story writing needs."""
     models = [m for m in CONFIG["llm_models"] if not gemini_model_out(m) and m not in _OVERLOADED]
+    if light:
+        models.sort(key=lambda m: "lite" not in m)
     if CONFIG.get("groq_backup", True) and env("GROQ_API_KEY", required=False):
         models.append("groq:" + CONFIG.get("groq_model", "openai/gpt-oss-120b"))
     return models or list(CONFIG["llm_models"])
@@ -341,14 +344,14 @@ def pick_mode(history: list[dict]) -> str:
 BACKOFF_503 = (10, 30, 60)  # overloaded model: retry the SAME model after 10 s, 30 s, 60 s, then the next model
 
 
-def _with_models(call, what: str = "story"):
+def _with_models(call, what: str = "story", light: bool = False):
     """Run call(model) down model_chain() (every Gemini model first, Groq last):
     - 500/503 "high demand": same model again after 10 s, 30 s, 60 s, then the next model;
     - per-minute 429: wait the time the API asks for (max 65 s) and retry the same model (max 3 times);
     - per-DAY quota: next model at once; 404 / other errors: up to 3 tries; BLOCKED twice: next model.
     If every model failed only on rate limits / overload, raise ApiBusy (not a topic problem)."""
     errors, busy_only = [], True
-    for model in model_chain():
+    for model in model_chain(light):
         overloads = rates = attempt = 0
         while True:
             attempt += 1
@@ -399,6 +402,9 @@ def _run_models(prompt: str, api_key: str, temperature: float, patient: bool = T
         story["model"] = model
         story["writer"] = _writer(model)
         log(f"Written by {story['writer']}")
+        if "lite" in model or model.startswith("groq:"):
+            log(f"WARNING: story text written by {model}, a last-resort writer (the stronger Gemini models are out "
+                "of daily quota or overloaded)")
         return story
     return _with_models(call)
 
@@ -553,10 +559,16 @@ STORY UPGRADE (true story)
 
 UPGRADE_LORE = """
 STORY UPGRADE (legend)
-- The hook is the strangest detail of the legend as it is actually told. Never invent new lore.
+- A STORY WITH TENSION, never a fact list: one scenario (people, a place, something going wrong, a decision, a
+  reveal, an ending) told the way the legend is told; every fact is woven into that scene. A script that reads
+  like a list of facts ("X was a sign of Y. People believed Z.") fails.
+- The hook is the most unsettling moment of that scenario, as the legend actually tells it. Never invent new lore.
 - The viewer must be able to retell the legend in one sentence afterwards.
-- Something new every 5-8 seconds: every scene adds one new detail of the legend or its real-world history.
+- Something new every 5-8 seconds: every scene moves the scenario forward with one new detail of the legend.
 - Say the legend's name out loud early (scene 1 or 2), the way people search for it.
+- Never talk about sources ("according to the sources", "from the sources", "folklore held", "according to
+  folklore"): just tell it ("the story goes", "people swore").
+- The creature is a character: in "characters" with a fixed look, and shown by name in 3+ shots incl. the hook shot.
 - Caption line 1 = the phrase people type into search, e.g. "What is the Wendigo?"."""
 
 STORY_SHAPES = {
@@ -589,17 +601,26 @@ Return JSON: {{"premises": [{{"premise": "...", "question": "...", "visual": "..
 CRITIC_PROMPT = """You are a strict critic for a short illustrated horror / true-crime channel. Score this {kind}
 story (JSON below) and give concrete reasons.
 {rules}
-Score (whole numbers): hook (max 20): the first sentence is the strangest {truth} detail, no date/place opener;
-clarity (max 20): the viewer can explain what happened in one sentence; pacing (max 20): something new every 5-8
-seconds, no filler; name_early (max 10): the case/legend/place name is said in scene 1 or 2; payoff (max 15): the
-ending answers the hook; integrity (max 15): {integrity}.
-Return JSON: {{"hook": 0, "clarity": 0, "pacing": 0, "name_early": 0, "payoff": 0, "integrity": 0,
+Score (whole numbers): hook (max {m_hook}): the first sentence is the strangest {truth} detail, no date/place
+opener; clarity (max {m_clarity}): the viewer can explain what happened in one sentence; pacing (max {m_pacing}):
+something new every 5-8 seconds, no filler; name_early (max 10): the case/legend/place name is said in scene 1 or 2;
+payoff (max 15): the ending answers the hook; integrity (max {m_integrity}): {integrity}.{story_rule}
+Return JSON: {{"hook": 0, "clarity": 0, "pacing": 0, "name_early": 0, "payoff": 0, "integrity": 0,{story_key}
 "what_happened": "one sentence", "reasons": ["concrete problem + concrete fix", ...]}}
 
 STORY:
 {draft}"""
 
 CRITIC_MAX = {"hook": 20, "clarity": 20, "pacing": 20, "name_early": 10, "payoff": 15, "integrity": 15}
+# legends: "story" = is this a story with tension (a scenario that escalates), not a list of facts
+CRITIC_MAX_LEGEND = {"hook": 15, "clarity": 15, "pacing": 15, "name_early": 10, "payoff": 15, "integrity": 10,
+                     "story": 20}
+CRITIC_STORY = """
+story (max 20): is this a STORY WITH TENSION? 20 = one concrete scenario (people, a place, something going wrong,
+a decision, a reveal, an ending) that escalates scene by scene; 0-8 = a list of facts about the legend ("X was a
+sign of Y. People believed Z. This was done to prevent W."), however well written. A fact list fails."""
+SOURCE_TALK = re.compile(r"\b(according to (the )?(sources?|folklore|records)|from the sources?|the sources? (say|said|"
+                         r"describe\w*|state\w*|mention\w*)|folklore (held|says|states|claims))\b", re.I)
 
 CRITIC_REWRITE = """Rewrite this story (same JSON format) to fix these critic notes. Keep every fact, name, number
 and the fact_ledger exactly; keep the number of scenes; keep scene 1's opening unless a note is about the hook.
@@ -638,7 +659,7 @@ def _json_call(prompt: str, api_key: str, temperature: float = 0.3) -> dict:
             raise RuntimeError(f"{model} HTTP {r.status_code}")
         parts = r.json()["candidates"][0]["content"]["parts"]
         return json.loads("".join(p.get("text", "") for p in parts))
-    return _with_models(call, "JSON answer")
+    return _with_models(call, "JSON answer", light=True)
 
 
 _PACE = {"last": 0.0}
@@ -697,20 +718,35 @@ def critic_pass(story: dict, api_key: str, kind: str, rules: str) -> dict:
     integrity = ("only facts from the source, nothing invented, theories labelled" if kind == "true"
                  else "the legend as actually told, nothing invented")
     extra = UPGRADE_TRUE if kind == "true" else UPGRADE_LORE
+    legend = kind != "true"
+    maxes = CRITIC_MAX_LEGEND if legend else CRITIC_MAX
     for rnd in range(3):  # score, then up to 2 rewrites
         draft = json.dumps({k: story[k] for k in SCHEMA["properties"] if k in story}, ensure_ascii=False)
         try:
-            r = _json_call(CRITIC_PROMPT.format(kind=kind, rules=extra, truth=truth, integrity=integrity,
-                                                draft=draft), api_key, 0.2)
+            r = _json_call(CRITIC_PROMPT.format(
+                kind=kind, rules=extra, truth=truth, integrity=integrity, draft=draft,
+                m_hook=maxes["hook"], m_clarity=maxes["clarity"], m_pacing=maxes["pacing"],
+                m_integrity=maxes["integrity"], story_rule=CRITIC_STORY if legend else "",
+                story_key=' "story": 0,' if legend else ""), api_key, 0.2)
         except Exception as e:  # noqa: BLE001
             log(f"Critic unavailable ({str(e)[:120]}); keeping the story")
             return story
-        total = sum(max(0, min(int(r.get(k, 0) or 0), mx)) for k, mx in CRITIC_MAX.items())
+        total = sum(max(0, min(int(r.get(k, 0) or 0), mx)) for k, mx in maxes.items())
         reasons = [str(x) for x in (r.get("reasons") or [])][:5]
-        log(f"Critic {rnd + 1}: {total}/100 ({', '.join(f'{k} {r.get(k)}' for k in CRITIC_MAX)}). "
+        said = " ".join(sc.get("narration", "") for sc in story.get("scenes") or [])
+        hard = []
+        if legend and int(r.get("story", 0) or 0) < 12:  # a fact list fails whatever the total
+            hard.append(f"story {r.get('story')}/20: this reads like a list of facts. Rewrite it as ONE scenario "
+                        "with people, a place and rising tension (death, illness, suspicion, the grave opened, the "
+                        "reveal, the remedy), weaving every fact into that scene")
+        talk = SOURCE_TALK.search(said)
+        if talk:
+            hard.append(f"the narration says {talk.group(0)!r}: never talk about sources; just tell the legend")
+        reasons = hard + reasons
+        log(f"Critic {rnd + 1}: {total}/100 ({', '.join(f'{k} {r.get(k)}' for k in maxes)}). "
             f"What happened: {str(r.get('what_happened', ''))[:120]}. Notes: {' | '.join(reasons)[:400]}")
         story["critic_score"] = total
-        if total >= bar:
+        if total >= bar and not hard:
             return story
         if rnd == 2:
             break

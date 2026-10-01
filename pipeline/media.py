@@ -482,6 +482,7 @@ def fill_shots(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
 
 
 _PERSON = re.compile(r"\b(man|men|woman|women|girl|boy|guest|guests|officer|officers|police|policeman|detective|"
+                     r"villagers?|gravedigger|priest|widow|farmer|hunter|crowd|family|figure|"
                      r"receptionist|clerk|worker|workers|staff|people|person|crowd|child|children|he|she|they|his|"
                      r"her|him|figure|hijacker|passenger|passengers|pilot|nurse|doctor|victim|stranger|narrator|"
                      r"family|couple|friends|someone|anyone)\b", re.IGNORECASE)
@@ -602,6 +603,9 @@ def honest_place_shots(story: dict, only: set | None = None, force: bool = False
             continue  # already has a real-media shot
         if sc.get("_place_shot"):
             continue  # already tried as a place shot
+        import shot_rules
+        if i in shot_rules.key_scenes(story) or shot_rules.ai_only(story, i, "b"):
+            continue  # the hook and twist scenes always keep a real subject, never an empty place
         name = ""
         for key in (images.LOC_KEYS.get("b", ""), images.LOC_KEYS.get("a", ""), "location"):
             cand = (sc.get(key) or "").lower().removeprefix("the ").strip()
@@ -634,6 +638,7 @@ def auto_tag(story: dict) -> int:
     if not CONFIG.get("real_media_auto_tag", True):
         return 0
     import images
+    import shot_rules
     true = bool(story.get("true_story"))
     names = [c.get("name", "").lower().removeprefix("the ") for c in story.get("characters") or [] if c.get("name")]
     # first / last names too ("Elisa's hand" had become the stock query "elisa hand gesturing")
@@ -647,7 +652,7 @@ def auto_tag(story: dict) -> int:
             cur = (sc.get(SRC_KEYS[l]) or "").strip().lower()
             if not text:
                 continue
-            if (i, l) == (0, "a"):
+            if (i, l) == (0, "a") or shot_rules.ai_only(story, i, l):  # hook / creature / key-scene shots
                 sc[SRC_KEYS[l]] = "ai"
                 continue
             low = text.lower()
@@ -674,6 +679,17 @@ def auto_tag(story: dict) -> int:
                 log(f"Shot {i:02d}{l}: planner said {cur or 'nothing'}, re-classified {new}"
                     + (f' (query "{sc.get(QUERY_KEYS[l])}")' if new != "ai" else ""))
     return changed
+
+
+def _historic_note(story: dict) -> str:
+    """Stock-clip QA for legends / historical stories: modern, sunny, touristy or clean footage fails."""
+    import library
+    if not (library.archive_story(story) or story.get("mode") in ("lore", "coldcase", "fiction")):
+        return ""
+    return ("; THIS IS A HISTORICAL HORROR STORY: FAIL if the frame shows anything modern (cars, asphalt, road "
+            "markings, street or shop signs, power lines, modern windows, street lamps or lights, modern clothes, "
+            "tourists, restored postcard streets), bright sunny daylight or blue sky, or clean touristy footage; "
+            "it must look dark, old and eerie")
 
 
 def _setting_note(story: dict, i: int, l: str) -> str:
@@ -754,8 +770,9 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
             n[meta["type"]] = n.get(meta["type"], 0) + 1
             return
         kind = (sc.get(SRC_KEYS[l]) or "ai").strip().lower()
-        if kind not in PROVIDERS or (i, l) == (0, "a"):  # the hook stays AI: thumbnail + AI animation
-            return
+        import shot_rules
+        if kind not in PROVIDERS or (i, l) == (0, "a") or shot_rules.ai_only(story, i, l):
+            return  # the hook stays AI (thumbnail + AI animation); creature / key-scene shots too
         if kind == "real_photo" and not true:
             log(f"Shot {i:02d}{l}: real_photo asked for a fiction story, using AI")
             return
@@ -776,8 +793,11 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
                     aq = q
                     break
             cands = [c for c in cands if c["id"] not in used and c["id"] not in recent][:3]
-            req = (f"{clean_query(raw_q)} (an old print, engraving or illustration of it is fine; FAIL if a colour "
-                   f"calibration chart, ruler, grey scale or scan border is visible){_setting_note(story, i, l)}")
+            req = (f"Does this image depict: {sc[PROMPT_KEYS[l]].strip().rstrip('.')}? It must show what that "
+                   "description MEANS (its subject in that situation), not just share a keyword: e.g. a workshop or "
+                   "shop full of coins is NOT 'a coin placed in a dead man's mouth', a list of names is NOT a grave. "
+                   "An old print, engraving or illustration of it is fine. FAIL if it depicts something else, or if "
+                   f"a colour calibration chart, ruler, grey scale or scan border is visible{_setting_note(story, i, l)}")
             if cands and _try_candidates(cands, i, l, "archive_print", aq, req, png, side, assets, used, n, images):
                 tried += len(cands)
                 return
@@ -797,7 +817,8 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
         # the story's exact moment or lighting); a real photo may show the place from any side.
         # stock clips never show a person as the main subject: viewers read any stranger as the story's person
         # (a woman walking a hotel corridor over "Elisa Lam checked into the Cecil Hotel")
-        request = (f"{clean_query(raw_q)}, NO PERSON as the main subject{_setting_note(story, i, l)}"
+        request = (f"{clean_query(raw_q)} (the shot: {sc[PROMPT_KEYS[l]].strip()[:160]}), NO PERSON as the main "
+                   f"subject{_historic_note(story)}{_setting_note(story, i, l)}"
                    if kind == "stock_video"
                    else f"{raw_q} (any view of it: outside, inside, an entrance or a detail; FAIL if a colour "
                         "calibration chart, ruler or scan border is visible)")

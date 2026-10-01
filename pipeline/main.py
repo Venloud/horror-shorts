@@ -176,6 +176,11 @@ def main() -> int:
             story = write_story(history)
             if not testing:
                 checkpoint.start(story)
+        if not reused:  # creature on screen (legends), real subjects for the hook + twist, no filler shots
+            import shot_rules
+            shot_rules.apply(story)
+            if not testing:
+                checkpoint.save_story(story)
         # Until it's posted, a video is known by its story id (the post number is given by publish.py).
         story["story_id"] = story.get("story_id") or checkpoint.story_id(story)
         if not story.get("visual_mode"):  # A/B test: classic -> fast -> analog (kept on a checkpoint resume)

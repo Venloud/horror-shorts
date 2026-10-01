@@ -90,19 +90,32 @@ SOURCE (from Wikipedia). This is your ONLY source for facts about the legend:
 {facts}
 \"\"\"
 
-STRUCTURE (follow exactly). It must feel like a complete mini-story with a clear ending.
-1. SCENE 1 = HOOK, "did you know" style (1-2 sentences, MAX 18 words), built on the single creepiest detail of the legend. The first 6 words must already be unsettling. Patterns:
-   - "Did you know [creepiest detail, stated plainly]?"
-   - "People still [strange protective habit]. Because of what [creature] does."
-   Never open with a vague line like "There is an old legend".
-   NEVER open with a date, a year, or a place name. Put when/where in scene 2. The first words must be the strangest or most shocking detail.
-   The first sentence is the most ironic, specific or unbelievable REAL detail in the source (e.g. "The password to the Louvre's security cameras was 'Louvre.'"), NOT a summary of the event. It must be literally true as the source states it, and must never imply a cause, motive or connection the source doesn't state.
-2. SCENE 2 = CONTEXT: where the legend comes from and how old it is.
-3. What the creature/legend is, what it does, its rules (how it hunts, what attracts it), with the eeriest details.
-4. The most famous story, sighting, or belief about it (framed as "people claimed", "the legend says").
-5. How people protected themselves, according to the legend.
-5b. Include ONE surprising real detail the viewer will want to repeat to a friend ("I didn't know that!").
-6. LAST SCENE = a chilling closing line that ties back to the hook and ends the video cleanly, e.g. "So next time you [situation]... maybe don't [action]."
+STRUCTURE (follow exactly). This is a STORY, not a list of facts: one specific scenario, told the way the legend
+is told, with people, a place, rising tension and an ending. Every fact from the ledger is woven INTO that scene.
+- THE SCENARIO: a scenario the source describes, or a typical one built only from what the source says the legend
+  involves (e.g. for a revenant: a death in a village, the family and neighbours falling ill one by one, the
+  villagers' suspicion turning to the grave, the gravedigger opening it and finding the signs the source names,
+  then the remedy the source names). If the source gives no specific case, frame it plainly as how the legend is
+  told ("The story always starts the same way.", "In the old tellings, ..."), never as a documented event, and
+  never invent names, dates, places or numbers. 1-2 recurring people (a gravedigger, a widow, a villager) with
+  roles, no names unless the source names them.
+1. SCENE 1 = HOOK (1-2 sentences, MAX 18 words): the most unsettling MOMENT of the scenario, stated plainly, e.g.
+   "When they opened her grave, the burial shroud was chewed to rags." The first 6 words must already be unsettling.
+   Never "Did you know", never a vague line like "There is an old legend".
+   NEVER open with a date, a year, or a place name. The first words must be the strangest or most shocking detail.
+   It must be literally what the legend says (a sign, a belief, a remedy from the source); never imply a cause,
+   motive or connection the source doesn't state.
+2. SCENE 2 = name the legend out loud (the way people search for it) and where/when it is told.
+3-5. THE SCENARIO with tension: the death, what starts happening to the living, the suspicion, the decision to
+   open the grave. Each scene adds one new detail from the ledger (what it is, what it does, its signs).
+6. THE REVEAL (twist_scene): what they find, from the source (e.g. the open mouth, the chewed shroud).
+7. THE REMEDY from the source, done in the scene (the coin or stone placed in the mouth, the head...), and
+   whether it worked, as the legend tells it.
+8. LAST SCENE = a chilling closing line that pays off the hook and ends the video cleanly.
+Include ONE surprising real detail the viewer will want to repeat to a friend.
+NEVER write "according to the sources", "from the sources", "the sources say", "folklore held", "according to
+folklore" or any line about where the information comes from: the narrator TELLS the legend ("the story goes",
+"people swore", "villagers believed" are fine).
 
 HARD RULES
 - FACT LOCK: before writing, build a fact ledger from the SOURCE in "fact_ledger" (one "label: value" line each: names, numbers, money, dates, years, ages, places, counts, organizations, vehicles/aircraft, quotes). Write the story ONLY from that ledger. Values may be turned into spoken words but NEVER changed, rounded, estimated or slangified ("$200,000" -> "two hundred thousand dollars"; never "twenty-k", "twenty thousand" or "about two hundred thousand"). Before returning, silently compare every value in the narration with the ledger.
@@ -113,7 +126,14 @@ HARD RULES
 - Third person, plain spoken English, short sentences. {words} words (about one minute). 7 to 9 scenes, 1-3 sentences each.
 
 IMAGE PROMPTS
-- Painted illustrations showing the creature, the setting, the era, or the moment. The creature can be shown (it is folklore), but no gore.
+- Painted illustrations of the SCENARIO: the people, the creature, the place, the moment. No gore.
+- THE CREATURE ON SCREEN: put the creature/revenant in "characters" (name = the legend's name in lower case, e.g.
+  "nachzehrer"; a fixed 15-20 word look exactly as the legend describes it, no blood, no gore, no occult symbols)
+  and SHOW it, by that exact name, in at least 3 shots: scene 1's "image_prompt" (the hook shot), the reveal
+  scene, and one more. Those shots are "ai". Also give the 1-2 recurring people a "characters" entry.
+- No filler shots: never a blank wall, a bare texture, a surface, threads or a generic object on a table. Every
+  shot shows a person, the creature, or a story object IN the story's moment (the coin in the corpse's mouth,
+  not "silver coins on a table").
 - TWO images per scene: "image_prompt" = the main visual of what the narration says (when the words say "the bridge", show the bridge); "image_prompt_2" = a genuinely DIFFERENT visual from the same narration: another subject, action or angle (e.g. the key object in close-up, the place as a wide shot, another person's reaction). Never the same picture twice. Leave "image_prompt_3" and "image_prompt_4" empty (and their image_location fields "none").
 - No text or writing in the image.
 - REAL PEOPLE (if the legend involves real people): real people are shown with normal visible faces in the channel's illustrated style, matching only basic public facts (approximate age, hair, clothing, era). Do NOT try to copy a real private person's actual face. Historical figures (dead 100+ years) may follow known portraits. Masked or hooded figures are fine when the story fits. Each real person gets a "characters" entry with a fixed look that is reused word-for-word in every shot they appear in.

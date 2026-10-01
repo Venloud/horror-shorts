@@ -628,7 +628,9 @@ def near_duplicate(p1: str, p2: str) -> bool:
 def _gemini_json(prompt: str, models: list[str] | None = None) -> dict | None:
     """Small JSON answer (duplicate-shot rewrite, shot shortening): Gemini, else the Groq writer model."""
     key = env("GEMINI_API_KEY", required=False)
-    for model in (models or (CONFIG.get("llm_models") or [])[:2]) if key and not gemini_out() else []:
+    # small helper calls: the "lite" models first, so the strong model's daily quota stays for story writing
+    light = sorted(CONFIG.get("llm_models") or [], key=lambda m: "lite" not in m)[:2]
+    for model in (models or light) if key and not gemini_out() else []:
         if gemini_model_out(model):
             continue
         try:
@@ -1261,6 +1263,41 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
             log(f"Image {i:02d}{shot}: virtual shot from {i:02d}{sib} (same scene, same place)")
 
     n_scenes = len(story["scenes"])
+    # A scene whose shots all failed is REDRAWN (its main shot, simple prompt, a new seed, every source still
+    # usable); another scene's picture is never stretched over it (a woodcut had run 12 s across two scenes).
+    for i in range(n_scenes):
+        if any(results.get((i, s)) for s in "abcd"):
+            continue
+        raw = (story["scenes"][i].get(PROMPT_KEYS["a"]) or story["scenes"][i].get("narration") or "").strip()
+        if not raw:
+            continue
+        path = outdir / f"scene_{i:02d}a.png"
+        subject, place = shot_request(story, i, raw, "a")
+        request = subject + (f", location: {place}" if place else "")
+        simple = build_simple_prompt(story, i, raw, letter="a")
+        chain = ([(_cloudflare, build_prompt(story, i, raw, style, letter="a"))] if cf_usable() else []) \
+            + ([(_hf_space, simple)] if not testing and not _STATE["spaces_out"] and count["hf_space"] < space_max
+               else []) \
+            + ([(_local_sd, simple)] if not _STATE["local_out"] and count["local_sd"] < local_max else [])
+        for provider, prompt in chain:
+            name = _NAMES[provider.__name__]
+            try:
+                _save_valid(provider(prompt, base_seed + 7919 * (i + 1)), path)
+            except Exception as e:  # noqa: BLE001
+                log(f"Scene {i}: redraw with {name} failed: {str(e)[:150]}")
+                continue
+            count["cloudflare" if provider is _cloudflare else name] += 1
+            verdict, why = check_image(path, request)
+            qa = "PASS" if verdict else ("FAIL" if verdict is False else "SKIPPED")
+            story.setdefault("_shot_qa", {})[f"{i:02d}a"] = qa
+            story.setdefault("_shot_provider", {})[f"{i:02d}a"] = name
+            log(f"Scene {i}: redrawn by {name}, qa={qa}" + (f", reason={why}" if why else "") + f" | prompt: {prompt}")
+            if verdict is False:
+                count["rejected"] += 1
+                path.replace(path.with_name(f"{path.stem}.rejected_redraw.png"))
+                continue
+            results[(i, "a")] = path
+            break
     empty = [i for i in range(n_scenes) if not any(results.get((i, s)) for s in "abcd")]
     log(f"Cloudflare images: {count['cloudflare']}")
     log(f"Cloudflare estimated neurons: {_STATE['cf_neurons']:.0f}")
@@ -1273,48 +1310,13 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
     missing = len(jobs) - sum(1 for p in results.values() if p)
     if missing or empty:
         log(f"Missing {missing} of {len(jobs)} shots; {len(empty)} of {n_scenes} scenes have no image at all")
-    if len(empty) > max(1, n_scenes // 4):
-        if _STATE["cf_out"]:  # low-quota build that can't fill its scenes: wait for the quota, keep the story
-            _quota_stop(f"{len(empty)} of {n_scenes} scenes have no image with Cloudflare out; the story is kept "
-                        "and the next build continues it.")
-        raise RuntimeError(f"{len(empty)} of {n_scenes} scenes have no image; not rendering a broken video.")
-
-    # How many scenes each picture fills (virtual crops count as their source). One picture may fill at most
-    # MAX_FILLS scenes: more empty scenes = "waiting for image quota", never one image stretched over the video.
-    fills: dict[str, int] = {}
-    for i in range(n_scenes):
-        for key in {source_key(results[(i, s)]) for s in "abcd" if results.get((i, s))}:
-            fills[key] = fills.get(key, 0) + 1
-
-    def free(p: Path) -> bool:
-        return fills.get(source_key(p), 0) < MAX_FILLS
-
-    per_scene: list[list[Path]] = []
-    for i in range(n_scenes):
-        shots = [results[(i, s)] for s in "abcd" if results.get((i, s))]
-        if not shots:  # emergency only (the run already allows at most max(1, scenes // 4) of these)
-            near = sorted((j for j in range(n_scenes) if j != i), key=lambda j: abs(j - i))
-            pick = next((results[(j, s)] for j in near for s in "abcd"
-                         if results.get((j, s)) and _fits(story, i, "a", j, s) and free(results[(j, s)])), None)
-            own_bad = next((rejected_files[(i, s)] for s in "abcd" if (i, s) in rejected_files), None)
-            if pick is None and own_bad:
-                pick = own_bad
-                log(f"Scene {i}: EMERGENCY, no fitting image anywhere; keeping its rejected image {pick.name}")
-            elif pick is None:
-                last = per_scene[-1][-1] if per_scene else None
-                pick = last if last is not None and free(last) else next(
-                    (p for p in results.values() if p and free(p)), None)
-                if pick is None:
-                    _quota_stop(f"scene {i} has no image and every usable picture already fills {MAX_FILLS} scenes "
-                                "(one image may never cover the video). Stopped; the next build continues it.")
-                log(f"Scene {i}: EMERGENCY, borrowing {pick.name} (no image of this scene or its place exists)")
-            else:
-                log(f"Scene {i}: no image of its own, using {pick.name} (same place)")
-            key = source_key(pick)
-            fills[key] = fills.get(key, 0) + 1
-            shots = [pick]
-        per_scene.append(shots)
-    return per_scene
+    if empty:  # never another scene's picture: wait for the quota (low-quota builds) or fail this build
+        detail = (f"scene(s) {', '.join(map(str, empty))} have no usable image of their own after a redraw; never "
+                  "stretching another scene's picture over them. The story is kept and the next build continues it.")
+        if _STATE["cf_out"]:
+            _quota_stop(detail)
+        raise RuntimeError(detail)
+    return [[results[(i, s)] for s in "abcd" if results.get((i, s))] for i in range(n_scenes)]
 
 
-MAX_FILLS = 2  # one picture (incl. its virtual crops) may fill at most 2 scenes of a video
+MAX_FILLS = 1  # a picture (incl. its virtual crops) never fills another scene (no cross-scene borrowing)

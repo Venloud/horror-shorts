@@ -10,9 +10,14 @@ so a new session can pick up without starting over.
 - **Night Files** is a fully automated, faceless AI horror / true-crime / folklore channel on **TikTok**
   (account "Nightfiles Stories", @istwatrajiks). Goal: go viral fast, spend as close to $0 as possible.
 - Everything runs on **GitHub Actions** in this private repo.
-- Repo is **private** (owner's call). `assets/music`: "Everything In Its Right Place" (Radiohead), "Tonight You Belong
-  To Me" (Patience & Prudence), "bk grnde" by Kitty katzzz (credited in the caption), and his own "Unsolved Mystery".
-  Music choices are his decision; don't lecture about it.
+- Repo is **private** (owner's call). `assets/music`: only his own "Unsolved Mystery". Oct 1 copyright audit (owner's
+  request after a YouTube "Notices" flag): removed "Everything In Its Right Place" (Radiohead, (P) 2016 XL
+  Recordings), "Tonight You Belong To Me" (Patience & Prudence, 1956 Liberty recording ripped from a YouTube upload;
+  the 1926 song is public domain but US pre-1972 recordings from 1947-1956 stay protected until 2067 under the Music
+  Modernization Act) and "bk grnde" by Kitty katzzz ((P) 2026 "12309505 Records DK", a DistroKid release; no license
+  in the repo). Only add a track whose specific recording is verifiably public domain / CC0 / licensed for
+  monetized use, with its source + license noted here. `assets/stings/default_impact.mp3` has no recorded source
+  (uploaded Sept 25): unverified. Music choices are his decision; don't lecture about it.
 - Secrets/keys go ONLY in GitHub repo secrets. Never ask the owner to paste keys into chat.
 - The owner is Christian, and his faith stays part of the channel's rules: **no occult / illuminati imagery**
   (no all-seeing eye, no floating "eyes only" shots, no occult symbols), even when a horror story would suggest it.
@@ -29,7 +34,11 @@ so a new session can pick up without starting over.
    legends with a pop-culture tie-in perform best (the Strigoi video got 232 views and 47% average watch time).
    Fiction is only the fallback when a mode fails (still behind the 80/100 quality gate).
    **Groq backup writer** (flag `groq_backup`, `groq_model` openai/gpt-oss-120b, only if GROQ_API_KEY):
-   `story.model_chain()` = every Gemini model in llm_models (minus ones whose DAILY quota is used up) -> Groq LAST
+   `story.model_chain()` = every Gemini model in llm_models, STRONGEST FIRST (3.8-flash, flash-latest, 3.5-flash-lite
+   last; minus ones whose DAILY quota is used up) -> Groq LAST; a story written by a lite model or Groq logs
+   "WARNING: story text written by ... a last-resort writer". Small JSON helper calls (critic scores, premises,
+   packaging, images._gemini_json) use `model_chain(light=True)` (lite first) so they don't eat the strong
+   model's small free daily quota
    (OpenAI-compatible JSON mode, schema spelled out in the prompt, same prompts + fact lock).
    **Retries** (`story._with_models`, used by every writer/JSON call): 500/503 "high demand" = the SAME model again
    after 10 s, 30 s, 60 s, then the next Gemini model, then Groq; a Gemini per-minute 429 waits its retryDelay
@@ -76,7 +85,13 @@ so a new session can pick up without starting over.
      (25) unused topics on the Wikimedia pageviews API (NightFilesBot User-Agent, one request at a time, cached 24 h
      in cache/media-search/trends.json) and take the one whose last-7-day views are >= `trend_min_ratio` (1.5x)
      its 60-day average; else (or on any error) a random pick as before. Log: "Trending pick: ...".
-   - `lore`: legends/folklore with a "Did you know" hook (`data/lore.json`).
+   - `lore`: legends/folklore (`data/lore.json`), told as a STORY, never a fact list (Oct 1, owner: the Nachzehrer
+     test was "not postable"): one scenario told the way the legend is told (a death in a village, the family
+     falling ill, suspicion, the grave opened, the signs found, the remedy from the source), facts from the ledger
+     woven into it; framed as folklore when the source has no specific case; the hook is the scenario's most
+     unsettling moment (no "Did you know"). Never source-talk ("according to the sources", "from the sources",
+     "folklore held"...: `story.SOURCE_TALK` fails the critic). The critic scores legends with an extra `story`
+     (max 20, `CRITIC_MAX_LEGEND`): "is this a story with tension?"; story < 12 fails whatever the total.
    - `inbox/`: the owner can drop links (`inbox/links.txt`: `true <url>` or `fiction <url>`) or pasted
      stories (`.txt`, first line TRUE/FICTION/SCRIPT/SCRIPT TRUE). Inbox items jump the queue and are used once.
      Optional second header line `NOT_BEFORE: <video number>` (e.g. `NOT_BEFORE: 31`): `sources.next_inbox` skips
@@ -201,20 +216,27 @@ so a new session can pick up without starting over.
    archive) + Spaces + max 6 SD-Turbo gap fillers, no early stop; log "Low-quota build: N real, N AI", history
    `low_quota`. It ships only if the full QA gate passes. A QA failure that is only visual (variety) = "waiting
    for image quota" alert: not counted toward the 2-strikes skip, the story stays in the checkpoint and its SD-Turbo
-   shots are deleted so Cloudflare redraws them; more empty scenes than max(1, scenes // 4) = the same wait.
+   shots are deleted so Cloudflare redraws them; a scene left empty after its redraw = the same wait.
    If Cloudflare is out (or hits its limit mid-run), at most 2 shots per scene for the rest of the run.
    **2 images per scene** (`shots_per_scene` 2, was 4; 3-4 still work if configured): shot a = the narration's
    main visual, shot b = a DIFFERENT subject/action/angle of the same words (render motion covers the rest).
    Quota order: every scene's "a" shot first, then every "b", then "c"/"d", so running out of quota (or the local
    time budget) loses extra cuts, never whole scenes. SD-Turbo is a GAP FILLER only: max `local_image_max` (6)
-   local images per video (test builds too). If Cloudflare
-   and the Spaces are out and more scenes need an image than local may make, the build stops early
-   (`images.ImageQuotaWait`, ntfy "waiting for image quota"; the checkpoint keeps story + narration, the buffer
-   covers the gap); preflight does the same before writing a story when both are already out.
+   local images per video (test builds too). No early stop any more (low-quota builds): a scene still empty after
+   its redraw = `images.ImageQuotaWait` (ntfy "waiting for image quota"; the checkpoint keeps story + narration).
    Hook shot (scene 0 shot a): up to 3 draws (new seed, then `build_simple_prompt`) before it's dropped.
    Cloudflare daily cap vs short rate limit are told apart (short limit = wait and retry).
-   A Space quota error marks the Spaces out for the run; the local model is always the last step. The run only
-   fails if more than max(1, scenes // 4) scenes have no image at all.
+   A Space quota error marks the Spaces out for the run; the local model is always the last step.
+   **Shot rules** (`pipeline/shot_rules.py`, run once in main.py right after the story is written): legends get
+   their creature as a character (fixed look; LLM, else a plain no-gore fallback) SHOWN by name in >=
+   `lore_creature_shots` (3) shots incl. the hook shot 0a and the twist scene; the hook + twist scenes always have
+   a real subject (person / creature / story object in the moment); filler shots (a texture, surface, wall,
+   threads, or a generic object "resting on a table") are rewritten (one LLM call, template fallback). These shots
+   are locked AI (`story["_ai_only"]`): library, stock, archive and honest place shots never take them. Log
+   "Creature on screen: '<name>' in N shot(s) (AI only), hook shot yes".
+   **No cross-scene borrowing** (Oct 1: a woodcut ran 12 s over two scenes): a scene whose shots all failed QA is
+   REDRAWN (main shot, a new seed, every source still usable); if it still has nothing, the build waits for the
+   quota (Cloudflare out) or fails; another scene's picture is never stretched over it (`MAX_FILLS` 1).
    **REAL PEOPLE rule** (mystery.py prompts, scene_plan.txt, story.REAL_STORY_IMAGES, editor rules): real people
    get normal visible faces in the illustrated style, from basic public facts only (approximate age, hair,
    clothing, era); never an attempt to copy a real private person's actual face; historical figures (dead 100+
@@ -260,7 +282,7 @@ so a new session can pick up without starting over.
    simpler prompt (`build_simple_prompt`); the same prompt is never sent twice; one try per provider (no blind
    retries). Also refused: files < 256 px or landscape. A shot with no usable image gets a virtual shot (75% crop)
    only from the SAME scene and the same place (never a cabin image for a forest shot); a scene with no image at
-   all borrows a same-place image, else (emergency, logged) its own rejected image or the previous scene's.
+   all is redrawn (see No cross-scene borrowing), never filled from another scene.
    End of run: "Cloudflare images / Cloudflare estimated neurons / HF images / Local SD images / Rejected images /
    Virtual/cached images".
    Consistency: the scene plan outputs `characters` and `locations` sheets (never removed); looks are injected
@@ -333,7 +355,10 @@ so a new session can pick up without starting over.
    **Real-media QA** (`images.REAL_QA_QUESTION`, `check_image(kind="real")`): the poster is ONE frame from the middle
    of the clip; the question says so and fails only for a wrong subject/setting, visible text/logo/watermark, a
    close-up real face, or a split frame; never for colour, lighting, warm/cold tones, time of day or style (our
-   grade fixes those). Groq vision QA is paced (`groq_vision_per_minute` 20) and a 429 waits (Retry-After, max 30 s)
+   grade fixes those). Archive prints are asked "Does this image depict: <the shot>?" and must show what it MEANS,
+   not share a keyword (a coin workshop is not "a coin in a dead man's mouth"). Stock clips for legends / fiction /
+   pre-1950 stories (`media._historic_note`) fail anything modern (cars, asphalt, signs, power lines, modern
+   windows/lamps/clothes, tourists, postcard streets), bright sunny daylight / blue sky or clean touristy footage. Groq vision QA is paced (`groq_vision_per_minute` 20) and a 429 waits (Retry-After, max 30 s)
    and retries up to 3 times instead of skipping. Stock queries = 2-4 concrete nouns (`media.clean_query`: no
    framing/mood/colour words), then a broader 2-noun query; a clip that failed QA is never retried.
    Stock clips must not show a person as the main subject (QA request "NO PERSON as the main subject"; a stranger
@@ -482,8 +507,8 @@ so a new session can pick up without starting over.
   (2) the FINISHED mp4 (`render.frame_visuals`: 2 frames/s, captions/logo/bottom masked, contrast-normalised,
   near-identical frames grouped) -> fail if one look > 20% or unchanged for > 20% of the duration, or too few
   looks. Every video logs "Visuals: N distinct picture(s); longest on screen ..." and "Final frames: ...";
-  history saves `visuals`. Emergency borrowing: one picture may fill at most `images.MAX_FILLS` (2) scenes;
-  beyond that -> "waiting for image quota".
+  history saves `visuals`. No cross-scene borrowing any more (`images.MAX_FILLS` 1): an empty scene is redrawn
+  or the build waits / fails.
   **Join** (`render._join`): xfade offsets come from each clip's REAL frame count (not summed word timings) and
   transitions are whole frames; a joined video shorter than its shots raises. Cause of #28: rounding drift over
   31 fast-mode cuts put an offset past the stream end, ffmpeg 6.1's xfade ended the chain at ~6 s, and the

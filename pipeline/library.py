@@ -336,6 +336,9 @@ def _fill(story: dict, outdir: Path) -> int:
                 continue  # the hook stays a fresh picture; checkpoints / real media already placed stay
             if _shot_has_person(story, text):
                 continue  # people / story characters: never a picture from another story
+            import shot_rules
+            if shot_rules.ai_only(story, i, l):
+                continue  # creature / hook / twist shots: always a fresh AI picture
             inside, _words = _setting(story, i, l, text)
             pos = _position(i, n_scenes)
             cands = []

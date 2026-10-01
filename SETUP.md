@@ -89,7 +89,7 @@ All settings and on/off flags are in `config.json` (edit on GitHub with the penc
 - Posting: `tiktok_mode`, `youtube_enabled`, `youtube_privacy`, `caption_search_style`, `analytics`.
 
 The owner's own stories go in `inbox/` (see CLAUDE.md for the header lines TRUE / FICTION / SCRIPT / SCRIPT TRUE and
-`NOT_BEFORE`). Music is picked from `assets/music/`, twist stings from `assets/stings/`, sound effects from
+`NOT_BEFORE`). Music is picked from `assets/music/` (only tracks that are verifiably public domain or licensed for monetized use: today only the owner's own `unsolved_mystery.mp3`), twist stings from `assets/stings/`, sound effects from
 `assets/sfx/`.
 
 ## Good to know
