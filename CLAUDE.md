@@ -354,7 +354,8 @@ so a new session can pick up without starting over.
   (+ "buffer low" alert at 1 left). Only if both platforms fail does the video stay in the buffer.
 - **Empty buffer at a slot**: the publisher does NOT fail. It writes `data/missed_slot.json` {"slot", "at"}, sends
   "Buffer empty: building now, will post when ready", and daily.yml starts build.yml at once (`gh workflow run`,
-  GH_PAT or github.token with actions: write). When a video passes QA and enters the buffer, main.py calls
+  github.token with actions: write; GH_PAT only as fallback: the
+  fine-grained PAT has no Actions permission, its 403 had turned daily runs 28-32 red; both failing = red run + ntfy). When a video passes QA and enters the buffer, main.py calls
   `publish.post_missed_slot()`: missed slot < 6 h old -> post it right away (same publish code, TikTok + YouTube,
   so build.yml also has the TikTok/YouTube secrets + token-save step), then delete the file; older -> just delete
   it and the next slot posts normally. Both workflows save history.json + missed_slot.json with

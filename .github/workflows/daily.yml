@@ -64,9 +64,22 @@ jobs:
 
       - name: Buffer was empty - start a build now (it posts as soon as the video is ready)
         if: success() && hashFiles('.trigger_build') != ''
+        # github.token may dispatch workflows (permissions: actions: write above); the fine-grained GH_PAT has no
+        # Actions permission (HTTP 403 turned runs 28-32 red), so it is only a fallback. If both fail the run ends
+        # red with a phone alert; the next :50 cron build still fills the buffer and posts the missed slot.
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT || github.token }}
-        run: gh workflow run build.yml --repo "${{ github.repository }}" --ref main
+          RUN_TOKEN: ${{ github.token }}
+          PAT: ${{ secrets.GH_PAT }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: |
+          for t in RUN_TOKEN PAT; do
+            [ -n "${!t}" ] || continue
+            if GH_TOKEN="${!t}" gh workflow run build.yml --repo "${{ github.repository }}" --ref main; then
+              echo "build.yml started ($t)"; exit 0
+            fi
+          done
+          cd pipeline && python -c "from notify import notify_text; notify_text('Build NOT started', 'Buffer was empty but build.yml could not be started (see the daily.yml log). The next cron build (:50) still fills the buffer and posts the missed slot.', warn=True)"
+          exit 1
 
       - name: Keep the posted video for download (7 days)
         if: always()
