@@ -1,4 +1,5 @@
 """Renders the final 1080x1920 video with FFmpeg: Ken Burns scenes, crossfades, grade, grain, captions, music."""
+import json
 import random
 import re
 import subprocess
@@ -287,6 +288,30 @@ def _vhs_ass(ass_path: Path, story: dict, total: float, workdir: Path) -> Path:
     return out
 
 
+def _pick_move(img, choices: list, last):
+    """random.choice of a camera move, never the previous shot's; a reused library asset (scene_XXl.reuse.json)
+    also avoids the moves of its earlier uses, and the chosen move is written back for the library."""
+    side = Path(img).with_suffix(".reuse.json")
+    avoid = set()
+    meta = None
+    if side.exists():
+        try:
+            meta = json.loads(side.read_text())
+            avoid = set(meta.get("avoid_moves") or [])
+        except ValueError:
+            meta = None
+    pool = [m for m in choices if m != last and m not in avoid] or [m for m in choices if m != last] or list(choices)
+    m = random.choice(pool)
+    if meta is not None:
+        meta["move"] = m
+        side.write_text(json.dumps(meta))
+    try:  # the asset library remembers every picture's move, so a later reuse moves differently
+        Path(img).with_suffix(".move").write_text(m)
+    except OSError:
+        pass
+    return m
+
+
 def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Path, workdir: Path) -> Path:
     total = narration["duration"] + tail_for(narration["duration"])
     starts = [0.0] + [st for st, _ in narration["scene_times"][1:]]
@@ -343,7 +368,7 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
             except Exception as e:  # noqa: BLE001
                 log(f"Shot {k}: cutout shot failed ({str(e)[:100]}), using its preview still")
         if framings[k] != "full":  # fast mode: a punch-in / detail / pan crop of the same picture
-            m = random.choice([mm for mm in motions if mm != last]); last = m
+            m = _pick_move(img, motions, last); last = m
             clips.append(_scene_clip(img, length, m, out, framings[k]))
             log(f"Shot {k}: {length:.1f}s {framings[k]} {m}")
             continue
@@ -354,7 +379,7 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
                 try:
                     if img not in depths:
                         depths[img] = effects.depth_map(img)
-                    m = random.choice([mm for mm in effects.PARALLAX_MOVES if mm != last]); last = m
+                    m = _pick_move(img, effects.PARALLAX_MOVES, last); last = m
                     done = _ai_into_still(ai, img, depths[img], length, out, m)
                     if done:
                         clips.append(done)
@@ -373,14 +398,14 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
         if img not in depths:
             depths[img] = effects.depth_map(img)
         if depths[img] is not None:
-            m = random.choice([mm for mm in effects.PARALLAX_MOVES if mm != last]); last = m
+            m = _pick_move(img, effects.PARALLAX_MOVES, last); last = m
             try:
                 clips.append(effects.parallax_clip(img, depths[img], length, m, out))
                 log(f"Shot {k}: {length:.1f}s 3D {m}")
                 continue
             except Exception as e:  # noqa: BLE001
                 log(f"Shot {k}: 3D failed ({str(e)[:100]}), using a normal zoom")
-        m = random.choice([mm for mm in motions if mm != last]); last = m
+        m = _pick_move(img, motions, last); last = m
         clips.append(_scene_clip(img, length, m, out))
         log(f"Shot {k}: {length:.1f}s {m}")
 

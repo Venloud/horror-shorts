@@ -85,7 +85,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface
-          key: hf-models-v3
+          key: hf-models-v4  # v4: + CLIP ViT-B/32 (asset library embeddings)
 
       - name: Real media search cache (24 h, Pexels / Pixabay / Wikimedia / Smithsonian)
         if: steps.check.outputs.build == 'true'

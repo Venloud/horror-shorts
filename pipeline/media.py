@@ -38,8 +38,11 @@ W, H, FPS = 1080, 1920, 30
 GRADE = ("eq=saturation=0.6:contrast=1.08:brightness=-0.05:gamma=0.95,"
          "colorbalance=rs=-0.06:bs=0.07:rh=0.07:gh=0.02:bh=-0.06,vignette=PI/4.5")
 FIT = f"scale={W}:{H}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{H},setsar=1"
+# Archive prints (mostly light paper): darker and pulled toward the channel palette so they sit next to painted shots
+GRADE_PRINT = ("curves=all='0/0 0.45/0.28 1/0.58',eq=saturation=0.45,"
+               "colorbalance=rs=-0.05:bs=0.08:rh=0.10:gh=0.04:bh=-0.06,vignette=PI/3.4")
 NAMES = {"pexels": "Pexels", "pixabay": "Pixabay", "wikimedia": "Wikimedia Commons",
-         "smithsonian": "Smithsonian Open Access"}
+         "smithsonian": "Smithsonian Open Access", "loc": "Library of Congress", "openverse": "Openverse"}
 
 
 def enabled(source: str | None = None) -> bool:
@@ -217,7 +220,168 @@ def smithsonian(query: str) -> list[dict]:
     return out
 
 
-PROVIDERS = {"stock_video": (pexels, pixabay), "real_photo": (wikimedia, smithsonian)}
+# ---------- Library of Congress (no key) + Openverse (no key) ----------
+
+_LOC_LOCK = {"last": 0.0}
+
+
+def _loc_get(url: str, params: dict | None = None) -> dict:
+    """loc.gov JSON API: one request at a time (loc_min_interval, 3 s apart: it answers 429 to 1/s), Retry-After
+    honored once."""
+    for attempt in range(2):
+        wait = float(CONFIG.get("loc_min_interval", 3)) - (time.time() - _LOC_LOCK["last"])
+        if wait > 0:
+            time.sleep(wait)
+        _LOC_LOCK["last"] = time.time()
+        r = requests.get(url, params={**(params or {}), "fo": "json"}, timeout=30, headers={"User-Agent": UA})
+        if r.status_code in (429, 503) and attempt == 0:
+            time.sleep(min(30, int(float(r.headers.get("Retry-After", 10) or 10))))
+            continue
+        r.raise_for_status()
+        return r.json()
+    return {}
+
+
+def loc_rights_ok(text: str) -> bool:
+    """LOC rights text: public domain / "free to use and reuse" / (flag) "No known restrictions on publication".
+    Everything else is rejected: "publication may be restricted", "rights status not evaluated", missing, unclear."""
+    t = " ".join((text or "").lower().split())
+    if not t:
+        return False
+    if "no known restrictions on publication" in t:  # (its "use elsewhere may be restricted" tail is about other laws)
+        return bool(CONFIG.get("loc_accept_no_known_restrictions", True))
+    if re.search(r"may be restricted|not evaluated|not been evaluated|not determined|permission|restricted|"
+                 r"copyright (?:is )?(?:held|retained)|all rights reserved", t):
+        return False
+    return "public domain" in t or "free to use and reuse" in t
+
+
+def _loc_search(query: str, kind: str) -> list[dict]:
+    if not enabled("loc"):
+        return []
+    data = _cached("loc", f"{kind}|{query}", lambda: _loc_get("https://www.loc.gov/photos/", {"q": query, "c": 12}))
+    out = []
+    checked = 0
+    for r in (data.get("results") or [])[:10]:
+        url = r.get("url") or r.get("id") or ""
+        if "/item/" not in url:
+            continue
+        fmt = " ".join(r.get("original_format") or []).lower()
+        if kind == "print" and not re.search(r"print|drawing|engraving|woodcut|lithograph|book|illustration", fmt
+                                             + " " + (r.get("title") or "").lower()):
+            continue
+        if checked >= 4:  # rights live on the item page: max 4 item lookups per search (rate limit)
+            break
+        checked += 1
+        try:
+            item = _cached("loc_item", url, lambda u=url: _loc_get(u.split("?")[0])).get("item") or {}
+        except Exception as e:  # noqa: BLE001
+            log(f"LOC item {url} unreadable ({str(e)[:80]})")
+            continue
+        rights = item.get("rights_advisory") or item.get("rights_information") or ""
+        if isinstance(rights, list):
+            rights = " ".join(rights)
+        if not loc_rights_ok(rights):
+            continue
+        imgs = [u.split("#")[0] for u in (r.get("image_url") or []) if u.split("#")[0].endswith(".jpg")]
+        if not imgs:
+            continue
+        creator = ", ".join(item.get("contributor_names") or r.get("contributor") or [])[:120]
+        out.append({"kind": "photo", "archive_kind": kind, "source": "loc", "id": f"loc:{url.rstrip('/').split('/')[-1]}",
+                    "url": url, "download": imgs[-1], "title": r.get("title", ""), "author": creator,
+                    "license": rights.split(".")[0][:120], "rights": rights[:400], "date": str(r.get("date") or "")[:20],
+                    "min_side": 760 if kind == "print" else 900})
+    return out
+
+
+def loc_print(query: str) -> list[dict]:
+    return _loc_search(query, "print")
+
+
+def loc_photo(query: str) -> list[dict]:
+    return _loc_search(query, "photo")
+
+
+OPENVERSE_OK = {"pdm", "cc0", "by"}  # public domain mark, CC0, CC BY; never NC / ND / SA
+
+
+def openverse(query: str) -> list[dict]:
+    if not enabled("openverse"):
+        return []
+
+    def fetch():
+        r = requests.get("https://api.openverse.org/v1/images/", timeout=30, headers={"User-Agent": UA},
+                         params={"q": query[:200], "license": ",".join(sorted(OPENVERSE_OK)), "page_size": 12,
+                                 "mature": "false"})
+        r.raise_for_status()
+        return r.json()
+
+    out = []
+    for r in _cached("openverse", query, fetch).get("results") or []:
+        lic = (r.get("license") or "").lower()
+        if lic not in OPENVERSE_OK or r.get("mature"):
+            continue
+        if min(r.get("width") or 0, r.get("height") or 0) < 700:
+            continue
+        name = {"pdm": "Public Domain Mark", "cc0": "CC0"}.get(lic, f"CC BY {r.get('license_version') or ''}".strip())
+        out.append({"kind": "photo", "archive_kind": "print", "source": "openverse",
+                    "id": f"openverse:{r.get('id')}", "url": r.get("foreign_landing_url") or r.get("url"),
+                    "download": r.get("url"), "title": r.get("title") or "", "author": r.get("creator") or "",
+                    "license": name, "license_url": r.get("license_url") or "", "provider": r.get("provider") or "",
+                    "attribution": r.get("attribution") or "", "date": "", "min_side": 760})
+    return out
+
+
+PROVIDERS = {"stock_video": (pexels, pixabay), "real_photo": (wikimedia, smithsonian, loc_photo),
+             "archive_print": (loc_print, openverse)}
+
+
+# ---------- archive query builder (pre-1950 stories and legends) ----------
+
+_CULTURES = [  # story words -> the print tradition that fits; a non-European story never gets European woodcuts
+    (r"\b(japan|japanese|tokyo|kyoto|edo|yokai|yurei|kitsune)\b", "japanese", ["ukiyo-e woodblock print",
+                                                                          "japanese woodblock print"]),
+    (r"\b(china|chinese)\b", "chinese", ["chinese ink painting", "chinese woodblock print"]),
+    (r"\b(germany|german|bavaria|silesia|france|french|england|english|britain|british|scotland|ireland|irish|"
+     r"romania|romanian|transylvania|poland|polish|italy|italian|venice|spain|europe|european|slavic|hungary|"
+     r"cornwall|cornish|bohemia|austria|dutch|norse|scandinavia|russia|russian|serbia|greece|greek)\b", "european",
+     ["woodcut", "wood engraving", "etching", "chapbook illustration", "frontispiece"]),
+    (r"\b(mexico|mexican)\b", "mexican", ["mexican engraving", "posada print"]),
+    (r"\b(america|american|united states|new england|new york|boston|california)\b", "american",
+     ["wood engraving", "lithograph", "book illustration"]),
+]
+
+
+def culture_of(story: dict) -> tuple[str, list[str]]:
+    text = " ".join([story.get("setting") or "", story.get("case") or "", story.get("title") or ""]
+                    + [sc.get("narration", "") for sc in (story.get("scenes") or [])[:3]]).lower()
+    for pat, name, media_terms in _CULTURES:
+        if re.search(pat, text):
+            return name, media_terms
+    return "", ["folklore illustration", "book illustration"]  # no matching tradition: neutral terms only
+
+
+_PREPS = set("beside behind above below around across through between beneath toward towards along among upon "
+             "within without next".split())
+
+
+def archive_query(story: dict, shot: str) -> str:
+    """2-3 concrete nouns of the shot + ONE fitting print term chosen for this shot (not blindly appended):
+    ghosts/apparitions -> apparition / specter, death imagery -> macabre, places -> etching / lithograph,
+    objects / creatures -> woodcut / engraving; the print tradition follows the story's culture."""
+    nouns = " ".join(w for w in clean_query(shot, 4).split() if w not in _PREPS)[:60]
+    nouns = " ".join(nouns.split()[:3])
+    low = shot.lower()
+    culture, terms = culture_of(story)
+    if re.search(r"\b(ghost|spirit|phantom|apparition|specter|spectre|wraith|figure in white)\b", low):
+        extra = "apparition" if culture in ("", "european", "american") else terms[0]
+    elif re.search(r"\b(skull|skeleton|grave|coffin|corpse|death|bones|tomb|crypt)\b", low):
+        extra = "macabre engraving" if culture in ("european", "") else terms[0]
+    elif re.search(r"\b(village|town|street|church|castle|house|landscape|forest|road|harbor|ship|mountain)\b", low):
+        extra = next((t for t in terms if t in ("etching", "lithograph")), terms[0])
+    else:
+        extra = terms[0]
+    return f"{nouns} {extra}".strip()
 
 
 # ---------- download + grade ----------
@@ -249,14 +413,14 @@ def _photo(c: dict, png: Path) -> None:
         im = im.convert("RGB")
         w, h = im.size
         cw, ch = (w, int(w * 16 / 9)) if w * 16 / 9 <= h else (int(h * 9 / 16), h)
-        if ch < 900:
+        if ch < c.get("min_side", 900):
             raise RuntimeError(f"too small for a vertical frame ({w}x{h})")
         x, y = (w - cw) // 2, (h - ch) // 2
         im.crop((x, y, x + cw, y + ch)).resize((W, H), Image.LANCZOS).save(raw.with_suffix(".crop.png"))
     raw.unlink(missing_ok=True)
     src = raw.with_suffix(".crop.png")
-    _run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(src), "-vf", f"{GRADE},noise=alls=5", "-frames:v", "1",
-          str(png)])
+    grade = f"{GRADE_PRINT},noise=alls=9" if c.get("archive_kind") == "print" else f"{GRADE},noise=alls=5"
+    _run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(src), "-vf", grade, "-frames:v", "1", str(png)])
     src.replace(_qa_frame(png))  # QA judges the clean, ungraded picture (grain / vignette confuse it)
 
 
@@ -568,7 +732,10 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
         log(f"Cloudflare is out: real media first for every eligible shot (stock limit {max_stock}), then Spaces, "
             f"then SD-Turbo (max {CONFIG.get('local_image_max', 6)})")
     recent = _recent_ids(history, int(CONFIG.get("stock_reuse_window", 20)))
-    n = {"stock_video": 0, "real_photo": 0}
+    n = {"stock_video": 0, "real_photo": 0, "archive_print": 0}
+    import library
+    archive_ok = enabled("archive") and library.archive_story(story)
+    max_archive = int(CONFIG.get("archive_max", 3))
     used: set[str] = set()
     tried = 0
     story_low = _story_text(story).lower()
@@ -578,6 +745,8 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
         sc = story["scenes"][i]
         png = outdir / f"scene_{i:02d}{l}.png"
         side = png.with_suffix(".json")
+        if png.exists() and png.with_suffix(".reuse.json").exists() and not side.exists():
+            return  # asset library reuse (a painted picture); real-media reuses have a .json and count below
         if side.exists() and png.exists():  # checkpoint from an earlier try of this story
             meta = json.loads(side.read_text())
             assets.append(meta)
@@ -590,9 +759,26 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
         if kind == "real_photo" and not true:
             log(f"Shot {i:02d}{l}: real_photo asked for a fiction story, using AI")
             return
+        raw_q = (sc.get(QUERY_KEYS[l]) or "").strip() or sc[PROMPT_KEYS[l]]
+        # legends / pre-1950 stories: an archive print (LOC / Openverse, woodcut / engraving / etching...) first
+        if kind == "stock_video" and archive_ok and n["archive_print"] < max_archive:
+            aq = archive_query(story, sc[PROMPT_KEYS[l]])
+            cands = []
+            for provider in PROVIDERS["archive_print"]:
+                try:
+                    cands += provider(aq)
+                except Exception as e:  # noqa: BLE001
+                    log(f"Shot {i:02d}{l}: {provider.__name__} search failed ({str(e)[:120]})")
+            cands = [c for c in cands if c["id"] not in used and c["id"] not in recent][:3]
+            req = (f"{clean_query(raw_q)} (an old print, engraving or illustration of it is fine; FAIL if a colour "
+                   f"calibration chart, ruler, grey scale or scan border is visible){_setting_note(story, i, l)}")
+            if cands and _try_candidates(cands, i, l, "archive_print", aq, req, png, side, assets, used, n, images):
+                tried += len(cands)
+                return
+            tried += len(cands)
+            log(f"Shot {i:02d}{l}: no usable archive print for '{aq}', trying stock")
         if n[kind] >= (max_photo if kind == "real_photo" else max_stock):
             return
-        raw_q = (sc.get(QUERY_KEYS[l]) or "").strip() or sc[PROMPT_KEYS[l]]
         # stock: 2-4 concrete nouns; archive photos keep the real name ("Cecil Hotel Los Angeles")
         queries = [clean_query(raw_q)] if kind == "stock_video" else [raw_q]
         if kind == "real_photo":  # pin the real place down: "Cecil Hotel office" -> "... Los Angeles" first,
@@ -607,7 +793,8 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
         # (a woman walking a hotel corridor over "Elisa Lam checked into the Cecil Hotel")
         request = (f"{clean_query(raw_q)}, NO PERSON as the main subject{_setting_note(story, i, l)}"
                    if kind == "stock_video"
-                   else f"{raw_q} (any view of it: outside, inside, an entrance or a detail)")
+                   else f"{raw_q} (any view of it: outside, inside, an entrance or a detail; FAIL if a colour "
+                        "calibration chart, ruler or scan border is visible)")
         budget = int(CONFIG.get("real_media_max_candidates", 4))  # per shot, all queries together
         done = False
         for query in queries:
@@ -646,7 +833,8 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
         missing = {i for i in range(len(story["scenes"])) if i not in {a["scene"] for a in assets}}
         for i in honest_place_shots(story, only=missing, force=True):
             attempt(i, "b")
-    log(f"Real media: {n['stock_video']} stock video(s), {n['real_photo']} real photo(s) "
+    log(f"Real media: {n['stock_video']} stock video(s), {n['real_photo']} real photo(s), "
+        f"{n['archive_print']} archive print(s) "
         f"({tried} candidate(s) tried; limits {max_stock} stock / {max_photo} photos)")
     return assets
 
@@ -678,7 +866,10 @@ def _try_candidates(cands, i, l, kind, query, request, png, side, assets, used, 
             continue
         meta = {"scene": i, "shot": l, "type": kind, "kind": c["kind"], "source": c["source"], "id": c["id"],
                 "url": c["url"], "author": c.get("author", ""), "license": c.get("license", ""),
-                "date": c.get("date", ""), "title": c.get("title", ""), "query": query}
+                "license_url": c.get("license_url", ""), "attribution": c.get("attribution", ""),
+                "rights": c.get("rights", ""), "provider": c.get("provider", ""),
+                "archive_kind": c.get("archive_kind", ""), "date": c.get("date", ""), "title": c.get("title", ""),
+                "query": query, "qa": qa}
         side.write_text(json.dumps(meta, ensure_ascii=False))
         assets.append(meta)
         used.add(c["id"])
@@ -695,8 +886,10 @@ def credits(assets: list[dict]) -> tuple[str, str]:
     short = "Visuals: " + ", ".join(names)
     lines = []
     for a in assets:
-        what = "Video" if a.get("kind") == "video" else "Photo"
+        what = "Video" if a.get("kind") == "video" else ("Print" if a.get("archive_kind") == "print" else "Photo")
         title = f" \"{a['title'].replace('File:', '')}\"" if a.get("title") else ""
         by = f" by {a['author']}" if a.get("author") else ""
-        lines.append(f"{what}{title}{by} ({a.get('license', '')}), {NAMES.get(a['source'], a['source'])}: {a['url']}")
+        lic = a.get("license", "") + (f", {a['license_url']}" if a.get("license_url") else "")
+        via = NAMES.get(a["source"], a["source"]) + (f" / {a['provider']}" if a.get("provider") else "")
+        lines.append(f"{what}{title}{by} ({lic}), {via}: {a['url']}")
     return short, "\n".join(dict.fromkeys(lines))

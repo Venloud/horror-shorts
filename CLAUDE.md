@@ -274,6 +274,40 @@ so a new session can pick up without starting over.
    TikTok caption line "Visuals: Pexels, Wikimedia Commons"; YouTube description "Visual credits:" (caption.json
    `visual_credits`). Free Spaces draw at most `space_images_max` (6) images per video so ZeroGPU minutes stay
    for the hook animation.
+   **Visual source order** (log "Visual sources: N reused, N archive/stock, N AI", history `visual_sources`):
+   asset library -> real media (stock / photos / archive prints) -> AI. Existing QA on everything.
+   **Asset library** (`pipeline/library.py`, flag `asset_library`): after a classic video enters the buffer,
+   `record_video` stores every shot that clearly PASSED QA (AI: `story["_shot_qa"]`; real media: `.json` qa) in the
+   GitHub release **"assets"** (`<id>.jpg` / `<id>.mp4` + `index.json`; test builds never write): source, license,
+   attribution, url, description (the shot), tags, style (painted / stock_video / archive_print / photo), setting
+   (interior / exterior + place words), era bucket (`era_of`: pre1800 / 1800s / 1900-1949 / 1950-1999 / modern /
+   folk; nature shots "any"), subjects, character_specific, CLIP embedding (float16), times_used, last_used_video /
+   seq, uses [position, crop, grade, move]. Embeddings: openai/clip-vit-base-patch32 (benchmarked against
+   google/siglip-base-patch16-224 on 4 CPUs: same top-1 0.93 / P@3 0.69 on 41 Openverse/LOC images, 60 vs 237
+   ms/image, no sentencepiece). `fill_shots` (before media.fill_shots) reuses an asset only if: the shot has no
+   story character / person (never a named person/creature across stories; such assets are flagged and never
+   reused), style allowed for the story, interior/exterior equal, same era (or "any"), times_used < 4
+   (`asset_max_uses`), not used in the last 10 videos (`asset_reuse_window`), not used at the same position
+   (early/middle/late) before, CLIP similarity >= `asset_min_similarity` 0.27 (63% of true matches, 1% false), then
+   the normal QA; max `asset_reuse_max_per_video` 6; the hook (0a) is always fresh. Each reuse gets a new crop
+   (left/right/tight/top/bottom/center) + grade (cool/warm/dark/faded/base) than its earlier uses, and render's
+   `_pick_move` avoids its earlier camera moves (`scene_XXl.reuse.json` avoid_moves; every picture's move is
+   written to `scene_XXl.move` for the library). Log "Reused asset <id> (use N)". `asset_library_max` 800 (used-up
+   and least recently used pruned). HF cache key hf-models-v4 (+ CLIP).
+   **Library of Congress** (`media.loc_print` / `loc_photo`, no key, loc.gov JSON, 3 s between requests
+   `loc_min_interval`, max 4 item lookups per search): rights from the item page: public domain / "free to use and
+   reuse" / "No known restrictions on publication" (flag `loc_accept_no_known_restrictions`); rejected:
+   "publication may be restricted", "rights status not evaluated", missing / unclear. Stored: item url, title,
+   creator, date, rights text. **Openverse** (`media.openverse`, /v1/images/, license pdm,cc0,by only, never NC/ND/SA,
+   not mature): id, provider, creator, urls, license + license URL, attribution; CC BY credits (with license URL)
+   go in the YouTube description. **Archive prints** (`archive_print`, flag `real_media_sources.archive`, max
+   `archive_max` 3 per video): for legends and stories set before 1950 (`library.archive_story`), a no-person shot
+   tagged stock_video first tries LOC prints -> Openverse with `media.archive_query`: 2-3 concrete nouns + ONE
+   print term chosen per shot (apparition / macabre engraving / etching / woodcut / folklore illustration...) from
+   the story's culture (`culture_of`: Japanese stories get ukiyo-e only, European ones woodcuts / engravings,
+   others neutral terms). Graded with `GRADE_PRINT` (highlights crushed, desaturated toward teal/amber, vignette,
+   grain) so prints sit next to painted shots; QA fails colour calibration charts, rulers and scan borders (LOC
+   scans often show Kodak strips). real_photo also searches LOC photos (true stories only, as before).
    **The planner's source tag is NOT trusted** (Groq tagged every shot "ai"): `media.auto_tag` re-classifies every
    shot after planning, for every story incl. inbox SCRIPT / TRUE SCRIPT (flag `real_media_auto_tag`): no story
    character / person + atmosphere, place or object -> stock_video; a named real place/object in a TRUE story ->
@@ -459,7 +493,7 @@ so a new session can pick up without starting over.
 - 2 videos a day, **11:40 AM and 8:40 PM New York**. GitHub's own cron was unreliable (4 h late / skipped),
   so the plan is **cron-job.org** calling the `workflow_dispatch` API for `daily.yml` with a fine-grained token
   (Actions: read & write). Only remove the `schedule:` block from daily.yml AFTER cron-job.org is tested.
-- `build.yml` has `timeout-minutes: 60` and HF cache key `hf-models-v3` (adds SD-Turbo); `daily.yml` 15 min.
+- `build.yml` has `timeout-minutes: 60` and HF cache key `hf-models-v4` (SD-Turbo + CLIP for the asset library); `daily.yml` 15 min.
 - `build.yml` runs at :50 every 3 hours (UTC); publish slots are 15:40 and 00:40 UTC.
 
 ## Owner preferences (how to work with him)

@@ -1135,7 +1135,10 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
             continue
         if _is_image(path):  # real media (media.py) or a checkpoint from an earlier try (it passed its checks then)
             side = path.with_suffix(".json")
-            if side.exists():
+            if path.with_suffix(".reuse.json").exists():
+                count["library"] = count.get("library", 0) + 1
+                log(f"Image {tag}: provider=asset library ({json.loads(path.with_suffix('.reuse.json').read_text())['asset']})")
+            elif side.exists():
                 count["real_media"] += 1
                 log(f"Image {tag}: provider={json.loads(side.read_text()).get('source', 'real media')} (real media)")
             else:
@@ -1223,6 +1226,8 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
                 count[name] += 1
                 verdict, why = check_image(path, request)
             qa = "PASS" if verdict else ("FAIL" if verdict is False else "SKIPPED")
+            story.setdefault("_shot_qa", {})[tag] = qa  # the asset library keeps only clear passes
+            story.setdefault("_shot_provider", {})[tag] = name
             extra_log = f", neurons~{_STATE['cf_neurons'] - neurons_before:.1f}" if provider is _cloudflare else ""
             log(f"Image {tag}: provider={name}, tokens={tokens}, qa={qa}"
                 + (f", reason={why}" if why else "") + f', subject="{subject[:60]}", location="{place or "-"}"'

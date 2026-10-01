@@ -175,8 +175,13 @@ def main() -> int:
             imgs = images._cached_images(story, img_dir)
         if imgs is None:
             story["render_style"] = "classic"
-            media.fill_shots(story, img_dir, history)  # real stock video / archive photos first (never raises)
-            imgs = images.generate_images(story, img_dir)
+            import library
+            library.fill_shots(story, img_dir, history)  # 1) asset library reuse (never raises)
+            media.fill_shots(story, img_dir, history)  # 2) stock video / archive photos + prints (never raises)
+            imgs = images.generate_images(story, img_dir)  # 3) AI for the rest
+            vs = library.summary(img_dir)
+            story["_visual_sources"] = vs
+            log(f"Visual sources: {vs['reused']} reused, {vs['archive_stock']} archive/stock, {vs['ai']} AI")
         from render import END_CARD_DELAY, tail_for
         ass = build_ass(narration["words"], story.get("hook_overlay", ""),
                         narration["duration"] + tail_for(narration["duration"]), workdir / "captions.ass",
@@ -234,6 +239,9 @@ def main() -> int:
             return 0
 
         buffer.add(stamp, video, meta)
+        if story.get("render_style", "classic") == "classic":  # QA-passed pictures go into the asset library
+            import library
+            library.record_video(story, img_dir)
         # Used as soon as the video is safely in the buffer, so it can never be made twice.
         for sk in story.pop("_skipped", []):
             history.append({"date": stamp, **sk})
@@ -260,6 +268,7 @@ def main() -> int:
             "render_style": story.get("render_style", "classic"),  # classic / cutout (experimental)
             "story_shape": story.get("story_shape"),  # fiction shape rotation
             "research_sources": [x.get("domain") or x.get("url") for x in story.get("sources") or []],
+            "visual_sources": story.get("_visual_sources"),  # reused / archive+stock / AI shots
             "remake_of": story.get("remake_of"),  # inbox REMAKE: the old video's title
             "remake_angle": story.get("remake_angle"),
             "critic_score": story.get("critic_score"),
