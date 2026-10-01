@@ -84,7 +84,8 @@ very short scene). SHOT is one of:
 - {{"type": "stage", "character": "<name or none>", "pose": "<{poses}>", "location": "<location name>",
    "plate": "wide|medium|detail", "position": "left|center|right", "scale": "full|medium|close",
    "action": "<{actions}>", "facing": "left|right"}}
-- {{"type": "insert", "prompt": "<object or detail close-up, no people, max 15 words>", "location": "<name or none>"}}
+- {{"type": "insert", "prompt": "<object or detail close-up, no people, no signs/labels/inscriptions, max 15 words>",
+   "location": "<name or none>"}}
 - {{"type": "screen", "kind": "phone|note|laptop", "contact": "<name said in the narration, or empty>",
    "time": "<e.g. 11:47 PM>", "lines": [{{"from": "them|me", "text": "<words QUOTED from the narration>"}}]}}
 RULES: adults only. A screen only when the narration mentions a text, message, call, note or screen, and its
@@ -463,11 +464,11 @@ def make_plates(story: dict, needed: set, outdir: Path, budget: Budget) -> dict:
             out[(loc, kind)] = dest
             continue
         prompt = (f"{style}, {looks.get(loc, loc).strip().rstrip('.')}, {PLATE_KINDS[kind]}, empty, no people, "
-                  f"vertical composition, no text, no signs")
+                  f"vertical composition, blank unmarked surfaces, no text, no signs")
         for attempt in range(2):
             if not _draw(prompt, 5000 + li * 37 + attempt, dest, budget, planned=attempt == 0):
                 break
-            v, why = _qa(dest, f"{loc}: {looks.get(loc, '')}, empty, no people")
+            v, why = _qa(dest, f"{loc}: {looks.get(loc, '')}, empty, no people; NO if any letters, words or writing are visible")
             if v is not False:
                 out[(loc, kind)] = dest
                 break
@@ -479,11 +480,15 @@ def make_plates(story: dict, needed: set, outdir: Path, budget: Budget) -> dict:
 def make_insert(story: dict, i: int, shot: dict, dest: Path, budget: Budget) -> Path | None:
     looks = {l["name"]: l.get("look", "") for l in story.get("locations") or []}
     place = " ".join(looks.get(shot.get("location") or "", "").split()[:10])
-    prompt = f"{_style()}, {shot['prompt']}" + (f", {place}" if place else "") + ", close-up, no people, no text"
+    import images
+    # garbled AI lettering ("Herteellienn" sign, "Lanes" tombstone in build 36848613329): no text requests at all,
+    # blank surfaces, and QA fails any visible letters
+    prompt = (f"{_style()}, {images._no_text(shot['prompt'])}" + (f", {place}" if place else "")
+              + ", close-up, no people, blank unmarked surfaces, no letters, no signs, no text")
     for attempt in range(2):
         if not _draw(prompt, 9000 + i * 11 + attempt, dest, budget, planned=attempt == 0):
             return None
-        v, why = _qa(dest, shot["prompt"])
+        v, why = _qa(dest, f"{shot['prompt']}; NO if any letters, words or writing are visible")
         if v is not False:
             return dest
         log(f"Cutout insert {dest.name}: QA NO ({why})")
