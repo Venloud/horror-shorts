@@ -187,9 +187,10 @@ def make_title(hook: str, subject: str, place: str, category: str, story: dict, 
     hw, sw = set(_squash_words(hook)), set(_squash_words(subject))
     if hw and len(hw & sw) / len(hw) > 0.6:  # "A Brick In Its Mouth... The Corpse With A Brick In Its Mouth"
         hook = ""
-    if hook and tail:
+    shared = bool(hw & sw)  # "Signs of a Nachzehrer... The Nachzehrer of Germany": no "hook... subject" form
+    if hook and tail and not shared:
         cands.append(f"{hook}... {tail}")
-    if hook and subject and tail != subject:
+    if hook and subject and tail != subject and not shared:
         cands.append(f"{hook}... {subject}")
     if hook and subject and category:
         cands.append(f"{hook} | {category}")
