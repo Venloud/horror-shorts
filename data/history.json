@@ -410,5 +410,39 @@
       "wanted": "public"
     },
     "posted": "2026-09-30_2037"
+  },
+  {
+    "date": "2026-10-01_0053",
+    "story_id": "bcfd69f4634d",
+    "title": "The Legend of the Lagahoo",
+    "premise": "In Trinidad and Tobago folklore, a daytime human becomes a headless shapeshifting phantom carrying a candlelit coffin by night.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Lagahoo",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Trinidad and Tobago rural roads and pastures at night",
+    "threat": "The Lagahoo, a headless size-shifting bloodsucker bound in heavy chains",
+    "twist": "To defeat the shapeshifting beast, one must beat it with an oil-anointed stick until it dissolves into ocean spray and black mist.",
+    "score": null,
+    "seconds": 58.7,
+    "voice_speed": 1.1,
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:37872704"
+    ],
+    "visual_mode": "classic",
+    "render_style": "classic",
+    "story_shape": null,
+    "critic_score": 97,
+    "visuals": {
+      "distinct": 12,
+      "longest_s": 10.3,
+      "longest_share": 0.165,
+      "longest_name": "scene_02b.png"
+    },
+    "buffered": "2026-10-01_0053",
+    "tiktok": null
   }
 ]
