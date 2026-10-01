@@ -15,7 +15,7 @@
       "status": "queued",
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
-      "stashed": false
+      "stashed": true
     },
     {
       "stamp": "2026-09-25_0228",
@@ -31,7 +31,7 @@
       "status": "queued",
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
-      "stashed": false
+      "stashed": true
     },
     {
       "stamp": "2026-09-25_0412",
@@ -47,7 +47,7 @@
       "status": "queued",
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
-      "stashed": false
+      "stashed": true
     },
     {
       "stamp": "2026-09-25_0637",
@@ -63,7 +63,7 @@
       "status": "queued",
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
-      "stashed": false
+      "stashed": true
     },
     {
       "stamp": "2026-09-25_1930",
@@ -79,7 +79,7 @@
       "status": "queued",
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
-      "stashed": false,
+      "stashed": true,
       "note": "one shot with fake handwriting (old French parchment)"
     },
     {
@@ -96,7 +96,7 @@
       "status": "queued",
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
-      "stashed": false,
+      "stashed": true,
       "note": "one shot with a garbled name plate"
     },
     {
@@ -113,7 +113,7 @@
       "status": "queued",
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
-      "stashed": false
+      "stashed": true
     },
     {
       "stamp": "2026-09-26_0514",
@@ -129,7 +129,7 @@
       "status": "queued",
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
-      "stashed": false
+      "stashed": true
     },
     {
       "stamp": "2026-09-26_0529",
@@ -145,7 +145,7 @@
       "status": "queued",
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
-      "stashed": false,
+      "stashed": true,
       "note": "one shot with a garbled court document"
     },
     {
@@ -162,7 +162,7 @@
       "status": "queued",
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
-      "stashed": false
+      "stashed": true
     },
     {
       "stamp": "2026-09-26_2325",
@@ -178,7 +178,7 @@
       "status": "queued",
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
-      "stashed": false,
+      "stashed": true,
       "note": "garbled diner sign in one shot"
     },
     {
@@ -195,7 +195,7 @@
       "status": "queued",
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
-      "stashed": false
+      "stashed": true
     },
     {
       "stamp": "2026-09-27_2014",
@@ -211,7 +211,7 @@
       "status": "queued",
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
-      "stashed": false
+      "stashed": true
     },
     {
       "stamp": "2026-09-28_0943",
