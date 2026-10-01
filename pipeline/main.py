@@ -147,6 +147,9 @@ def main() -> int:
         problem = images.preflight()  # don't spend Gemini + voice time if no image source works
         if problem:
             raise RuntimeError(problem)
+        if (os.environ.get("RENDER_STYLE") or "").strip().lower() == "cutout" and images.cloudflare_has_quota() is False:
+            # cutout draws its pose sets on Cloudflare only: stop before spending Gemini + voice on a story
+            raise RuntimeError("Cutout render was forced but Cloudflare's daily limit is used up (resets 00:00 UTC)")
 
         story, reused = None, False
         if testing and not images.test_cloudflare_images():  # zero-config test: the last built story + images
