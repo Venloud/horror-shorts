@@ -177,11 +177,11 @@ jobs:
           rm -f .new_refresh_token
 
       - name: Save story history (marks inbox items / cases as used) + missed slot
-        if: success() && steps.check.outputs.build == 'true' && inputs.test != true
+        if: success() && steps.check.outputs.build == 'true'
         run: bash pipeline/push_state.sh "Buffer story"
 
       - name: Save the checkpoint (story, narration, images; or "done")
-        if: always() && steps.check.outputs.build == 'true' && inputs.test != true && hashFiles('cache/checkpoint/**') != ''
+        if: always() && steps.check.outputs.build == 'true' && hashFiles('cache/checkpoint/**') != ''
         uses: actions/cache/save@v4
         with:
           path: cache/checkpoint
