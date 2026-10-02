@@ -530,3 +530,69 @@ The next implementation is considered ready only if it preserves these propertie
 - no bypass of research, fact-lock, visual QA, duration QA, or packaging safeguards;
 - clear artifact/output location for comparison;
 - failure of Ruflo remains non-fatal to production.
+
+
+## Buffer-first publishing update, 2026-10-02
+
+Implemented the missing queue-first behavior for Night Files.
+
+### What changed
+
+1. Added `pipeline/buffer_status.py`
+   - Reports the number of complete video/caption pairs currently waiting in the GitHub Release buffer.
+   - Used by both the scheduled publisher and the separate buffer-fill workflow.
+
+2. Changed `.github/workflows/daily.yml`
+   - Checks the production buffer before generation.
+   - If the buffer contains one or more complete videos, generation is skipped.
+   - The existing publish step then consumes the oldest buffered video.
+   - If the buffer is empty, exactly one new video is generated into the buffer and the same run publishes the next buffered item.
+   - This prevents the scheduled daily job from creating an unnecessary new video while content is already queued.
+
+3. Added `.github/workflows/buffer_fill.yml`
+   - Separate producer workflow.
+   - Scheduled every six hours and manually dispatchable.
+   - Default target is two complete waiting videos.
+   - Generates at most one new video per workflow run when the buffer is below the target.
+   - Never calls `publish.py`, TikTok, or YouTube.
+   - Uploads the generated video, caption, story, and supporting content artifacts to the workflow run.
+
+4. Changed `pipeline/media_production_test.py`
+   - Removed the old test-only `buffer.add` block.
+   - Media tests now use the real production buffer.
+   - HyperFrames and Premiere MCP are still exercised, but the finished video is queued for the scheduled publisher instead of being discarded or immediately posted.
+
+### Resulting flow
+
+```
+Buffer fill / media test
+        |
+        v
+    Generate video
+        |
+        v
+   GitHub Release buffer
+        |
+        |  scheduled daily run
+        v
+ Check buffer first
+        |
+        v
+ Publish oldest item
+        |
+        v
+ Remove successfully posted item
+```
+
+This is intentional: repeated testing can accumulate finished content without spamming TikTok or YouTube. The scheduled daily workflow remains the distribution gate.
+
+### Commit ledger
+
+- `5c2988c72b19731af2e58392e831f5dcb98e5976` - Add buffer status helper.
+- `b51909f67eed808f5f7d3a0588e63df92ba17d54` - Make daily publish from buffer first.
+- `ec08385afd8d9fc48f46997828bf63bc5e391dc7` - Add scheduled buffer fill workflow.
+- `e05438119208c1e5387cc8a6421768aed193d182` - Queue media test output in production buffer.
+
+### Safety boundary
+
+No TikTok or YouTube credentials were added. The buffer-fill and media-test workflows do not publish. The existing `publish.py` remains the only consumer responsible for platform posting and buffer removal.
