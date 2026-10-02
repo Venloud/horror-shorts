@@ -10,13 +10,9 @@ on:
 permissions:
   contents: write
 
-# Shared with daily.yml, so a build and a publish never write history.json at the same time.
 concurrency:
   group: night-files
   cancel-in-progress: false
-
-env:
-  BUFFER_SIZE: 3
 
 jobs:
   daily:
@@ -75,7 +71,7 @@ jobs:
           pip install -q torch --index-url https://download.pytorch.org/whl/cpu
           pip install -q -r requirements.txt
 
-      - name: Is cutout mode on for this build?
+      - name: Is cutout mode on
         id: cutout
         run: |
           on=$(python -c "import json;c=json.load(open('config.json'));print('true' if c.get('render_style')=='cutout' or c.get('cutout_for_modes') else 'false')")
