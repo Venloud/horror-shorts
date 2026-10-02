@@ -5,28 +5,121 @@
   "production_blocking": false,
   "requires_ruflo_runtime": false,
   "stages": [
-    {"id":"research","role":"researcher","entrypoints":["pipeline/research.py","pipeline/sources.py","pipeline/discover.py"],"depends_on":[]},
-    {"id":"story","role":"writer","entrypoints":["pipeline/story.py","pipeline/mystery.py"],"depends_on":["research"]},
-    {"id":"story_bible","role":"planner","entrypoints":["pipeline/story_bible.py"],"depends_on":["story"]},
-    {"id":"shot_rules","role":"visual_planner","entrypoints":["pipeline/shot_rules.py"],"depends_on":["story_bible"]},
-    {"id":"visuals","role":"visual_planner","entrypoints":["pipeline/images.py","pipeline/media.py"],"depends_on":["shot_rules"]},
-    {"id":"voice","role":"writer","entrypoints":["pipeline/voice.py"],"depends_on":["story"]},
-    {"id":"render","role":"renderer","entrypoints":["pipeline/render.py"],"depends_on":["visuals","voice"]},
-    {"id":"qa","role":"qa_reviewer","entrypoints":["pipeline/render.py"],"depends_on":["render"]},
-    {"id":"buffer","role":"publisher","entrypoints":["pipeline/buffer.py"],"depends_on":["qa"]},
-    {"id":"publish","role":"publisher","entrypoints":["pipeline/publish.py"],"depends_on":["buffer"]}
+    {
+      "id": "research",
+      "role": "researcher",
+      "entrypoints": [
+        "pipeline/research.py",
+        "pipeline/sources.py",
+        "pipeline/discover.py"
+      ],
+      "depends_on": []
+    },
+    {
+      "id": "story",
+      "role": "writer",
+      "entrypoints": [
+        "pipeline/story.py",
+        "pipeline/mystery.py"
+      ],
+      "depends_on": [
+        "research"
+      ]
+    },
+    {
+      "id": "story_bible",
+      "role": "planner",
+      "entrypoints": [
+        "pipeline/story_bible.py"
+      ],
+      "depends_on": [
+        "story"
+      ]
+    },
+    {
+      "id": "shot_rules",
+      "role": "visual_planner",
+      "entrypoints": [
+        "pipeline/shot_rules.py"
+      ],
+      "depends_on": [
+        "story_bible"
+      ]
+    },
+    {
+      "id": "visuals",
+      "role": "visual_planner",
+      "entrypoints": [
+        "pipeline/images.py",
+        "pipeline/media.py"
+      ],
+      "depends_on": [
+        "shot_rules"
+      ]
+    },
+    {
+      "id": "voice",
+      "role": "writer",
+      "entrypoints": [
+        "pipeline/voice.py"
+      ],
+      "depends_on": [
+        "story"
+      ]
+    },
+    {
+      "id": "render",
+      "role": "renderer",
+      "entrypoints": [
+        "pipeline/render.py"
+      ],
+      "depends_on": [
+        "visuals",
+        "voice"
+      ]
+    },
+    {
+      "id": "qa",
+      "role": "qa_reviewer",
+      "entrypoints": [
+        "pipeline/render.py"
+      ],
+      "depends_on": [
+        "render"
+      ]
+    },
+    {
+      "id": "buffer",
+      "role": "publisher",
+      "entrypoints": [
+        "pipeline/buffer.py"
+      ],
+      "depends_on": [
+        "qa"
+      ]
+    },
+    {
+      "id": "publish",
+      "role": "publisher",
+      "entrypoints": [
+        "pipeline/publish.py"
+      ],
+      "depends_on": [
+        "buffer"
+      ]
+    }
   ],
   "roles": {
-    "planner":"Decompose and coordinate work without changing production truth.",
-    "researcher":"Find and verify source material and trend/topic evidence.",
-    "writer":"Create and revise the story while respecting fact locks and duration targets.",
-    "visual_planner":"Map narration to specific visual shots and continuity constraints.",
-    "qa_reviewer":"Review factual, visual, duration, audio, caption, and publishing readiness signals.",
-    "packaging_reviewer":"Review caption, title, hashtags, pinned comment, and platform metadata."
+    "planner": "Decompose and coordinate work without changing production truth.",
+    "researcher": "Find and verify source material and trend/topic evidence.",
+    "writer": "Create and revise the story while respecting fact locks and duration targets.",
+    "visual_planner": "Map narration to specific visual shots and continuity constraints.",
+    "qa_reviewer": "Review factual, visual, duration, audio, caption, and publishing readiness signals.",
+    "packaging_reviewer": "Review caption, title, hashtags, pinned comment, and platform metadata."
   },
   "activation_policy": {
     "production": "disabled",
     "manual_review": "future",
-    "non_production": "future"
+    "non_production": "ready"
   }
 }
