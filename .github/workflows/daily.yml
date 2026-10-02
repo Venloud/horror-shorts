@@ -29,8 +29,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: npm
-          cache-dependency-path: remotion/package.json
 
       - name: Install Remotion composition layer
         run: npm install --prefix remotion --no-audit --no-fund
