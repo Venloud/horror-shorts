@@ -331,6 +331,13 @@ def main() -> int:
         images.save_cache(story, imgs)
         checkpoint.finish(story)
         (ROOT / ".built").write_text(stamp)  # tells build.yml to save the image cache
+        # Optional AutoClip repurposing runs only when explicitly enabled and never blocks production.
+        if CONFIG.get("autoclip", {}).get("enabled"):
+            try:
+                import autoclip_adapter
+                autoclip_adapter.run(story, final_path, narration.get("words") or [], workdir / "autoclip")
+            except Exception as e:  # noqa: BLE001
+                log(f"AUTOCLIP: non-fatal integration error ({type(e).__name__}: {str(e)[:240]})")
         log(f"Done: '{story['title']}' is in the buffer.")
         return 0
     except Exception as e:  # noqa: BLE001
