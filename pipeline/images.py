@@ -51,6 +51,19 @@ def _log_neurons(raw: bytes, headers) -> None:
     cf_budget.add(neurons)  # per-UTC-day ledger shared by every build (tests capped at 35%)
 
 
+def _cf_call_log(r) -> None:
+    """Every Cloudflare image call: status, billed neurons and any quota / rate-limit header (investigation of the
+    Oct 2 early 4006), plus our ledger after the call."""
+    import cf_budget
+    hdrs = {k: v for k, v in r.headers.items()
+            if any(w in k.lower() for w in ("neuron", "ratelimit", "rate-limit", "remaining", "quota", "limit"))}
+    billed = r.headers.get("cf-ai-neurons", "-")
+    after = cf_budget.load()
+    log(f"Cloudflare call: HTTP {r.status_code}, cf-ai-neurons={billed}, ledger before this image "
+        f"{after['tests'] + after['production']:.0f}/{cf_budget.limit():.0f}"
+        + (f", headers {hdrs}" if set(hdrs) - {"cf-ai-neurons"} else ""))
+
+
 def _cloudflare(prompt: str, seed: int, fixed_seed: bool = False) -> bytes:
     """fixed_seed=True would send the seed, but FLUX schnell on Workers AI has no seed input (400), so only with
     config cloudflare_seed; pose sets stay consistent through the word-for-word look + the same-character check."""
@@ -66,6 +79,7 @@ def _cloudflare(prompt: str, seed: int, fixed_seed: bool = False) -> bytes:
             body.pop("seed")  # the model's schema has no seed: same request without it
             r = requests.post(CF_URL.format(acct=acct), timeout=120,
                               headers={"Authorization": f"Bearer {token}"}, json=body)
+        _cf_call_log(r)
         if r.status_code == 200:
             break  # success: never scan the body, the base64 image can contain "4006" or anything else
         body = r.text[:300]
@@ -78,6 +92,9 @@ def _cloudflare(prompt: str, seed: int, fixed_seed: bool = False) -> bytes:
         # Daily cap (error 4006, "daily free allocation of 10,000 neurons"): skip Cloudflare for the rest of the run.
         if 4006 in codes or "daily free allocation" in msgs or "neurons" in msgs:
             _STATE["cf_out"] = True
+            import cf_budget
+            log(f"Cloudflare 4006 (daily limit) after {cf_budget.line()}; full answer: {r.text[:600]}")
+            cf_budget.analytics_report()  # Cloudflare's own count, to explain an early 4006
             raise RuntimeError(f"Cloudflare daily free limit used up (resets 00:00 UTC): {body}")
         # Plain 429 = short "slow down" limit: wait and retry, keep Cloudflare for the next images.
         if r.status_code != 429:
@@ -225,6 +242,9 @@ def cloudflare_has_quota() -> bool | None:
         errs = []
     text = " ".join(str(e.get("message", "")) for e in errs if isinstance(e, dict)).lower()
     if any(e.get("code") == 4006 for e in errs if isinstance(e, dict)) or "daily free allocation" in text:
+        import cf_budget
+        log(f"Cloudflare quota check: daily limit used up ({cf_budget.line()}); answer: {r.text[:400]}")
+        cf_budget.analytics_report()
         return False
     log(f"Cloudflare quota check: HTTP {r.status_code} {r.text[:150]}")
     return None
@@ -240,6 +260,7 @@ def preflight() -> str | None:
         return None
     import cf_budget
     log(cf_budget.line())
+    cf_budget.analytics_report()
     cf = cloudflare_has_quota()
     if cf is not False:
         log(f"Cloudflare: {'has quota' if cf else 'status unknown, will try it'}")
@@ -1310,6 +1331,8 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
     log(f"Cloudflare images: {count['cloudflare']}")
     log(f"Cloudflare estimated neurons: {_STATE['cf_neurons']:.0f}")
     log(cf_budget.line())
+    if count["cloudflare"]:
+        cf_budget.analytics_report(force=True)  # Cloudflare's own count after this run's images
     log(f"HF images: {count['hf_space']}")
     log(f"Local SD images: {count['local_sd']}" + (f" ({_STATE['local_secs']:.0f}s)" if _STATE["local_secs"] else ""))
     log(f"Real media (stock video / archive photos): {count['real_media']}")

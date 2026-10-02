@@ -548,6 +548,20 @@ so a new session can pick up without starting over.
   36847389674 = seed 400, 36848613329 = QA fail (one empty plate 27%, fixed), 36850352869 = Cloudflare daily
   limit used up; next test right after 00:00 UTC with `inbox_file=nachzehrer_remake.txt`. Not used in production.
 
+## FEATURE FREEZE (Oct 2-8, 2026)
+- Owner's rules: bug fixes only, no new features, NO test builds unless production fails; Cloudflare (~57
+  images/day) is production's alone (the deferred cutout test was cancelled; cutout stays untested/off).
+- `freeze_summary.yml` (00:52 UTC = ~9 PM New York, `pipeline/freeze_summary.py`): one ntfy a day with posts,
+  builds, buffer, missed slot, hold and yesterday's Cloudflare ledger; appended to `data/freeze_log.md` (the
+  freeze log; stops itself after day 7). Replies to the owner during the freeze: daily summaries only.
+- Production hold: lifted after the first supervised production build (build.yml input `ignore_hold`, Oct 2
+  ~07:10 UTC, after Gemini's 07:00 UTC quota reset) passes QA, then left lifted.
+- Cloudflare early-4006 investigation (Oct 2: "daily limit used up" at 00:44 UTC after only 16 images): every
+  call logs "Cloudflare call: HTTP ..., cf-ai-neurons=..., ledger ..." (+ any quota/rate-limit headers); the
+  preflight, every 4006 and the end of image generation log Cloudflare's own GraphQL analytics count
+  (`cf_budget.analytics_report`, dataset aiInferenceAdaptiveGroups; needs Account Analytics: Read on the token,
+  else the log says "Cloudflare analytics unavailable"). The ledger keeps the last 8 days (`past`).
+
 ## Schedule
 - 2 videos a day, **11:40 AM and 8:40 PM New York**. GitHub's own cron was unreliable (4 h late / skipped),
   so the plan is **cron-job.org** calling the `workflow_dispatch` API for `daily.yml` with a fine-grained token

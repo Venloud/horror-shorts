@@ -25,6 +25,10 @@ on:
         description: "EXPERIMENTAL: classic / cutout (pose-set characters on background plates); empty = config"
         type: string
         default: ""
+      ignore_hold:
+        description: "Production build even while data/hold_builds.txt exists (one supervised build to prove the fix)"
+        type: boolean
+        default: false
       inbox_file:
         description: "Test build + fresh_images only: use this inbox file (e.g. nachzehrer_remake.txt), even if already used"
         type: string
@@ -59,7 +63,7 @@ jobs:
           # exit code, not output: on a 404 gh api still prints the error JSON, which read as "hold"
           hold=""
           if gh api "repos/${{ github.repository }}/contents/data/hold_builds.txt" >/dev/null 2>&1; then hold=yes; fi
-          if [ -n "$hold" ] && [ "${{ inputs.test }}" != "true" ]; then
+          if [ -n "$hold" ] && [ "${{ inputs.test }}" != "true" ] && [ "${{ inputs.ignore_hold }}" != "true" ]; then
             echo "Production builds are ON HOLD (data/hold_builds.txt exists): nothing built."
           elif [ "${{ inputs.test }}" = "true" ] || [ "$waiting" -lt "$BUFFER_SIZE" ]; then
             echo "build=true" >> "$GITHUB_OUTPUT"

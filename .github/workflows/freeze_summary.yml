@@ -1,0 +1,43 @@
+name: Freeze summary
+
+# Feature freeze (Oct 2-8, 2026): one phone alert a day at ~9 PM New York (00:52 UTC, after the 00:40 slot) with
+# what the bot did in the last 24 h, also appended to data/freeze_log.md. Stops by itself after day 7.
+on:
+  schedule:
+    - cron: "52 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  summary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -q requests
+      - name: Cloudflare ledger (read only)
+        uses: actions/cache/restore@v4
+        with:
+          path: cache/cf-usage
+          key: cf-usage-summary-${{ github.run_id }}
+          restore-keys: cf-usage-
+      - name: Summary + phone alert
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: cd pipeline && python freeze_summary.py
+      - name: Save data/freeze_log.md
+        run: |
+          git config user.name "horror-bot"
+          git config user.email "horror-bot@users.noreply.github.com"
+          git add data/freeze_log.md
+          git diff --cached --quiet && exit 0
+          git commit -qm "Freeze summary $(date -u +%F)"
+          for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0; sleep 5; done
+          exit 1
