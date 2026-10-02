@@ -76,3 +76,56 @@ RUFLO CHECK: PASS
 
 Official project:
 https://github.com/ruvnet/ruflo
+
+
+## Task contract implementation, 2026-10-02
+
+The first practical Ruflo layer has now been implemented as **local task contracts**, while Ruflo itself remains optional and is not installed or executed by production.
+
+### Added files
+
+- `docs/ruflo_tasks/planner.md`: decomposes Night Files work into the existing pipeline stages without replacing the pipeline.
+- `docs/ruflo_tasks/researcher.md`: defines source-backed research, evidence tracing, and fact/folklore/speculation separation.
+- `docs/ruflo_tasks/story_writer.md`: defines story drafting/revision while preserving hook, fact-lock, duration, fiction, and channel rules.
+- `docs/ruflo_tasks/visual_planner.md`: defines narration-to-shot planning, story-bible continuity, visual specificity, and existing visual safety rules.
+- `docs/ruflo_tasks/qa_reviewer.md`: defines diagnostic review and failure reporting without silently overriding quality gates.
+- `docs/ruflo_tasks/packaging_reviewer.md`: defines title/caption/hashtag/pinned-comment/platform metadata review while leaving transport to the existing publisher.
+- `pipeline/ruflo_task_check.py`: dependency-free contract validator.
+
+### Validator behavior
+
+The validator checks that every required role contract exists, contains the five required sections (Purpose, Inputs, Outputs, Responsibilities, Constraints), and corresponds to a role declared by `pipeline/ruflo_plan.json`.
+
+It prints:
+
+```
+RUFLO TASK CHECK: PASS
+Production execution: unchanged
+Ruflo runtime required: no
+Agent/swarm execution: disabled
+```
+
+The validator does not import Ruflo and does not perform network operations, agent execution, swarm execution, MCP startup, or publishing.
+
+### Current activation state
+
+Ruflo is **documented and contract-ready, but not production-active**. The real Night Files Python pipeline remains the execution source of truth. The task contracts are deliberately reusable definitions that can later be consumed by Ruflo/Claude Code for non-production work.
+
+The implementation does not add a secret, API key, daemon, service, model, or new production dependency.
+
+### Production boundary
+
+No change was made to the production publisher, TikTok authentication, YouTube authentication, buffer semantics, render path, or daily workflow. An orchestration failure cannot currently discard a generated video because Ruflo is not in the production execution path.
+
+### Verification performed
+
+The repository now has both validators:
+
+- `python pipeline/ruflo_check.py` validates the stage/dependency manifest.
+- `python pipeline/ruflo_task_check.py` validates the role contracts.
+
+Both must pass before the next Ruflo activation stage is considered complete.
+
+### Next implementation stage
+
+After these contracts are validated, the next step is **non-production Ruflo execution against one isolated task**, preferably research or review. That stage should produce an artifact for comparison with the existing Night Files output before any production delegation is considered.
