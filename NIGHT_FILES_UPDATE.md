@@ -81,9 +81,13 @@ The existing pipeline still creates and normalizes individual shot clips. Remoti
 
 This is intentionally the first integration step. It gives Night Files a real Remotion composition layer without replacing the mature audio/effects/final-encoding system in one risky change.
 
-### 2. PersonaLive, next
+### 2. PersonaLive, integrated as an optional adapter
 
-Do not enable PersonaLive on GitHub-hosted CPU runners. The project is a diffusion-based portrait animation system with heavyweight pretrained models and is better suited to a GPU/self-hosted environment. The integration should therefore be an optional character-animation stage, not a hard dependency for every production video.
+PersonaLive is now connected to Night Files through the existing `pipeline/ai_motion.py` motion stage, but it is **disabled by default**. The adapter only runs when `persona_live.enabled` is enabled and a local PersonaLive checkout plus a driving video are configured. It invokes PersonaLive's offline inference script and returns the generated MP4 to the normal AI-motion path.
+
+This does not add PersonaLive's heavyweight dependencies or model weights to GitHub Actions. GitHub-hosted CPU runs continue using the existing free Hugging Face motion path and 3D fallback. PersonaLive is intended for a GPU/self-hosted environment where the user explicitly provides the model installation and driving video.
+
+The public PersonaLive project documents offline inference using a reference image and driving video, and its current README describes it as a real-time, streamable diffusion framework for portrait animation. urlPersonaLive READMEhttps://github.com/GVCLab/PersonaLive/blob/main/README.md
 
 ### 3. MuMuAINovel
 
