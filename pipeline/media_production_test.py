@@ -27,7 +27,6 @@ def main() -> int:
     checkpoint.finish = lambda *args, **kwargs: None
     images.save_cache = lambda *args, **kwargs: None
     library.record_video = lambda *args, **kwargs: None
-    pipeline_main.save_history = lambda *args, **kwargs: None
 
     result = pipeline_main.main()
     if result != 0:
