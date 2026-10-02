@@ -640,6 +640,8 @@ def auto_tag(story: dict) -> int:
     import images
     import shot_rules
     true = bool(story.get("true_story"))
+    import library
+    historic = library.archive_story(story)
     names = [c.get("name", "").lower().removeprefix("the ") for c in story.get("characters") or [] if c.get("name")]
     # first / last names too ("Elisa's hand" had become the stock query "elisa hand gesturing")
     names += [w for nm in list(names) for w in re.findall(r"[a-z]+", nm) if len(w) > 2 and w not in _GENERIC_NAME
@@ -666,6 +668,10 @@ def auto_tag(story: dict) -> int:
                           and m.group(1) in narration]
                 if true and proper:
                     new, query = "real_photo", proper[0]
+                elif historic and images._OBJECTS.search(text) and not _ATMOS.search(text):
+                    # legends / pre-1950 stories: an object close-up from stock is a modern object (a "QUARTZ"
+                    # pocket watch for a medieval grave): objects are painted, only atmosphere comes from stock
+                    new, query = "ai", ""
                 elif _ATMOS.search(text) or images._OBJECTS.search(text):
                     new, query = "stock_video", _stock_query(text)
                 else:

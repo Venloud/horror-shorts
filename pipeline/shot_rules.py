@@ -52,7 +52,7 @@ def key_scenes(story: dict) -> set[int]:
 _NEGATED = re.compile(r"\b(no|without|empty of|devoid of)\s+(\w+\s+)?(people|person|figures?|one|bodies|humans?)\b",
                       re.I)
 _ON_TABLE = re.compile(r"\b(resting|lying|sitting|placed|scattered) (on|in) (an? |the )?(\w+ ){0,2}(table|surface|floor|"
-                       r"ground|soil|dirt|shelf|counter)\b", re.I)
+                       r"ground|soil|dirt|shelf|counter|slab|rock|stone|altar|bench|cloth|wood|planks|boards)\b", re.I)
 
 
 def has_subject(story: dict, text: str) -> bool:

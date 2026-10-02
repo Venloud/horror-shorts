@@ -821,7 +821,10 @@ NO: <reason in 2-5 words>
 Answer NO if: the main subject or action is different or missing; the setting clearly contradicts the request
 (e.g. an airplane cabin when the request is outdoors, a factory when it asks for a hotel roof); it is several
 panels, a comic page, a collage or a split screen instead of one single frame; it shows garbled or fake text; or
-the anatomy is clearly broken (extra or missing limbs, merged or melted bodies, faces on the back of heads).
+the anatomy is clearly broken (extra or missing limbs, merged or melted bodies, faces on the back of heads); or
+it shows a person, face or figure the request does not ask for (an extra figure changes the story: mud falling
+from a shovel must not become a long-haired figure in the mud).
+NEVER answer NO for small details: the moon's phase, the exact hand or finger pose, a small prop, a colour.
 NEVER answer NO for the art style alone: cartoon, painterly, sketchy, realistic or any other style is fine, and so
 is the image quality, as long as the subject, action and setting are right.
 Do NOT require the identity of a specific real landmark, building, brand or person: a generic painterly version
@@ -846,7 +849,8 @@ coroner scene, a sunny beach for a snowy forest, a sci-fi lab for a 1920s farm);
 Reflections, ripples, windows, doors, shelves, tiles, frames on a wall or several objects side by side are NOT
 panels.
 NEVER answer NO for colour, lighting, warm vs cold tones, time of day, weather, art style or image quality: those
-are changed afterwards. A generic version of a named place or object is fine.
+are changed afterwards (unless the request itself says so, e.g. a historical story that rules out sunny daylight
+or anything modern: then follow the request). A generic version of a named place or object is fine.
 Answer YES when the requested subject is recognizable."""
 
 
