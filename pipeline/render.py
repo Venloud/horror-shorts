@@ -164,6 +164,9 @@ def _remotion_join(clips: list[Path], scene_cut: list[bool], out: Path,
     if not clips:
         raise RuntimeError("no clips to join")
 
+    log(f"REMOTION: starting join render for {len(clips)} shots")
+    log(f"REMOTION: project={project} output={out}")
+
     frames = [_frame_count(c) for c in clips]
     timeline = []
     acc = frames[0]
@@ -198,6 +201,8 @@ def _remotion_join(clips: list[Path], scene_cut: list[bool], out: Path,
         "fps": FPS,
         "output": str(out.resolve()),
     }), encoding="utf-8")
+    log(f"REMOTION: manifest created ({len(timeline)} clips, {acc} frames, {acc / FPS:.1f}s)")
+    log("REMOTION: invoking npm run render:join")
 
     try:
         subprocess.run(
@@ -206,13 +211,15 @@ def _remotion_join(clips: list[Path], scene_cut: list[bool], out: Path,
             check=True,
             timeout=900,
         )
+        log("REMOTION: render command completed successfully")
         if not out.exists() or out.stat().st_size < 100_000:
             raise RuntimeError("Remotion returned without a usable joined video")
         got = media_duration(out)
         want = acc / FPS
         if got < want - 0.5:
             raise RuntimeError(f"Remotion joined video is {got:.1f}s but expected about {want:.1f}s")
-        log(f"Remotion joined {len(clips)} shots into {got:.1f}s")
+        log(f"REMOTION: output verified, joined {len(clips)} shots into {got:.1f}s")
+        log("REMOTION: SUCCESS")
         return out
     finally:
         manifest.unlink(missing_ok=True)
@@ -227,7 +234,8 @@ def _join(clips: list[Path], seg: list[float], scene_cut: list[bool], out: Path,
         try:
             return _remotion_join(clips, scene_cut, out, trans)
         except Exception as e:  # noqa: BLE001
-            log(f"Remotion join failed ({type(e).__name__}: {str(e)[:240]}), falling back to FFmpeg")
+            log(f"REMOTION: FAILED ({type(e).__name__}: {str(e)[:240]})")
+            log("REMOTION: falling back to FFmpeg xfade")
 
     inputs, fc = [], []
     for i, c in enumerate(clips):
