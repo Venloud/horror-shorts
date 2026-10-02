@@ -87,7 +87,7 @@ jobs:
           key: media-search-${{ github.run_id }}
           restore-keys: media-search-
 
-      - name: Cloudflare neurons used today (tests may use 35%; every build adds to it)
+      - name: Cloudflare neurons used today (every build adds to it)
         if: steps.check.outputs.build == 'true'
         uses: actions/cache/restore@v4
         with:
@@ -96,7 +96,7 @@ jobs:
           restore-keys: cf-usage-
 
       - name: Restore the checkpoint of an unfinished build
-        if: steps.check.outputs.build == 'true' && inputs.test != true
+        if: steps.check.outputs.build == 'true'
         uses: actions/cache/restore@v4
         with:
           path: cache/checkpoint
