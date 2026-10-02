@@ -3,7 +3,7 @@
 The free allocation is 10,000 neurons/day (resets 00:00 UTC). Test builds may use at most `cloudflare_test_share`
 (35%) of it, so a day of testing can never starve production. The ledger is cache/cf-usage/usage.json, carried
 from run to run by build.yml (Actions cache "cf-usage-*", saved even when a build fails). Our own count is an
-estimate (images.py: 4.8 neurons per 512x512 tile + 9.6 per step); Cloudflare's own 4006 answer still wins.
+figure: Cloudflare's own cf-ai-neurons header (172.8 per FLUX schnell image); its 4006 answer still wins.
 """
 import json
 from datetime import datetime, timezone
@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from common import CONFIG, ROOT, log
 
 PATH = ROOT / "cache" / "cf-usage" / "usage.json"
-IMAGE_NEURONS = 57.6  # one 1024x1024 FLUX schnell image at 4 steps
+IMAGE_NEURONS = 172.8  # one FLUX schnell image, as Cloudflare bills it (header cf-ai-neurons; ~57 images/day)
 
 
 def limit() -> float:

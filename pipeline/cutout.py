@@ -328,6 +328,10 @@ def _draw(prompt: str, seed: int, path: Path, budget: Budget, planned: bool = Tr
     if not budget.take(planned):
         log(f"Cutout: Cloudflare budget used ({budget.used}), skipping {path.name}")
         return None
+    import cf_budget
+    if images.test_mode() and not cf_budget.test_allowed():
+        log(f"Cutout: test cap reached ({cf_budget.line()}), skipping {path.name}")
+        return None
     raw = images._cloudflare(prompt, seed, fixed_seed=True)
     images._save_valid(raw, path)
     return path

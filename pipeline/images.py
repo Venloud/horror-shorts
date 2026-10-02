@@ -39,12 +39,16 @@ def _log_neurons(raw: bytes, headers) -> None:
         tiles = 4
     steps = int(CONFIG.get("image_steps", 4))
     neurons = tiles * 4.8 + steps * 9.6
+    # Cloudflare's own figure wins: it bills 172.8 per FLUX schnell image (header cf-ai-neurons), 3x the old estimate
+    for k, v in headers.items():
+        if k.lower() == "cf-ai-neurons":
+            try:
+                neurons = float(v)
+            except ValueError:
+                pass
     _STATE["cf_neurons"] += neurons
     import cf_budget
     cf_budget.add(neurons)  # per-UTC-day ledger shared by every build (tests capped at 35%)
-    extra = {k: v for k, v in headers.items() if "neuron" in k.lower()}
-    if extra:  # the per-image line in generate_images shows the estimate; log Cloudflare's own figure if it sends one
-        log(f"Cloudflare neuron headers: {extra}")
 
 
 def _cloudflare(prompt: str, seed: int, fixed_seed: bool = False) -> bytes:

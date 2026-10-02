@@ -150,7 +150,7 @@ def main() -> int:
         if (os.environ.get("RENDER_STYLE") or "").strip().lower() == "cutout":
             # cutout draws everything on Cloudflare: check before spending Gemini + voice on a story
             import cf_budget
-            need = int(CONFIG.get("cutout_max_images", 22)) * cf_budget.IMAGE_NEURONS
+            need = int(CONFIG.get("cutout_hard_max_images", 20)) * cf_budget.IMAGE_NEURONS
             cf_out = images.cloudflare_has_quota() is False
             if testing and (cf_out or cf_budget.test_room() < need):
                 why = ("Cloudflare's daily limit is used up" if cf_out else

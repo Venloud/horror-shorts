@@ -199,7 +199,9 @@ so a new session can pick up without starting over.
 2. **Voice**: Kokoro TTS `am_michael` (`voice_lang` "a", start speed 1.1, fitted within 1.0-1.2; the original voice, back after a bm_george test), word timings
    tagged by scene. `voice_samples.yml` renders the same hook in several voices for comparison.
 3. **Images** (`images.py`), all free: Cloudflare Workers AI FLUX schnell (10,000 neurons/day, resets 00:00 UTC =
-   8 PM New York; no size option, 1024x1024 = 4 tiles x 4.8 + 4 steps x 9.6 = ~57.6 neurons, logged per image)
+   8 PM New York; Cloudflare BILLS 172.8 neurons per image (response header `cf-ai-neurons`, Oct 2), not the
+   57.6 estimate, so ~57 images/day; the ledger uses the header. On Oct 2 Cloudflare answered "daily limit used up"
+   at 00:44 UTC after only 16 images (~2,800 neurons) since 00:00: unexplained, watch it)
    -> free HF ZeroGPU Spaces running FLUX.1-schnell (config `image_spaces`, 576x1024, gradio_client like ai_motion;
    shares the daily GPU minutes with the AI hook) -> local SD-Turbo on the runner CPU (`local_image_model`,
    512x896, 2 steps, guidance 0; ~23 s load + ~20 s/image on 4 CPUs; Stability AI Community License: free under
@@ -210,7 +212,7 @@ so a new session can pick up without starting over.
    **Neuron ledger** (`pipeline/cf_budget.py`, cache/cf-usage/usage.json, Actions cache `cf-usage-*` saved even on
    failed builds): neurons per UTC day split tests / production; log "Cloudflare today: N/10000 (tests N,
    production N)". Test builds may use `cloudflare_test_share` (0.35) of `cloudflare_daily_neurons`; a fresh test
-   whose video wouldn't fit (scenes x shots x 57.6) runs without Cloudflare (real media + library + local gap
+   whose video wouldn't fit (scenes x shots x 172.8) runs without Cloudflare (real media + library + local gap
    fillers; tests never use the Spaces), and a test that hits the cap mid-run switches off Cloudflare.
    **Low-quota build** (Cloudflare out in production, at preflight or mid-run): real media first (library / stock /
    archive) + Spaces + max 6 SD-Turbo gap fillers, no early stop; log "Low-quota build: N real, N AI", history
@@ -526,7 +528,8 @@ so a new session can pick up without starting over.
   `cutout_for_modes` (e.g. ["coldcase"]). Any cutout failure -> logged, the video renders classic; a FORCED
   cutout (RENDER_STYLE=cutout) never ships classic: the build fails with "Cutout render was forced but failed in
   <where>: <why>", and stops before the story if Cloudflare's daily limit is already used up (cutout is
-  Cloudflare-only). A forced cutout TEST that doesn't fit the tests' share (`cutout_max_images` x 57.6 neurons) or
+  Cloudflare-only). A forced cutout TEST that doesn't fit the tests' share (`cutout_hard_max_images` 20 x 172.8 =
+  3,456 of the 3,500 test neurons: it must be the day's first test; each cutout draw also checks the cap) or
   finds Cloudflare out is deferred instead of failing: main.py writes output/*/deferred_test.json, build.yml commits
   it to data/deferred_test.json, and `deferred_test.yml` (00:03 / 00:23 / 02:13 UTC) starts build.yml with the same
   inputs once and deletes the file. Legends whose shots name no figure get their creature (+ one adult witness) as the cast
@@ -538,7 +541,7 @@ so a new session can pick up without starting over.
   cut-out drops the pose), composited on empty plates (wide/medium/detail per location, reused). Inserts = AI
   object close-ups; screens (phone chat / note / laptop) drawn by code with only words the narration says.
   Compositor: plate 80% brightness/saturation, character 107%, room tint, rim light, contact shadow, breathing,
-  enter/walk/turn moves. Budget `cutout_max_images` 22 (hard `cutout_hard_max_images` 26). Review artifacts:
+  enter/walk/turn moves. Budget `cutout_max_images` 18 (hard `cutout_hard_max_images` 20; was 22/26 before the 172.8-neuron finding). Review artifacts:
   poses_sheet.png (labelled "Who: pose"), plates_sheet.png ("location / kind"), contact_sheet.png, summary.txt.
   Inserts/plates: no text requests (`images._no_text`), "blank unmarked surfaces", QA fails visible letters (run
   36848613329 had garbled sign/tombstone lettering). STATUS (Oct 1): offline end-to-end passes; runner test runs:
