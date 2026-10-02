@@ -623,5 +623,83 @@
       "wanted": "public"
     },
     "posted": "2026-10-02_1957"
+  },
+  {
+    "date": "2026-10-02_2046",
+    "story_id": "22a436bc9b52",
+    "title": "Municipal Water Reservoir Security Camera",
+    "premise": "A night shift worker watches a security monitor showing a woman standing on the surface of an underground water supply.",
+    "subgenre": "found footage / old tape or camera roll",
+    "mode": "fiction",
+    "true_story": false,
+    "case": null,
+    "source": null,
+    "prompt_file": "fiction_reddit_thriller.txt",
+    "setting": "Municipal water reservoir control room at 3 AM",
+    "threat": "A supernatural entity trapped in the water supply that mimics the guard's presence",
+    "twist": "The footage is from yesterday, and the guard already signed into a shift he does not remember working.",
+    "score": 86,
+    "seconds": 63.7,
+    "voice_speed": 1.128,
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:17980166"
+    ],
+    "visual_mode": "classic",
+    "render_style": "classic",
+    "story_shape": "discovery",
+    "research_sources": [],
+    "visual_sources": {
+      "reused": 0,
+      "archive_stock": 1,
+      "ai": 14
+    },
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": null,
+    "visuals": {
+      "distinct": 13,
+      "longest_s": 12.0,
+      "longest_share": 0.179,
+      "longest_name": "scene_04a.png"
+    },
+    "yt_title": "Woman Standing On The Water | Scary Story #shorts",
+    "hashtags": [
+      "scarystories",
+      "creepypasta",
+      "horrorstory"
+    ],
+    "yt_tags": [
+      "municipal water reservoir",
+      "woman standing on water",
+      "underground water supply",
+      "scary story",
+      "horror story",
+      "night shift security camera",
+      "creepy security footage",
+      "sealed concrete chamber",
+      "security monitor footage",
+      "creepy water supply",
+      "night shift horror",
+      "creepy story",
+      "short horror story",
+      "scary stories",
+      "horror short"
+    ],
+    "buffered": "2026-10-02_2046",
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7692180784786163743",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "video_number": 33,
+    "youtube": {
+      "id": "8qntiTftNv0",
+      "url": "https://youtube.com/shorts/8qntiTftNv0",
+      "privacy": "public",
+      "wanted": "public"
+    },
+    "posted": "2026-10-02_2112"
   }
 ]
