@@ -26,3 +26,11 @@ first production build passes QA and left lifted.
   entries are only removed; failed removal = history `removal_pending`).
 - analytics.yml / freeze_summary.yml: own concurrency groups (no longer in `night-files`).
 - Cloudflare: no new data yet; the first call with full error logging is the 07:10 UTC supervised production build.
+
+## 2026-10-02 08:37 UTC: Night Files freeze day 1/7
+- Posted: nothing in the last 24 h
+- Built: The Corpse That Chewed Its Shroud (lore, writer gemini (gemini-3.5-flash-lite), critic 92, 8 AI / 6 real)
+- Build runs: 24 (4 failed: 36855953908, 36850352869, 36848613329, 36847389674)
+- Buffer now: 1 video(s)
+- Missed slot waiting for a make-up: Fri Oct 02, 02:12 AM New York
+- Cloudflare 2026-10-01 UTC: no record
