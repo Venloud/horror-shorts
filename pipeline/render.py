@@ -185,7 +185,7 @@ def _remotion_join(clips: list[Path], scene_cut: list[bool], out: Path,
             "startFrame": start,
             "durationFrames": frames[i],
             "fadeInFrames": fade,
-            "fadeOutFrames": fade,
+            "fadeOutFrames": fade if i < len(clips) - 1 else 0,
         })
         acc += frames[i] - fade
 
