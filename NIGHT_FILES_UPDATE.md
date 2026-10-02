@@ -108,9 +108,31 @@ This is intentionally a lightweight integration of the useful narrative-planning
 
 Add this after the main render is stable. It should consume the finished Night Files MP4 and create alternate short clips/hooks without changing the primary post.
 
-### 5. Ruflo
+### 5. Ruflo, next implementation
 
-Use Ruflo last as the orchestration layer once the individual stages are stable. It should coordinate existing Night Files stages rather than replace the proven generator/publisher immediately.
+Status: **NEXT, not yet implemented in Night Files production**.
+
+Research checked against the current official Ruflo project. Ruflo is an agent meta-harness for Claude Code and Codex, with agent routing, swarms, memory, hooks, and workflow orchestration.
+
+Night Files must **not** make Ruflo a required production dependency. Normal GitHub Actions runs must continue to work without Ruflo installed globally, an Anthropic API key added to GitHub Actions, a Ruflo daemon, a live multi-agent swarm, or a network-dependent orchestration service.
+
+First Ruflo integration target:
+1. Add a local, declarative orchestration map describing the existing Night Files stages: research -> story -> story bible -> shot rules -> visuals -> voice -> render -> QA -> buffer -> publish.
+2. Add reusable task/agent role definitions for planner, researcher, writer, visual planner, QA reviewer, and packaging reviewer.
+3. Make the integration read-only/non-blocking for production at first. The existing Python pipeline remains the source of execution truth.
+4. Keep secrets unchanged. Ruflo must not require any new secret for the first integration.
+5. Add a local doctor/validation step that verifies the orchestration files are syntactically valid and prints what would be delegated, without actually spawning agents during production.
+6. Only after that validation is stable should we consider using Ruflo for selected non-production tasks such as topic research, story review, or QA analysis.
+
+Why this shape:
+- Ruflo's official Quick Start creates .claude/, .claude-flow/, and hook configuration and can initialize swarms and persistent memory, but those heavyweight pieces are not necessary for Night Files' first integration.
+- Night Files is in the Oct 2-8 feature freeze, so this integration must not alter the production path until separately validated.
+- The goal is to coordinate existing stages, not replace the proven generator or publisher.
+
+Official references:
+- https://github.com/ruvnet/ruflo
+- https://github.com/ruvnet/ruflo/wiki/Quick-Start
+- https://github.com/ruvnet/ruflo/wiki/Installation
 
 ## Search-query backlog
 
