@@ -1,45 +1,92 @@
 # horror-shorts (Night Files)
 
-A free, fully automated, faceless illustrated horror / true-crime / folklore channel: **2 videos a day** to
-TikTok (drafts) and YouTube Shorts, built and posted by GitHub Actions. The full, current design notes live in
-**[CLAUDE.md](CLAUDE.md)** (the main source); setup is in **[SETUP.md](SETUP.md)**.
+A free, fully automated, faceless illustrated horror / true-crime / folklore channel: **2 videos a day** to TikTok and YouTube Shorts, built and posted by GitHub Actions.
 
-## How it works
+## Current production flow
 
-- **Buffer + publisher.** `build.yml` (every 3 h at :50 UTC) keeps up to 3 finished videos on the GitHub Release
-  `buffer`. `daily.yml` (15:40 and 00:40 UTC = 11:40 AM / 8:40 PM New York) only posts the oldest one to TikTok
-  and YouTube Shorts. An empty buffer at a slot starts a build and posts it as soon as it's ready (within 6 h).
-- **Story.** Rotation `lore, mystery, lore, case, coldcase` (+ the owner's `inbox/`), written by Gemini with
-  **Groq** (gpt-oss-120b) as backup. True stories are fact-locked to their source (fact ledger + fact check), get a
-  critic pass, and never show a real victim's body. Trending topics (Wikipedia pageviews) are picked first.
-- **Voice.** Kokoro TTS (`am_michael`), fitted so every video is 61-68 s (TikTok Creator Rewards: over 60 s).
-- **Visuals.** Real media first (Pexels / Pixabay stock video, Wikimedia Commons / Smithsonian archive photos,
-  credited), then AI images: Cloudflare FLUX -> free Hugging Face Spaces -> local SD-Turbo (max 6). Every image
-  gets a vision QA check (Gemini, Groq as backup).
-- **Render.** FFmpeg 1080x1920: AI motion on the hook, 2.5D parallax, word-by-word captions, ducked music, real
-  sound effects, and an A/B test of visual modes (classic / fast / analog). A QA gate checks every video.
-- **Analytics.** `analytics.yml` saves per-Short YouTube stats to `data/analytics.json` by mode and visual mode.
-- **Alerts.** ntfy phone notifications with the caption, pinned comment and YouTube link.
+One scheduled workflow does the whole job:
 
-Every feature has an on/off flag in `config.json` (see CLAUDE.md); a failing optional feature never stops a video.
+```
+daily.yml
+   ↓
+generate story
+   ↓
+voice
+   ↓
+real media + AI visuals
+   ↓
+render 61-68s video
+   ↓
+QA REPORT ONLY
+   ↓
+put successful render in buffer
+   ↓
+publish.py immediately
+   ↓
+TikTok + YouTube independently
+```
+
+There is **no separate build page/workflow** in the current production design. The GitHub Release buffer is storage and duplicate protection, not a separate production stage.
+
+A successful render is not blocked by the QA report. If TikTok fails, YouTube is still attempted. If both platforms fail, the buffered video is retained for the next attempt instead of being deleted.
+
+## Posting
+
+- `.github/workflows/daily.yml` runs at **11:40 AM and 8:40 PM New York**.
+- Each run generates one production video and immediately invokes `pipeline/publish.py`.
+- TikTok currently uses the configured account mode in `config.json`. The current setting is `draft`, so it safely sends TikTok content to drafts until Direct Post access is approved.
+- YouTube uploads are enabled and configured for public Shorts.
+- Duplicate-post protection and `removal_pending` protection remain enabled.
+- A successful render is never intentionally discarded just because QA reports a problem.
+
+## Pipeline
+
+- **Story.** Rotation `lore, mystery, lore, case, coldcase` (+ the owner's `inbox/`), written by Gemini with Groq as backup. True stories are fact-locked to their sources.
+- **Voice.** Kokoro TTS, fitted to the 61-68 second target.
+- **Visuals.** Real media first, then Cloudflare FLUX, free Hugging Face Spaces, and local fallback generation.
+- **Render.** FFmpeg 1080x1920 with word-by-word captions, motion/effects, music ducking, and sound effects.
+- **QA.** Diagnostic/reporting only in production. It does not become a publishing gate.
+- **Analytics.** YouTube Shorts analytics are stored in `data/analytics.json`.
+
+## Planned research integrations
+
+The repository is **not** vendoring five external projects wholesale. The useful pieces will be evaluated and integrated where they improve Night Files without breaking the existing free GitHub Actions pipeline.
+
+- **Remotion**: candidate for deterministic React-based composition and caption/scene rendering.
+- **PersonaLive**: candidate for a persistent animated narrator/character layer.
+- **MuMuAINovel**: candidate source of story-planning and narrative-structure ideas.
+- **Auto Clip MVP**: candidate for automatically extracting alternate clips from finished videos.
+- **Ruflo**: candidate orchestration layer for future research/story/visual/QA agents.
+
+See **[NIGHT_FILES_UPDATE.md](NIGHT_FILES_UPDATE.md)** for the integration notes and the search-query backlog.
+
+## Repository layout
 
 ```
 pipeline/
-  main.py            builder: story -> voice -> real media -> images -> render -> QA gate -> buffer
-  publish.py         publisher: buffer -> TikTok + YouTube Shorts -> history, post numbers
-  story.py           stories, critic, fact check, captions (Gemini + Groq)
-  mystery.py         real-story prompts (mystery / lore / true cases), fact lock
-  sources.py         inbox, FBI cases, Wikipedia     trends.py   pageview trend picking
-  discover.py        NTSB / old newspapers / folklore leads
-  voice.py           Kokoro narration + word timings
-  media.py           real stock video + archive photos (licenses, credits)
-  images.py          AI images + vision QA
-  render.py, effects.py, ai_motion.py, captions.py   the video
-  buffer.py          GitHub Release buffer          checkpoint.py   resume a failed build
-  tiktok.py, youtube.py, notify.py, analytics.py
-config.json          all settings and feature flags
-data/                history.json, counter.json (post numbers), analytics.json, topic lists
-inbox/               owner's links / scripts (jump the queue)
-.github/workflows/   build, daily, analytics, buffer_cleanup, yt_check, yt_upload_test, voice_samples,
-                     connect-tiktok, get-sfx
+  main.py            generator: story -> voice -> visuals -> render -> QA -> buffer
+  publish.py         publisher: buffer -> TikTok + YouTube -> history
+  story.py           story generation, critic, fact checks
+  mystery.py         mystery / lore / case prompts
+  sources.py         source and inbox handling
+  trends.py          trend/topic selection
+  discover.py        research leads
+  voice.py           narration + word timings
+  media.py           real stock/archive media
+  images.py          AI images + visual QA
+  render.py          final FFmpeg render
+  effects.py         motion/effects
+  ai_motion.py       optional AI motion
+  captions.py        caption generation
+  buffer.py          GitHub Release buffer
+  checkpoint.py      build resume support
+  tiktok.py          TikTok publishing
+  youtube.py         YouTube publishing
+  notify.py          phone alerts
+  analytics.py       analytics
+
+config.json          production settings
+data/                history, post counter, analytics
+inbox/               owner-supplied links/scripts
+.github/workflows/   daily, analytics, OAuth checks and maintenance
 ```
