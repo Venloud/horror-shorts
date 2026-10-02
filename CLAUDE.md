@@ -247,8 +247,7 @@ so a new session can pick up without starting over.
    their creature as a character (fixed look; LLM, else a plain no-gore fallback) SHOWN by name in >=
    `lore_creature_shots` (3) shots incl. the hook shot 0a and the twist scene; the hook + twist scenes always have
    a real subject (person / creature / story object in the moment); filler shots (a texture, surface, wall,
-   threads, or a generic object "resting on a table") are rewritten (one LLM call, template fallback). These shots
-   are locked AI (`story["_ai_only"]`): library, stock, archive and honest place shots never take them. Log
+   threads, or a generic object "resting on a table") are rewritten (one LLM call, template fallback). These shots   are locked AI (`story["_ai_only"]`): library, stock, archive and honest place shots never take them. Log
    "Creature on screen: '<name>' in N shot(s) (AI only), hook shot yes".
    **No cross-scene borrowing** (Oct 1: a woodcut ran 12 s over two scenes): a scene whose shots all failed QA is
    REDRAWN (main shot, a new seed, every source still usable); if it still has nothing, the build waits for the
@@ -497,8 +496,7 @@ so a new session can pick up without starting over.
   fine-grained PAT has no Actions permission, its 403 had turned daily runs 28-32 red; both failing = red run + ntfy). When a video passes QA and enters the buffer, main.py calls
   `publish.post_missed_slot()`: missed slot < 6 h old -> post it right away (same publish code, TikTok + YouTube,
   so build.yml also has the TikTok/YouTube secrets + token-save step), then delete the file; older -> just delete
-  it and the next slot posts normally. Both workflows save history.json + missed_slot.json with
-  `pipeline/push_state.sh` (merge_history.py + 3 push tries). The 6 h make-up window was replaced by the
+  it and the next slot posts normally. Both workflows save history.json + missed_slot.json with  `pipeline/push_state.sh` (merge_history.py + 3 push tries). The 6 h make-up window was replaced by the
   make-up rules above.
 - **Video numbers** (`data/counter.json` {"next_video": N}): GitHub run numbers are per workflow, so the bot keeps
   its own post counter. `publish.take_video_number()` gives the number only once a video actually went out
@@ -666,3 +664,14 @@ The next implementation is considered ready only if it preserves these propertie
 - no bypass of research, fact-lock, visual QA, duration QA, or packaging safeguards;
 - clear artifact/output location for comparison;
 - failure of Ruflo remains non-fatal to production.
+
+## Production media tools implementation, 2026-10-02
+
+Two production-capable media integrations are now implemented in an isolated test lane.
+
+- HyperFrames: pipeline/hyperframes_adapter.py wraps a generated Night Files MP4 in an isolated HyperFrames composition, runs the HyperFrames linter, and renders a second MP4. The test pins hyperframes@0.8.100 and uses Node 22. The existing FFmpeg final pass remains the production source of truth until this renderer is compared against it.
+- Adobe Premiere Pro MCP: .mcp.json registers the local premiere-pro-mcp MCP server for agent clients. pipeline/premiere_mcp_adapter.py creates a review-only handoff manifest. GitHub-hosted Linux cannot run Adobe Premiere, so the test lane does not claim a live Premiere edit.
+- Isolated test runner: pipeline/media_production_test.py runs the existing generator while blocking buffer/history/checkpoint/cache side effects, then exercises HyperFrames and creates the Premiere handoff.
+- Test workflow: .github/workflows/daily_media_test.yml is manual only and separate from daily.yml. It never calls publish.py.
+
+Production daily behavior is unchanged. See docs/PRODUCTION_MEDIA_TOOLS.md.
