@@ -169,6 +169,10 @@ def main() -> int:
             if not testing:
                 checkpoint.start(story)
         if not reused:  # creature on screen (legends), real subjects for the hook + twist, no filler shots
+            if CONFIG.get("story_bible", True):
+                import story_bible
+                story_bible.build(story)
+                log(story_bible.summary(story))
             import shot_rules
             shot_rules.apply(story)
             if not testing:
