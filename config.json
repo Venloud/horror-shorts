@@ -21,6 +21,7 @@
   "local_image_max": 6,
   "space_images_max": 6,
   "render_style": "classic",
+  "remotion_join": true,
   "cutout_for_modes": [],
   "cutout_style": "flat 2D cartoon illustration, clean dark outlines, simple shading, muted night palette, no text",
   "cutout_max_images": 18,
