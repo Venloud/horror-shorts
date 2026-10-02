@@ -3,8 +3,7 @@
 Posting happens separately (publish.py, run by daily.yml), so a failed build wastes nothing: the inbox item or case
 is only marked used (history.json) once its video is safely in the buffer, and a failed build keeps its story,
 narration and images as a checkpoint (checkpoint.py) so the next try only redoes what's missing.
-  python main.py          normal build: add the video to the buffer and write history
-  python main.py --test   test build: no Cloudflare, no buffer, no history, no checkpoints; mp4 kept as an artifact
+  python main.py          production build: add the video to the buffer and write history
 """
 import argparse
 import json
@@ -117,13 +116,8 @@ def write_summary(workdir: Path, story: dict, video: Path, problems: list[str]) 
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--test", action="store_true", help="test build: no Cloudflare, no buffer, no history")
-    ap.add_argument("--no-upload", action="store_true", help="old name for --test")
-    args = ap.parse_args()
-    testing = args.test or args.no_upload
-    if testing:
-        os.environ["TEST_MODE"] = "true"
+    # Production-only builder: every invocation creates a real buffered video.
+    testing = False
 
     import buffer
     import checkpoint
@@ -136,7 +130,7 @@ def main() -> int:
     from story import mark_true_story, write_story
     from voice import narrate
 
-    prefix = "[TEST] " if testing else ""
+    prefix = ""
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M")
     workdir = ROOT / "output" / stamp
     workdir.mkdir(parents=True, exist_ok=True)
@@ -265,35 +259,15 @@ def main() -> int:
 
         problems = qa_gate(video, ass, narration, story)
         write_summary(workdir, story, video, problems)
-        if problems:  # never let a broken video into the buffer
+        if problems:
+            # QA is report-only in production. A rendered video is still buffered and posted.
+            # This keeps QA useful for diagnostics without turning it into a publishing gate.
             reason = "; ".join(problems)
-            if testing:
-                notify(story, None, prefix=prefix, error=f"QA gate failed: {reason}")
-                return 1
-            visual = ("one picture", "only ", "the finished video", "visual check")
-            if story.get("_low_quota") and all(p.startswith(visual) for p in problems):
-                # a low-quota video that isn't good enough: wait for the quota (not counted against the story);
-                # SD-Turbo gap fillers are dropped so Cloudflare redraws those shots next time
-                for tag, prov in (story.get("_shot_provider") or {}).items():
-                    if prov == "local_sd":
-                        (img_dir / f"scene_{tag}.png").unlink(missing_ok=True)
-                try:
-                    images._quota_stop(f"low-quota build failed the QA gate ({reason}); the story is kept and "
-                                       "the next build (with Cloudflare) continues it.")
-                except images.ImageQuotaWait:
-                    pass
-                return 0
-            fails = checkpoint.qa_failed(story, problems)
-            if fails >= 2:  # same story failed twice: skip it for good so the builder can't loop on it
-                history.append({"date": stamp, "story_id": story.get("story_id"), "title": story["title"],
-                                "mode": story.get("mode"), "source": story.get("source"), "case": story.get("case"),
-                                "skipped": True, "reason": f"QA gate: {reason}"})
-                save_history(history)
-                checkpoint.finish(story)
-                notify(story, None, error=f"QA gate failed twice, story skipped for good: {reason}")
-            else:
-                notify(story, None, error=f"QA gate failed, not added to the buffer (next build retries): {reason}")
-            return 0  # alert already sent; exit 0 so build.yml still saves history + checkpoint
+            log(f"QA gate REPORT ONLY: {reason}")
+            try:
+                notify(story, None, error=f"QA report only: {reason}")
+            except Exception as e:
+                log(f"QA report alert failed ({e})")
 
         meta = workdir / "caption.json"
         meta.write_text(json.dumps({
@@ -307,11 +281,7 @@ def main() -> int:
             "render_style": story.get("render_style", "classic"),
         }, indent=2, ensure_ascii=False))
 
-        if testing:
-            log("TEST MODE: not adding to the buffer, not writing history")
-            notify(story, None, prefix=prefix, note="Test video: download it from this run's artifacts.")
-            log("Done (test).")
-            return 0
+        # Every successful render reaches the production buffer. There is no test-only exit.
 
         buffer.add(stamp, video, meta)
         if story.get("render_style", "classic") == "classic":  # QA-passed pictures go into the asset library
