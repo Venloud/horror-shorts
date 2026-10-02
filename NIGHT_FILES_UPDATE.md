@@ -134,6 +134,18 @@ Official references:
 - https://github.com/ruvnet/ruflo/wiki/Quick-Start
 - https://github.com/ruvnet/ruflo/wiki/Installation
 
+
+### Ruflo first-stage integration design
+
+Implementation rule: **do not install or execute Ruflo inside the normal production workflow yet**.
+
+The first Night Files integration is intentionally a local orchestration manifest plus validator. It mirrors the real pipeline, records which role owns each stage, and can be consumed by Claude Code/Ruflo later.
+
+Proposed files:
+- `pipeline/ruflo_plan.json`: stage/role/dependency map.
+- `pipeline/ruflo_check.py`: zero-dependency validator that checks the manifest and prints the delegation plan.
+- `docs/RUFLO_INTEGRATION.md`: exact handoff rules, role descriptions, and future activation path.
+
 ## Search-query backlog
 
 These are topic/search queries captured from the creator analytics screenshot for later research. Keep the original wording available so future trend analysis can compare it with normalized queries.
