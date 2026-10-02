@@ -1,8 +1,6 @@
 name: Daily horror video
 
-# Every 3 hours: if fewer than BUFFER_SIZE finished videos are waiting on the "buffer" release, make one.
-# A failed build (Gemini 503, image quota...) exits quietly and the next run tries again; the phone alert only
-# goes out when the buffer is empty. Every build is production, and every rendered video enters the buffer.
+# Twice a day: generate one production video, then post it immediately.
 on:
   schedule:
     - cron: "40 15 * * *"
@@ -21,7 +19,7 @@ env:
   BUFFER_SIZE: 3
 
 jobs:
-  build:
+  daily:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -84,14 +82,14 @@ jobs:
           echo "on=$on" >> "$GITHUB_OUTPUT"
 
       - name: Cache cut-out models (rembg)
-        if: steps.check.outputs.build == 'true' && steps.cutout.outputs.on == 'true'
+        if: steps.cutout.outputs.on == 'true'
         uses: actions/cache@v4
         with:
           path: ~/.u2net
           key: rembg-models-v1
 
       - name: Install cut-out tools (rembg; the code falls back to a gray-background key without it)
-        if: steps.check.outputs.build == 'true' && steps.cutout.outputs.on == 'true'
+        if: steps.cutout.outputs.on == 'true'
         run: |
           pip install -q rembg onnxruntime || echo "rembg install failed, the gray-background key is used"
 
@@ -109,7 +107,7 @@ jobs:
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           SI_API_KEY: ${{ secrets.SI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}  # backup story writer (skipped if missing)
-          # only used to make up a missed publish slot right after the build
+          # Used if main.py needs to make up a previously missed slot.
           TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
           TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
           TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
@@ -119,42 +117,11 @@ jobs:
         run: cd pipeline && python main.py
 
       - name: Save today's Cloudflare usage (also when the build failed)
-        if: always() && steps.check.outputs.build == 'true' && hashFiles('cache/cf-usage/usage.json') != ''
+        if: always() && hashFiles('cache/cf-usage/usage.json') != ''
         uses: actions/cache/save@v4
         with:
           path: cache/cf-usage
           key: cf-usage-${{ github.run_id }}-${{ github.run_attempt }}
-
-      - name: Save new TikTok token if TikTok rotated it (make-up post)
-        if: always() && hashFiles('.new_refresh_token') != ''
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
-        run: |
-          if [ -n "$GH_TOKEN" ]; then
-            gh secret set TIKTOK_REFRESH_TOKEN --repo "${{ github.repository }}" < .new_refresh_token
-            echo "Refresh token updated."
-          else
-            echo "::warning::TikTok gave a new refresh token but GH_PAT is not set, so it could not be saved."
-          fi
-          rm -f .new_refresh_token
-
-      - name: Save story history after generation
-        if: success()
-        run: bash pipeline/push_state.sh "Generated story"
-
-      - name: Post the generated video to TikTok + YouTube Shorts
-        id: publish
-        if: success()
-        env:
-          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
-          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
-          TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
-          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
-          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
-          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
-          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
-          GITHUB_TOKEN: ${{ github.token }}
-        run: cd pipeline && python publish.py
 
       - name: Save new TikTok token if TikTok rotated it
         if: always() && hashFiles('.new_refresh_token') != ''
