@@ -335,7 +335,7 @@ def main() -> int:
         if CONFIG.get("autoclip", {}).get("enabled"):
             try:
                 import autoclip_adapter
-                autoclip_adapter.run(story, final_path, narration.get("words") or [], workdir / "autoclip")
+                autoclip_adapter.run(story, video, narration.get("words") or [], workdir / "autoclip")
             except Exception as e:  # noqa: BLE001
                 log(f"AUTOCLIP: non-fatal integration error ({type(e).__name__}: {str(e)[:240]})")
         log(f"Done: '{story['title']}' is in the buffer.")
