@@ -26,6 +26,15 @@ so a new session can pick up without starting over.
   Shown as a small corner logo and on the end card ("FOLLOW FOR MORE / NIGHT FILES" + click sound).
   The intro flash at the start was removed on purpose (`mascot_intro: false`): the hook must be frame one.
 
+
+## External project integrations (implementation order)
+- These integrations are added one at a time. Do not replace the working Night Files production pipeline wholesale.
+- **Remotion: ACTIVE**. Used for the shot-joining/composition layer when `remotion_join=true`; FFmpeg remains the automatic fallback if the Remotion join fails. A production run that never reaches render does not prove Remotion ran.
+- **PersonaLive: INTEGRATED, OFF by default**. Optional adapter in `pipeline/ai_motion.py`; requires an explicitly configured local PersonaLive checkout, reference/driving assets, and a suitable environment. GitHub-hosted CPU production stays on the existing motion path.
+- **MuMuAINovel: INTEGRATED**. Deterministic local story-bible stage in `pipeline/story_bible.py`, after story writing and before shot planning. It carries canonical characters, locations, threat/twist, timeline, and visual continuity. Do not copy the GPL application wholesale.
+- **AutoClip: INTEGRATED, OFF by default**. `pipeline/autoclip_adapter.py` runs only after the primary render succeeds, uses the rendered video path, produces optional alternate clips/publish kits, and is non-fatal. Latest AutoClip fix commit: `79d803d65f0e11aa242e2573e2abfc065472579a`.
+- **Ruflo: NEXT / NOT YET IMPLEMENTED**. Planned as the orchestration layer for existing stages, not as a replacement for the proven generator or publisher. Ruflo is an agent meta-harness for Claude Code/Codex with agents, swarms, memory, hooks, and workflow orchestration. For Night Files, the first integration should be lightweight and non-blocking: capture orchestration hooks/config and reusable task definitions, but do not require Ruflo, an Anthropic key, a daemon, or a multi-agent swarm for normal GitHub Actions production. See `NIGHT_FILES_UPDATE.md` for the detailed staged plan. Official repo: https://github.com/ruvnet/ruflo
+
 ## Pipeline (pipeline/main.py runs it in order)
 1. **Story** (`story.py`, `mystery.py`, `sources.py`) with the Gemini API (free tier). Models in `config.json` `llm_models`,
    automatic fallback on 404/429/503/safety blocks (see **Retries** below).
