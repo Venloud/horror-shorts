@@ -1,2 +1,0 @@
-Production builds on hold until the stacked changes (research, remake, packaging, asset library, LOC/Openverse)
-pass a test build (test + fresh_images). Delete this file to release the hold.
