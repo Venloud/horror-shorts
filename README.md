@@ -58,7 +58,7 @@ Remotion is now part of the production composition path. It joins the generated 
 
 The remaining integrations are staged:
 
-- **PersonaLive**: optional recurring-character animation stage, planned for a GPU-capable environment.
+- **PersonaLive**: optional recurring-character portrait animation adapter, disabled by default. It activates only when a local PersonaLive checkout, reference image path, and driving video are explicitly configured on a GPU-capable machine. GitHub-hosted CPU runs remain unchanged.
 - **MuMuAINovel**: narrative planning and consistency ideas, without copying its GPL-3.0 application code into Night Files.
 - **Auto Clip MVP**: alternate clip extraction after the primary video is rendered.
 - **Ruflo**: orchestration after the individual stages are stable.
@@ -81,7 +81,7 @@ pipeline/
   images.py          AI images + visual QA
   render.py          final FFmpeg render
   effects.py         motion/effects
-  ai_motion.py       optional AI motion
+  ai_motion.py       optional AI motion, including the PersonaLive adapter
   captions.py        caption generation
   buffer.py          GitHub Release buffer
   checkpoint.py      build resume support
