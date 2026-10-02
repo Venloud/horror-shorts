@@ -53,7 +53,7 @@ def _log_neurons(raw: bytes, headers) -> None:
 
 def _cf_call_log(r) -> None:
     """Every Cloudflare image call: status, billed neurons and any quota / rate-limit header (investigation of the
-    Oct 2 early 4006), plus our ledger after the call."""
+    Oct 2 early "daily limit"), plus our ledger after the call."""
     import cf_budget
     hdrs = {k: v for k, v in r.headers.items()
             if any(w in k.lower() for w in ("neuron", "ratelimit", "rate-limit", "remaining", "quota", "limit"))}
@@ -72,7 +72,7 @@ def _cloudflare(prompt: str, seed: int, fixed_seed: bool = False) -> bytes:
     body = {"prompt": prompt[:2000], "steps": int(CONFIG.get("image_steps", 4))}
     if fixed_seed and CONFIG.get("cloudflare_seed", False):  # FLUX schnell on Workers AI rejects "seed" (HTTP 400
         body["seed"] = int(seed) % 2_147_483_647           # "'/seed' not allowed", test build 36847389674)
-    for wait in (5, 15, 30, 0):
+    for wait in (10, 30, 60, 0):
         r = requests.post(CF_URL.format(acct=acct), timeout=120,
                           headers={"Authorization": f"Bearer {token}"}, json=body)
         if r.status_code == 400 and "seed" in body and "/seed" in r.text:
@@ -83,29 +83,27 @@ def _cloudflare(prompt: str, seed: int, fixed_seed: bool = False) -> bytes:
         if r.status_code == 200:
             break  # success: never scan the body, the base64 image can contain "4006" or anything else
         body = r.text[:300]
-        try:
-            errors = r.json().get("errors") or []
-        except ValueError:
-            errors = []
-        codes = {e.get("code") for e in errors if isinstance(e, dict)}
-        msgs = " ".join(str(e.get("message", "")) for e in errors if isinstance(e, dict)).lower()
-        # Daily cap (error 4006, "daily free allocation of 10,000 neurons"): skip Cloudflare for the rest of the run.
-        if 4006 in codes or "daily free allocation" in msgs or "neurons" in msgs:
+        codes, msgs = _cf_errors(r)
+        log(f"Cloudflare error: HTTP {r.status_code}, codes {sorted(c for c in codes if c is not None)}, "
+            f"headers {dict(r.headers)}, body {r.text[:800]}")
+        # ONLY the documented daily-allocation answer (code 3036 / "daily free allocation") ends Cloudflare for today.
+        if cf_daily_limit(r):
             _STATE["cf_out"] = True
             import cf_budget
-            log(f"Cloudflare 4006 (daily limit) after {cf_budget.line()}; full answer: {r.text[:600]}")
-            cf_budget.analytics_report()  # Cloudflare's own count, to explain an early 4006
+            log(f"Cloudflare DAILY LIMIT (code 3036) after {cf_budget.line()}")
+            cf_budget.analytics_report()  # Cloudflare's own count, to explain an early limit
             raise RuntimeError(f"Cloudflare daily free limit used up (resets 00:00 UTC): {body}")
-        # Plain 429 = short "slow down" limit: wait and retry, keep Cloudflare for the next images.
-        if r.status_code != 429:
+        # 429 (rate limit / 3040 out of capacity), 408 and 5xx: temporary. Wait 10 s, 30 s, 60 s and retry; then
+        # give up on THIS image only (Cloudflare stays on for the next one). Anything else (e.g. 400 NSFW) = no retry.
+        if not (r.status_code in (408, 429) or r.status_code >= 500):
             break
         if not wait:
-            raise RuntimeError(f"Cloudflare rate limited (short-term, will keep using it): {body}")
+            raise RuntimeError(f"Cloudflare busy (temporary, will keep using it): HTTP {r.status_code} {body}")
         try:
             wait = min(60, max(wait, int(float(r.headers.get("Retry-After", wait)))))
         except ValueError:
             pass
-        log(f"Cloudflare rate limited, waiting {wait}s: {body}")
+        log(f"Cloudflare temporary error HTTP {r.status_code}, waiting {wait}s and retrying")
         time.sleep(wait)
     if r.status_code != 200:
         raise RuntimeError(f"Cloudflare HTTP {r.status_code}: {r.text[:300]}")
@@ -222,6 +220,27 @@ def _local_sd(prompt: str, seed: int) -> bytes:
     return buf.getvalue()
 
 
+DAILY_LIMIT_CODE = 3036  # Workers AI docs (platform/errors): 429 "Account limited: You have used up your daily
+#                          free allocation of 10,000 neurons." 3040 = "Out of capacity" (temporary). Limits reset
+#                          00:00 UTC (platform/pricing). Code 4006 is NOT a documented daily-limit code.
+
+
+def _cf_errors(r) -> tuple[set, str]:
+    try:
+        errs = r.json().get("errors") or []
+    except ValueError:
+        errs = []
+    codes = {e.get("code") for e in errs if isinstance(e, dict)}
+    msgs = " ".join(str(e.get("message", "")) for e in errs if isinstance(e, dict)).lower()
+    return codes, msgs
+
+
+def cf_daily_limit(r) -> bool:
+    """ONLY Cloudflare's explicit daily-allocation answer counts as 'used up for today'."""
+    codes, msgs = _cf_errors(r)
+    return DAILY_LIMIT_CODE in codes or "daily free allocation" in msgs or "daily free allocation" in r.text.lower()
+
+
 def cloudflare_has_quota() -> bool | None:
     """Tiny embeddings call (a few neurons) to see if the daily allocation is used up. None = no token/unknown."""
     token = env("CLOUDFLARE_API_TOKEN", required=False)
@@ -236,17 +255,13 @@ def cloudflare_has_quota() -> bool | None:
         return None
     if r.status_code == 200:
         return True
-    try:
-        errs = r.json().get("errors") or []
-    except ValueError:
-        errs = []
-    text = " ".join(str(e.get("message", "")) for e in errs if isinstance(e, dict)).lower()
-    if any(e.get("code") == 4006 for e in errs if isinstance(e, dict)) or "daily free allocation" in text:
-        import cf_budget
-        log(f"Cloudflare quota check: daily limit used up ({cf_budget.line()}); answer: {r.text[:400]}")
+    import cf_budget
+    log(f"Cloudflare quota check: HTTP {r.status_code}, headers {dict(r.headers)}, body {r.text[:800]}")
+    if cf_daily_limit(r):
+        log(f"Cloudflare quota check: DAILY LIMIT (code 3036 / 'daily free allocation'); {cf_budget.line()}")
         cf_budget.analytics_report()
         return False
-    log(f"Cloudflare quota check: HTTP {r.status_code} {r.text[:150]}")
+    log("Cloudflare quota check: not the daily limit; Cloudflare will be tried")
     return None
 
 

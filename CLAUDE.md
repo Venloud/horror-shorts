@@ -200,8 +200,13 @@ so a new session can pick up without starting over.
    tagged by scene. `voice_samples.yml` renders the same hook in several voices for comparison.
 3. **Images** (`images.py`), all free: Cloudflare Workers AI FLUX schnell (10,000 neurons/day, resets 00:00 UTC =
    8 PM New York; Cloudflare BILLS 172.8 neurons per image (response header `cf-ai-neurons`, Oct 2), not the
-   57.6 estimate, so ~57 images/day; the ledger uses the header. On Oct 2 Cloudflare answered "daily limit used up"
-   at 00:44 UTC after only 16 images (~2,800 neurons) since 00:00: unexplained, watch it)
+   57.6 estimate, so ~57 images/day; the ledger uses the header. DAILY LIMIT = ONLY Cloudflare's documented
+   answer: code 3036 (HTTP 429) "You have used up your daily free allocation of 10,000 neurons" (`images.cf_daily_limit`;
+   docs: developers.cloudflare.com/workers-ai/platform/errors + /pricing "All limits reset daily at 00:00 UTC").
+   Until Oct 2 the code also treated an undocumented code 4006 (and, for image calls, any message mentioning
+   "neurons") as the daily limit, and every "limit used up" of Oct 1-2 came from the bge-small quota PROBE whose
+   answer was never logged, so those may have been false. 429 / 3040 out of capacity / 408 / 5xx = wait 10 s, 30 s,
+   60 s and retry, then skip that one image only; never the day. Every non-200 answer logs status, codes, headers, body)
    -> free HF ZeroGPU Spaces running FLUX.1-schnell (config `image_spaces`, 576x1024, gradio_client like ai_motion;
    shares the daily GPU minutes with the AI hook) -> local SD-Turbo on the runner CPU (`local_image_model`,
    512x896, 2 steps, guidance 0; ~23 s load + ~20 s/image on 4 CPUs; Stability AI Community License: free under
@@ -556,7 +561,7 @@ so a new session can pick up without starting over.
   freeze log; stops itself after day 7). Replies to the owner during the freeze: daily summaries only.
 - Production hold: lifted after the first supervised production build (build.yml input `ignore_hold`, Oct 2
   ~07:10 UTC, after Gemini's 07:00 UTC quota reset) passes QA, then left lifted.
-- Cloudflare early-4006 investigation (Oct 2: "daily limit used up" at 00:44 UTC after only 16 images): every
+- Cloudflare early-limit investigation (Oct 2: "daily limit used up" at 00:44 UTC after only 16 images): every
   call logs "Cloudflare call: HTTP ..., cf-ai-neurons=..., ledger ..." (+ any quota/rate-limit headers); the
   preflight, every 4006 and the end of image generation log Cloudflare's own GraphQL analytics count
   (`cf_budget.analytics_report`, dataset aiInferenceAdaptiveGroups; needs Account Analytics: Read on the token,
