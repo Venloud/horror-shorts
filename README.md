@@ -48,17 +48,22 @@ A successful render is not blocked by the QA report. If TikTok fails, YouTube is
 - **QA.** Diagnostic/reporting only in production. It does not become a publishing gate.
 - **Analytics.** YouTube Shorts analytics are stored in `data/analytics.json`.
 
-## Planned research integrations
+## External integrations
 
-The repository is **not** vendoring five external projects wholesale. The useful pieces will be evaluated and integrated where they improve Night Files without breaking the existing free GitHub Actions pipeline.
+Night Files is integrating the external projects **one at a time**, rather than copying five full repositories into the production codebase.
 
-- **Remotion**: candidate for deterministic React-based composition and caption/scene rendering.
-- **PersonaLive**: candidate for a persistent animated narrator/character layer.
-- **MuMuAINovel**: candidate source of story-planning and narrative-structure ideas.
-- **Auto Clip MVP**: candidate for automatically extracting alternate clips from finished videos.
-- **Ruflo**: candidate orchestration layer for future research/story/visual/QA agents.
+### Remotion, active
 
-See **[NIGHT_FILES_UPDATE.md](NIGHT_FILES_UPDATE.md)** for the integration notes and the search-query backlog.
+Remotion is now part of the production composition path. It joins the generated shot clips with a frame-based React composition. If the Remotion stage fails, Night Files automatically falls back to the existing FFmpeg joiner so a temporary Remotion problem does not discard a successful render.
+
+The remaining integrations are staged:
+
+- **PersonaLive**: optional recurring-character animation stage, planned for a GPU-capable environment.
+- **MuMuAINovel**: narrative planning and consistency ideas, without copying its GPL-3.0 application code into Night Files.
+- **Auto Clip MVP**: alternate clip extraction after the primary video is rendered.
+- **Ruflo**: orchestration after the individual stages are stable.
+
+See **[NIGHT_FILES_UPDATE.md](NIGHT_FILES_UPDATE.md)** for the integration notes and search-query backlog.
 
 ## Repository layout
 
