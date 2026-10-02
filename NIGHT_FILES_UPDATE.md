@@ -73,15 +73,29 @@ These are research/integration candidates, not repositories to blindly copy into
 
 Do not replace the working pipeline all at once.
 
-Recommended order:
+### 1. Remotion, integrated
 
-1. Keep the current generation and posting path working.
-2. Prototype Remotion separately against one existing 61-68 second video.
-3. Evaluate whether Remotion improves composition/caption control enough to replace parts of FFmpeg.
-4. Only then consider a persistent character layer with PersonaLive.
-5. Use MuMuAINovel ideas at the story-planning layer, not as a hard dependency.
-6. Add automatic clip extraction only after the main video reliably posts.
-7. Consider Ruflo last, when there are enough independent agents/tasks to justify orchestration.
+Night Files now uses Remotion for the **shot-joining/composition stage** when `remotion_join` is enabled in `config.json`.
+
+The existing pipeline still creates and normalizes individual shot clips. Remotion then places those clips on a frame-accurate timeline and handles the transition overlap. The mature FFmpeg xfade implementation remains an automatic fallback if the Remotion render fails.
+
+This is intentionally the first integration step. It gives Night Files a real Remotion composition layer without replacing the mature audio/effects/final-encoding system in one risky change.
+
+### 2. PersonaLive, next
+
+Do not enable PersonaLive on GitHub-hosted CPU runners. The project is a diffusion-based portrait animation system with heavyweight pretrained models and is better suited to a GPU/self-hosted environment. The integration should therefore be an optional character-animation stage, not a hard dependency for every production video.
+
+### 3. MuMuAINovel
+
+Use its narrative-planning concepts first rather than copying its GPL-3.0 application code into Night Files. The current Night Files writer remains the production writer. The next integration can add a structured story outline / scene-plan stage inspired by its consistency, timeline, character, and quality-scoring features.
+
+### 4. Auto Clip MVP
+
+Add this after the main render is stable. It should consume the finished Night Files MP4 and create alternate short clips/hooks without changing the primary post.
+
+### 5. Ruflo
+
+Use Ruflo last as the orchestration layer once the individual stages are stable. It should coordinate existing Night Files stages rather than replace the proven generator/publisher immediately.
 
 ## Search-query backlog
 
