@@ -89,9 +89,20 @@ This does not add PersonaLive's heavyweight dependencies or model weights to Git
 
 The public PersonaLive project documents offline inference using a reference image and driving video, and its current README describes it as a real-time, streamable diffusion framework for portrait animation. urlPersonaLive READMEhttps://github.com/GVCLab/PersonaLive/blob/main/README.md
 
-### 3. MuMuAINovel
+### 3. MuMuAINovel, integrated as a local story-bible stage
 
-Use its narrative-planning concepts first rather than copying its GPL-3.0 application code into Night Files. The current Night Files writer remains the production writer. The next integration can add a structured story outline / scene-plan stage inspired by its consistency, timeline, character, and quality-scoring features.
+Night Files now uses a small deterministic `pipeline/story_bible.py` stage inspired by MuMuAINovel's outline, character/worldbuilding, timeline, and consistency concepts. It runs after the story is written and before shot planning.
+
+The stage:
+- creates canonical character names and fixed looks;
+- records the story setting, threat, twist, and twist scene;
+- builds a scene-by-scene timeline with narration, location, and mentioned characters;
+- creates explicit continuity rules for visual planning;
+- injects that bible into the shot-prompt rewrite so the image planner is less likely to change a character's look, location, or ending detail.
+
+It adds **no extra AI call** and does not add MuMuAINovel's GPL-3.0 application code to Night Files. The existing Night Files writer remains responsible for production stories.
+
+This is intentionally a lightweight integration of the useful narrative-planning ideas rather than a deployment of the full MuMuAINovel application.
 
 ### 4. Auto Clip MVP
 
