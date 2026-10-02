@@ -63,6 +63,11 @@ jobs:
           key: hf-models-v4
           restore-keys: hf-models-
 
+      - name: Install Python packages
+        run: |
+          pip install -q torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -q -r requirements.txt
+
       - name: Check buffer
         id: buffer
         env:
@@ -86,11 +91,6 @@ jobs:
             echo "Buffer already at target ($COUNT >= $TARGET): no generation needed."
           fi
 
-      - name: Install Python packages
-        if: steps.decide.outputs.generate == 'true'
-        run: |
-          pip install -q torch --index-url https://download.pytorch.org/whl/cpu
-          pip install -q -r requirements.txt
 
       - name: Make and queue one video
         if: steps.decide.outputs.generate == 'true'
