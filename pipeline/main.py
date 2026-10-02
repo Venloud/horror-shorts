@@ -1,9 +1,7 @@
-"""Builder (build.yml): story -> voice -> images -> captions -> render -> QA gate -> into the video buffer.
+"""Production video generator: story -> voice -> images -> captions -> render -> QA report -> video buffer.
 
-Posting happens separately (publish.py, run by daily.yml), so a failed build wastes nothing: the inbox item or case
-is only marked used (history.json) once its video is safely in the buffer, and a failed build keeps its story,
-narration and images as a checkpoint (checkpoint.py) so the next try only redoes what's missing.
-  python main.py          production build: add the video to the buffer and write history
+The daily workflow runs this generator and then immediately runs publish.py. A successful render is always queued
+for posting, while QA remains report-only and never blocks a production video from being published.
 """
 import argparse
 import json
