@@ -456,5 +456,80 @@
       "wanted": "public"
     },
     "posted": "2026-10-01_0633"
+  },
+  {
+    "date": "2026-10-02_0720",
+    "story_id": "f097c7fa1803",
+    "title": "The Corpse That Chewed Its Shroud",
+    "premise": "A German revenant known as the nachzehrer was believed to chew its burial clothes to drag the living into death.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Nachzehrer",
+    "source": "inbox/nachzehrer_remake.txt",
+    "prompt_file": null,
+    "setting": "Northern Germany",
+    "threat": "Nachzehrer",
+    "twist": "The dead could consume their shrouds to drag the living into death.",
+    "score": null,
+    "seconds": 61.8,
+    "voice_speed": 1.0,
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "loc:2006681051",
+      "pixabay:209659",
+      "openverse:f87184e0-f19b-4544-a354-45c08e1a1fd4",
+      "pexels:33117478",
+      "pexels:4035040",
+      "pexels:6460001"
+    ],
+    "visual_mode": "fast",
+    "render_style": "classic",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org",
+      "en.wikipedia.org"
+    ],
+    "visual_sources": {
+      "reused": 0,
+      "archive_stock": 6,
+      "ai": 8
+    },
+    "low_quota": false,
+    "remake_of": "The German Legend of the Nachzehrer",
+    "remake_angle": "What people put in the mouths of the dead, and why the mouth mattered: a corpse with an open mouth was a sign of a nachzehrer, the shroud-eater said to chew its burial clothes in the grave while its family wasted away. Elsewhere in Europe, coins, stones or iron were placed in the mouths of the dead so they could not return.",
+    "critic_score": 92,
+    "visuals": {
+      "distinct": 14,
+      "longest_s": 8.2,
+      "longest_share": 0.126,
+      "longest_name": "scene_06b.png"
+    },
+    "yt_title": "Buried Corpse That Consumed Shroud... The nachzehrer #shorts",
+    "hashtags": [
+      "nachzehrer",
+      "germany",
+      "legends",
+      "folklore"
+    ],
+    "yt_tags": [
+      "the nachzehrer",
+      "nachzehrer legend",
+      "german folklore",
+      "northern germany folklore",
+      "nachzehrer creature",
+      "buried corpse legend",
+      "shroud eating corpse",
+      "european folklore",
+      "scary legend",
+      "german revenant",
+      "nachzehrer myth",
+      "folklore story",
+      "nachzehrer",
+      "folklore",
+      "creepy legend"
+    ],
+    "buffered": "2026-10-02_0720",
+    "tiktok": null
   }
 ]
