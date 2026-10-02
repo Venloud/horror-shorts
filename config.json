@@ -66,6 +66,7 @@
   "story_modes": ["lore", "mystery", "lore", "case", "coldcase"],
 
   "story_upgrade": true,
+  "story_bible": true,
   "critic_pass": true,
   "critic_min_score": 75,
   "gemini_min_interval": 4,
