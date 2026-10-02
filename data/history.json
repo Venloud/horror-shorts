@@ -543,5 +543,85 @@
       "wanted": "public"
     },
     "posted": "2026-10-02_1702"
+  },
+  {
+    "date": "2026-10-02_1941",
+    "story_id": "75d59038e966",
+    "title": "The Green Children of Woolpit",
+    "premise": "Two children with unusual green skin suddenly appeared in an English village during the 12th century.",
+    "subgenre": "real unsolved mystery",
+    "mode": "mystery",
+    "true_story": true,
+    "case": "Green children of Woolpit",
+    "source": null,
+    "prompt_file": null,
+    "setting": "12th-century England",
+    "threat": "Unknown origin and mysterious green skin",
+    "twist": "The surviving girl explained they came from a land where the sun never shone and everything was green.",
+    "score": null,
+    "seconds": 62.5,
+    "voice_speed": 1.1,
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:6650212"
+    ],
+    "visual_mode": "analog",
+    "render_style": "classic",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": {
+      "reused": 0,
+      "archive_stock": 1,
+      "ai": 15
+    },
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 91,
+    "visuals": {
+      "distinct": 16,
+      "longest_s": 5.3,
+      "longest_share": 0.081,
+      "longest_name": "scene_02a.png"
+    },
+    "yt_title": "Children With Skin As Green As Grass | True History #shorts",
+    "hashtags": [
+      "england",
+      "history",
+      "strangehistory"
+    ],
+    "yt_tags": [
+      "the green children of woolpit",
+      "green children of woolpit",
+      "woolpit green children",
+      "england history",
+      "true story",
+      "strange history",
+      "king stephen reign",
+      "woolpit children",
+      "saint martins land",
+      "mysterious children",
+      "12th century england",
+      "historical mystery",
+      "england mystery",
+      "true crime story",
+      "unsolved mystery"
+    ],
+    "buffered": "2026-10-02_1941",
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7692161575439878175",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "video_number": 32,
+    "youtube": {
+      "id": "VcHDx2iaSEA",
+      "url": "https://youtube.com/shorts/VcHDx2iaSEA",
+      "privacy": "public",
+      "wanted": "public"
+    },
+    "posted": "2026-10-02_1957"
   }
 ]
