@@ -19,6 +19,55 @@ VIDEO_EXT = (".mp4", ".webm", ".mov", ".mkv", ".gif")
 QUOTA_RE = re.compile(r"\((\d+)s requested vs\. (-?\d+)s left\)")
 
 
+def _personalive_settings() -> dict:
+    """Optional local PersonaLive bridge. Disabled by default because it requires a CUDA/GPU install."""
+    s = {"enabled": False, "root": "", "driving_video": "", "frames": 64, "timeout": 300}
+    s.update(CONFIG.get("persona_live", {}))
+    if os.environ.get("PERSONALIVE_ENABLED"):
+        s["enabled"] = os.environ["PERSONALIVE_ENABLED"].strip().lower() in ("1", "true", "yes", "on")
+    if os.environ.get("PERSONALIVE_ROOT"):
+        s["root"] = os.environ["PERSONALIVE_ROOT"]
+    if os.environ.get("PERSONALIVE_DRIVING_VIDEO"):
+        s["driving_video"] = os.environ["PERSONALIVE_DRIVING_VIDEO"]
+    return s
+
+
+def _personalive_animate(image: Path, out: Path) -> Path | None:
+    """Run PersonaLive only on an explicitly configured local GPU installation."""
+    s = _personalive_settings()
+    if not s["enabled"]:
+        return None
+    root = Path(str(s.get("root") or "")).expanduser()
+    driving = Path(str(s.get("driving_video") or "")).expanduser()
+    script = root / "inference_offline.py"
+    if not script.exists() or not image.exists() or not driving.exists():
+        log("PersonaLive skipped (valid PERSONALIVE_ROOT and PERSONALIVE_DRIVING_VIDEO are required)")
+        return None
+    import subprocess
+    result_dir = root / "results"
+    before = {p.resolve() for p in result_dir.rglob("*.mp4")} if result_dir.exists() else set()
+    cmd = ["python", str(script), "--reference_image", str(image), "--driving_video", str(driving),
+           "--name", f"night_files_{int(time.time())}", "-L", str(max(4, int(s.get("frames", 64))))]
+    try:
+        log("PersonaLive: generating optional portrait motion clip")
+        subprocess.run(cmd, cwd=str(root), check=True, timeout=int(s.get("timeout", 300)))
+        candidates = [p for p in result_dir.rglob("*.mp4") if p.resolve() not in before and p.stat().st_size > 0]
+        if not candidates:
+            log("PersonaLive returned no new MP4")
+            return None
+        src = max(candidates, key=lambda p: p.stat().st_mtime)
+        shutil.copy2(src, out)
+        if media_duration(out) < 0.8:
+            log("PersonaLive clip too short, skipping")
+            out.unlink(missing_ok=True)
+            return None
+        log(f"PersonaLive: got {media_duration(out):.1f}s portrait clip")
+        return out
+    except Exception as e:
+        log(f"PersonaLive failed, using existing AI-motion fallbacks ({type(e).__name__}: {str(e)[:180]})")
+        out.unlink(missing_ok=True)
+        return None
+
 def _settings() -> dict:
     s = {"enabled": True, "max_shots": 1, "seconds": 2, "timeout": 240, "total_budget": 420,
          "spaces": ["multimodalart/wan2-1-fast", "DeepRat/LTX-Video-ZeroGPU-Optimized", "Lightricks/ltx-video-distilled"]}
