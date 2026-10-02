@@ -65,6 +65,14 @@ jobs:
           if gh api "repos/${{ github.repository }}/contents/data/hold_builds.txt" >/dev/null 2>&1; then hold=yes; fi
           if [ -n "$hold" ] && [ "${{ inputs.test }}" != "true" ] && [ "${{ inputs.ignore_hold }}" != "true" ]; then
             echo "Production builds are ON HOLD (data/hold_builds.txt exists): nothing built."
+            {
+              echo "### BUFFER EMPTY / PRODUCTION HOLD / NO BUILD"
+              echo
+              echo "- Videos waiting: $waiting"
+              echo "- Target buffer: $BUFFER_SIZE"
+              echo "- Hold file: data/hold_builds.txt"
+              echo "- No generation or posting work was run."
+            } >> "$GITHUB_STEP_SUMMARY"
           elif [ "${{ inputs.test }}" = "true" ] || [ "$waiting" -lt "$BUFFER_SIZE" ]; then
             echo "build=true" >> "$GITHUB_OUTPUT"
           else
