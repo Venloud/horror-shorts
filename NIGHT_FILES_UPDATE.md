@@ -255,6 +255,77 @@ These topic families are intended for future topic selection and hook generation
 - What happened to the Mary Celeste crew?
 - Who built Göbekli Tepe?
 
+## List, ranking, and countdown formats
+
+The topic engine should also generate **list-style posts**, especially formats that create a clear reason to keep watching until the next item.
+
+Example format from the creator's reference:
+
+> Four archaeological discoveries that were never meant to see the light of day.
+
+This is a **format/hook template**, not a factual claim. The individual discoveries still need research and verification.
+
+### Ranking-style formats
+
+Use numbered or ranked structures when the subjects can be compared using a clear, defensible criterion.
+
+Examples:
+- 4 archaeological discoveries that were never meant to see the light of day
+- 5 ancient discoveries that raised more questions than answers
+- 7 places archaeologists still cannot fully explain
+- 5 historical mysteries with the strangest evidence
+- 6 lost objects people are still searching for
+- 5 abandoned places with disturbing histories
+- 7 folklore creatures people once genuinely feared
+- 5 experiments that changed what scientists understood about human behavior
+- 4 archaeological sites that changed our understanding of the ancient world
+- 6 discoveries that were found completely by accident
+- 5 mysterious objects whose purpose is still debated
+- 7 disappearances that remain unresolved
+- 5 ancient texts nobody has fully decoded
+- 4 historical discoveries that were hidden, buried, or deliberately concealed
+- 5 strange artifacts found in places they should not have been
+- 6 archaeological discoveries that sounded impossible before they were found
+
+### Ranking hooks
+
+Possible opening structures:
+
+- "These are 5 of the strangest..."
+- "Number 5 is strange. Number 1 is still unexplained."
+- "Five discoveries changed what historians thought they knew."
+- "These four finds were buried for centuries. Then someone uncovered them."
+- "Here are five discoveries that raised more questions than answers."
+
+Do not use fake rankings or imply an objective "best" or "worst" order when there is no defensible criterion. If a countdown is used, define the basis for the order in the research or script.
+
+### Other repeatable list formats
+
+Rotate list structures so every video does not feel like the same countdown:
+
+1. **Top N / countdown**: ranked from #N to #1.
+2. **N discoveries**: each item gets one surprising fact.
+3. **N mysteries, one common thread**: separate cases connected by a theme.
+4. **Then vs. now**: what people believed before a discovery and what changed afterward.
+5. **N theories**: documented explanations for one mystery, clearly separating evidence from speculation.
+6. **N clues**: strongest documented clues surrounding an unresolved case.
+7. **N places**: locations connected by a specific historical or archaeological theme.
+8. **N objects**: artifacts, manuscripts, paintings, or other unusual finds.
+9. **N things you didn't know**: only when every item can be independently verified.
+10. **From least to most mysterious**: only when the ordering criterion is explicitly explained.
+
+### List-post research rules
+
+For every item in a list:
+
+- Verify the item's name and basic claim independently.
+- Prefer primary sources, museums, archaeological institutions, academic sources, government records, or reputable historical references.
+- Keep folklore, disputed interpretations, and speculation clearly labeled.
+- Do not invent an ordering just to create drama.
+- The title can promise a list, but the script should quickly deliver the first concrete fact.
+- Avoid padding the list with weak items just to reach a target number.
+- A 4-item list with strong evidence is better than a 10-item list with filler.
+
 ## Topic-selection rules
 
 The topic engine should prefer subjects that can produce a **specific curiosity question** rather than generic horror.
