@@ -250,12 +250,14 @@ def _join(clips: list[Path], seg: list[float], scene_cut: list[bool], out: Path,
         label = f"[x{i}]"
         fc.append(f"{prev}[n{i}]xfade=transition={kind}:duration={d / FPS:.6f}:offset={offset / FPS:.6f}{label}")
         prev, acc = label, acc + frames[i] - d
+    log("FFMPEG: starting fallback xfade join")
     run(["ffmpeg", "-y", "-loglevel", "error", *inputs, "-filter_complex", ";".join(fc),
          "-map", prev, "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "14", "-r", str(FPS),
          "-pix_fmt", "yuv420p", str(out)])
     want, got = acc / FPS, media_duration(out)
     if got < want - 0.5:
         raise RuntimeError(f"joined video is {got:.1f}s but the shots add up to {want:.1f}s: xfade chain broke")
+    log(f"FFMPEG: fallback join completed ({got:.1f}s)")
     return out
 
 
