@@ -10,8 +10,10 @@ on:
 permissions:
   contents: write
 
+# Own group: a report never waits behind, cancels or replaces a build / publish run (it only writes
+# data/analytics.json, never history.json).
 concurrency:
-  group: night-files
+  group: analytics
   cancel-in-progress: false
 
 jobs:

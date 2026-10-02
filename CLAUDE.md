@@ -475,6 +475,13 @@ so a new session can pick up without starting over.
   manual daily.yml run) serves the most recent regular slot: if that is the recorded missed slot, the file is
   deleted (`publish._late_slot_served`), so one missed slot is never posted twice. (Oct 1: GitHub's cron skipped the 15:40
   daily run entirely; its missed_slot.json was written by hand.)
+- **Duplicate-post guard** (`publish._posted_entry`, Oct 2 freeze fix): a buffered video whose history entry
+  (same stamp or story_id) already has `posted` is never posted again; only its buffer removal is retried. A failed
+  `buffer.remove` after a successful post sets history `removal_pending` (cleared when a later run removes it).
+  `post_missed_slot` deletes missed_slot.json only when the make-up post returned 0; a failure keeps it.
+- **Concurrency groups**: build.yml, daily.yml, buffer_cleanup.yml (everything that writes history.json or the
+  buffer) share `night-files`; analytics.yml (`analytics`), freeze_summary.yml (`freeze-summary`) and
+  yt_backfill.yml (`yt-backfill`) have their own, so reports never wait behind or replace a build / publish run.
 - **Empty buffer at a slot**: the publisher does NOT fail. It writes `data/missed_slot.json` {"slot", "at"}, sends
   "Buffer empty: building now, will post when ready", and daily.yml starts build.yml at once (`gh workflow run`,
   github.token with actions: write; GH_PAT only as fallback: the

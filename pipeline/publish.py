@@ -74,7 +74,15 @@ def post_missed_slot() -> None:
         log(f"Missed slot ({info.get('slot')}) not made up yet: {wait}; a later build tries again")
         return
     log(f"Making up the missed slot ({info.get('slot')}, {age_h:.1f} h ago): posting now")
-    main(from_build=True)
+    try:
+        rc = main(from_build=True)
+    except Exception as e:  # noqa: BLE001
+        traceback.print_exc()
+        log(f"Make-up post crashed ({type(e).__name__}: {e}); missed_slot.json kept, a later build retries")
+        return
+    if rc != 0:
+        log(f"Make-up post did not go out (exit {rc}); missed_slot.json kept, a later build retries")
+        return
     MISSED.unlink(missing_ok=True)
 
 
@@ -141,6 +149,28 @@ def makeup_blocker(now: datetime | None = None, waiting: int | None = None) -> s
     return ""
 
 
+def _posted_entry(history: list[dict], stamp: str, story_id: str | None = None) -> dict | None:
+    """The history entry of a buffered video that already went out (TikTok or YouTube), else None."""
+    for h in reversed(history):
+        same = h.get("buffered") == stamp or h.get("date") == stamp or (story_id and h.get("story_id") == story_id)
+        if same and h.get("posted"):
+            return h
+    return None
+
+
+def _drop_posted(buffer, video: dict, h: dict) -> None:
+    """A video that already went out is never posted again: only (re)try its buffer removal."""
+    log(f"'{h.get('title')}' ({video['stamp']}) was already posted as #{h.get('video_number')} at {h.get('posted')}: "
+        "not posting it again, removing it from the buffer")
+    try:
+        buffer.remove(video)
+        if h.pop("removal_pending", None):
+            log("Buffer removal pending flag cleared")
+    except Exception as e:  # noqa: BLE001
+        h["removal_pending"] = True
+        log(f"Buffer removal failed again ({e}); still marked removal pending")
+
+
 def main(from_build: bool = False) -> int:
     import buffer
     import tiktok
@@ -154,6 +184,18 @@ def main(from_build: bool = False) -> int:
         traceback.print_exc()
         notify_text("Night Files: publish FAILED", f"Could not read the video buffer: {e}", warn=True)
         return 1
+    # duplicate-post guard: a buffered video whose history entry says it already went out is only removed
+    history = load_history()
+    fresh = []
+    for v in waiting:
+        h = _posted_entry(history, v["stamp"])
+        if h:
+            _drop_posted(buffer, v, h)
+        else:
+            fresh.append(v)
+    if len(fresh) != len(waiting):
+        save_history(history)
+        waiting = fresh
     if not waiting:
         if from_build:
             log("Buffer is empty, nothing to post")
@@ -176,6 +218,11 @@ def main(from_build: bool = False) -> int:
         mp4 = buffer.download(video["mp4"], out / "final.mp4")
         meta = json.loads(buffer.download(video["json"], out / "caption.json").read_text())
         (out / "caption.txt").write_text(meta["caption_text"] + "\n\nPIN: " + meta.get("pinned_comment", ""))
+        h = _posted_entry(history, video["stamp"], meta.get("story_id"))
+        if h:  # same story under another stamp (a rebuilt copy): never post it twice
+            _drop_posted(buffer, video, h)
+            save_history(history)
+            return 1 if from_build else 0
         log(f"Posting '{meta['title']}' ({video['stamp']}, {meta.get('mode')})")
     except Exception as e:  # noqa: BLE001
         traceback.print_exc()
@@ -222,10 +269,12 @@ def main(from_build: bool = False) -> int:
         return 1
 
     # At least one platform has it: take it out of the buffer so it's never posted twice.
+    removal_pending = False
     try:
         buffer.remove(video)
     except Exception as e:  # noqa: BLE001
-        log(f"Could not remove it from the buffer ({e}); delete {video['stamp']} from the release by hand")
+        removal_pending = True  # history says "posted, removal pending": the next run removes it, never reposts it
+        log(f"Could not remove it from the buffer ({e}); recorded as posted with removal pending")
     number = take_video_number()
     _gh_output("video_number", number)
     log(f"Video #{number}: '{meta['title']}' (story {meta.get('story_id', '?')}, buffered {video['stamp']})")
@@ -237,6 +286,8 @@ def main(from_build: bool = False) -> int:
             h["tiktok"] = result if result else {"error": tt_error}
             h["youtube"] = yt if yt else ({"error": yt_error} if yt_error else None)
             h["posted"] = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M")
+            if removal_pending:
+                h["removal_pending"] = True
             if meta.get("yt_title"):
                 h["yt_title"], h["hashtags"], h["yt_tags"] = meta["yt_title"], meta.get("hashtags"), meta.get("yt_tags")
             break

@@ -20,3 +20,9 @@ first production build passes QA and left lifted.
   00:00 UTC. Run 36944145400 had no limit error at all (its one failure was an NSFW 400, code 8007).
 - Fix: only code 3036 / "daily free allocation" ends Cloudflare for the day; 429/3040/408/5xx retry 10/30/60 s
   then skip one image; every non-200 answer logs status + codes + headers + body.
+
+## 2026-10-02 05:00 UTC: freeze bug fixes (owner-approved)
+- publish.py: make-up post deletes missed_slot.json only on success; duplicate-post guard (already-posted buffer
+  entries are only removed; failed removal = history `removal_pending`).
+- analytics.yml / freeze_summary.yml: own concurrency groups (no longer in `night-files`).
+- Cloudflare: no new data yet; the first call with full error logging is the 07:10 UTC supervised production build.

@@ -11,6 +11,11 @@ permissions:
   contents: write
   actions: read
 
+# Own group (read-only report + data/freeze_log.md): never queued behind or replacing build / daily runs.
+concurrency:
+  group: freeze-summary
+  cancel-in-progress: false
+
 jobs:
   summary:
     runs-on: ubuntu-latest
