@@ -55,3 +55,48 @@ The production daily workflow is not changed by this implementation.
 
 - HyperFrames: https://github.com/heygen-com/hyperframes
 - Premiere MCP: https://github.com/DutchErwin/PremiereMCP
+
+
+## Buffer-first distribution
+
+The media test lane is a producer, not a publisher.
+
+The durable queue is `pipeline/buffer.py`, which stores complete MP4 + metadata pairs in the GitHub Release named `buffer`.
+
+The production flow is now:
+
+1. A buffer-fill run or media-production test generates a finished video.
+2. The generated video and caption metadata are placed in the real FIFO buffer.
+3. The producer workflow stops. It does not call TikTok or YouTube.
+4. The scheduled `daily.yml` checks the buffer first.
+5. If content is waiting, daily skips generation and publishes the oldest complete buffered pair.
+6. If the buffer is empty, daily generates one video, which enters the buffer, then publishes the next buffered pair.
+7. After at least one platform succeeds, `publish.py` removes the buffered pair. If publishing fails, the item remains queued for the next run.
+
+This means repeated HyperFrames/Premiere media testing can build a supply of finished content without immediately publishing every test run.
+
+### Media test artifacts
+
+`.github/workflows/daily_media_test.yml` still uploads:
+
+- `final.mp4`
+- `hyperframes_test.mp4`
+- `media_production_test.json`
+- Premiere MCP `handoff.json`
+- `summary.txt`
+
+The media test now also leaves `final.mp4` and its caption metadata in the real production buffer for later scheduled distribution.
+
+### Buffer fill artifacts
+
+`.github/workflows/buffer_fill.yml` uploads:
+
+- `final.mp4`
+- `caption.txt`
+- `caption.json`
+- `story.json`
+- visual/contact sheets when present
+- `summary.txt`
+
+It never invokes the platform publisher.
+
