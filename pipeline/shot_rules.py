@@ -119,11 +119,22 @@ def _rewrite(story: dict, jobs: list[dict]) -> dict:
     """{tag: new prompt} from one small LLM call; empty on failure (callers fall back to templates)."""
     import images
     chars = "; ".join(f"{c['name']}: {c.get('look', '')}" for c in story.get("characters") or [] if c.get("name"))
+    bible = story.get("_story_bible") or {}
+    continuity = json.dumps({
+        "setting": bible.get("setting"),
+        "threat": bible.get("threat"),
+        "twist": bible.get("twist"),
+        "twist_scene": bible.get("twist_scene"),
+        "characters": bible.get("characters") or [],
+        "locations": bible.get("locations") or [],
+        "continuity_rules": bible.get("continuity_rules") or [],
+    }, ensure_ascii=False)
     ask = ("Rewrite these image prompts for a dark painted horror illustration video. Each new prompt: max 25 "
            "words, ONE clear subject in the moment the narration describes, plain descriptive text, no gore, no "
            "readable text, no occult symbols, never a real victim's body, never a texture, surface or blank wall. "
-           "Refer to characters by their exact names.\n"
-           f"CHARACTERS: {chars}\nSHOTS:\n" + json.dumps(jobs, ensure_ascii=False)
+           "Refer to characters by their exact names. Preserve the story bible's character looks, locations, and "
+           "twist. Do not invent a new character, location, or ending detail.\n"
+           f"STORY BIBLE: {continuity}\nCHARACTERS: {chars}\nSHOTS:\n" + json.dumps(jobs, ensure_ascii=False)
            + '\nReturn JSON {"shots": [{"id": "00a", "prompt": "..."}]}')
     try:
         ans = images._gemini_json(ask) or {}
