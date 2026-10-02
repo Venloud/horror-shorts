@@ -129,3 +129,44 @@ Both must pass before the next Ruflo activation stage is considered complete.
 ### Next implementation stage
 
 After these contracts are validated, the next step is **non-production Ruflo execution against one isolated task**, preferably research or review. That stage should produce an artifact for comparison with the existing Night Files output before any production delegation is considered.
+
+
+## Ruflo implementation ledger, 2026-10-02
+
+This section is cumulative. Every Ruflo-related commit made so far is recorded here so the repository remains self-documenting and the next implementation can start from a known state.
+
+### Commits completed
+
+1. `55dba71653467bce61c0e72867f5d189e2977548` - Add concrete Ruflo first-stage integration design. Established the first-stage architecture and explicitly kept Ruflo outside production.
+2. `157a9875aa0945d0dfe8fc0fcaaeaa5ff3a6cbb9` - Document Ruflo integration plan and safety constraints. Recorded the activation sequence, production boundary, and safety rules.
+3. `767242e1f811885ee513a7a3c2ea4359f6527e64` - Add Ruflo integration `pipeline/ruflo_plan.json`. Added the declarative stage/dependency/role map for research through publishing.
+4. `9ff04cfce6cc7338525bc0efa49131fd6850f1b6` - Add Ruflo integration `pipeline/ruflo_check.py`. Added the zero-dependency manifest validator and delegation-graph check.
+5. `a24cd4f27bc0789dd14b83850bf6ffd79561a93f` - Add Ruflo integration docs. Added the dedicated integration reference and activation boundaries.
+6. `4879e18f0a60cdebcdddd1c3b4c1f7fa2cf74481` - Add planner task contract. Defined how Ruflo planning maps onto existing Night Files stages without replacing them.
+7. `01cd3726fe82ff8de6663e3777f897daec2cb6bf` - Add researcher task contract. Defined source-backed research, evidence tracing, and folklore/speculation separation.
+8. `9f3bda761e04662b2ddee12e5e58277612fdc55f` - Add story-writer task contract. Defined narration generation/revision under fact-lock, hook, duration, and fiction rules.
+9. `a2b1bd4bb8775f97dd39c6725fb8fdaf8c8416b3` - Add visual-planner task contract. Defined shot planning, continuity, and visual safety requirements.
+10. `f4099b098e1f32e8ea85af0f30a8114caa8ff01e` - Add QA-reviewer task contract. Defined diagnostic review and failure reporting without bypassing gates.
+11. `4d05bc1c3d7efdb8ba362ade2e075125bd50af3f` - Add packaging-reviewer task contract. Defined metadata review while leaving TikTok/YouTube transport untouched.
+12. `b7c6a6d9c8cf2737f7fcdc23c0244631cd561210` - Add Ruflo task-contract validator. Added `pipeline/ruflo_task_check.py` to verify all six contracts and their required sections.
+13. `e4b61ac216553a1ce0501b16e5274db587aeb216` - Document implemented Ruflo task contracts. Expanded `docs/RUFLO_INTEGRATION.md` with exact files, validator behavior, and current activation state.
+14. `0242173df1e81a52e07640c8716a8bce501f7f9b` - Record implemented Ruflo task contracts. Added the cumulative implementation update to `NIGHT_FILES_UPDATE.md`.
+15. `6f6d428eb5396b1a1fac34ea2ee53f38262353eb` - Mark Ruflo contract layer implemented. Updated `CLAUDE.md` so future sessions treat the contract layer as implemented, production-disabled.
+
+### Validation state before the next implementation
+
+The repository state has been statically checked from the current GitHub files. The manifest and task-contract definitions are internally consistent. The validators are dependency-free and are designed not to start agents, swarms, MCP, daemons, or publishing.
+
+### Ready state
+
+**Current Ruflo state: contract-ready, production-disabled.**
+
+**Next implementation:** isolated non-production Ruflo execution of exactly one task, with captured output and comparison against the existing Night Files result. Do not connect that execution to `daily.yml`, publishing, TikTok auth, YouTube auth, or the production buffer yet.
+
+The next implementation is considered ready only if it preserves these properties:
+- no new production secret unless a verified runtime requirement is discovered;
+- no production workflow dependency;
+- no automatic publishing;
+- no bypass of research, fact-lock, visual QA, duration QA, or packaging safeguards;
+- clear artifact/output location for comparison;
+- failure of Ruflo remains non-fatal to production.
