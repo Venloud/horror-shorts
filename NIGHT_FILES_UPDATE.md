@@ -130,3 +130,170 @@ The first 10 seconds should answer:
 
 Avoid generic openings such as "Have you ever wondered..." unless the actual question is immediately specific.
 
+
+
+## Expanded Night Files topic backlog
+
+These topic families are intended for future topic selection and hook generation. They should be treated as a research backlog, not as claims that every topic is factual.
+
+### Haunted objects and cursed artifacts
+- Dybbuk Box
+- Annabelle and the real-world history behind the doll
+- The Conjuring / Perron family case
+- The Crying Boy paintings
+- Robert the Doll
+- The Hands Resist Him painting
+- The Basano Vase
+- The Black Aggie statue
+- Hope Diamond stories
+
+### Strange experiments and programs
+- Russian Sleep Experiment, including its fictional origin
+- Stanford Prison Experiment
+- MKUltra
+- Monster Study
+- Little Albert experiment
+- Third Wave experiment
+- Philadelphia Experiment
+- Remote-viewing programs
+- Montauk Project
+- Stargate Project
+
+### Folklore creatures
+- Manananggal
+- Chupacabra
+- Mothman
+- Jersey Devil
+- Wendigo
+- Skinwalker folklore
+- Black-Eyed Children
+- Dover Demon
+- Flatwoods Monster
+- Fresno Nightcrawler
+- Beast of Bray Road
+- Loveland Frog
+- Hopkinsville Goblins
+- Enfield Horror
+- Ozark Howler
+
+### Historical mysteries and disappearances
+- Mary Celeste
+- Dyatlov Pass
+- Somerton Man
+- Sodder children
+- Amelia Earhart
+- Isdal Woman
+- Lead Masks Case
+- Hinterkaifeck
+- Villisca Axe Murders
+- Tamam Shud
+- Dancing Plague of 1518
+- London Monster
+- Ambrose Bierce disappearance
+- Man in the Iron Mask
+- Princes in the Tower
+
+### Ancient, biblical, and archaeological mysteries
+- Ark of the Covenant
+- Antikythera Mechanism
+- Voynich Manuscript
+- Cleopatra's lost tomb
+- Ninth Legion
+- Nazca Lines
+- Derinkuyu underground city
+- Terracotta Army
+- Göbekli Tepe
+- Atlantis
+- Amber Room
+- Oak Island
+- Copper Scroll
+- Phaistos Disc
+
+### Places and location-driven mysteries
+- Abandoned towns and villages
+- Restricted islands
+- Strange forests and disappearance legends
+- Haunted roads
+- Unexplained hotel rooms
+- Staircases in remote woods
+- Unexplored caves
+- Island of the Dolls
+- Locations associated with repeated eyewitness reports
+
+### Search-first question topics
+- What is the Grim Reaper?
+- Why are people afraid of 666?
+- Mona Lisa painting mysteries
+- Why does the Wow! signal remain unexplained?
+- What happened to Roanoke?
+- Who was the Somerton Man?
+- Why did the Dancing Plague happen?
+- What really happened at Dyatlov Pass?
+- What is the Manananggal?
+- Was the Chupacabra ever actually found?
+- Where could the Ark of the Covenant be?
+- Who created the Voynich Manuscript?
+- What was the Philadelphia Experiment?
+- What happened to the Mary Celeste crew?
+- Who built Göbekli Tepe?
+
+## Topic-selection rules
+
+The topic engine should prefer subjects that can produce a **specific curiosity question** rather than generic horror.
+
+Prefer:
+- A named person, place, object, creature, experiment, event, or case.
+- A concrete unanswered question.
+- A strange documented detail that can appear in the first 10 seconds.
+- Topics with enough reliable source material to verify claims.
+- Topics that can be explained clearly at roughly third-grade reading level.
+
+Avoid:
+- Generic "scary story" prompts with no specific subject.
+- Repeating the same famous case too frequently.
+- Presenting folklore as established fact.
+- Presenting fictional internet stories as true.
+- Making a claim stronger than the available evidence.
+
+### Hook transformation examples
+
+Weak:
+> Today we're talking about the Dyatlov Pass incident.
+
+Stronger:
+> Nine hikers entered the Russian mountains. All nine died. Then rescuers found their tent cut open from the inside.
+
+Weak:
+> The Chupacabra is a mysterious creature.
+
+Stronger:
+> Farmers in Puerto Rico began reporting animals with strange wounds. Then people started saying they had seen the same creature.
+
+Weak:
+> Have you heard of the Voynich Manuscript?
+
+Stronger:
+> Someone wrote a book centuries ago in a script nobody can reliably read. And nobody knows who wrote it.
+
+The stronger examples are **hook templates**, not factual claims to publish without source verification.
+
+## Content pillars for future topic rotation
+
+Rotate across:
+1. True mysteries
+2. Unsolved disappearances
+3. Haunted objects
+4. Haunted locations
+5. Folklore creatures
+6. Strange experiments
+7. Dark history
+8. Ancient mysteries
+9. Government / intelligence history
+10. Unexplained phenomena
+11. Creepy internet stories, clearly labeled when fictional or unverified
+12. Weird science
+13. Bizarre documented crimes
+14. Lost places
+15. Cursed-artifact legends
+
+The generator should use the pillar as a constraint, then independently research and verify the selected topic before scripting it.
