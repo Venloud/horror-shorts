@@ -77,7 +77,15 @@ def analytics_report(force: bool = False) -> str:
                                                               "until": now.strftime("%Y-%m-%dT%H:%M:%SZ")}})
         data = r.json()
         if data.get("errors"):
-            msg = f"Cloudflare analytics unavailable: {str(data['errors'])[:300]}"
+            errors = data["errors"]
+            msg_text = str(errors)[:300]
+            # Analytics is diagnostic only. A token can successfully run Workers AI
+            # without having Account Analytics: Read, so never treat this as an
+            # image-generation or quota failure.
+            if any("authz" in str(e).lower() or "not authorized" in str(e).lower() for e in errors):
+                msg = "Cloudflare analytics unavailable (Account Analytics: Read is not granted); image generation is unaffected."
+            else:
+                msg = f"Cloudflare analytics unavailable: {msg_text}"
             log(msg)
             return msg
         rows = data["data"]["viewer"]["accounts"][0]["aiInferenceAdaptiveGroups"]
