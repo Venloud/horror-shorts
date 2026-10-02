@@ -431,3 +431,61 @@ Rotate across:
 15. Cursed-artifact legends
 
 The generator should use the pillar as a constraint, then independently research and verify the selected topic before scripting it.
+
+
+## Ruflo implementation update, 2026-10-02
+
+Ruflo is no longer only a planned documentation item. The first implementation layer is now in the repository, while production remains unchanged.
+
+### Implemented
+
+The orchestration manifest remains at `pipeline/ruflo_plan.json` and the original safety validator remains at `pipeline/ruflo_check.py`.
+
+Added the reusable task contracts under `docs/ruflo_tasks/`:
+
+1. Planner, maps requested work to the existing Night Files stages.
+2. Researcher, verifies source material and separates evidence from folklore/speculation.
+3. Story writer, drafts narration under the existing hook, fact-lock, duration, and fiction rules.
+4. Visual planner, maps narration to specific shots while preserving story-bible continuity and visual safety rules.
+5. QA reviewer, reports failures and evidence without overriding safeguards.
+6. Packaging reviewer, checks platform metadata without touching upload/authentication transport.
+
+Added `pipeline/ruflo_task_check.py`, a dependency-free validator for those six contracts.
+
+### Why this is the current implementation boundary
+
+Ruflo is being integrated as an orchestration layer, not as a replacement for Night Files. The existing Python generator, renderer, QA, buffer, and publisher remain the production source of truth.
+
+The first implementation intentionally does **not**:
+
+- install Ruflo into GitHub Actions;
+- add an Anthropic API key or any new secret;
+- start a Ruflo daemon;
+- start a swarm or MCP server;
+- change TikTok or YouTube publishing;
+- change the buffer release behavior;
+- make production depend on network-based agent orchestration.
+
+This means the new layer can be validated independently without increasing the failure surface of the daily production run.
+
+### Validation requirements
+
+Run:
+
+```bash
+python pipeline/ruflo_check.py
+python pipeline/ruflo_task_check.py
+```
+
+Expected markers:
+
+```
+RUFLO CHECK: PASS
+RUFLO TASK CHECK: PASS
+```
+
+### Exact current state
+
+**Ruflo status: contract-ready, production-disabled.**
+
+The next implementation is not another documentation-only pass. Once both validators pass, the next step is to execute one isolated Ruflo-style task outside the production workflow and compare its output against the existing Night Files pipeline before any production delegation is enabled.
