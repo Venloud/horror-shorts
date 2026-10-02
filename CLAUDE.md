@@ -675,3 +675,22 @@ Two production-capable media integrations are now implemented in an isolated tes
 - Test workflow: .github/workflows/daily_media_test.yml is manual only and separate from daily.yml. It never calls publish.py.
 
 Production daily behavior is unchanged. See docs/PRODUCTION_MEDIA_TOOLS.md.
+
+
+## Buffer-first publishing architecture, 2026-10-02
+
+The Night Files production queue is now the durable source of truth between generation and publishing.
+
+- `pipeline/buffer.py` stores complete `.mp4` + `.json` pairs in the GitHub Release named `buffer`.
+- `.github/workflows/daily.yml` checks the buffer before generating anything. If one or more complete videos are waiting, it does not generate another video and publishes the oldest buffered item.
+- If the buffer is empty, the daily workflow generates exactly one video. `pipeline/main.py` places it into the buffer, and the same daily run then publishes the next buffered item.
+- `.github/workflows/buffer_fill.yml` is the separate producer lane. It runs every six hours and can be manually dispatched. It checks the queue and generates one video only when the queue is below its target, defaulting to two waiting videos.
+- The buffer-fill workflow never calls `publish.py`, TikTok, or YouTube. Its generated video, caption, story, and supporting artifacts are uploaded to the GitHub Actions run.
+- `pipeline/media_production_test.py` now uses the real `buffer.add()` path. Media tests therefore queue finished videos for later scheduled publication instead of discarding them.
+- `pipeline/publish.py` remains the consumer. After at least one platform succeeds, it removes the buffered pair. Existing history-based duplicate protection remains in place.
+
+This separates **production generation** from **scheduled distribution**. Repeated media tests can build the queue without immediately spamming TikTok or YouTube. The scheduled daily workflow consumes the queue one item at a time.
+
+The buffer is FIFO: oldest complete pair first. A buffered item stays available if publishing fails. A successfully posted item is removed so it cannot be posted again.
+
+Artifacts from the producer/test workflows remain downloadable from their GitHub Actions runs for seven days. The durable media queue is the GitHub Release buffer itself.
