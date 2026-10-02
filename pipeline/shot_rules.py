@@ -129,8 +129,21 @@ def _rewrite(story: dict, jobs: list[dict]) -> dict:
         ans = images._gemini_json(ask) or {}
     except Exception:  # noqa: BLE001
         ans = {}
+
+    # Gemini occasionally returns the requested `shots` array directly instead of
+    # wrapping it in {"shots": [...]}. Normalize both valid shapes so this optional
+    # rewrite stage can never crash the production pipeline.
+    if isinstance(ans, dict):
+        shot_items = ans.get("shots") or []
+    elif isinstance(ans, list):
+        shot_items = ans
+    else:
+        shot_items = []
+
     out = {}
-    for s in ans.get("shots") or []:
+    for s in shot_items:
+        if not isinstance(s, dict):
+            continue
         p = str(s.get("prompt", "")).strip()
         if p and not _GORE.search(p):
             out[str(s.get("id", ""))] = p
