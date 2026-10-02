@@ -96,8 +96,18 @@ jobs:
         run: |
           pip install -q rembg onnxruntime || echo "rembg install failed, the gray-background key is used"
 
-      - name: Make video
+      - name: Check production buffer
+        id: buffer
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          count=$(cd pipeline && python buffer_status.py)
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "Production buffer contains $count waiting video(s)."
+
+      - name: Make video only when buffer is empty
         id: make
+        if: steps.buffer.outputs.count == '0'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -118,7 +128,7 @@ jobs:
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
         run: cd pipeline && python main.py
 
-      - name: Post generated video immediately
+      - name: Post next buffered video
         if: success()
         id: publish
         env:
