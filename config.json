@@ -47,6 +47,13 @@
 
   "effects": {"parallax": true, "fog": true, "fog_strength": 0.22, "dust": false, "flicker": true, "shake": true},
 
+  "persona_live": {
+    "enabled": false,
+    "root": "",
+    "driving_video": "",
+    "frames": 64,
+    "timeout": 300
+  },
   "ai_motion": {
     "enabled": true,
     "max_shots": 1,
