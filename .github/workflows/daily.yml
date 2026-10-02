@@ -1,39 +1,150 @@
 name: Daily horror video
 
-# Publisher: no generation here. Takes the oldest finished video from the "buffer" release (filled by build.yml),
-# sends it to TikTok, deletes it from the buffer and sends the phone alert. About a minute.
+# Every 3 hours: if fewer than BUFFER_SIZE finished videos are waiting on the "buffer" release, make one.
+# A failed build (Gemini 503, image quota...) exits quietly and the next run tries again; the phone alert only
+# goes out when the buffer is empty. Every build is production, and every rendered video enters the buffer.
 on:
   schedule:
-    # Twice a day, in UTC. 15:40 UTC = 11:40 AM New York, 00:40 UTC = 8:40 PM New York (daylight time).
     - cron: "40 15 * * *"
     - cron: "40 0 * * *"
   workflow_dispatch:
 
 permissions:
   contents: write
-  actions: write   # lets an empty-buffer slot start build.yml
 
-# Shared with build.yml, so a build and a publish never write history.json at the same time.
+# Shared with daily.yml, so a build and a publish never write history.json at the same time.
 concurrency:
   group: night-files
   cancel-in-progress: false
 
+env:
+  BUFFER_SIZE: 3
+
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: pip
 
-      - name: Install
-        run: pip install -q requests google-api-python-client google-auth
+      - name: Install system tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg espeak-ng fonts-dejavu-core > /dev/null
 
-      - name: Post the oldest buffered video to TikTok + YouTube Shorts
+      - name: Get caption font (Anton, free license)
+        run: |
+          mkdir -p assets/fonts
+          if [ ! -s assets/fonts/Anton-Regular.ttf ]; then
+            curl -fsSL -o assets/fonts/Anton-Regular.ttf \
+              https://raw.githubusercontent.com/google/fonts/main/ofl/anton/Anton-Regular.ttf || true
+          fi
+
+      - name: Cache models (voice, depth, SD-Turbo)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-models-v4  # v4: + CLIP ViT-B/32 (asset library embeddings)
+
+      - name: Real media search cache (24 h, Pexels / Pixabay / Wikimedia / Smithsonian)
+        uses: actions/cache@v4
+        with:
+          path: cache/media-search
+          key: media-search-${{ github.run_id }}
+          restore-keys: media-search-
+
+      - name: Cloudflare neurons used today (every build adds to it)
+        uses: actions/cache/restore@v4
+        with:
+          path: cache/cf-usage
+          key: cf-usage-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: cf-usage-
+
+      - name: Restore the checkpoint of an unfinished build
+        uses: actions/cache/restore@v4
+        with:
+          path: cache/checkpoint
+          key: ckpt-${{ github.run_id }}
+          restore-keys: ckpt-
+
+      - name: Install Python packages
+        run: |
+          pip install -q torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -q -r requirements.txt
+
+      - name: Is cutout mode on for this build?
+        id: cutout
+        run: |
+          on=$(python -c "import json;c=json.load(open('config.json'));print('true' if c.get('render_style')=='cutout' or c.get('cutout_for_modes') else 'false')")
+          echo "on=$on" >> "$GITHUB_OUTPUT"
+
+      - name: Cache cut-out models (rembg)
+        if: steps.check.outputs.build == 'true' && steps.cutout.outputs.on == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.u2net
+          key: rembg-models-v1
+
+      - name: Install cut-out tools (rembg; the code falls back to a gray-background key without it)
+        if: steps.check.outputs.build == 'true' && steps.cutout.outputs.on == 'true'
+        run: |
+          pip install -q rembg onnxruntime || echo "rembg install failed, the gray-background key is used"
+
+      - name: Make video
+        id: make
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+          # real media first (each source is skipped if its key is missing)
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          SI_API_KEY: ${{ secrets.SI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}  # backup story writer (skipped if missing)
+          # only used to make up a missed publish slot right after the build
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+          TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+        run: cd pipeline && python main.py
+
+      - name: Save today's Cloudflare usage (also when the build failed)
+        if: always() && steps.check.outputs.build == 'true' && hashFiles('cache/cf-usage/usage.json') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: cache/cf-usage
+          key: cf-usage-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Save new TikTok token if TikTok rotated it (make-up post)
+        if: always() && hashFiles('.new_refresh_token') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          if [ -n "$GH_TOKEN" ]; then
+            gh secret set TIKTOK_REFRESH_TOKEN --repo "${{ github.repository }}" < .new_refresh_token
+            echo "Refresh token updated."
+          else
+            echo "::warning::TikTok gave a new refresh token but GH_PAT is not set, so it could not be saved."
+          fi
+          rm -f .new_refresh_token
+
+      - name: Save story history after generation
+        if: success()
+        run: bash pipeline/push_state.sh "Generated story"
+
+      - name: Post the generated video to TikTok + YouTube Shorts
         id: publish
+        if: success()
         env:
           TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
           TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
@@ -58,37 +169,22 @@ jobs:
           fi
           rm -f .new_refresh_token
 
-      - name: Save history + missed slot
+      - name: Save history after posting
         if: success()
         run: bash pipeline/push_state.sh "Posted story"
 
-      - name: Buffer was empty - start a build now (it posts as soon as the video is ready)
-        if: success() && hashFiles('.trigger_build') != ''
-        # github.token may dispatch workflows (permissions: actions: write above); the fine-grained GH_PAT has no
-        # Actions permission (HTTP 403 turned runs 28-32 red), so it is only a fallback. If both fail the run ends
-        # red with a phone alert; the next :50 cron build still fills the buffer and posts the missed slot.
-        env:
-          RUN_TOKEN: ${{ github.token }}
-          PAT: ${{ secrets.GH_PAT }}
-          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
-        run: |
-          for t in RUN_TOKEN PAT; do
-            [ -n "${!t}" ] || continue
-            if GH_TOKEN="${!t}" gh workflow run build.yml --repo "${{ github.repository }}" --ref main; then
-              echo "build.yml started ($t)"; exit 0
-            fi
-          done
-          cd pipeline && python -c "from notify import notify_text; notify_text('Build NOT started', 'Buffer was empty but build.yml could not be started (see the daily.yml log). The next cron build (:50) still fills the buffer and posts the missed slot.', warn=True)"
-          exit 1
-
-      - name: Keep the posted video for download (7 days)
+      - name: Keep the generated/post result for download (7 days)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          # The channel's own post number (data/counter.json); a slot that posted nothing gets no number.
-          name: ${{ steps.publish.outputs.video_number && format('video-{0}', steps.publish.outputs.video_number) || format('unposted-{0}', github.run_id) }}
+          name: ${{ steps.publish.outputs.video_number && format('video-{0}', steps.publish.outputs.video_number) || format('run-{0}', github.run_id) }}
           path: |
-            output/publish/final.mp4
-            output/publish/caption.txt
+            output/**/final.mp4
+            output/**/caption.txt
+            output/**/story.json
+            output/**/poses_sheet.png
+            output/**/plates_sheet.png
+            output/**/contact_sheet.png
+            output/**/summary.txt
           retention-days: 7
           if-no-files-found: ignore
