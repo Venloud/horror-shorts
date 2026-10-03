@@ -527,31 +527,18 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
     # 2) Chain crossfades (every clip normalized to 1080x1920 / 30 fps / yuv420p / SAR 1, audio dropped)
     joined = _join(clips, seg, scene_cut, workdir / "joined.mp4", trans)
 
-    # 3) Final pass: colour grade, grain, vignette, captions, audio mix
+    # 3) Final pass: colour grade, grain, vignette, captions, narration/SFX audio. Music is added separately.
     font, fontsdir = font_setup()
     ass_arg = str(ass_path).replace("\\", "/").replace(":", "\\:")
     ass_filter = f"ass='{ass_arg}'" + (f":fontsdir='{fontsdir}'" if fontsdir else "")
-    music, music_source = _music_for_render(workdir, total)
-    story["music_file"] = music.name if music else None
-    story["music_source"] = music_source
+    # Background music is deliberately a separate post-render stage.
+    story["music_file"] = None
+    story["music_source"] = "pending_separate_post_mix"
     sting = _pick_file(ROOT / "assets" / "stings")
     ins = ["-i", str(joined), "-i", str(narration["path"])]
-    achain = ["[1:a]aformat=sample_rates=48000:channel_layouts=stereo,asplit=2[narr][key]"]
+    achain = ["[1:a]anull[narr]"]
     mix = ["[narr]"]
     idx = 2
-    if music:
-        ins += ["-stream_loop", "-1", "-i", str(music)]
-        mv = CONFIG.get("track_volumes", {}).get(music.name, CONFIG.get("music_volume", 0.22))
-        achain.append(
-            f"[{idx}:a]aformat=sample_rates=48000:channel_layouts=stereo,atrim=0:{total:.2f},"
-            f"loudnorm=I=-18:TP=-2,"  # even out loud/quiet songs first
-            f"volume={mv},afade=t=in:d=1.5,afade=t=out:st={total - 2.0:.2f}:d=2.0[mus]"
-        )
-        achain.append("[mus][key]sidechaincompress=threshold=0.04:ratio=5:attack=30:release=500[duck]")
-        mix.append("[duck]")
-        idx += 1
-    else:
-        achain.append("[key]anullsink")
     if sting:
         twist = int(story.get("twist_scene", len(starts) - 2))
         at_ms = int(max(0.0, starts[min(twist, len(starts) - 1)] - 0.15) * 1000)
