@@ -263,5 +263,7 @@
     "persona_live_local_optional",
     "huggingface_zerogpu",
     "free_3d_parallax"
-  ]
+  ],
+  "nvidia_text_model": "z-ai/glm-5.3-flash",
+  "modelscope_text_model": "Qwen/Qwen3.5-27B"
 }
