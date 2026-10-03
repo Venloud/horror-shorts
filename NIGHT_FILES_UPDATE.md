@@ -760,3 +760,45 @@ If you do not add any new keys, Night Files still runs with the existing provide
 All changed files were fetched back from GitHub after implementation. No live provider generation was triggered during this code-edit pass, so actual account quotas, endpoint availability, and generated media quality remain runtime checks. The next validation should be buffer_fill.yml, followed by inspection of output/<stamp>/run_manifest.json.
 
 See docs/FREE_PROVIDER_ARCHITECTURE.md for the full architecture and manual setup list.
+
+
+## GitHub Actions workflow-role separation, 2026-10-03
+
+Added an explicit repository CI layer and documented the boundary between validation, TikTok OAuth, generation, and publishing workflows.
+
+### Implementation
+
+- Added `.github/workflows/ci.yml`.
+- CI runs automatically on pushes to `main` and pull requests targeting `main`.
+- CI validates Python syntax with `compileall`.
+- CI validates `config.json` and pipeline JSON manifests.
+- CI runs the existing Ruflo validators when they are present.
+- CI verifies critical Night Files production files exist.
+- CI has only `contents: read` permissions.
+- CI does not exchange OAuth codes, write repository secrets, publish videos, or call TikTok/YouTube publishing APIs.
+
+### Workflow boundaries
+
+- `ci.yml` = repository health and code validation.
+- `connect-tiktok.yml` = one-time TikTok OAuth connection and refresh-token storage.
+- `buffer_fill.yml` = generate content into the buffer without publishing.
+- `daily.yml` = scheduled distribution of buffered content.
+- `yt_check.yml` = YouTube credential validation.
+- `yt_backfill.yml` = separate historical TikTok-to-YouTube backfill path.
+
+This prevents an authentication failure from being mistaken for CI, and prevents a generation failure from being mistaken for a publishing failure.
+
+### Documentation
+
+- Added `docs/GITHUB_WORKFLOW_ROLES.md` with the workflow-by-workflow responsibilities and debugging boundaries.
+- Added the same distinction to `README.md`.
+
+### Commits
+
+- `7f3ed48509c0cf8835a1fa855c623aa7ab07878a` - Add repository CI validation workflow.
+- `b458634c308cc86ec012cb2f1537dc1a57a24bf5` - Document GitHub Actions workflow roles.
+- `2e26c802dab5591c6254de0101d5ac6e2edf1ff3` - Document workflow roles in README.
+
+### Validation boundary
+
+The CI workflow itself was added but not executed by this edit operation. The first push to `main` should trigger it automatically. The workflow is intentionally non-publishing and cannot alter TikTok or YouTube credentials.
