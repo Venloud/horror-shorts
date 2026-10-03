@@ -183,10 +183,12 @@
   "caption_highlight": "#FFD84D",
   "caption_words_per_group": 1,
   "music_volume": 0.14,
-  "track_volumes": {
-    "unsolved_mystery.mp3": 0.14
+  "music_policy": "procedural_only",
+  "approved_music": [],
+  "track_volumes": {},
+  "music_credits": {
+    "procedural_original": "Generated locally by FFmpeg for Night Files; no third-party recording."
   },
-  "music_credits": {},
   "sting_volume": 0.55,
   "sfx_volume": 0.32,
   "sfx_max_seconds": 4.5,
