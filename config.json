@@ -7,6 +7,7 @@
   "story_words": [138, 152],
 
   "subgenre_prompts": {
+    "randomly catching feelings for a stranger (fictional romantic psychological horror)": "fiction_stranger_feelings.txt",
     "'rules' horror (a list of strange rules at a job or place)": "fiction_creepy_job.txt",
     "late-night job gone wrong (night shift, security guard, gas station)": "fiction_creepy_job.txt"
   },
@@ -113,6 +114,7 @@
     "someone has been living in my house",
     "glitch in the matrix: a small impossible thing that keeps happening",
     "online marketplace or app meetup that goes wrong",
+    "randomly catching feelings for a stranger (fictional romantic psychological horror)",
     "small town with a secret everyone keeps"
   ],
 
