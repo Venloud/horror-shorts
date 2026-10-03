@@ -117,7 +117,11 @@ def install(namespace: dict) -> None:
         "hf_quota_checks": 0,
     })
     state.setdefault("pollinations_out", False)
+    state.setdefault("nvidia_out", False)
+    state.setdefault("modelscope_out", False)
     state.setdefault("hf_quota_unknown", False)
+    state.setdefault("broker_counts", {}).setdefault("nvidia", 0)
+    state.setdefault("broker_counts", {}).setdefault("modelscope", 0)
 
     config = namespace.get("CONFIG", {})
     polli_size = config.get("pollinations_image_size", [576, 1024])
@@ -126,7 +130,36 @@ def install(namespace: dict) -> None:
     hf_min_seconds = int(config.get("hf_min_quota_seconds", 65))
 
     def broker_hf(prompt: str, seed: int, width=None, height=None, steps=None) -> bytes:
-        # Tier 2: Pollinations. It is opt-in by the presence of a secret/key,
+        # Tier 2: NVIDIA FLUX.2-klein-4b. Optional free/preview access requires
+        # the owner's NVIDIA API key. Never assume capacity without the key.
+        nvidia_key = os.environ.get("NVIDIA_API_KEY") or os.environ.get("NVIDIA_NIM_API_KEY")
+        nvidia_max = int(config.get("nvidia_image_max", 12))
+        if nvidia_key and not state["nvidia_out"] and state["broker_counts"]["nvidia"] < nvidia_max:
+            try:
+                from providers import nvidia
+                raw = nvidia.generate_image(prompt, seed, steps or int(CONFIG.get("image_steps", 4)))
+                state["broker_counts"]["nvidia"] += 1
+                namespace["log"](f"Image broker: provider=nvidia model=flux.2-klein-4b count={state['broker_counts']['nvidia']}/{nvidia_max}")
+                return raw
+            except Exception as exc:
+                state["nvidia_out"] = True
+                namespace["log"](f"Image broker: NVIDIA failed, falling through: {type(exc).__name__}: {str(exc)[:180]}")
+
+        # Tier 3: ModelScope Qwen-Image. Optional registration/token tier.
+        ms_key = os.environ.get("MODELSCOPE_TOKEN") or os.environ.get("MODELSCOPE_API_KEY")
+        ms_max = int(config.get("modelscope_image_max", 12))
+        if ms_key and not state["modelscope_out"] and state["broker_counts"]["modelscope"] < ms_max:
+            try:
+                from providers import modelscope
+                raw = modelscope.generate_image(prompt, model=config.get("modelscope_image_model", "Qwen/Qwen-Image-2.1"))
+                state["broker_counts"]["modelscope"] += 1
+                namespace["log"](f"Image broker: provider=modelscope model={config.get('modelscope_image_model', 'Qwen/Qwen-Image-2.1')} count={state['broker_counts']['modelscope']}/{ms_max}")
+                return raw
+            except Exception as exc:
+                state["modelscope_out"] = True
+                namespace["log"](f"Image broker: ModelScope failed, falling through: {type(exc).__name__}: {str(exc)[:180]}")
+
+        # Tier 4: Pollinations. It is opt-in by the presence of a secret/key,
         # never assumed to be free or unlimited.
         if _enabled() and _key() and not state["pollinations_out"]:
             if state["broker_counts"]["pollinations"] < polli_max:
@@ -185,8 +218,8 @@ def install(namespace: dict) -> None:
     namespace["_IMAGE_PROVIDER_BROKER_INSTALLED"] = True
 
     namespace["log"](
-        "Image provider broker installed: Cloudflare -> "
-        + ("Pollinations -> " if _key() else "")
-        + "HF ZeroGPU -> local SD-Turbo; "
+        "Image provider broker installed: Cloudflare -> NVIDIA -> ModelScope -> Pollinations -> HF ZeroGPU -> local SD-Turbo; "
+        + ("NVIDIA key detected; " if (os.environ.get("NVIDIA_API_KEY") or os.environ.get("NVIDIA_NIM_API_KEY")) else "NVIDIA standby; ")
+        + ("ModelScope key detected; " if (os.environ.get("MODELSCOPE_TOKEN") or os.environ.get("MODELSCOPE_API_KEY")) else "ModelScope standby; ")
         + ("Pollinations key detected" if _key() else "Pollinations standby (no key)")
     )
