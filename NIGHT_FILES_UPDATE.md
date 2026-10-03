@@ -927,3 +927,6 @@ Commits:
 - `36ad3c23b0cb63de3f64563ff95286c3f167efc5` - publish `production_gate.json` with buffer-fill artifacts.
 
 The gate evidence is now downloadable from the same Actions run that produced the video.
+
+
+- `cfd3a6aba6fbb3ce6fcc1d992e68569e260e361c` - clarify that readiness credential checks are warnings, not false claims of verified secrets.
