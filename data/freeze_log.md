@@ -34,3 +34,15 @@ first production build passes QA and left lifted.
 - Buffer now: 1 video(s)
 - Missed slot waiting for a make-up: Fri Oct 02, 02:12 AM New York
 - Cloudflare 2026-10-01 UTC: no record
+
+## 2026-10-03 05:50 UTC: Night Files freeze day 2/7
+- Posted #31 The Corpse That Chewed Its Shroud (lore): YouTube public https://youtube.com/shorts/d-NAQNa3jGQ; TikTok ok
+- Posted #32 The Green Children of Woolpit (mystery): YouTube public https://youtube.com/shorts/VcHDx2iaSEA; TikTok ok
+- Posted #33 Municipal Water Reservoir Security Camera (fiction): YouTube public https://youtube.com/shorts/8qntiTftNv0; TikTok ok
+- Built: The Corpse That Chewed Its Shroud (lore, writer gemini (gemini-3.5-flash-lite), critic 92, 8 AI / 6 real)
+- Built: The Green Children of Woolpit (mystery, writer gemini (gemini-3.5-flash-lite), critic 91, 15 AI / 1 real)
+- Built: Municipal Water Reservoir Security Camera (fiction, writer gemini (gemini-3.5-flash-lite), critic None, 14 AI / 1 real)
+- Build runs: 6 (0 failed)
+- Buffer now: 0 video(s)
+- Missed slot waiting for a make-up: Fri Oct 02, 02:12 AM New York
+- Cloudflare 2026-10-02 UTC: 9043/10000 neurons (tests 922, production 8122, ~52 images)
