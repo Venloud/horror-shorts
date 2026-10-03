@@ -12,10 +12,42 @@
       "artifact_expires": "2026-10-02T01:03Z",
       "duration": 79.9,
       "tiktok_publish_id": "v_inbox_file~v2.7689271753075623966",
-      "status": "queued",
+      "status": "uploaded",
       "reason": null,
-      "qa": "passed (local check 2026-10-01)",
-      "stashed": true
+      "qa": "passed",
+      "stashed": true,
+      "tiktok_published": true,
+      "tiktok_match_source": "backfill.json:tiktok_publish_id",
+      "yt_title": "Blindfold To Sleep Every Night... Footsteps on the Ceiling #shorts",
+      "hashtags": [
+        "scarystories",
+        "horrorstory",
+        "creepypasta"
+      ],
+      "yt_tags": [
+        "footsteps on the ceiling",
+        "scary story",
+        "horror story",
+        "top floor apartment",
+        "upside down footsteps",
+        "creepy bedroom story",
+        "attic noise scary",
+        "ghost story",
+        "scary short story",
+        "bedtime scary story",
+        "creepy ceiling footsteps",
+        "fictional horror story",
+        "footsteps on the ceiling story",
+        "creepy story",
+        "short horror story"
+      ],
+      "youtube": {
+        "id": "T_DNGqnSc_A",
+        "url": "https://youtube.com/shorts/T_DNGqnSc_A",
+        "privacy": "public",
+        "wanted": "public"
+      },
+      "uploaded_at": "2026-10-03T09:54Z"
     },
     {
       "stamp": "2026-09-25_0228",
@@ -31,7 +63,9 @@
       "status": "queued",
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
-      "stashed": true
+      "stashed": true,
+      "tiktok_published": true,
+      "tiktok_match_source": "backfill.json:tiktok_publish_id"
     },
     {
       "stamp": "2026-09-25_0412",
@@ -47,7 +81,9 @@
       "status": "queued",
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
-      "stashed": true
+      "stashed": true,
+      "tiktok_published": true,
+      "tiktok_match_source": "backfill.json:tiktok_publish_id"
     },
     {
       "stamp": "2026-09-25_0637",
@@ -63,7 +99,9 @@
       "status": "queued",
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
-      "stashed": true
+      "stashed": true,
+      "tiktok_published": true,
+      "tiktok_match_source": "backfill.json:tiktok_publish_id"
     },
     {
       "stamp": "2026-09-25_1930",
@@ -80,7 +118,9 @@
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
       "stashed": true,
-      "note": "one shot with fake handwriting (old French parchment)"
+      "note": "one shot with fake handwriting (old French parchment)",
+      "tiktok_published": true,
+      "tiktok_match_source": "backfill.json:tiktok_publish_id"
     },
     {
       "stamp": "2026-09-26_0327",
@@ -98,7 +138,9 @@
       "qa": "passed (local check 2026-10-01)",
       "stashed": true,
       "note": "one shot with a garbled name plate",
-      "remade": true
+      "remade": true,
+      "tiktok_published": true,
+      "tiktok_match_source": "backfill.json:tiktok_publish_id"
     },
     {
       "stamp": "2026-09-26_0443",
@@ -114,7 +156,9 @@
       "status": "queued",
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
-      "stashed": true
+      "stashed": true,
+      "tiktok_published": true,
+      "tiktok_match_source": "backfill.json:tiktok_publish_id"
     },
     {
       "stamp": "2026-09-26_0514",
@@ -130,7 +174,9 @@
       "status": "queued",
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
-      "stashed": true
+      "stashed": true,
+      "tiktok_published": true,
+      "tiktok_match_source": "backfill.json:tiktok_publish_id"
     },
     {
       "stamp": "2026-09-26_0529",
@@ -147,7 +193,9 @@
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
       "stashed": true,
-      "note": "one shot with a garbled court document"
+      "note": "one shot with a garbled court document",
+      "tiktok_published": true,
+      "tiktok_match_source": "backfill.json:tiktok_publish_id"
     },
     {
       "stamp": "2026-09-26_2244",
@@ -163,7 +211,9 @@
       "status": "queued",
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
-      "stashed": true
+      "stashed": true,
+      "tiktok_published": true,
+      "tiktok_match_source": "backfill.json:tiktok_publish_id"
     },
     {
       "stamp": "2026-09-26_2325",
@@ -180,7 +230,9 @@
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
       "stashed": true,
-      "note": "garbled diner sign in one shot"
+      "note": "garbled diner sign in one shot",
+      "tiktok_published": true,
+      "tiktok_match_source": "backfill.json:tiktok_publish_id"
     },
     {
       "stamp": "2026-09-27_0546",
@@ -196,7 +248,9 @@
       "status": "queued",
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
-      "stashed": true
+      "stashed": true,
+      "tiktok_published": true,
+      "tiktok_match_source": "backfill.json:tiktok_publish_id"
     },
     {
       "stamp": "2026-09-27_2014",
@@ -212,7 +266,9 @@
       "status": "queued",
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
-      "stashed": true
+      "stashed": true,
+      "tiktok_published": true,
+      "tiktok_match_source": "backfill.json:tiktok_publish_id"
     },
     {
       "stamp": "2026-09-28_0943",
@@ -233,7 +289,9 @@
         "id": "Khcw2HPvxTU",
         "url": "https://youtube.com/shorts/Khcw2HPvxTU",
         "privacy": "public"
-      }
+      },
+      "tiktok_published": true,
+      "tiktok_match_source": "backfill.json:tiktok_publish_id"
     },
     {
       "stamp": "2026-09-28_1953",
@@ -249,7 +307,9 @@
       "status": "skipped",
       "reason": "known bad: the airplane-cabin D.B. Cooper (comic panel grids, garbled note, '20k' slang)",
       "qa": "passed (local check 2026-10-01)",
-      "stashed": false
+      "stashed": false,
+      "tiktok_published": true,
+      "tiktok_match_source": "backfill.json:tiktok_publish_id"
     },
     {
       "stamp": "2026-09-29_0119",
@@ -257,7 +317,8 @@
       "mode": "lore",
       "video_number": null,
       "status": "skipped",
-      "reason": "never posted on TikTok (buffered only; old buffer purged or still waiting)"
+      "reason": "never posted on TikTok (buffered only; old buffer purged or still waiting)",
+      "tiktok_published": false
     },
     {
       "stamp": "2026-09-29_0339",
@@ -265,7 +326,8 @@
       "mode": "inbox-script",
       "video_number": null,
       "status": "skipped",
-      "reason": "never posted on TikTok (buffered only; old buffer purged or still waiting)"
+      "reason": "never posted on TikTok (buffered only; old buffer purged or still waiting)",
+      "tiktok_published": false
     },
     {
       "stamp": "2026-09-29_1820",
@@ -273,7 +335,8 @@
       "mode": "inbox-script",
       "video_number": null,
       "status": "skipped",
-      "reason": "never finished (skipped story)"
+      "reason": "never finished (skipped story)",
+      "tiktok_published": false
     },
     {
       "stamp": "2026-09-30_0603",
@@ -281,7 +344,8 @@
       "mode": "case",
       "video_number": 28,
       "status": "skipped",
-      "reason": "already on YouTube (zJW9LJSUZ_M); also known bad (#28 frozen gavel)"
+      "reason": "already on YouTube (zJW9LJSUZ_M); also known bad (#28 frozen gavel)",
+      "tiktok_published": false
     },
     {
       "stamp": "2026-09-30_2022",
@@ -290,7 +354,8 @@
       "video_number": 29,
       "status": "skipped",
       "reason": "already on YouTube (03EE6zzqf04, #29, kept there by the owner); remade by inbox/bloody_mary_remake.txt (posts to TikTok + YouTube)",
-      "remade": true
+      "remade": true,
+      "tiktok_published": false
     },
     {
       "stamp": "2026-10-01_0053",
@@ -298,7 +363,8 @@
       "mode": "lore",
       "video_number": null,
       "status": "skipped",
-      "reason": "already on YouTube (i_JUW5QpUck, posted #30 by daily.yml)"
+      "reason": "already on YouTube (i_JUW5QpUck, posted #30 by daily.yml)",
+      "tiktok_published": false
     }
   ],
   "unmatched_lines": []
