@@ -175,10 +175,26 @@ def resize_story(story: dict, api_key: str, want_words: int) -> dict:
 
 
 def pick_subgenre(history: list[dict]) -> str:
-    """Pick the least-recently/least-often used subgenre, with a little randomness."""
+    """Pick a fresh subgenre, with an analytics-driven priority lane for proven topics."""
     subs = CONFIG["subgenres"]
     recent = [h.get("subgenre") for h in history[-len(subs):]]
     counts = Counter(recent)
+
+    # Analytics can promote a proven content cluster without destroying the normal
+    # least-recently/least-often-used rotation. A priority topic cannot repeat inside
+    # the configured recent window, so a strong search signal does not become spam.
+    priority = [s for s in CONFIG.get("priority_subgenres", []) if s in subs]
+    probability = float(CONFIG.get("priority_subgenre_probability", 0))
+    recent_window = max(0, int(CONFIG.get("priority_subgenre_recent_window", 0)))
+    blocked = set(recent[-recent_window:]) if recent_window else set()
+
+    if priority and probability > 0 and random.random() < probability:
+        candidates = [s for s in priority if s not in blocked]
+        if candidates:
+            choice = random.choice(candidates)
+            log(f"Priority topic selected: {choice}")
+            return choice
+
     fresh = [s for s in subs if counts[s] == 0]
     return random.choice(fresh or subs)
 
