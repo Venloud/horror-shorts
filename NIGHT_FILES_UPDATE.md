@@ -918,3 +918,12 @@ Commits:
 - `773d9aa375a0b7943a911bd1e3a7b72d6e40252` - revalidate buffered media before publishing
 - `8ddb5affa1ab94dac2c4921881f0f3ba0fddc01e` - run readiness in daily generation lane
 - `16046423c9b3b1e138fab6d6c6424d81c57c32fb` - run readiness in buffer-fill lane and require generated artifacts
+
+
+### Production-gate artifact follow-up
+
+- `d59253da10c7b209fc2c7ffcc021bb431c9aa197` - clarify main module's hard-gate behavior.
+- `a742b645efb765655a0c3d14aa323f3fd3912bde` - publish `production_gate.json` with daily workflow artifacts.
+- `36ad3c23b0cb63de3f64563ff95286c3f167efc5` - publish `production_gate.json` with buffer-fill artifacts.
+
+The gate evidence is now downloadable from the same Actions run that produced the video.
