@@ -1,22 +1,31 @@
 {
   "channel_name": "Night Files",
-
   "story_min_score": 80,
   "story_max_drafts": 3,
-
-  "story_words": [138, 152],
-
+  "story_words": [
+    138,
+    152
+  ],
   "subgenre_prompts": {
     "randomly catching feelings for a stranger (fictional romantic psychological horror)": "fiction_stranger_feelings.txt",
     "'rules' horror (a list of strange rules at a job or place)": "fiction_creepy_job.txt",
     "late-night job gone wrong (night shift, security guard, gas station)": "fiction_creepy_job.txt"
   },
-
   "shots_per_scene": 2,
-  "image_spaces": ["black-forest-labs/FLUX.1-schnell", "evalstate/flux1_schnell", "hysts-mcp/FLUX.1-schnell"],
-  "space_image_size": [576, 1024],
+  "image_spaces": [
+    "black-forest-labs/FLUX.1-schnell",
+    "evalstate/flux1_schnell",
+    "hysts-mcp/FLUX.1-schnell"
+  ],
+  "space_image_size": [
+    576,
+    1024
+  ],
   "local_image_model": "stabilityai/sd-turbo",
-  "local_image_size": [512, 896],
+  "local_image_size": [
+    512,
+    896
+  ],
   "local_image_steps": 2,
   "local_image_budget_minutes": 18,
   "local_image_max": 12,
@@ -36,11 +45,23 @@
   "cutout_max_images": 18,
   "cutout_hard_max_images": 20,
   "visual_ab": true,
-  "visual_modes": ["classic", "fast", "analog"],
+  "visual_modes": [
+    "classic",
+    "fast",
+    "analog"
+  ],
   "real_media": true,
-  "real_media_sources": {"pexels": true, "pixabay": true, "wikimedia": true, "smithsonian": true, "loc": true, "openverse": true, "archive": true},
+  "real_media_sources": {
+    "pexels": true,
+    "pixabay": true,
+    "wikimedia": true,
+    "smithsonian": true,
+    "loc": true,
+    "openverse": true,
+    "archive": true
+  },
   "stock_video_max_share": 0.4,
-  "stock_video_max_share_cf_out": 1.0,
+  "stock_video_max_share_cf_out": 1,
   "real_media_auto_tag": true,
   "real_media_when_cf_out": true,
   "honest_place_shots": true,
@@ -49,13 +70,24 @@
   "real_photo_max": 3,
   "real_media_max_candidates": 4,
   "stock_reuse_window": 20,
-  "target_seconds": [61, 68],
+  "target_seconds": [
+    61,
+    68
+  ],
   "qa_max_visual_share": 0.2,
   "qa_min_visuals": 8,
-  "voice_speed_range": [1.0, 1.2],
-
-  "effects": {"parallax": true, "fog": true, "fog_strength": 0.22, "dust": false, "flicker": true, "shake": true},
-
+  "voice_speed_range": [
+    1,
+    1.2
+  ],
+  "effects": {
+    "parallax": true,
+    "fog": true,
+    "fog_strength": 0.22,
+    "dust": false,
+    "flicker": true,
+    "shake": true
+  },
   "persona_live": {
     "enabled": false,
     "root": "",
@@ -69,11 +101,20 @@
     "seconds": 2,
     "timeout": 240,
     "total_budget": 420,
-    "spaces": ["Lightricks/ltx-video-distilled", "multimodalart/wan2-1-fast", "linoyts/wan2-2-i2v-rCM", "DeepRat/LTX-Video-ZeroGPU-Optimized"]
+    "spaces": [
+      "Lightricks/ltx-video-distilled",
+      "multimodalart/wan2-1-fast",
+      "linoyts/wan2-2-i2v-rCM",
+      "DeepRat/LTX-Video-ZeroGPU-Optimized"
+    ]
   },
-
-  "story_modes": ["lore", "mystery", "lore", "case", "coldcase"],
-
+  "story_modes": [
+    "lore",
+    "mystery",
+    "lore",
+    "case",
+    "coldcase"
+  ],
   "story_upgrade": true,
   "story_bible": true,
   "critic_pass": true,
@@ -84,9 +125,21 @@
   "trend_min_ratio": 1.5,
   "trend_sample": 25,
   "discovery": true,
-  "discovery_sources": {"ntsb": true, "newspapers": true, "loc_folklore": true, "duchas": true},
+  "discovery_sources": {
+    "ntsb": true,
+    "newspapers": true,
+    "loc_folklore": true,
+    "duchas": true
+  },
   "discovery_share": 0.25,
-  "newspaper_queries": ["sea serpent", "ghost seen", "haunted house", "strange light in the sky", "mysterious noises", "wild man"],
+  "newspaper_queries": [
+    "sea serpent",
+    "ghost seen",
+    "haunted house",
+    "strange light in the sky",
+    "mysterious noises",
+    "wild man"
+  ],
   "duchas_topic_ids": [],
   "groq_backup": true,
   "groq_model": "openai/gpt-oss-120b",
@@ -95,8 +148,11 @@
   "groq_vision_per_minute": 20,
   "groq_source_chars": 3500,
   "groq_max_tokens": 8000,
-  "llm_models": ["gemini-3.8-flash", "gemini-flash-latest", "gemini-3.5-flash-lite"],
-
+  "llm_models": [
+    "gemini-3.8-flash",
+    "gemini-flash-latest",
+    "gemini-3.5-flash-lite"
+  ],
   "subgenres": [
     "paranormal encounter in an ordinary home",
     "creepypasta-style urban legend",
@@ -117,18 +173,15 @@
     "randomly catching feelings for a stranger (fictional romantic psychological horror)",
     "small town with a secret everyone keeps"
   ],
-
   "voice": "am_michael",
   "voice_speed": 1.1,
   "voice_lang": "a",
-
   "caption_font": "Anton",
   "caption_font_file": "assets/fonts/Anton-Regular.ttf",
   "caption_fallback_font": "DejaVu Sans",
   "caption_size": 96,
   "caption_highlight": "#FFD84D",
   "caption_words_per_group": 1,
-
   "music_volume": 0.14,
   "track_volumes": {
     "unsolved_mystery.mp3": 0.14
@@ -137,12 +190,10 @@
   "sting_volume": 0.55,
   "sfx_volume": 0.32,
   "sfx_max_seconds": 4.5,
-
   "image_style_cf": "dark cinematic horror illustration, painterly digital art, bold ink linework, semi-realistic adult proportions and faces, moody cinematic lighting, deep shadows, muted desaturated colors with warm lamp and moonlight highlights, eerie atmosphere, detailed background, vertical composition, NOT a photograph, not cute, not childlike, not Pixar or Disney style, no text, no speech bubbles, no watermark, no gore",
   "image_check_per_minute": 10,
   "image_check_cloudflare": true,
   "image_style_fallback": "single full-frame cinematic horror illustration, painterly, dark lighting, realistic adult proportions, vertical composition",
-
   "mascot_intro": false,
   "tiktok_mode": "draft",
   "buffer_purge": true,
@@ -163,7 +214,10 @@
   "archive_max": 3,
   "loc_accept_no_known_restrictions": true,
   "research": false,
-  "research_models": ["gemini-2.5-flash", "gemini-2.5-flash-lite"],
+  "research_models": [
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite"
+  ],
   "research_daily_limit": 400,
   "direct_privacy": "SELF_ONLY",
   "tiktok_ai_label": true,
@@ -171,6 +225,25 @@
   "cloudflare_test_share": 0.35,
   "missed_slot_max_hours": 24,
   "min_post_gap_hours": 3,
-  "publish_slots_utc": ["15:40", "00:40"],
-  "lore_creature_shots": 3
+  "publish_slots_utc": [
+    "15:40",
+    "00:40"
+  ],
+  "lore_creature_shots": 3,
+  "pollinations_image_enabled": true,
+  "pollinations_image_model": "flux",
+  "pollinations_image_size": [
+    576,
+    1024
+  ],
+  "pollinations_image_max": 12,
+  "hf_min_quota_seconds": 65,
+  "image_provider_tiers": [
+    "cloudflare_flux",
+    "pollinations_flux_optional",
+    "huggingface_zerogpu",
+    "local_sd_turbo",
+    "same_scene_virtual_crop",
+    "real_media"
+  ]
 }
