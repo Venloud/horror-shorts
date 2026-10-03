@@ -102,5 +102,14 @@ def finish(story: dict) -> None:
     (CK / "done.json").write_text(json.dumps({"story_id": story.get("story_id")}))
 
 
+def finish_from_artifact(story_id_value: str, artifact_name: str = "final.mp4") -> None:
+    """Mark a verified uploaded final video complete, even if a later queue step failed."""
+    clear()
+    CK.mkdir(parents=True, exist_ok=True)
+    (CK / "done.json").write_text(json.dumps({
+        "story_id": story_id_value,
+        "completed_via": "workflow_artifact",
+        "artifact": artifact_name,
+    }, indent=2))
 def clear() -> None:
     shutil.rmtree(CK, ignore_errors=True)
