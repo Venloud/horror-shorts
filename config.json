@@ -9,7 +9,16 @@
   "subgenre_prompts": {
     "randomly catching feelings for a stranger (fictional romantic psychological horror)": "fiction_stranger_feelings.txt",
     "'rules' horror (a list of strange rules at a job or place)": "fiction_creepy_job.txt",
-    "late-night job gone wrong (night shift, security guard, gas station)": "fiction_creepy_job.txt"
+    "late-night job gone wrong (night shift, security guard, gas station)": "fiction_creepy_job.txt",
+    "the story of Queen Esther (biblical historical mystery)": "fiction_esther.txt",
+    "a book with a chilling mystery (original psychological horror)": "fiction_chilling_book.txt",
+    "the stranger who knew me (original psychological horror)": "fiction_stranger.txt",
+    "a family photograph with one extra person (original mystery horror)": "fiction_extra_photo.txt",
+    "the house that added a room (original psychological horror)": "fiction_new_room.txt",
+    "a voicemail from tomorrow (original psychological horror)": "fiction_tomorrow_voicemail.txt",
+    "the last person in the library (original atmospheric horror)": "fiction_last_library_person.txt",
+    "a diary that was not mine (original mystery horror)": "fiction_diary_not_mine.txt",
+    "the dream that started remembering me (original psychological horror)": "fiction_dream_remembers.txt"
   },
   "shots_per_scene": 2,
   "image_spaces": [
@@ -171,7 +180,16 @@
     "glitch in the matrix: a small impossible thing that keeps happening",
     "online marketplace or app meetup that goes wrong",
     "randomly catching feelings for a stranger (fictional romantic psychological horror)",
-    "small town with a secret everyone keeps"
+    "small town with a secret everyone keeps",
+    "the story of Queen Esther (biblical historical mystery)",
+    "a book with a chilling mystery (original psychological horror)",
+    "the stranger who knew me (original psychological horror)",
+    "a family photograph with one extra person (original mystery horror)",
+    "the house that added a room (original psychological horror)",
+    "a voicemail from tomorrow (original psychological horror)",
+    "the last person in the library (original atmospheric horror)",
+    "a diary that was not mine (original mystery horror)",
+    "the dream that started remembering me (original psychological horror)"
   ],
   "voice": "am_michael",
   "voice_speed": 1.1,
