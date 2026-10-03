@@ -240,10 +240,28 @@
   "hf_min_quota_seconds": 65,
   "image_provider_tiers": [
     "cloudflare_flux",
+    "nvidia_flux2_klein_optional",
+    "modelscope_qwen_image_optional",
     "pollinations_flux_optional",
     "huggingface_zerogpu",
     "local_sd_turbo",
     "same_scene_virtual_crop",
     "real_media"
+  ],
+  "nvidia_image_max": 12,
+  "modelscope_image_max": 12,
+  "modelscope_image_model": "Qwen/Qwen-Image-2.1",
+  "nvidia_video": {
+    "enabled": true,
+    "resolution": "480_16_9",
+    "num_frames": 25,
+    "steps": 35,
+    "fps": 24
+  },
+  "video_provider_tiers": [
+    "nvidia_cosmos3_nano_optional",
+    "persona_live_local_optional",
+    "huggingface_zerogpu",
+    "free_3d_parallax"
   ]
 }
