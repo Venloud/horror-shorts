@@ -125,6 +125,14 @@ def main() -> int:
             meta["caption_text"] + "\n\nPIN: " + meta.get("pinned_comment", "")
         )
 
+        # Re-validate the durable buffer asset after download. The producer gate
+        # protects admission; this protects the publish boundary as well.
+        from production_gate import validate_final_video, validate_buffer_metadata, validate_buffer_provenance
+        validate_final_video(mp4)
+        validate_buffer_metadata(out / "caption.json")
+        validate_buffer_provenance(out / "caption.json")
+        log("PRODUCTION GATE: buffered MP4 and provenance re-verified before publishing")
+
         h = _posted_entry(history, video["stamp"], meta.get("story_id"))
         if h:
             _drop_posted(buffer, video, h)
