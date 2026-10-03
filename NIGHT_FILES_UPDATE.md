@@ -719,3 +719,44 @@ The buffer-fill image failure is now addressed with a quota-aware provider broke
 
 ### Verification boundary
 This change was reviewed against current Cloudflare, Hugging Face, and Pollinations documentation before implementation. No live generation run was executed by the code edit itself. The next validation must be the buffer-fill workflow and should verify provider selection, quota preflight, image counts, and creation of a real final.mp4 before any publishing workflow is considered.
+
+## Free-provider + automation architecture implementation, 2026-10-03
+
+Implemented the next architecture layer after researching MoneyPrinterTurbo, Video Factory, Content Machine, the owner-supplied awesome-freellm-apis catalog, and current NVIDIA APIs.
+
+### Provider architecture
+- Added pipeline/provider_registry.py as the declarative modality/provider inventory.
+- Added pipeline/providers/nvidia.py for NVIDIA FLUX.2-klein-4b image generation, Cosmos3-Nano image-to-video/text-to-video, and NVIDIA NIM chat fallback.
+- Added pipeline/providers/modelscope.py for ModelScope Qwen-Image async generation and OpenAI-compatible text fallback.
+- Added pipeline/providers/__init__.py.
+- Added pipeline/video_provider_broker.py for non-blocking NVIDIA Cosmos motion generation.
+- Added pipeline/provider_doctor.py to report optional credential configuration without making generation requests.
+
+### Image broker
+The existing image broker now uses: Cloudflare -> NVIDIA FLUX.2-klein-4b -> ModelScope Qwen-Image -> Pollinations -> Hugging Face ZeroGPU -> local SD-Turbo -> existing same-scene/cached visual fallbacks. Missing credentials simply disable optional tiers.
+
+### Video broker
+pipeline/ai_motion.py now tries NVIDIA Cosmos3-Nano image-to-video when NVIDIA_API_KEY is configured. A failure immediately returns to the existing PersonaLive/Hugging Face/3D path.
+
+### Text broker
+pipeline/story.py now optionally appends NVIDIA NIM and ModelScope models after the existing Gemini/Groq chain. Existing retry and quota behavior remains the controlling layer.
+
+### Run artifact architecture
+Added pipeline/artifacts.py and integrated a run_manifest.json into pipeline/main.py. Each production run records provider configuration, stage states, output artifacts, and final status. This borrows the inspectable/resumable artifact pattern from Content Machine and the staged/checkpointed pattern from Video Factory without adding another runtime framework.
+
+### Configuration and workflows
+config.json now records image/video tiers and optional NVIDIA/ModelScope models. buffer_fill.yml, daily.yml, and daily_media_test.yml receive optional NVIDIA_API_KEY and MODELSCOPE_TOKEN secrets. Existing secrets remain unchanged.
+
+### Owner homework
+Nothing needs to be coded manually. The only optional manual setup is creating provider credentials:
+- NVIDIA API key: required to activate NVIDIA image/video/text tiers. NVIDIA's current free/preview endpoints may require account or phone verification.
+- ModelScope token: required to activate ModelScope image/text tiers.
+- Pollinations API key: optional if you want that tier active.
+- Existing HF, Cloudflare, Gemini, and Groq secrets remain as before.
+
+If you do not add any new keys, Night Files still runs with the existing providers. Adding NVIDIA and ModelScope keys simply gives the broker more fallback capacity.
+
+### Validation boundary
+All changed files were fetched back from GitHub after implementation. No live provider generation was triggered during this code-edit pass, so actual account quotas, endpoint availability, and generated media quality remain runtime checks. The next validation should be buffer_fill.yml, followed by inspection of output/<stamp>/run_manifest.json.
+
+See docs/FREE_PROVIDER_ARCHITECTURE.md for the full architecture and manual setup list.
