@@ -285,5 +285,6 @@
     "free_3d_parallax"
   ],
   "nvidia_text_model": "z-ai/glm-5.3-flash",
-  "modelscope_text_model": "Qwen/Qwen3.5-27B"
+  "modelscope_text_model": "Qwen/Qwen3.5-27B",
+  "music_stage": "separate_post_render"
 }
