@@ -116,10 +116,21 @@ def validate_buffer_metadata(meta_path: Path) -> dict:
     return {"metadata_valid": True, "story_id": meta["story_id"], "title": meta["title"]}
 
 
+def validate_buffer_provenance(meta_path: Path) -> dict:
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    provenance = meta.get("provenance") or {}
+    assets = provenance.get("media_assets") or []
+    story = {"media_assets": assets}
+    result = validate_provenance(story)
+    result["buffer_provenance"] = True
+    return result
+
+
 def gate_final_video(video: Path, story: dict, meta: Path | None = None) -> dict:
     evidence = {"video": validate_final_video(video), "provenance": validate_provenance(story)}
     if meta:
         evidence["metadata"] = validate_buffer_metadata(meta)
+        evidence["provenance"] = validate_buffer_provenance(meta)
     return evidence
 
 
