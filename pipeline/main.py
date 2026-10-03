@@ -1,7 +1,7 @@
-"""Production video generator: story -> voice -> images -> captions -> render -> QA report -> video buffer.
+"""Production video generator: story -> voice -> images -> captions -> render -> QA -> hard production gate -> buffer.
 
-The daily workflow runs this generator and then immediately runs publish.py. A successful render is always queued
-for posting, while QA remains report-only and never blocks a production video from being published.
+The daily workflow runs this generator and then runs publish.py. Diagnostic visual QA remains report-only, but the
+hard production gate rejects invalid/corrupt media or missing provenance before anything reaches the durable buffer.
 """
 import argparse
 import json
