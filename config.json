@@ -18,7 +18,15 @@
     "a voicemail from tomorrow (original psychological horror)": "fiction_tomorrow_voicemail.txt",
     "the last person in the library (original atmospheric horror)": "fiction_last_library_person.txt",
     "a diary that was not mine (original mystery horror)": "fiction_diary_not_mine.txt",
-    "the dream that started remembering me (original psychological horror)": "fiction_dream_remembers.txt"
+    "the dream that started remembering me (original psychological horror)": "fiction_dream_remembers.txt",
+    "Bloody Mary folklore legend (fresh variant, not the existing mirror video)": "fiction_bloody_mary_legend.txt",
+    "Bloody Mary one dark fun fact (folklore/history)": "fiction_bloody_mary_fun_fact.txt",
+    "Where did the Bloody Mary name come from? (folklore origins)": "fiction_bloody_mary_origins.txt",
+    "Bloody Mary lesser-known folklore variation": "fiction_bloody_mary_variations.txt",
+    "Why is the mirror central to Bloody Mary? (folklore explainer)": "fiction_bloody_mary_mirror.txt",
+    "Bloody Mary original fictional spin-off": "fiction_bloody_mary_spin_off.txt",
+    "Bloody Mary fictional bathroom rumor spin-off": "fiction_bloody_mary_school.txt",
+    "Bloody Mary fictional aftermath spin-off": "fiction_bloody_mary_after.txt"
   },
   "shots_per_scene": 2,
   "image_spaces": [
@@ -189,7 +197,15 @@
     "a voicemail from tomorrow (original psychological horror)",
     "the last person in the library (original atmospheric horror)",
     "a diary that was not mine (original mystery horror)",
-    "the dream that started remembering me (original psychological horror)"
+    "the dream that started remembering me (original psychological horror)",
+    "Bloody Mary folklore legend (fresh variant, not the existing mirror video)",
+    "Bloody Mary one dark fun fact (folklore/history)",
+    "Where did the Bloody Mary name come from? (folklore origins)",
+    "Bloody Mary lesser-known folklore variation",
+    "Why is the mirror central to Bloody Mary? (folklore explainer)",
+    "Bloody Mary original fictional spin-off",
+    "Bloody Mary fictional bathroom rumor spin-off",
+    "Bloody Mary fictional aftermath spin-off"
   ],
   "voice": "am_michael",
   "voice_speed": 1.1,
@@ -286,5 +302,17 @@
   ],
   "nvidia_text_model": "z-ai/glm-5.3-flash",
   "modelscope_text_model": "Qwen/Qwen3.5-27B",
-  "music_stage": "separate_post_render"
+  "music_stage": "separate_post_render",
+  "priority_subgenres": [
+    "Bloody Mary folklore legend (fresh variant, not the existing mirror video)",
+    "Bloody Mary one dark fun fact (folklore/history)",
+    "Where did the Bloody Mary name come from? (folklore origins)",
+    "Bloody Mary lesser-known folklore variation",
+    "Why is the mirror central to Bloody Mary? (folklore explainer)",
+    "Bloody Mary original fictional spin-off",
+    "Bloody Mary fictional bathroom rumor spin-off",
+    "Bloody Mary fictional aftermath spin-off"
+  ],
+  "priority_subgenre_probability": 0.4,
+  "priority_subgenre_recent_window": 3
 }
