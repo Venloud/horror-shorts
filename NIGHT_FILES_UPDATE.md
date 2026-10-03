@@ -596,3 +596,33 @@ This is intentional: repeated testing can accumulate finished content without sp
 ### Safety boundary
 
 No TikTok or YouTube credentials were added. The buffer-fill and media-test workflows do not publish. The existing `publish.py` remains the only consumer responsible for platform posting and buffer removal.
+
+## DESIGN.md implementation, 2026-10-02
+
+Added the repository-level DESIGN.md using the DESIGN.md convention highlighted by VoltAgent/awesome-design-md. The upstream collection provides plain-text design-system files for AI agents, covering visual theme, color roles, typography, component styling, layout, depth, responsive behavior, and design guardrails.
+
+### Night Files implementation
+
+- Added DESIGN.md at the repository root.
+- The file is a Night Files-specific system, not a copied third-party brand identity.
+- Defines dark production-control-room surfaces, restrained electric-blue interaction states, semantic status colors, typography, spacing, radii, dashboard components, video review panels, buffer UI, integration cards, and responsive behavior.
+- Explicitly documents the buffer-first UX: Generate -> Buffer -> Scheduled Publisher -> TikTok / YouTube.
+- Requires external-media provenance/license metadata in review surfaces.
+- Explicitly states that yt-dlp downloading a file does not make the media copyright-free.
+- Prohibits occult/illuminati decorative imagery and gratuitous gore in the application chrome.
+- Adds an agent prompt rule telling future coding agents to read DESIGN.md before editing UI.
+
+### Documentation cleanup
+
+- README.md now points future UI work to DESIGN.md as the visual source of truth.
+- CLAUDE.md now records the DESIGN.md integration and the UI/provenance rules.
+
+### Commits
+
+- 958189a327e75811b4c3d8fdf47964cbddb2346d - Add Night Files UI design system (DESIGN.md).
+- 881d923c140f60e01b36e4df71b3326ea777aa9b - Document Night Files design-system source in README.md.
+- 5fb633aeb49d0407b9db085f554affd922d6c115 - Document DESIGN.md integration in CLAUDE.md.
+
+### Upstream reference
+
+- VoltAgent/awesome-design-md: https://github.com/voltagent/awesome-design-md
