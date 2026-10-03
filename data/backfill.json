@@ -60,12 +60,43 @@
       "artifact_expires": "2026-10-02T02:40Z",
       "duration": 70.8,
       "tiktok_publish_id": "v_inbox_file~v2.7689296665102632991",
-      "status": "queued",
+      "status": "uploaded",
       "reason": null,
-      "qa": "passed (local check 2026-10-01)",
+      "qa": "passed",
       "stashed": true,
       "tiktok_published": true,
-      "tiktok_match_source": "backfill.json:tiktok_publish_id"
+      "tiktok_match_source": "backfill.json:tiktok_publish_id",
+      "yt_title": "Vanished in the Malaysian Highlands... Jim Thompson #shorts",
+      "hashtags": [
+        "jimthompson",
+        "malaysia",
+        "unsolvedmysteries",
+        "coldcase"
+      ],
+      "yt_tags": [
+        "jim thompson",
+        "jim thompson disappearance",
+        "malaysia mystery",
+        "unsolved mystery",
+        "true crime story",
+        "missing american businessman",
+        "disappearance in malaysia",
+        "jim thompson case",
+        "cold case mystery",
+        "mysterious disappearance",
+        "malaysian history",
+        "jim thompson story",
+        "true story",
+        "mystery explained",
+        "true crime"
+      ],
+      "youtube": {
+        "id": "5k_ld2Ls8WM",
+        "url": "https://youtube.com/shorts/5k_ld2Ls8WM",
+        "privacy": "public",
+        "wanted": "public"
+      },
+      "uploaded_at": "2026-10-03T13:24Z"
     },
     {
       "stamp": "2026-09-25_0412",
