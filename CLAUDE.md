@@ -704,3 +704,15 @@ Artifacts from the producer/test workflows remain downloadable from their GitHub
 - The Night Files design intentionally does NOT copy one external brand. It uses a dark production-control-room aesthetic tailored to this project.
 - The buffer-first architecture is part of the UI contract: Generate -> Buffer -> Scheduled Publisher -> TikTok / YouTube.
 - External media review must expose provenance/license metadata. yt-dlp downloading a file does not make that file copyright-free.
+
+
+## YouTube backfill eligibility update, 2026-10-03
+
+The YouTube historical backfill no longer hard-depends on data/tiktok_posted.txt when the explicit config flag yt_backfill_trust_publish_ids is enabled. The current config enables this mode because data/backfill.json already contains tiktok_publish_id values captured during TikTok publishing.
+
+Rules:
+- data/tiktok_posted.txt remains the preferred explicit owner inventory when present.
+- If that file is absent, queued videos with tiktok_publish_id are eligible under the explicit trust flag.
+- Videos without a recorded TikTok publish ID remain ineligible.
+- Existing YouTube duplicate detection, render QA, upload quota, daily publish-slot guard, one-upload-per-run limit, and post-success asset deletion remain unchanged.
+- This is historical TikTok -> YouTube backfill only. It does not change the normal buffer -> scheduled publisher flow.
