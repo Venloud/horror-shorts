@@ -52,7 +52,7 @@ def main() -> int:
     if errors:
         return 1
 
-    print("READINESS: PASS: local toolchain, configuration, and required secrets are ready", flush=True)
+    print("READINESS: PASS: local toolchain and configuration are ready; credential presence was reported above", flush=True)
     return 0
 
 
