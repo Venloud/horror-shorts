@@ -256,8 +256,18 @@ def main() -> int:
                         badge="TRUE STORY" if story.get("true_story") else None)
         manifest.stage("render", "started")
         video = render(story, imgs, narration, ass, workdir)
-        manifest.artifact(video, "final-video")
+        manifest.artifact(video, "rendered-video-no-music")
         manifest.stage("render", "complete")
+
+        # Music is a separate post-render layer. The visual/narration render
+        # can be reused if a soundtrack is ever rejected.
+        from background_music import add_background_music
+        manifest.stage("background_music", "started")
+        video = add_background_music(video, workdir, story)
+        manifest.artifact(video, "final-video")
+        manifest.stage("background_music", "complete",
+                       music_source=story.get("music_source"),
+                       music_file=story.get("music_file"))
         if story.get("render_style") == "cutout":  # review sheet for the owner (artifact)
             try:
                 cutout.contact_sheet(video, workdir / "contact_sheet.png")
