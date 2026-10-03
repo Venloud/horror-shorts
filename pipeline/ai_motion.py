@@ -208,6 +208,16 @@ def animate(image: Path, shot_prompt: str, out: Path) -> Path | None:
     if personalive:
         return personalive
 
+    # Optional NVIDIA Cosmos3-Nano I2V lane. It is credential-gated and never blocks
+    # the existing Hugging Face/3D fallback path.
+    try:
+        from video_provider_broker import generate_image_video
+        nvidia_clip = generate_image_video(image, prompt, out)
+        if nvidia_clip:
+            return nvidia_clip
+    except Exception as e:
+        log(f"AI animation: NVIDIA broker unavailable ({type(e).__name__}: {str(e)[:160]})")
+
     start = time.time()
     for space in s["spaces"]:
         if time.time() - start > s["total_budget"]:
