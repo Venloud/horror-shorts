@@ -119,7 +119,8 @@ jobs:
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           SI_API_KEY: ${{ secrets.SI_API_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}  # backup story writer (skipped if missing)
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}  # backup story writer (skipped if missing)
           TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
           TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
           TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
