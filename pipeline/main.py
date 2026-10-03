@@ -132,6 +132,10 @@ def main() -> int:
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M")
     workdir = ROOT / "output" / stamp
     workdir.mkdir(parents=True, exist_ok=True)
+    from artifacts import RunManifest
+    from provider_registry import snapshot as provider_snapshot
+    manifest = RunManifest(workdir)
+    manifest.provider_snapshot(provider_snapshot())
     history = load_history()
     story: dict = {"title": "(no story yet)"}
 
@@ -165,7 +169,9 @@ def main() -> int:
         elif not testing:
             story = checkpoint.resume(history)
         if story is None:
+            manifest.stage("story", "started")
             story = write_story(history)
+            manifest.stage("story", "complete", writer=story.get("writer") or story.get("model"))
             if not testing:
                 checkpoint.start(story)
         if not reused:  # creature on screen (legends), real subjects for the hook + twist, no filler shots
@@ -177,6 +183,8 @@ def main() -> int:
             shot_rules.apply(story)
             if not testing:
                 checkpoint.save_story(story)
+            manifest.stage("story_bible", "complete" if CONFIG.get("story_bible", True) else "skipped")
+            manifest.stage("shot_rules", "complete")
         # Until it's posted, a video is known by its story id (the post number is given by publish.py).
         story["story_id"] = story.get("story_id") or checkpoint.story_id(story)
         if not story.get("visual_mode"):  # A/B test: classic -> fast -> analog (kept on a checkpoint resume)
@@ -232,7 +240,9 @@ def main() -> int:
             import library
             library.fill_shots(story, img_dir, history)  # 1) asset library reuse (never raises)
             media.fill_shots(story, img_dir, history)  # 2) stock video / archive photos + prints (never raises)
+            manifest.stage("visual_sources", "started")
             imgs = images.generate_images(story, img_dir)  # 3) AI for the rest
+            manifest.stage("visual_sources", "complete", summary=library.summary(img_dir))
             vs = library.summary(img_dir)
             story["_visual_sources"] = vs
             log(f"Visual sources: {vs['reused']} reused, {vs['archive_stock']} archive/stock, {vs['ai']} AI")
@@ -244,7 +254,10 @@ def main() -> int:
                         narration["duration"] + tail_for(narration["duration"]), workdir / "captions.ass",
                         end_start=narration["duration"] + END_CARD_DELAY,
                         badge="TRUE STORY" if story.get("true_story") else None)
+        manifest.stage("render", "started")
         video = render(story, imgs, narration, ass, workdir)
+        manifest.artifact(video, "final-video")
+        manifest.stage("render", "complete")
         if story.get("render_style") == "cutout":  # review sheet for the owner (artifact)
             try:
                 cutout.contact_sheet(video, workdir / "contact_sheet.png")
@@ -260,6 +273,7 @@ def main() -> int:
         (workdir / "caption.txt").write_text(caption + "\n\nPIN: " + story.get("pinned_comment", ""))
 
         problems = qa_gate(video, ass, narration, story)
+        manifest.stage("qa", "complete" if not problems else "report", problems=problems)
         write_summary(workdir, story, video, problems)
         if problems:
             # QA is report-only in production. A rendered video is still buffered and posted.
@@ -286,6 +300,10 @@ def main() -> int:
         # Every successful render reaches the production buffer. There is no test-only exit.
 
         buffer.add(stamp, video, meta)
+        manifest.artifact(meta, "caption")
+        manifest.artifact(workdir / "story.json", "story")
+        manifest.stage("buffer", "complete", buffer_count=buffer.count())
+        manifest.finish("success")
         if story.get("render_style", "classic") == "classic":  # QA-passed pictures go into the asset library
             import library
             library.record_video(story, img_dir)
@@ -341,6 +359,8 @@ def main() -> int:
         log(f"Done: '{story['title']}' is in the buffer.")
         return 0
     except Exception as e:  # noqa: BLE001
+        manifest.stage("run", "failed", error=f"{type(e).__name__}: {str(e)[:400]}")
+        manifest.finish("failed")
         traceback.print_exc()
         if testing:
             notify(story, None, error=f"{type(e).__name__}: {e}", prefix=prefix)
