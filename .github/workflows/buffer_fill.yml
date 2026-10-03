@@ -92,6 +92,10 @@ jobs:
           fi
 
 
+      - name: Production readiness preflight
+        if: steps.decide.outputs.generate == 'true'
+        run: cd pipeline && python production_readiness.py
+
       - name: Make and queue one video
         if: steps.decide.outputs.generate == 'true'
         env:
@@ -125,7 +129,7 @@ jobs:
             output/**/contact_sheet.png
             output/**/summary.txt
           retention-days: 7
-          if-no-files-found: ignore
+          if-no-files-found: error
 
       - name: Report final buffer state
         if: always()
