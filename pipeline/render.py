@@ -65,6 +65,43 @@ def _pick_file(folder: Path) -> Path | None:
     return random.choice(files) if files else None
 
 
+def _procedural_music(workdir: Path, seconds: float) -> Path:
+    """Create an original ambient bed locally. No downloaded/commercial recording is used."""
+    out = workdir / "procedural_ambient.mp3"
+    duration = max(1.0, float(seconds))
+    run([
+        "ffmpeg", "-y", "-loglevel", "error",
+        "-f", "lavfi", "-i", f"sine=frequency=110:duration={duration:.2f}",
+        "-f", "lavfi", "-i", f"sine=frequency=164.81:duration={duration:.2f}",
+        "-f", "lavfi", "-i", f"anoisesrc=color=brown:amplitude=0.018:duration={duration:.2f}",
+        "-filter_complex",
+        "[0:a]volume=0.045[a];"
+        "[1:a]volume=0.028[b];"
+        "[2:a]lowpass=f=900,volume=0.20[c];"
+        "[a][b][c]amix=inputs=3:duration=longest:normalize=0,"
+        "lowpass=f=1400,afade=t=in:d=2,afade=t=out:st="
+        f"{max(0.1, duration - 2):.2f}:d=2,alimiter=limit=0.85",
+        "-ar", "48000", "-ac", "2", "-codec:a", "libmp3lame", "-b:a", "128k",
+        str(out),
+    ])
+    return out
+
+
+def _music_for_render(workdir: Path, seconds: float) -> tuple[Path | None, str]:
+    """Return only explicitly approved music; otherwise use original procedural ambience."""
+    policy = str(CONFIG.get("music_policy", "procedural_only")).strip().lower()
+    if policy == "approved_files":
+        approved = set(CONFIG.get("approved_music") or [])
+        files = [
+            p for p in (ROOT / "assets" / "music").glob("*")
+            if p.name in approved and p.suffix.lower() in {".mp3", ".wav", ".m4a", ".ogg", ".flac"}
+        ]
+        if files:
+            return random.choice(files), "approved_configured_file"
+        log("No approved music files configured; using procedural original ambience.")
+    return _procedural_music(workdir, seconds), "procedural_original"
+
+
 def _scene_clip(img: Path, seconds: float, motion: str, out: Path, framing: str = "full") -> Path:
     frames = max(2, int(round(seconds * FPS)))
     z, x, y = (s.format(D=frames) for s in MOTIONS[motion])
@@ -494,8 +531,9 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
     font, fontsdir = font_setup()
     ass_arg = str(ass_path).replace("\\", "/").replace(":", "\\:")
     ass_filter = f"ass='{ass_arg}'" + (f":fontsdir='{fontsdir}'" if fontsdir else "")
-    music = _pick_file(ROOT / "assets" / "music")
+    music, music_source = _music_for_render(workdir, total)
     story["music_file"] = music.name if music else None
+    story["music_source"] = music_source
     sting = _pick_file(ROOT / "assets" / "stings")
     ins = ["-i", str(joined), "-i", str(narration["path"])]
     achain = ["[1:a]aformat=sample_rates=48000:channel_layouts=stereo,asplit=2[narr][key]"]
