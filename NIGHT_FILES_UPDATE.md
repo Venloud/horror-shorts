@@ -1004,3 +1004,29 @@ GitHub distinguishes artifacts from caches: artifacts are for preserving workflo
 - Valid final MP4 uploaded as workflow artifact: checkpoint is marked complete.
 - Valid final MP4 admitted to the durable buffer: checkpoint is already completed by `main.py`.
 - A completed story is never resumed just because an older cache entry still exists; `done.json` blocks resume.
+
+
+## Separate background music + artifact completion boundary, 2026-10-03
+
+The owner requested that the recent video remain usable because the visual/story result is strong, while removing only the copyrighted soundtrack. Background music is therefore restored as a normal production layer, but it is no longer fused into the core visual render.
+
+### Music behavior
+
+- The core render now produces the finished visual + narration/SFX video first.
+- `pipeline/background_music.py` adds the background soundtrack as a separate post-render FFmpeg pass.
+- Default soundtrack remains `procedural_original`: an ambient bed synthesized locally by FFmpeg, so no third-party recording is introduced.
+- The existing `approved_files` policy remains available for deliberately approved local tracks. A track is never treated as safe merely because it exists in `assets/music`.
+- The separate stage records `music_source`, `music_file`, and `music_stage=separate_post_render`.
+- The production gate runs after the music stage, so the actual shipped MP4 is the file being validated.
+
+This means the next production run will have background music again without bringing back the copyrighted recording.
+
+### Checkpoint completion
+
+A checkpoint is still kept when generation fails before a complete final video is preserved.
+
+After the workflow successfully uploads a complete `final.mp4` artifact, the workflow now marks that checkpoint complete and writes `done.json`. Buffer admission still calls `checkpoint.finish()` normally.
+
+This follows the requested boundary: once the complete finished video is preserved as a workflow artifact, the unfinished story should not be regenerated on the next run.
+
+GitHub distinguishes artifacts from caches: artifacts preserve workflow outputs, while caches are intended for reusable intermediate data. citeturn0search0turn0search1
