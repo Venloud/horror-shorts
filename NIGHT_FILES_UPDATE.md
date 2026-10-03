@@ -802,3 +802,49 @@ This prevents an authentication failure from being mistaken for CI, and prevents
 ### Validation boundary
 
 The CI workflow itself was added but not executed by this edit operation. The first push to `main` should trigger it automatically. The workflow is intentionally non-publishing and cannot alter TikTok or YouTube credentials.
+
+
+## Copyrighted music claim fix, 2026-10-03
+
+The YouTube screenshots supplied by the owner show a published Night Files video blocked globally because YouTube Content ID identified **“Everything In Its Right Place” by Radiohead**, with **Beggars Group Digital** listed as claimant. The claim is on the audio track and YouTube states the claimed content exceeds the copyright holder's length limits.
+
+Repository inspection identified the previous Night Files music configuration pointing at `assets/music/unsolved_mystery.mp3`. The render selected a random file from `assets/music`, so that repository recording could enter every generated video.
+
+### Immediate fix
+
+- Removed `assets/music/unsolved_mystery.mp3`.
+- Changed the default music policy to `procedural_only`.
+- Removed the configured third-party track volume entry.
+- Added a locally generated ambient music bed created by FFmpeg from synthesized tones/noise.
+- The renderer now records `story["music_source"]` as `procedural_original` when using the safe fallback.
+- Explicit third-party music can only be used if the configuration is deliberately changed to `approved_files` and the filename is listed in `approved_music`.
+- Added `pipeline/music_rights_check.py`.
+- Added the music-rights validator to `ci.yml`, so an accidental music file cannot silently re-enter the repository under the default policy.
+
+### New safety boundary
+
+Night Files no longer treats “a file exists in assets/music” as permission to use it.
+
+Default behavior:
+
+```text
+music_policy = procedural_only
+assets/music = empty
+render -> original FFmpeg ambient bed
+```
+
+An approved recording requires an explicit configuration entry and an intentional policy change.
+
+This prevents the exact failure shown in the YouTube claim screenshots from recurring through the old random-file selection path.
+
+### Existing published video
+
+The already-published video remains a separate platform-side issue. The screenshots show YouTube offering **Erase song** and **Dispute**. The repository fix prevents future builds from using the removed recording; it does not change an already-uploaded video's copyright state.
+
+### Commits
+
+- `dc97004cea9ee1a674955b08d5753a6a72490f0d` - prevent unapproved music and add original ambient fallback.
+- `a4b9bbe68072cd093621982a5f897385e393fd35` - make music policy procedural-only by default.
+- `c89e26b7d1b36c342ee148c60cc6ffa1b3e32825` - remove unapproved music recording.
+- `b884835ba00a98e4b27c631c528fbc0d03eb7f3d` - add automated music provenance guard.
+- `c7aa3343a731ee92d606d39a9111fb41db371a91` - enforce music provenance in CI.
