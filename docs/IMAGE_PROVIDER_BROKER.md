@@ -119,3 +119,16 @@ The first validation run should be the buffer fill workflow, not YouTube backfil
 - Pollinations current unified image API and authentication documentation.
 
 These external limits can change; the broker therefore treats provider quota/health as runtime state rather than hard-coding a claim that a provider is permanently free or unlimited.
+
+## Final implementation commit ledger
+
+- `a4f0858a0822220297ad5a67dfbd78e40c68d122` - Added the initial quota-aware image provider broker.
+- `204770b6f4236ca79ce149e78a0c89462d7093fd` - Installed the broker into the existing image generator provider slot.
+- `455fdbdf60cbffc0839e0b0596699c75a7cbd5f8` - Fixed broker logging to use the images module namespace correctly.
+- `810bd72d4636087a19f3a39b7e4702daf745de03` - Preserved existing HF provider accounting so the generator's outer cap remains valid.
+- `365cbbd400b836b6ca79baddeb6ffc97db32be70` - Added broker configuration and tier order.
+- `55a3139f4cdab86ed77f1f47e31968ac77c5aa24` - Raised the broker-slot ceiling to 12 total provider attempts so the new tier can actually operate before fallback.
+- `fb5dd85394dd0fb1e6045921a2dafb4db4547f0d` - Passed optional Pollinations credentials into buffer-fill generation.
+- `eff7afdeaf154fc19a248853e78ee1a641897123` - Passed optional Pollinations credentials into daily production generation.
+- `d8592f957280430cbee499995eaba3883505b326` - Added this detailed image-provider broker reference.
+- `27086d3f788094dc598cf6422032d39bb7471318` - Added the cumulative implementation ledger to NIGHT_FILES_UPDATE.md.
