@@ -1030,3 +1030,82 @@ After the workflow successfully uploads a complete `final.mp4` artifact, the wor
 This follows the requested boundary: once the complete finished video is preserved as a workflow artifact, the unfinished story should not be regenerated on the next run.
 
 GitHub distinguishes artifacts from caches: artifacts preserve workflow outputs, while caches are intended for reusable intermediate data. citeturn0search0turn0search1
+
+## Bloody Mary analytics cluster, 2026-10-03
+
+YouTube Studio analytics now show a clear content signal around **Bloody Mary**:
+
+- **Bloody Mary Mirror Legend #Shorts** is the channel's top Short in the supplied 28-day screenshots at **321 views**.
+- Realtime also shows the Bloody Mary video continuing to receive views.
+- Search terms include **bloody mary**, **bloody mary horror**, **bloody mary mirror**, **bloody mary ritual**, **bloody mary shorts**, **bloody mary story**, **what is the story of bloody mary**, and **what does bloody mary look like**.
+- The search-term spread is broader than one exact title, which supports building a small Bloody Mary topic cluster instead of repeatedly making the same mirror video.
+
+### Strategy change
+
+Night Files now treats Bloody Mary as an analytics-priority cluster while preserving the existing duplicate/history protection. The goal is **more Bloody Mary, not eight copies of the same video**.
+
+The cluster contains eight dedicated prompt types:
+
+1. Fresh Bloody Mary folklore variant
+2. One dark fun fact about the folklore/history
+3. Where the Bloody Mary name came from
+4. A lesser-known folklore variation
+5. Why the mirror is central to the legend
+6. An original fictional spin-off inspired by the legend
+7. A fictional bathroom-rumor spin-off
+8. A fictional aftermath spin-off
+
+### Rotation behavior
+
+config.json now contains:
+
+- priority_subgenres: the eight Bloody Mary concepts.
+- priority_subgenre_probability: 0.40.
+- priority_subgenre_recent_window: 3.
+
+On each normal story selection, there is a 40% opportunity to select a Bloody Mary concept. A priority concept that appeared inside the last three selected stories is blocked from immediate priority selection. If the priority lane is not selected or has no eligible candidate, the existing least-recently/least-often-used rotation remains in control.
+
+This preserves the existing story-history system while deliberately responding to the strongest search signal currently visible in YouTube Studio.
+
+### Content rules
+
+The factual/folklore prompts explicitly distinguish legend from verified history. In particular, the origin prompt does not allow the popular association between Bloody Mary and a specific historical person to be presented as settled fact.
+
+The fictional spin-offs are clearly original fiction and are instructed not to copy the standard mirror ritual story. The mirror explainer does not provide ritual instructions.
+
+The existing Night Files safety rules remain in force: adult characters, no gore, sexual content, self-harm, suicide, harm to children, real people, real brands, or named towns.
+
+### Implementation
+
+Added:
+
+- prompts/fiction_bloody_mary_legend.txt
+- prompts/fiction_bloody_mary_fun_fact.txt
+- prompts/fiction_bloody_mary_origins.txt
+- prompts/fiction_bloody_mary_variations.txt
+- prompts/fiction_bloody_mary_mirror.txt
+- prompts/fiction_bloody_mary_spin_off.txt
+- prompts/fiction_bloody_mary_school.txt
+- prompts/fiction_bloody_mary_after.txt
+
+Modified:
+
+- config.json to map and prioritize the cluster.
+- pipeline/story.py so the priority lane is analytics-driven but respects a three-story recent-repeat block and falls back to the original rotation.
+
+### Commits
+
+- f2549fe913423734a2ff72c351ee2aaefa162f6c - add fresh Bloody Mary folklore prompt.
+- e1acfeb049f29bda6bae31df16fbcfe9c7a71dac - add Bloody Mary fun-fact prompt.
+- f82208851ae483fb92a20f5d35c06debb448007d - add Bloody Mary origins prompt.
+- c6346c7b99e9a9e5bd6d4186a80170a29c0f5d1f - add Bloody Mary variation prompt.
+- 5ea0fd07f7cd4e8b16852643dd7ef1900c0256b9 - add mirror-focused prompt.
+- 145853380f237781e508ab4a68f850c148fcd705 - add original fiction spin-off prompt.
+- 3716e4046f8504be9ca65c242def960350ba44f2 - add fictional bathroom-rumor spin-off.
+- 1ea0d41bf143d22781eceaface6d3ae483fb7a50 - add fictional aftermath spin-off.
+- 30fd4103f342ffcb7c97f45388e27ca5eab8ba74 - map the cluster and add analytics priority settings.
+- faddb433bbf8708384e440d56fe1a143711033c3 - implement priority topic selection with repeat protection.
+
+### Validation boundary
+
+The change is configuration/prompt/selection logic only. It does not alter rendering, music, buffer, publishing, or YouTube authentication. The next normal generation run is the live validation that the selected Bloody Mary prompt produces a distinct script and still passes the existing story critic, visual QA, production gate, and buffer flow.
