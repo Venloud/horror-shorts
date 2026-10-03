@@ -719,3 +719,21 @@ Rules:
 
 
 Provider architecture rule: read docs/FREE_PROVIDER_ARCHITECTURE.md before changing provider, media, or orchestration code.
+
+
+## Hard production boundary (2026-10-03)
+
+Before a generated video enters the durable buffer, `pipeline/main.py` must pass `pipeline/production_gate.py`.
+The gate validates the actual final MP4 with ffprobe + full FFmpeg decode, requires 1080x1920 video, audio,
+configured 61-68s duration, and a sane file size. It also validates external-media provenance and the configured
+music policy. `production_gate.json` is written beside the final artifact.
+
+Do not downgrade this gate to report-only. The existing `render.qa_gate()` remains useful for diagnostic/visual
+QA, but a missing/corrupt final file must be a hard failure.
+
+`pipeline/publish.py` repeats the media/provenance validation after downloading the buffered asset. This protects
+the publish boundary from corrupted or incomplete durable-buffer entries.
+
+`pipeline/production_readiness.py` is an offline, zero-provider-cost preflight used by `daily.yml` and
+`buffer_fill.yml`. It checks local tooling/configuration and reports credential warnings. It must not become a
+provider-probing step in the normal free-tier workflow.
