@@ -161,6 +161,11 @@ jobs:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           GITHUB_TOKEN: ${{ github.token }}
         run: cd pipeline && python publish.py
+      - name: Mark checkpoint complete after verified artifact upload
+        if: steps.artifact.outcome == 'success' && hashFiles('output/**/final.mp4') != ''
+        run: |
+          python -c "import json,glob,sys; from pathlib import Path; files=glob.glob('output/**/story.json', recursive=True); story=json.loads(Path(files[0]).read_text()) if files else {}; sys.path.insert(0,'pipeline'); import checkpoint; checkpoint.finish_from_artifact(story.get('story_id','unknown'))"
+
       - name: Save checkpoint for the next run
         if: always() && hashFiles('cache/checkpoint/**') != ''
         uses: actions/cache/save@v4
@@ -193,6 +198,7 @@ jobs:
         run: bash pipeline/push_state.sh "Posted story"
 
       - name: Keep the generated/post result for download (7 days)
+        id: artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
