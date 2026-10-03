@@ -626,3 +626,19 @@ Added the repository-level DESIGN.md using the DESIGN.md convention highlighted 
 ### Upstream reference
 
 - VoltAgent/awesome-design-md: https://github.com/voltagent/awesome-design-md
+
+## Buffer-first documentation correction, 2026-10-02
+
+Corrected stale production-flow descriptions that still implied the scheduled workflow always generated and immediately published a new video.
+
+### Changes
+
+- `.github/workflows/daily.yml`: workflow header now states that scheduled runs publish the next buffered video and generate only when the buffer is empty.
+- `README.md`: replaced the old single-workflow immediate-publish diagram with the actual producer -> buffer -> scheduled publisher architecture.
+- README now documents the separate `buffer_fill.yml` producer and media-test producer behavior.
+- README now states that failed platform publishing leaves the buffered item available and successful publishing removes it through `publish.py`.
+
+### Commits
+
+- `02da4a09832966aa64019422f65ed0ac846873ab` - Correct daily workflow description.
+- `62968c2176356adae7e7a88d025e56cd36880257` - Correct README production-flow documentation.
