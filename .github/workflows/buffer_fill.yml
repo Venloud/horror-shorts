@@ -23,7 +23,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: night-files-buffer-fill
+  group: night-files
   cancel-in-progress: false
 
 jobs:
@@ -77,18 +77,41 @@ jobs:
           echo "count=$count" >> "$GITHUB_OUTPUT"
           echo "Buffer has $count complete waiting video(s)."
 
+      - name: Restore checkpoint cache
+        uses: actions/cache/restore@v4
+        with:
+          path: cache/checkpoint
+          key: ckpt-${{ github.run_id }}
+          restore-keys: |
+            ckpt-
+
+      - name: Check for unfinished checkpoint
+        id: checkpoint
+        run: |
+          if [ -s cache/checkpoint/story.json ] && [ ! -f cache/checkpoint/done.json ]; then
+            echo "pending=true" >> "$GITHUB_OUTPUT"
+            echo "Unfinished checkpoint found: this run will resume it."
+          else
+            echo "pending=false" >> "$GITHUB_OUTPUT"
+            echo "No unfinished checkpoint found."
+          fi
+
       - name: Decide whether to generate
         id: decide
         env:
           COUNT: ${{ steps.buffer.outputs.count }}
           TARGET: ${{ inputs.target_buffer || '2' }}
+          CHECKPOINT: ${{ steps.checkpoint.outputs.pending }}
         run: |
-          if [ "$COUNT" -lt "$TARGET" ]; then
+          if [ "$CHECKPOINT" = "true" ]; then
+            echo "generate=true" >> "$GITHUB_OUTPUT"
+            echo "Unfinished checkpoint takes priority: resuming the previous story."
+          elif [ "$COUNT" -lt "$TARGET" ]; then
             echo "generate=true" >> "$GITHUB_OUTPUT"
             echo "Buffer below target ($COUNT < $TARGET): generating one video."
           else
             echo "generate=false" >> "$GITHUB_OUTPUT"
-            echo "Buffer already at target ($COUNT >= $TARGET): no generation needed."
+            echo "Buffer already at target ($COUNT >= $TARGET) and no checkpoint is pending."
           fi
 
 
@@ -131,6 +154,13 @@ jobs:
             output/**/production_gate.json
           retention-days: 7
           if-no-files-found: error
+
+      - name: Save checkpoint for the next run
+        if: always() && hashFiles('cache/checkpoint/**') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: cache/checkpoint
+          key: ckpt-${{ github.run_id }}
 
       - name: Report final buffer state
         if: always()
