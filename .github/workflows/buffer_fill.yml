@@ -138,6 +138,7 @@ jobs:
         run: cd pipeline && python main.py
 
       - name: Upload generated buffer artifacts
+        id: artifact
         if: always() && steps.decide.outputs.generate == 'true'
         uses: actions/upload-artifact@v4
         with:
@@ -154,6 +155,11 @@ jobs:
             output/**/production_gate.json
           retention-days: 7
           if-no-files-found: error
+
+      - name: Mark checkpoint complete after verified artifact upload
+        if: steps.artifact.outcome == 'success' && hashFiles('output/**/final.mp4') != ''
+        run: |
+          python -c "import json,glob,sys; from pathlib import Path; files=glob.glob('output/**/story.json', recursive=True); story=json.loads(Path(files[0]).read_text()) if files else {}; sys.path.insert(0,'pipeline'); import checkpoint; checkpoint.finish_from_artifact(story.get('story_id','unknown'))"
 
       - name: Save checkpoint for the next run
         if: always() && hashFiles('cache/checkpoint/**') != ''
