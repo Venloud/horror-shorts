@@ -694,3 +694,13 @@ This separates **production generation** from **scheduled distribution**. Repeat
 The buffer is FIFO: oldest complete pair first. A buffered item stays available if publishing fails. A successfully posted item is removed so it cannot be posted again.
 
 Artifacts from the producer/test workflows remain downloadable from their GitHub Actions runs for seven days. The durable media queue is the GitHub Release buffer itself.
+
+
+## DESIGN.md integration, 2026-10-02
+
+- Added repository-level `DESIGN.md` as the visual source of truth for future Night Files UI surfaces.
+- It follows the DESIGN.md convention used by VoltAgent/awesome-design-md: visual theme, tokens, typography, components, layout, depth, responsive behavior, and explicit do/don't rules. It is a convention/reference, not a dependency or runtime package.
+- Before changing any dashboard, buffer viewer, run monitor, media review surface, integration page, or other UI, read `DESIGN.md` first.
+- The Night Files design intentionally does NOT copy one external brand. It uses a dark production-control-room aesthetic tailored to this project.
+- The buffer-first architecture is part of the UI contract: Generate -> Buffer -> Scheduled Publisher -> TikTok / YouTube.
+- External media review must expose provenance/license metadata. yt-dlp downloading a file does not make that file copyright-free.
