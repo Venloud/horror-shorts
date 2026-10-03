@@ -694,3 +694,28 @@ The run reported 0 Cloudflare images, 0 Hugging Face images, 6 local SD images, 
 
 - 9820a172bd6878bcadd6a6c15991dd2f13edeb36 - Increase buffer image fallback capacity.
 - 5f6f7d10f2e3d9b48f266faea84f3e2d53cd810b - Give buffer fill more image fallback time.
+
+
+## Image provider broker implementation, 2026-10-03
+
+The buffer-fill image failure is now addressed with a quota-aware provider broker instead of continuing to raise the CPU SD-Turbo cap. The implementation preserves the existing image QA, checkpoint, renderer, real-media, and buffer architecture.
+
+### Tier order
+- Tier 1: existing Cloudflare Workers AI FLUX.1 schnell.
+- Tier 2: optional Pollinations FLUX, activated only by POLLINATIONS_API_KEY or POLLINATIONS_KEY. It is capped per run and is not treated as unlimited free capacity.
+- Tier 3: existing Hugging Face ZeroGPU FLUX Spaces, now preceded by a live get_zero_gpu_quota() preflight when HF_TOKEN and a compatible huggingface_hub version are available.
+- Tier 4: existing local SD-Turbo CPU emergency fallback, still capped at 12 images and 18 minutes.
+- Tier 5: existing same-scene virtual/cached crop fallback. Cross-scene borrowing remains prohibited.
+- Tier 6: existing real-media/asset-library path remains upstream of AI generation and continues to carry provenance/rights metadata.
+
+### Implementation
+- Added pipeline/image_provider_broker.py.
+- pipeline/images.py installs the broker after the existing provider functions are defined. The broker occupies the existing HF provider slot so the renderer and downstream QA logic do not need a rewrite.
+- Pollinations 401/402/403 disables that provider for the rest of the run. Temporary failures fall through to HF.
+- HF quota below 65 seconds is skipped before another Space generation request. If quota lookup is unavailable, the existing scheduler-side HF error handling remains authoritative.
+- config.json records the provider tier order, Pollinations model/size/cap, and HF minimum quota threshold.
+- buffer_fill.yml and daily.yml pass the optional POLLINATIONS_API_KEY secret to generation. No new mandatory secret exists.
+- Full implementation details and expected log lines are in docs/IMAGE_PROVIDER_BROKER.md.
+
+### Verification boundary
+This change was reviewed against current Cloudflare, Hugging Face, and Pollinations documentation before implementation. No live generation run was executed by the code edit itself. The next validation must be the buffer-fill workflow and should verify provider selection, quota preflight, image counts, and creation of a real final.mp4 before any publishing workflow is considered.
