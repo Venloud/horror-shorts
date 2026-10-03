@@ -179,7 +179,7 @@ def install(namespace: dict) -> None:
     # The outer generator uses this name for logging/counting. Its internal
     # max is enforced by the broker and the existing HF scheduler/quota guard.
     names = namespace.get("_NAMES", {})
-    names["_hf_space"] = "image_broker"
+    names["_hf_space"] = "hf_space"
     namespace["_NAMES"] = names
 
     namespace["_IMAGE_PROVIDER_BROKER_INSTALLED"] = True
