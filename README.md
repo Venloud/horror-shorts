@@ -95,3 +95,7 @@ data/                history, post counter, analytics
 inbox/               owner-supplied links/scripts
 .github/workflows/   daily, analytics, OAuth checks and maintenance
 ```
+
+## Design system
+
+Night Files UI surfaces use the repository-level `DESIGN.md` as their visual source of truth. It follows the DESIGN.md convention documented by VoltAgent's Awesome DESIGN.md collection: design tokens, typography, components, layout, depth, responsive behavior, and explicit do/don't rules. Before changing a dashboard, buffer viewer, monitoring page, or other UI, read `DESIGN.md` first.
