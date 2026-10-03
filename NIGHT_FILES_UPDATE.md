@@ -930,3 +930,44 @@ The gate evidence is now downloadable from the same Actions run that produced th
 
 
 - `cfd3a6aba6fbb3ce6fcc1d992e68569e260e361c` - clarify that readiness credential checks are warnings, not false claims of verified secrets.
+
+## Persistent checkpoint/resume fix, 2026-10-03
+
+The recent buffer-fill logs exposed a real gap in the checkpoint implementation. pipeline/checkpoint.py already had the correct idea: keep the story, narration, and finished images after a failed build. The problem was workflow persistence, not the checkpoint data model.
+
+The failed image run explicitly reported that the story was kept and that the next build should continue it, but the buffer-fill workflow did not restore or save cache/checkpoint. The daily workflow restored a checkpoint but did not save the checkpoint cache after the run. That meant a failed run could not reliably hand its unfinished story to the next scheduled producer.
+
+### What changed
+
+- .github/workflows/buffer_fill.yml restores the newest ckpt-* cache before generation.
+- .github/workflows/buffer_fill.yml detects cache/checkpoint/story.json without done.json.
+- Unfinished checkpoints take priority over starting a new story.
+- buffer_fill.yml saves cache/checkpoint after every run, including failures.
+- buffer_fill.yml now uses the same night-files concurrency group as daily.yml.
+- daily.yml detects an unfinished checkpoint after restoring it.
+- daily.yml now generates when the buffer is empty OR a checkpoint is pending.
+- daily.yml saves cache/checkpoint after every run, including failures.
+- pipeline/checkpoint.py required no runtime change because resume(), save_story(), save_narration(), and finish() already implement the intended state machine.
+
+### Resulting behavior
+
+Run A starts Story X -> story.json saved -> narration saved -> images saved as they finish -> image/provider/render failure -> run fails -> checkpoint cache is saved.
+
+Run B (daily or buffer-fill) -> checkpoint cache restored -> unfinished Story X detected -> Story X resumes -> no new Story Y is started -> completed narration/images are reused -> only missing work is attempted.
+
+If Run B fails again, the checkpoint is saved again. If Run B succeeds, buffer.add() completes the durable queue entry and checkpoint.finish() clears the heavy checkpoint state and writes done.json.
+
+This is specifically designed for the current image-quota failure mode. The recent run stopped at ImageQuotaWait and explicitly logged that the story is kept and the next build continues it. fileciteturn544file0L5-L8
+
+### Commits
+
+- 6c254577529d22d5e763093eda26aa9fe0c76c7a - persist and resume checkpoints in buffer-fill.
+- c2f7ec3d481903b5a6e0f8b30b15dbffe5277f73 - let daily runs resume unfinished checkpoints.
+
+### Important limitation
+
+GitHub Actions cache is the persistence layer. A checkpoint is not a permanent artifact in the repository and is subject to GitHub Actions cache retention/eviction. As long as the checkpoint cache is available, the workflows restore it by the ckpt- prefix. A completed story is protected by done.json and by history duplicate checks.
+
+### Validation status
+
+The workflow files were updated directly and re-read from GitHub after the changes. The actual scheduled recovery path has not yet been executed on a failed production run, so the next real buffer-fill or daily run is the live validation.
