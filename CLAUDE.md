@@ -777,3 +777,12 @@ the publish boundary from corrupted or incomplete durable-buffer entries.
 `pipeline/production_readiness.py` is an offline, zero-provider-cost preflight used by `daily.yml` and
 `buffer_fill.yml`. It checks local tooling/configuration and reports credential warnings. It must not become a
 provider-probing step in the normal free-tier workflow.
+
+
+### Background music and checkpoint completion boundary
+
+The production renderer intentionally separates soundtrack work from the core visual render. `pipeline/render.py` creates the complete visual + narration/SFX video; `pipeline/background_music.py` then adds the background music. The default is an original FFmpeg-generated ambient bed. Do not restore the removed copyrighted recording. Deliberately approved local tracks remain possible only through `music_policy=approved_files` plus `approved_music`.
+
+The production gate runs after the separate music stage.
+
+Checkpoint rule: keep the checkpoint for failures before a complete final MP4 is preserved. If the workflow successfully uploads a complete `final.mp4` artifact, it may mark the checkpoint complete with `done.json`, per the owner's requested completion boundary. Buffer admission also completes the checkpoint normally.
