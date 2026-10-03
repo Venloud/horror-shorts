@@ -105,6 +105,7 @@ jobs:
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           SI_API_KEY: ${{ secrets.SI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
         run: cd pipeline && python main.py
 
       - name: Upload generated buffer artifacts
