@@ -893,3 +893,28 @@ The other eight concepts are explicitly original fiction and retain the existing
 ### Commit
 
 - `81da9382df8cb4675e5fd559b91881b4d4a902c2` - add all nine concepts to the Night Files story pool and map them to dedicated prompts.
+
+
+## Production readiness + hard media/provenance gate, 2026-10-03
+
+Implemented the production-safety pattern from the reviewed youtube-automation-agent architecture without importing its Node/SQLite stack.
+
+- Added `pipeline/production_readiness.py`. It is an offline preflight only: checks ffmpeg/ffprobe, required Python modules, target duration config, music policy, and reports missing runtime credentials as warnings. It never calls a provider and never spends quota.
+- Added `pipeline/production_gate.py`. This is the hard buffer boundary. It rejects missing/zero-byte/suspiciously small/oversized MP4s, wrong duration, missing video/audio streams, wrong 1080x1920 output, and files that fail full FFmpeg video/audio decode.
+- The same gate checks external media provenance. Any real/archive asset must carry a source/provider, HTTP(S) source URL, and license/rights field. The current procedural-only music policy is explicitly accepted; an approved-file policy requires an allowlist.
+- `pipeline/main.py` now writes provenance into `caption.json`, runs the hard gate after render/packaging, writes `production_gate.json`, and only then calls `buffer.add()`. A failed gate cannot enter the durable FIFO buffer.
+- `pipeline/publish.py` re-runs the final-media and buffer-provenance checks after downloading the buffered MP4 and before TikTok/YouTube posting. This protects the second boundary as well.
+- `.github/workflows/daily.yml` and `.github/workflows/buffer_fill.yml` run the offline readiness preflight before generation. Buffer-fill artifacts now fail if the expected generated files are absent.
+- No new secrets are required.
+
+This specifically addresses the recent failure mode where a buffer-fill run could finish without a real `final.mp4` while artifact handling did not make that absence fatal. It also addresses the YouTube music-claim incident by making soundtrack policy and external-media evidence part of the production contract.
+
+Commits:
+- `f2d444d8ea9930bf49bdbd270b5937a633e5eb46` - add hard final media/provenance gate
+- `6c16328c399a823f926b271c6fefafb5acbced4b` - carry provenance evidence into buffer metadata
+- `a519b785e70e3c50b673441b82664ac11ae530d2` - add offline readiness preflight
+- `03fa79ffecf24a762440897e56611d7c9a0f87b6` - keep readiness credential-safe
+- `1b62bb9bc761c55498d51fd4ca0bf04547f858a2` - block invalid media before buffer admission
+- `773d9aa375a0b7943a911bd1e3a7b72d6e40252` - revalidate buffered media before publishing
+- `8ddb5affa1ab94dac2c4921881f0f3ba0fddc01e` - run readiness in daily generation lane
+- `16046423c9b3b1e138fab6d6c6424d81c57c32fb` - run readiness in buffer-fill lane and require generated artifacts
