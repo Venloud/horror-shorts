@@ -101,3 +101,23 @@ def generate_video(prompt: str, *, resolution: str = "480_16_9",
     if not encoded:
         raise RuntimeError(f"NVIDIA Cosmos3-Nano returned no video: {str(data)[:240]}")
     return base64.b64decode(encoded, validate=True)
+
+
+def chat(model: str, prompt: str, *, temperature: float = 0.7, as_json: bool = True,
+         schema: dict | None = None) -> str:
+    """OpenAI-compatible NVIDIA NIM chat fallback."""
+    token = key()
+    if not token:
+        raise RuntimeError("NVIDIA text provider disabled: NVIDIA_API_KEY missing")
+    if as_json:
+        prompt += "\nReturn ONLY valid JSON matching this schema:\n" + str(schema or {})
+    body = {"model": model, "messages": [{"role": "user", "content": prompt}],
+            "temperature": float(temperature), "max_tokens": 8000}
+    if as_json:
+        body["response_format"] = {"type": "json_object"}
+    r = requests.post("https://integrate.api.nvidia.com/v1/chat/completions",
+                      headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+                      json=body, timeout=180)
+    if r.status_code != 200:
+        raise RuntimeError(f"NVIDIA chat HTTP {r.status_code}: {r.text[:300]}")
+    return r.json()["choices"][0]["message"]["content"] or ""
