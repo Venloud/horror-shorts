@@ -1366,3 +1366,9 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
 
 
 MAX_FILLS = 1  # a picture (incl. its virtual crops) never fills another scene (no cross-scene borrowing)
+
+# The broker patches only the existing _hf_space slot. Cloudflare remains the first
+# provider, local SD remains the emergency CPU fallback, and same-scene virtual
+# shots remain the final visual fill already implemented above.
+from image_provider_broker import install as _install_image_provider_broker
+_install_image_provider_broker(globals())
