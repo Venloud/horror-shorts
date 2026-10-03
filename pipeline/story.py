@@ -275,12 +275,24 @@ def model_chain(light: bool = False) -> list[str]:
         models.sort(key=lambda m: "lite" not in m)
     if CONFIG.get("groq_backup", True) and env("GROQ_API_KEY", required=False):
         models.append("groq:" + CONFIG.get("groq_model", "openai/gpt-oss-120b"))
+    if env("NVIDIA_API_KEY", required=False) or env("NVIDIA_NIM_API_KEY", required=False):
+        models.append("nvidia:" + CONFIG.get("nvidia_text_model", "z-ai/glm-5.3-flash"))
+    if env("MODELSCOPE_TOKEN", required=False) or env("MODELSCOPE_API_KEY", required=False):
+        models.append("modelscope:" + CONFIG.get("modelscope_text_model", "Qwen/Qwen3.5-27B"))
     return models or list(CONFIG["llm_models"])
 
 
 def _call_model(model: str, prompt: str, api_key: str, temperature: float = 1.0, as_json: bool = True, schema=None):
     if model.startswith("groq:"):
         return _call_groq(model[5:], prompt, temperature, as_json, schema)
+    if model.startswith("nvidia:"):
+        from providers import nvidia
+        text = nvidia.chat(model[7:], prompt, temperature=temperature, as_json=as_json, schema=schema or SCHEMA)
+        return json.loads(text) if as_json else text.strip()
+    if model.startswith("modelscope:"):
+        from providers import modelscope
+        text = modelscope.chat(model[11:], prompt, temperature=temperature, as_json=as_json, schema=schema or SCHEMA)
+        return json.loads(text) if as_json else text.strip()
     return _call_gemini(model, prompt, api_key, temperature, as_json, schema)
 
 
@@ -319,7 +331,13 @@ def _call_groq(model: str, prompt: str, temperature: float = 1.0, as_json: bool 
 
 
 def _writer(model: str) -> str:
-    return f"groq ({model[5:]})" if model.startswith("groq:") else f"gemini ({model})"
+    if model.startswith("groq:"):
+        return f"groq ({model[5:]})"
+    if model.startswith("nvidia:"):
+        return f"nvidia ({model[7:]})"
+    if model.startswith("modelscope:"):
+        return f"modelscope ({model[11:]})"
+    return f"gemini ({model})"
 
 
 def _validate(story: dict) -> None:
