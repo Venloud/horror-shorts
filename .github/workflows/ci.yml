@@ -1,0 +1,73 @@
+name: Continuous Integration
+
+# This workflow is project CI, not a social-platform connection workflow.
+# It validates repository code on pushes and pull requests.
+# It never exchanges OAuth codes, stores tokens, publishes videos, or calls TikTok/YouTube.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate Night Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate Python syntax
+        run: |
+          python -m compileall -q pipeline
+
+      - name: Validate JSON configuration
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          files = [Path("config.json")]
+          files += sorted(Path("pipeline").glob("*.json"))
+
+          for path in files:
+              with path.open(encoding="utf-8") as f:
+                  json.load(f)
+              print(f"OK JSON: {path}")
+          PY
+
+      - name: Validate Ruflo contracts when present
+        run: |
+          if [ -f pipeline/ruflo_check.py ]; then
+            python pipeline/ruflo_check.py
+          fi
+          if [ -f pipeline/ruflo_task_check.py ]; then
+            python pipeline/ruflo_task_check.py
+          fi
+
+      - name: Verify critical repository files
+        run: |
+          test -f config.json
+          test -f pipeline/main.py
+          test -f pipeline/publish.py
+          test -f pipeline/buffer.py
+          test -f .github/workflows/daily.yml
+          test -f .github/workflows/buffer_fill.yml
+          test -f .github/workflows/connect-tiktok.yml
+          echo "Critical Night Files structure: OK"
