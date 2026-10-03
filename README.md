@@ -4,40 +4,27 @@ A free, fully automated, faceless illustrated horror / true-crime / folklore cha
 
 ## Current production flow
 
-One scheduled workflow does the whole job:
+Generation and distribution are separate stages:
 
 ```
-daily.yml
-   ↓
-generate story
-   ↓
-voice
-   ↓
-real media + AI visuals
-   ↓
-render 61-68s video
-   ↓
-QA REPORT ONLY
-   ↓
-put successful render in buffer
-   ↓
-publish.py immediately
-   ↓
-TikTok + YouTube independently
+Buffer fill / media test
+        ↓
+   generate video
+        ↓
+   GitHub Release buffer
+        ↓
+ scheduled daily workflow
+        ↓
+ publish oldest buffered item
+        ↓
+ TikTok + YouTube independently
 ```
 
-There is **no separate build page/workflow** in the current production design. The GitHub Release buffer is storage and duplicate protection, not a separate production stage.
+The scheduled workflow checks the production buffer first. If content is already waiting, it skips generation and publishes the oldest complete item. If the buffer is empty, it generates one video into the buffer and then publishes the next buffered item.
 
-A successful render is not blocked by the QA report. If TikTok fails, YouTube is still attempted. If both platforms fail, the buffered video is retained for the next attempt instead of being deleted.
+The separate `.github/workflows/buffer_fill.yml` producer can build inventory without publishing. The media-production test lane can also queue finished test output without immediately posting it.
 
-## Posting
-
-- `.github/workflows/daily.yml` runs at **11:40 AM and 8:40 PM New York**.
-- Each run generates one production video and immediately invokes `pipeline/publish.py`.
-- TikTok currently uses the configured account mode in `config.json`. The current setting is `draft`, so it safely sends TikTok content to drafts until Direct Post access is approved.
-- YouTube uploads are enabled and configured for public Shorts.
-- Duplicate-post protection and `removal_pending` protection remain enabled.
-- A successful render is never intentionally discarded just because QA reports a problem.
+A failed platform post does not delete the buffered item. A successful publish is removed by `pipeline/publish.py` so the same buffered item is not intentionally posted again.
 
 ## Pipeline
 
