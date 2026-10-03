@@ -786,3 +786,21 @@ The production renderer intentionally separates soundtrack work from the core vi
 The production gate runs after the separate music stage.
 
 Checkpoint rule: keep the checkpoint for failures before a complete final MP4 is preserved. If the workflow successfully uploads a complete `final.mp4` artifact, it may mark the checkpoint complete with `done.json`, per the owner's requested completion boundary. Buffer admission also completes the checkpoint normally.
+
+## Analytics-driven Bloody Mary content cluster
+
+YouTube Studio analytics now provide a strong Bloody Mary signal. The current top Short is **Bloody Mary Mirror Legend #Shorts** at 321 views in the supplied 28-day view, with multiple Bloody Mary-related search terms appearing.
+
+Night Files now has eight dedicated Bloody Mary prompt concepts covering folklore variants, a dark fun fact, uncertain origins, lesser-known variations, the role of mirrors, and three clearly fictional spin-offs.
+
+config.json uses an analytics-priority lane with priority_subgenre_probability=0.40 and a three-story recent-repeat block. This is intentionally not a hard Bloody Mary-only mode. The normal least-recently/least-often-used rotation remains the fallback, and the priority lane cannot immediately repeat a Bloody Mary concept from the recent window.
+
+When writing Bloody Mary content:
+- Do not simply remake the existing mirror video.
+- Expand the cluster into different story angles and formats.
+- Treat folklore as folklore, not verified supernatural fact.
+- Do not present disputed historical origins as proven.
+- Fun-fact scripts should center on one fact rather than becoming a list.
+- Fictional spin-offs must be original and clearly fictional.
+- Do not provide ritual instructions.
+- Preserve the normal Night Files safety and duplicate-history rules.
