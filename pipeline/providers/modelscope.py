@@ -54,3 +54,23 @@ def generate_image(prompt: str, *, model: str = "Qwen/Qwen-Image-2.1",
             raise RuntimeError(f"ModelScope image task failed: {str(data)[:240]}")
         time.sleep(5)
     raise RuntimeError(f"ModelScope image task timed out after {timeout}s")
+
+
+def chat(model: str, prompt: str, *, temperature: float = 0.7, as_json: bool = True,
+         schema: dict | None = None) -> str:
+    """OpenAI-compatible ModelScope text fallback."""
+    token = key()
+    if not token:
+        raise RuntimeError("ModelScope text provider disabled: MODELSCOPE_TOKEN missing")
+    if as_json:
+        prompt += "\nReturn ONLY valid JSON matching this schema:\n" + str(schema or {})
+    body = {"model": model, "messages": [{"role": "user", "content": prompt}],
+            "temperature": float(temperature), "max_tokens": 8000}
+    if as_json:
+        body["response_format"] = {"type": "json_object"}
+    r = requests.post(f"{BASE}/v1/chat/completions",
+                      headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+                      json=body, timeout=180)
+    if r.status_code != 200:
+        raise RuntimeError(f"ModelScope chat HTTP {r.status_code}: {r.text[:300]}")
+    return r.json()["choices"][0]["message"]["content"] or ""
