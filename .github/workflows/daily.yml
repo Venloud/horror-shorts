@@ -105,6 +105,10 @@ jobs:
           echo "count=$count" >> "$GITHUB_OUTPUT"
           echo "Production buffer contains $count waiting video(s)."
 
+      - name: Production readiness preflight
+        if: steps.buffer.outputs.count == '0'
+        run: cd pipeline && python production_readiness.py
+
       - name: Make video only when buffer is empty
         id: make
         if: steps.buffer.outputs.count == '0'
