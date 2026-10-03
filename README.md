@@ -86,3 +86,32 @@ inbox/               owner-supplied links/scripts
 ## Design system
 
 Night Files UI surfaces use the repository-level `DESIGN.md` as their visual source of truth. It follows the DESIGN.md convention documented by VoltAgent's Awesome DESIGN.md collection: design tokens, typography, components, layout, depth, responsive behavior, and explicit do/don't rules. Before changing a dashboard, buffer viewer, monitoring page, or other UI, read `DESIGN.md` first.
+
+
+## GitHub Actions workflow roles
+
+Night Files separates repository validation, account connection, generation, and publishing into different workflows.
+
+**Continuous Integration:** `.github/workflows/ci.yml`
+
+This is the project's general **CI** workflow. GitHub runs it automatically on pushes to `main` and pull requests targeting `main`. It checks Python syntax, JSON configuration, Ruflo contracts when present, and critical repository structure.
+
+**CI is not a TikTok connection workflow.** It does not exchange OAuth codes, store tokens, publish videos, or call TikTok/YouTube publishing APIs.
+
+**TikTok connection:** `.github/workflows/connect-tiktok.yml`
+
+This is the separate, manually triggered OAuth workflow. It exchanges the owner's TikTok authorization code for a refresh token and stores that token as a GitHub repository secret.
+
+**Buffer generation:** `.github/workflows/buffer_fill.yml`
+
+Generates inventory into the GitHub Release buffer without publishing.
+
+**Scheduled publishing:** `.github/workflows/daily.yml`
+
+Checks the buffer and publishes the oldest buffered item. It generates only when the buffer is empty.
+
+**YouTube checks/backfill:** `.github/workflows/yt_check.yml` and `.github/workflows/yt_backfill.yml`
+
+These are separate YouTube credential/backfill workflows and are not general CI.
+
+For debugging, identify the workflow first. A `ci.yml` failure is repository validation; a `connect-tiktok.yml` failure is TikTok OAuth setup; a `buffer_fill.yml` failure is generation/buffering; and a `daily.yml` failure is scheduled distribution.
