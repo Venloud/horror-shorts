@@ -848,3 +848,48 @@ The already-published video remains a separate platform-side issue. The screensh
 - `c89e26b7d1b36c342ee148c60cc6ffa1b3e32825` - remove unapproved music recording.
 - `b884835ba00a98e4b27c631c528fbc0d03eb7f3d` - add automated music provenance guard.
 - `c7aa3343a731ee92d606d39a9111fb41db371a91` - enforce music provenance in CI.
+
+
+## Story queue expansion, 2026-10-03
+
+Added the requested Night Files story concepts to the production subgenre pool with dedicated prompt files.
+
+### Added concepts
+
+1. **The story of Queen Esther** - biblical/historical mystery. The prompt keeps the major events grounded in the Book of Esther and requires the script to distinguish biblical text from dramatic reconstruction.
+2. **A book with a chilling mystery** - an original book that begins describing the reader's life.
+3. **The stranger who knew me** - an original grounded psychological horror about a stranger who knows private details.
+4. **The photograph with one extra person** - an old family photograph contains someone nobody remembers.
+5. **The house that added a room** - an impossible new room appears inside a home.
+6. **The voicemail from tomorrow** - a person's own phone number leaves a message about an event that has not happened.
+7. **The last person in the library** - books continue being checked out after closing.
+8. **The diary that wasn't mine** - a decades-old diary accurately describes the narrator's current life.
+9. **The dream that remembered me** - a recurring dream changes in response to waking-life events.
+
+### Implementation
+
+Each concept has its own `prompts/fiction_*.txt` instruction file and is mapped explicitly through `config.json -> subgenre_prompts`.
+
+The normal subgenre rotation already chooses the least-recently/least-often used subgenre, so these concepts enter the existing story pipeline rather than bypassing it.
+
+### Content boundary
+
+The Esther prompt is intentionally different from the fictional horror prompts. It is framed as a biblical/historical retelling and instructs the writer not to invent supernatural events, conspiracies, or unsupported historical facts and present them as scripture/history.
+
+The other eight concepts are explicitly original fiction and retain the existing Night Files safety rules.
+
+### Prompt files
+
+- `prompts/fiction_esther.txt`
+- `prompts/fiction_chilling_book.txt`
+- `prompts/fiction_stranger.txt`
+- `prompts/fiction_extra_photo.txt`
+- `prompts/fiction_new_room.txt`
+- `prompts/fiction_tomorrow_voicemail.txt`
+- `prompts/fiction_last_library_person.txt`
+- `prompts/fiction_diary_not_mine.txt`
+- `prompts/fiction_dream_remembers.txt`
+
+### Commit
+
+- `81da9382df8cb4675e5fd559b91881b4d4a902c2` - add all nine concepts to the Night Files story pool and map them to dedicated prompts.
