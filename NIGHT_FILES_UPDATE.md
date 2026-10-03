@@ -971,3 +971,36 @@ GitHub Actions cache is the persistence layer. A checkpoint is not a permanent a
 ### Validation status
 
 The workflow files were updated directly and re-read from GitHub after the changes. The actual scheduled recovery path has not yet been executed on a failed production run, so the next real buffer-fill or daily run is the live validation.
+
+## Separate background music + artifact completion boundary, 2026-10-03
+
+The owner requested that the recent video remain usable because the visual/story result is strong, while removing only the copyrighted soundtrack that caused the YouTube claim. Background music is therefore restored as a normal production layer, but it is no longer fused into the core visual render.
+
+### Music behavior
+
+- The core render now produces the finished visual + narration/SFX video first.
+- `pipeline/background_music.py` adds the background soundtrack as a separate post-render FFmpeg pass.
+- Default soundtrack remains `procedural_original`: an ambient bed synthesized locally by FFmpeg, so no third-party recording is introduced.
+- The existing `approved_files` policy remains available for deliberately approved local tracks. A track is never treated as safe merely because it exists in `assets/music`.
+- The separate stage records `music_source`, `music_file`, and `music_stage=separate_post_render` in the story/manifest.
+- The final production gate still runs after the music stage, so the actual shipped MP4 is the file being validated.
+
+This means the next production run will have background music again without bringing back the copyrighted Radiohead recording.
+
+### Checkpoint completion
+
+A checkpoint is still kept when generation fails before a complete final video is preserved.
+
+After the workflow successfully uploads a complete `final.mp4` artifact, the workflow now marks that checkpoint complete and writes `done.json`. This follows the owner's requested boundary: once the complete finished video is preserved as a workflow artifact, the unfinished story should not be regenerated on the next run.
+
+Buffer admission still calls `checkpoint.finish()` normally. The artifact-completion path is a second completion boundary for cases where the MP4 was fully preserved but a later queue/publishing step failed.
+
+GitHub distinguishes artifacts from caches: artifacts are for preserving workflow outputs, while caches are for reusable intermediate data. citeturn0search0turn0search1
+
+### Important behavior
+
+- Image/story failure before final MP4: checkpoint remains.
+- Render/music/gate failure before final MP4: checkpoint remains.
+- Valid final MP4 uploaded as workflow artifact: checkpoint is marked complete.
+- Valid final MP4 admitted to the durable buffer: checkpoint is already completed by `main.py`.
+- A completed story is never resumed just because an older cache entry still exists; `done.json` blocks resume.
