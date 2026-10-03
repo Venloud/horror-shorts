@@ -29,7 +29,7 @@
   "local_image_steps": 2,
   "local_image_budget_minutes": 18,
   "local_image_max": 12,
-  "space_images_max": 6,
+  "space_images_max": 12,
   "render_style": "classic",
   "remotion_join": true,
   "autoclip": {
