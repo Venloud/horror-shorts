@@ -642,3 +642,32 @@ Corrected stale production-flow descriptions that still implied the scheduled wo
 
 - `02da4a09832966aa64019422f65ed0ac846873ab` - Correct daily workflow description.
 - `62968c2176356adae7e7a88d025e56cd36880257` - Correct README production-flow documentation.
+
+
+## YouTube backfill eligibility fix, 2026-10-03
+
+The YouTube backfill workflow was tested against a separate GitHub Actions log and the run did not upload a video. That run was blocked before YouTube upload because data/tiktok_posted.txt was absent. The repository already had a stronger inventory signal in data/backfill.json: queued videos retain tiktok_publish_id values from the TikTok publishing step.
+
+### Implementation
+
+- Updated pipeline/yt_backfill.py so the text inventory remains preferred when data/tiktok_posted.txt exists.
+- Added an explicit configuration gate, yt_backfill_trust_publish_ids.
+- Enabled that gate in config.json.
+- When the text inventory is absent and the gate is enabled, each queued backfill item with a recorded tiktok_publish_id becomes eligible for the YouTube backfill.
+- The match source is recorded as backfill.json:tiktok_publish_id in memory/state so the log explains why the video was selected.
+- Videos without a recorded TikTok publish ID remain ineligible.
+- Existing YouTube duplicate checks, QA checks, one-upload-per-run behavior, daily quota limit, publish-slot guard, and successful-asset cleanup remain unchanged.
+- No TikTok or YouTube credentials were changed.
+
+### Why this is separate from the latest buffer-fill failure
+
+The later 2026-10-03 buffer-fill run is a different workflow and failed during image generation because scenes 5-8 had no usable image after the configured redraw/gap-filler limits. It reached the final error with exit code 1 and left the production buffer at 0. That failure is not a YouTube backfill failure and is not being conflated with this fix.
+
+### Commits
+
+- 81e51f8a54378dec61040d6395151fd3cd020c29 - Allow YouTube backfill from recorded TikTok publish IDs.
+- 58fffb8bf3b03023ab210c0b04a8ff084e18391f - Enable YouTube backfill from recorded TikTok IDs.
+
+### Expected next backfill behavior
+
+A scheduled or manually dispatched yt_backfill run no longer requires data/tiktok_posted.txt when the explicit trust flag is enabled. It will use the recorded TikTok publish IDs already stored in data/backfill.json, then proceed through the existing YouTube eligibility and QA gates. A successful upload will be logged with the YouTube URL and recorded in data/backfill.json; the corresponding stashed MP4 and metadata assets are removed only after the upload succeeds.
