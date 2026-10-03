@@ -48,6 +48,35 @@ def generate_image(prompt: str, seed: int, steps: int = 4) -> bytes:
     return base64.b64decode(encoded, validate=True)
 
 
+def generate_image_video(image_bytes: bytes, prompt: str, *, resolution: str = "480_16_9",
+                         num_frames: int = 25, steps: int = 35, fps: int = 24) -> bytes:
+    token = key()
+    if not token:
+        raise RuntimeError("NVIDIA video provider disabled: NVIDIA_API_KEY missing")
+    import mimetypes
+    mime = "image/png"
+    ref = "data:image/png;base64," + base64.b64encode(image_bytes).decode("ascii")
+    body = {
+        "model_mode": "image2video",
+        "prompt": prompt[:4000],
+        "input_reference": ref,
+        "resolution": resolution,
+        "num_frames": max(25, int(num_frames)),
+        "num_inference_steps": int(steps),
+        "fps": int(fps),
+    }
+    r = requests.post(VIDEO_URL, headers={"Authorization": f"Bearer {token}",
+                                          "Accept": "application/json",
+                                          "Content-Type": "application/json"},
+                      json=body, timeout=900)
+    if r.status_code != 200:
+        raise RuntimeError(f"NVIDIA Cosmos3-Nano I2V HTTP {r.status_code}: {r.text[:240]}")
+    encoded = r.json().get("b64_video")
+    if not encoded:
+        raise RuntimeError("NVIDIA Cosmos3-Nano I2V returned no video")
+    return base64.b64decode(encoded, validate=True)
+
+
 def generate_video(prompt: str, *, resolution: str = "480_16_9",
                    num_frames: int = 25, steps: int = 35, fps: int = 24) -> bytes:
     token = key()
