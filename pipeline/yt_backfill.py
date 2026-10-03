@@ -188,10 +188,28 @@ def _score(line: str, text: str) -> float:
 
 
 def match_posted(state: dict) -> bool:
-    """Mark videos the owner published on TikTok (data/tiktok_posted.txt). False if the file is missing."""
+    """Mark TikTok-published videos from the owner list or recorded TikTok publish IDs.
+
+    The text inventory remains the preferred source when present. When it is absent,
+    the explicit config flag yt_backfill_trust_publish_ids allows the existing
+    tiktok_publish_id recorded in backfill.json to act as the eligibility signal.
+    """
     if not POSTED.exists():
-        log("data/tiktok_posted.txt is missing: nothing is backfilled until the owner adds it "
-            "(one title or caption per line, from the TikTok profile)")
+        if CONFIG.get("yt_backfill_trust_publish_ids", False):
+            matched = 0
+            for v in state["videos"]:
+                v["tiktok_published"] = bool(v.get("tiktok_publish_id"))
+                v.pop("tiktok_line", None)
+                if v["tiktok_published"]:
+                    v["tiktok_match_source"] = "backfill.json:tiktok_publish_id"
+                    matched += 1
+                    log(f"TikTok publish ID accepted: {v['stamp']} {v['title']!r} ({v['tiktok_publish_id']})")
+                else:
+                    v.pop("tiktok_match_source", None)
+            if matched:
+                log(f"TikTok inventory: {matched} video(s) eligible from recorded publish IDs because data/tiktok_posted.txt is absent")
+                return True
+        log("data/tiktok_posted.txt is missing and recorded TikTok publish IDs are not enabled: nothing is backfilled")
         return False
     lines = [ln.strip() for ln in POSTED.read_text(encoding="utf-8").splitlines()
              if ln.strip() and not ln.strip().startswith("//")]
@@ -215,8 +233,6 @@ def match_posted(state: dict) -> bool:
     state["unmatched_lines"] = unmatched
     return True
 
-
-# ---------- YouTube ----------
 
 def _title_key(t: str) -> str:
     return _norm(re.sub(r"#shorts", "", t, flags=re.IGNORECASE))
