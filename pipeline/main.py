@@ -295,9 +295,20 @@ def main() -> int:
             "true_story": bool(story.get("true_story")), "seconds": round(narration["duration"], 1),
             "visual_credits": visual_credits, "visual_mode": story.get("visual_mode"),
             "render_style": story.get("render_style", "classic"),
+            "provenance": {
+                "media_assets": story.get("media_assets") or [],
+                "visual_sources": story.get("_visual_sources") or {},
+                "rights_policy": "external-media-requires-source-url-and-license",
+            },
         }, indent=2, ensure_ascii=False))
 
-        # Every successful render reaches the production buffer. There is no test-only exit.
+        # Hard production boundary: only a real, fully decodable final MP4 with
+        # provenance evidence may enter the durable FIFO buffer.
+        from production_gate import gate_final_video, write_gate_report
+        gate_evidence = gate_final_video(video, story, meta)
+        gate_report = write_gate_report(workdir, gate_evidence)
+        manifest.artifact(gate_report, "production-gate")
+        manifest.stage("production_gate", "complete", evidence=gate_evidence)
 
         buffer.add(stamp, video, meta)
         manifest.artifact(meta, "caption")
