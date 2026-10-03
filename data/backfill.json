@@ -109,12 +109,43 @@
       "artifact_expires": "2026-10-02T04:23Z",
       "duration": 78.4,
       "tiktok_publish_id": "v_inbox_file~v2.7689323010515929119",
-      "status": "queued",
+      "status": "uploaded",
       "reason": null,
-      "qa": "passed (local check 2026-10-01)",
+      "qa": "passed",
       "stashed": true,
       "tiktok_published": true,
-      "tiktok_match_source": "backfill.json:tiktok_publish_id"
+      "tiktok_match_source": "backfill.json:tiktok_publish_id",
+      "yt_title": "A Creature That Detaches Its Body... The Manananggal #shorts",
+      "hashtags": [
+        "manananggal",
+        "philippines",
+        "folklore",
+        "legends"
+      ],
+      "yt_tags": [
+        "the manananggal",
+        "manananggal legend",
+        "philippines folklore",
+        "manananggal creature",
+        "philippine folklore",
+        "scary legend",
+        "manananggal story",
+        "splitting monster",
+        "mythical being",
+        "philippine mythology",
+        "nocturnal hunt",
+        "creature legend",
+        "manananggal",
+        "folklore",
+        "creepy legend"
+      ],
+      "youtube": {
+        "id": "A-iKN47HZks",
+        "url": "https://youtube.com/shorts/A-iKN47HZks",
+        "privacy": "public",
+        "wanted": "public"
+      },
+      "uploaded_at": "2026-10-03T23:06Z"
     },
     {
       "stamp": "2026-09-25_0637",
