@@ -6,7 +6,8 @@ State: data/backfill.json (inventory + uploaded / skipped + reason), so nothing 
                                    GitHub release "backfill" (<stamp>.mp4 + <stamp>.json). No YouTube calls.
   python yt_backfill.py upload  -> one upload, only when:
      - data/tiktok_posted.txt exists (the owner's list of videos he actually PUBLISHED on TikTok, one title or
-       caption per line); drafts that never went public are not backfilled. Missing file = nothing happens.
+       caption per line), or yt_backfill_trust_publish_ids is enabled and a queued item has a recorded
+       tiktok_publish_id in data/backfill.json.
      - not within 60 min of a publish slot (daily.yml crons) or a post in history.json, and no daily.yml run active.
      - fewer than yt_backfill_per_day backfill uploads today (UTC).
      - the title isn't on the channel already (history ids, backfill.json, the channel's uploads when the token
