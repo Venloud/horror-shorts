@@ -671,3 +671,26 @@ The later 2026-10-03 buffer-fill run is a different workflow and failed during i
 ### Expected next backfill behavior
 
 A scheduled or manually dispatched yt_backfill run no longer requires data/tiktok_posted.txt when the explicit trust flag is enabled. It will use the recorded TikTok publish IDs already stored in data/backfill.json, then proceed through the existing YouTube eligibility and QA gates. A successful upload will be logged with the YouTube URL and recorded in data/backfill.json; the corresponding stashed MP4 and metadata assets are removed only after the upload succeeds.
+
+
+## Buffer-fill image fallback fix, 2026-10-03
+
+Reviewed the separate buffer-fill run. This was not a YouTube backfill failure. The run exhausted Cloudflare and Hugging Face image sources, then used all 6 configured local SD-Turbo gap-fill images. Four scenes still had no image, so the image pipeline correctly stopped instead of borrowing another scene's image. The build exited before rendering and nothing was added to the production buffer.
+
+### Implementation
+
+- Increased `local_image_max` from 6 to 12 so a low-cloud-quota buffer build can repair more completely empty scenes with the local SD-Turbo fallback.
+- Increased `local_image_budget_minutes` from 12 to 18 to make the larger local fallback allowance real rather than merely increasing the image count cap.
+- Increased `.github/workflows/buffer_fill.yml` timeout from 90 to 120 minutes. This gives CPU image generation enough headroom without changing the buffer producer's role or publishing behavior.
+- Kept the existing same-scene-only virtual-shot rule. The pipeline still refuses to stretch an image from another scene over a missing scene.
+- Kept Cloudflare, Hugging Face, real-media, QA, and existing quota logic unchanged.
+- The buffer-fill workflow still generates at most one video per run and never calls TikTok or YouTube publishing.
+
+### Why the previous run failed
+
+The run reported 0 Cloudflare images, 0 Hugging Face images, 6 local SD images, 1 real-media asset, 2 rejected images, 5 virtual/cached images, and 4 of 9 scenes with no image. The image quota stop was therefore expected behavior under the old 6-image local cap. The fix increases the recovery capacity for exactly this low-provider-quota condition.
+
+### Commits
+
+- 9820a172bd6878bcadd6a6c15991dd2f13edeb36 - Increase buffer image fallback capacity.
+- 5f6f7d10f2e3d9b48f266faea84f3e2d53cd810b - Give buffer fill more image fallback time.
