@@ -716,3 +716,6 @@ Rules:
 - Videos without a recorded TikTok publish ID remain ineligible.
 - Existing YouTube duplicate detection, render QA, upload quota, daily publish-slot guard, one-upload-per-run limit, and post-success asset deletion remain unchanged.
 - This is historical TikTok -> YouTube backfill only. It does not change the normal buffer -> scheduled publisher flow.
+
+
+Provider architecture rule: read docs/FREE_PROVIDER_ARCHITECTURE.md before changing provider, media, or orchestration code.
