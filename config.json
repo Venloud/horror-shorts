@@ -152,6 +152,7 @@
   "analytics_start": "2026-09-01",
   "youtube_privacy": "public",
   "yt_backfill_per_day": 3,
+  "yt_backfill_trust_publish_ids": true,
   "packaging": true,
   "asset_library": true,
   "asset_min_similarity": 0.27,
