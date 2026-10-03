@@ -1,6 +1,6 @@
 name: Daily horror video
 
-# Twice a day: generate one production video, then post it immediately.
+# Twice a day: publish the next buffered video. Generate only when the buffer is empty.
 on:
   schedule:
     - cron: "40 15 * * *"
