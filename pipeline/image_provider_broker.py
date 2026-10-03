@@ -54,13 +54,13 @@ def _quota_snapshot(images, minimum_seconds: int = 65):
         reset = getattr(quota, "resets_at", None)
         reset_text = str(reset) if reset else "unknown"
         usable = remaining >= minimum_seconds
-        images.log(
+        images["log"](
             f"HF ZeroGPU quota preflight: {remaining:.0f}s remaining; "
             f"minimum {minimum_seconds}s; resets_at={reset_text}"
         )
         return usable, remaining, reset_text
     except Exception as exc:
-        images.log(f"HF ZeroGPU quota preflight unavailable: {type(exc).__name__}: {str(exc)[:140]}")
+        images["log"](f"HF ZeroGPU quota preflight unavailable: {type(exc).__name__}: {str(exc)[:140]}")
         return None, None, "unknown"
 
 
