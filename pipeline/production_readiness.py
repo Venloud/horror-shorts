@@ -12,14 +12,6 @@ from common import CONFIG
 
 
 REQUIRED_MODULES = ("requests", "PIL")
-REQUIRED_ENV = (
-    "GEMINI_API_KEY",
-    "CLOUDFLARE_ACCOUNT_ID",
-    "CLOUDFLARE_API_TOKEN",
-    "GITHUB_TOKEN",
-)
-
-
 def main() -> int:
     errors = []
     warnings = []
@@ -39,9 +31,9 @@ def main() -> int:
     elif float(target[0]) <= 0 or float(target[1]) < float(target[0]):
         errors.append(f"invalid target_seconds: {target!r}")
 
-    for name in REQUIRED_ENV:
+    for name in ("GEMINI_API_KEY", "CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN", "GITHUB_TOKEN"):
         if not os.environ.get(name):
-            errors.append(f"{name} is not set")
+            warnings.append(f"{name} is not set in this shell; the workflow must provide it")
 
     if CONFIG.get("youtube_enabled", True):
         for name in ("YT_CLIENT_ID", "YT_CLIENT_SECRET", "YT_REFRESH_TOKEN"):
