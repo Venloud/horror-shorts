@@ -1,6 +1,6 @@
 name: Daily horror video
 
-# Twice a day: publish the next buffered video. Generate only when the buffer is empty.
+# Twice a day: publish the next buffered video. Generate when the buffer is empty, or resume an unfinished checkpoint.
 on:
   schedule:
     - cron: "40 15 * * *"
@@ -71,7 +71,19 @@ jobs:
         with:
           path: cache/checkpoint
           key: ckpt-${{ github.run_id }}
-          restore-keys: ckpt-
+          restore-keys: |
+            ckpt-
+
+      - name: Check for an unfinished checkpoint
+        id: checkpoint
+        run: |
+          if [ -s cache/checkpoint/story.json ] && [ ! -f cache/checkpoint/done.json ]; then
+            echo "pending=true" >> "$GITHUB_OUTPUT"
+            echo "Unfinished checkpoint found: daily run can resume it."
+          else
+            echo "pending=false" >> "$GITHUB_OUTPUT"
+            echo "No unfinished checkpoint found."
+          fi
 
       - name: Install Python packages
         run: |
@@ -106,12 +118,12 @@ jobs:
           echo "Production buffer contains $count waiting video(s)."
 
       - name: Production readiness preflight
-        if: steps.buffer.outputs.count == '0'
+        if: steps.buffer.outputs.count == '0' || steps.checkpoint.outputs.pending == 'true'
         run: cd pipeline && python production_readiness.py
 
-      - name: Make video only when buffer is empty
+      - name: Make video when buffer is empty or a checkpoint is pending
         id: make
-        if: steps.buffer.outputs.count == '0'
+        if: steps.buffer.outputs.count == '0' || steps.checkpoint.outputs.pending == 'true'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -149,6 +161,13 @@ jobs:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           GITHUB_TOKEN: ${{ github.token }}
         run: cd pipeline && python publish.py
+      - name: Save checkpoint for the next run
+        if: always() && hashFiles('cache/checkpoint/**') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: cache/checkpoint
+          key: ckpt-${{ github.run_id }}
+
       - name: Save today's Cloudflare usage (also when the build failed)
         if: always() && hashFiles('cache/cf-usage/usage.json') != ''
         uses: actions/cache/save@v4
