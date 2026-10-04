@@ -206,13 +206,42 @@
       "artifact_expires": "2026-10-02T19:41Z",
       "duration": 76.4,
       "tiktok_publish_id": "v_inbox_file~v2.7689559751851591711",
-      "status": "queued",
+      "status": "uploaded",
       "reason": null,
-      "qa": "passed (local check 2026-10-01)",
+      "qa": "passed",
       "stashed": true,
       "note": "one shot with fake handwriting (old French parchment)",
       "tiktok_published": true,
-      "tiktok_match_source": "backfill.json:tiktok_publish_id"
+      "tiktok_match_source": "backfill.json:tiktok_publish_id",
+      "yt_title": "A Man-Eating Cryptid Terrorized France | True Story #shorts",
+      "hashtags": [
+        "beastofgevaudan",
+        "france",
+        "history",
+        "truecrime"
+      ],
+      "yt_tags": [
+        "the beast of gevaudan",
+        "beast of gevaudan",
+        "gevaudan beast",
+        "france monster",
+        "cryptid attack",
+        "man eating cryptid",
+        "history mystery",
+        "18th century beast",
+        "historical cryptid",
+        "french monster",
+        "beast of gévaudan",
+        "beast of gévaudan story",
+        "france mystery"
+      ],
+      "youtube": {
+        "id": "NPstIYqU8QU",
+        "url": "https://youtube.com/shorts/NPstIYqU8QU",
+        "privacy": "public",
+        "wanted": "public"
+      },
+      "uploaded_at": "2026-10-04T14:05Z"
     },
     {
       "stamp": "2026-09-26_0327",
