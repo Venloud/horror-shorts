@@ -274,12 +274,42 @@
       "artifact_expires": "2026-10-03T04:54Z",
       "duration": 57.9,
       "tiktok_publish_id": "v_inbox_file~v2.7689702113580009502",
-      "status": "queued",
+      "status": "uploaded",
       "reason": null,
-      "qa": "passed (local check 2026-10-01)",
+      "qa": "passed",
       "stashed": true,
       "tiktok_published": true,
-      "tiktok_match_source": "backfill.json:tiktok_publish_id"
+      "tiktok_match_source": "backfill.json:tiktok_publish_id",
+      "yt_title": "Whispering My Full Childhood Name... The Backward Shadow #shorts",
+      "hashtags": [
+        "thebackwardshadow",
+        "scarystories",
+        "creepypasta"
+      ],
+      "yt_tags": [
+        "the backward shadow",
+        "backward shadow story",
+        "scary story",
+        "horror story",
+        "creepy trail legend",
+        "foggy woods horror",
+        "flashlight shadow story",
+        "hiking horror story",
+        "creepy woods tale",
+        "mirror horror story",
+        "spooky short story",
+        "creepy pasta",
+        "backward shadow",
+        "creepy story",
+        "short horror story"
+      ],
+      "youtube": {
+        "id": "Ly29-enQfBE",
+        "url": "https://youtube.com/shorts/Ly29-enQfBE",
+        "privacy": "public",
+        "wanted": "public"
+      },
+      "uploaded_at": "2026-10-04T23:12Z"
     },
     {
       "stamp": "2026-09-26_0514",
