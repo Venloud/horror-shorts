@@ -158,12 +158,42 @@
       "artifact_expires": "2026-10-02T06:46Z",
       "duration": 74.4,
       "tiktok_publish_id": "v_pub_file~v2-1.7689359811137439774",
-      "status": "queued",
+      "status": "uploaded",
       "reason": null,
-      "qa": "passed (local check 2026-10-01)",
+      "qa": "passed",
       "stashed": true,
       "tiktok_published": true,
-      "tiktok_match_source": "backfill.json:tiktok_publish_id"
+      "tiktok_match_source": "backfill.json:tiktok_publish_id",
+      "yt_title": "The Abandoned Subway Terminal Rule | Scary Story #shorts",
+      "hashtags": [
+        "platformfour",
+        "scarystories",
+        "creepypasta"
+      ],
+      "yt_tags": [
+        "platform four",
+        "subway terminal security",
+        "phantom train at 315 am",
+        "abandoned subway horror",
+        "security guard scary story",
+        "subway platform four rule",
+        "faceless passengers train",
+        "creepy subway legend",
+        "night shift horror story",
+        "abandoned subway mystery",
+        "subway station ghost story",
+        "scary fiction story",
+        "platform four rule",
+        "platform four rule story",
+        "scary story"
+      ],
+      "youtube": {
+        "id": "kJLVSyDAfzE",
+        "url": "https://youtube.com/shorts/kJLVSyDAfzE",
+        "privacy": "public",
+        "wanted": "public"
+      },
+      "uploaded_at": "2026-10-04T10:37Z"
     },
     {
       "stamp": "2026-09-25_1930",
