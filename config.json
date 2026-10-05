@@ -1,4 +1,5 @@
 {
+  "blocked_topics": ["Lizzie Borden"],
   "channel_name": "Night Files",
   "story_min_score": 80,
   "story_max_drafts": 3,

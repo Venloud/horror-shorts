@@ -7,7 +7,7 @@ from collections import Counter
 
 import requests
 
-from common import (CONFIG, env, gemini_model_out, gemini_out, log, mark_source, note_gemini_429, strip_marks,
+from common import (CONFIG, blocked_topic, env, gemini_model_out, gemini_out, log, mark_source, note_gemini_429, strip_marks,
                     trim_sources)
 
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
@@ -176,7 +176,7 @@ def resize_story(story: dict, api_key: str, want_words: int) -> dict:
 
 def pick_subgenre(history: list[dict]) -> str:
     """Pick a fresh subgenre, with an analytics-driven priority lane for proven topics."""
-    subs = CONFIG["subgenres"]
+    subs = [s for s in CONFIG["subgenres"] if not blocked_topic(s)]
     recent = [h.get("subgenre") for h in history[-len(subs):]]
     counts = Counter(recent)
 
@@ -1188,6 +1188,10 @@ def _transient(e: Exception) -> bool:
 def write_story(history: list[dict]) -> dict:
     skipped: list[dict] = []
     story = _write_story(history, skipped)
+    hit = blocked_topic(story.get("title"), story.get("case"), story.get("premise"), story.get("source"),
+                        " ".join(sc.get("narration", "") for sc in story.get("scenes") or []))
+    if hit:  # last line of defence: a blocked topic that slipped past a picker never gets voiced or posted
+        raise RuntimeError(f"Story '{story.get('title')}' is about a blocked topic ({hit}): discarded")
     mark_true_story(story)
     if story.get("mode") != "inbox-script":  # the owner's exact words are never changed
         speak_numbers(story)

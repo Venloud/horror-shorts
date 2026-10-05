@@ -6,7 +6,7 @@ import time
 
 import requests
 
-from common import CONFIG, ROOT, log
+from common import CONFIG, ROOT, blocked_topic, log
 
 CASES_FILE = ROOT / "data" / "mysteries.json"
 WIKI_API = "https://en.wikipedia.org/w/api.php"
@@ -255,13 +255,15 @@ def pick_case(history: list[dict], kind: str = "mystery") -> str | dict:
     try:
         import discover
         found = discover.lead(kind, history)
-        if found:
+        if found and blocked_topic(found.get("title"), found.get("text", "")[:3000]):
+            log(f"Discovery lead '{found.get('title')}' is a blocked topic: skipped")
+        elif found:
             return found
     except Exception as e:  # noqa: BLE001
         log(f"Discovery skipped ({str(e)[:120]})")
     file = LORE_FILE if kind == "lore" else CASES_FILE
     used = {h.get("case") for h in history if h.get("case")}
-    fresh = [c for c in json.loads(file.read_text()) if c not in used]
+    fresh = [c for c in json.loads(file.read_text()) if c not in used and not blocked_topic(c)]
     if not fresh:
         raise RuntimeError(f"All topics in {file.name} have been used. Add more titles.")
     import trends

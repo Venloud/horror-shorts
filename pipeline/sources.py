@@ -25,7 +25,7 @@ import re
 
 import requests
 
-from common import ROOT, log
+from common import ROOT, blocked_topic, log
 
 INBOX = ROOT / "inbox"
 CASES_FILE = ROOT / "data" / "cases.json"
@@ -98,7 +98,7 @@ def next_case(history: list[dict]) -> dict:
     used = {h.get("case") for h in history if h.get("case")}
     import discover
     pool = json.loads(CASES_FILE.read_text()) + discover.aviation_cases()  # + strange NTSB aviation cases
-    fresh = [c for c in pool if c["title"] not in used]
+    fresh = [c for c in pool if c["title"] not in used and not blocked_topic(c.get("title"), c.get("wiki"))]
     if not fresh:
         raise RuntimeError("All FBI cases have been used. Add more to data/cases.json.")
     import trends
@@ -144,7 +144,7 @@ def next_inbox(history: list[dict]) -> dict | None:
                 continue
             kind, _, url = line.partition(" ") if line.split()[0].lower() in ("true", "fiction") else ("true", "", line)
             url = url.strip()
-            if url.startswith("http") and url not in used:
+            if url.startswith("http") and url not in used and not blocked_topic(url.replace("_", " ")):
                 return {"key": url, "kind": kind.lower(), "url": url}
     def order(f):
         """QUEUE: n header first (lower = sooner); topic files (REMAKE / LORE / TRUE: <topic>) before the rest."""
@@ -158,6 +158,10 @@ def next_inbox(history: list[dict]) -> dict | None:
 
     for f in sorted(INBOX.glob("*.txt"), key=order):
         if f.name == "links.txt" or f"inbox/{f.name}" in used or (forced and f.name != forced):
+            continue
+        hit = blocked_topic(f.name, f.read_text(encoding="utf-8", errors="ignore")[:4000])
+        if hit:
+            log(f"Inbox {f.name}: blocked topic ({hit}), skipped")
             continue
         lines = f.read_text(encoding="utf-8").strip().splitlines()
         if not lines:

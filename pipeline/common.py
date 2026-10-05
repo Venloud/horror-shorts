@@ -11,6 +11,16 @@ CONFIG = json.loads((ROOT / "config.json").read_text())
 HISTORY_FILE = ROOT / "data" / "history.json"
 
 
+def blocked_topic(*texts) -> str:
+    """The config "blocked_topics" entry (case-insensitive) found in any of the texts, else "". Temporary hard stop
+    for a topic that keeps repeating (Oct 5: Lizzie Borden posted 4 times while history.json was frozen)."""
+    hay = " ".join(str(t or "") for t in texts).lower()
+    for t in CONFIG.get("blocked_topics", []):
+        if t and t.lower() in hay:
+            return t
+    return ""
+
+
 def log(msg: str) -> None:
     print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 

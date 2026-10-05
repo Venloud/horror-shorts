@@ -13,7 +13,7 @@ from urllib.parse import quote
 
 import requests
 
-from common import CONFIG, ROOT, log
+from common import CONFIG, ROOT, blocked_topic, log
 
 UA = "NightFilesBot/1.0 (https://github.com/Venloud/horror-shorts; automated short-video builder)"
 API = ("https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/user/"
@@ -51,6 +51,7 @@ def jump(title: str, cache: dict) -> float | None:
 
 def pick(candidates: list, title_of=lambda c: c):
     """The unused topic with the biggest pageview jump (>= trend_min_ratio), else a random one."""
+    candidates = [c for c in candidates if not blocked_topic(title_of(c))]  # config blocked_topics, every caller
     if not candidates:
         raise ValueError("no candidates")
     if not CONFIG.get("trend_picking", True):
