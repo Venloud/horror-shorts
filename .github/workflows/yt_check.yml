@@ -44,25 +44,35 @@ jobs:
               "https://www.googleapis.com/auth/youtube.upload",
               "https://www.googleapis.com/auth/yt-analytics.readonly",
           ]
+          # No scopes on the refresh: google-auth would echo the REQUESTED scopes back as "granted" when Google's
+          # answer has no scope field (it printed "upload + analytics granted" with only youtube.upload). Google's
+          # tokeninfo endpoint says what the access token can really do.
           creds = Credentials(None, refresh_token=os.environ["YT_REFRESH_TOKEN"],
                               client_id=os.environ["YT_CLIENT_ID"],
                               client_secret=os.environ["YT_CLIENT_SECRET"],
-                              token_uri="https://oauth2.googleapis.com/token",
-                              scopes=scopes)
+                              token_uri="https://oauth2.googleapis.com/token")
           try:
               creds.refresh(Request())
           except Exception as e:
               print(f"YouTube token FAILED: {type(e).__name__}: {e}")
               sys.exit(1)
-          granted = set(creds.granted_scopes or [])
-          missing_scopes = [scope for scope in scopes if scope not in granted]
-          print("Granted YouTube OAuth scopes:")
-          for scope in sorted(granted):
-              if scope.startswith("https://www.googleapis.com/auth/youtube"):
-                  print("  " + scope)
-          if missing_scopes:
-              print("YouTube OAuth scope check FAILED. Missing:")
-              for scope in missing_scopes:
-                  print("  " + scope)
+          import requests
+          info = requests.get("https://oauth2.googleapis.com/tokeninfo",
+                              params={"access_token": creds.token}, timeout=30).json()
+          granted = set((info.get("scope") or "").split())
+          if not granted:
+              print(f"Could not read the token's scopes from tokeninfo: {info.get('error_description') or info}")
               sys.exit(1)
-          print("YouTube token OK: upload + analytics scopes are granted.")
+          print("Scopes this refresh token really has:")
+          for scope in scopes:
+              print(f"  {'GRANTED' if scope in granted else 'MISSING'}  {scope}")
+          for scope in sorted(granted - set(scopes)):
+              print(f"  (also)   {scope}")
+          if scopes[0] not in granted:
+              print("::error::youtube.upload is MISSING: uploads will fail. Re-run pipeline/connect_youtube.py.")
+              sys.exit(1)
+          if scopes[1] not in granted:
+              print("::error::Uploads OK, but yt-analytics.readonly is MISSING: analytics.yml cannot work. Re-run "
+                    "pipeline/connect_youtube.py (it asks for both) and update YT_REFRESH_TOKEN.")
+              sys.exit(1)
+          print("YouTube token OK: youtube.upload and yt-analytics.readonly are both granted.")

@@ -25,13 +25,14 @@ def _when(stamp: str | None) -> datetime | None:
         return None
 
 
-def _runs(since: datetime) -> list[dict]:
-    """build.yml runs of the last 24 h (GitHub API, the workflow's own token)."""
+def _runs(since: datetime, workflow: str = "buffer_fill.yml") -> list[dict]:
+    """Runs of one workflow in the last 24 h (GitHub API, the workflow's own token). build.yml is gone since Oct 2:
+    buffer_fill.yml builds, daily.yml builds only when the buffer is empty and then posts."""
     repo, token = os.environ.get("GITHUB_REPOSITORY"), os.environ.get("GITHUB_TOKEN")
     if not (repo and token):
         return []
     try:
-        r = requests.get(f"https://api.github.com/repos/{repo}/actions/workflows/build.yml/runs", timeout=30,
+        r = requests.get(f"https://api.github.com/repos/{repo}/actions/workflows/{workflow}/runs", timeout=30,
                          headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"},
                          params={"created": f">={since.strftime('%Y-%m-%dT%H:%M:%SZ')}", "per_page": 50})
         return r.json().get("workflow_runs", []) if r.ok else []
@@ -70,11 +71,11 @@ def summary(now: datetime | None = None) -> tuple[str, str] | None:
                      + (", LOW-QUOTA" if h.get("low_quota") else "") + ")")
     for h in skipped:
         lines.append(f"Skipped for good: {h.get('title')}: {str(h.get('reason'))[:120]}")
-    runs = _runs(since)
-    real = runs  # no test builds during the freeze
-    fails = [r for r in real if r.get("conclusion") == "failure"]
-    lines.append(f"Build runs: {len(real)} ({len(fails)} failed"
-                 + (": " + ", ".join(r["html_url"].rsplit("/", 1)[-1] for r in fails[:5]) if fails else "") + ")")
+    for wf, label in (("buffer_fill.yml", "Build runs (buffer_fill.yml)"), ("daily.yml", "Slot runs (daily.yml)")):
+        runs = _runs(since, wf)
+        fails = [r for r in runs if r.get("conclusion") == "failure"]
+        lines.append(f"{label}: {len(runs)} ({len(fails)} failed"
+                     + (": " + ", ".join(r["html_url"].rsplit("/", 1)[-1] for r in fails[:5]) if fails else "") + ")")
     try:
         import buffer
         lines.append(f"Buffer now: {buffer.count()} video(s)")
