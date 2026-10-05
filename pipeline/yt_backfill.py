@@ -6,8 +6,7 @@ State: data/backfill.json (inventory + uploaded / skipped + reason), so nothing 
                                    GitHub release "backfill" (<stamp>.mp4 + <stamp>.json). No YouTube calls.
   python yt_backfill.py upload  -> one upload, only when:
      - data/tiktok_posted.txt exists (the owner's list of videos he actually PUBLISHED on TikTok, one title or
-       caption per line), or yt_backfill_trust_publish_ids is enabled and a queued item has a recorded
-       tiktok_publish_id in data/backfill.json.
+       caption per line). Without it the backfill is paused (a TikTok publish_id only means "sent to drafts").
      - not within 60 min of a publish slot (daily.yml crons) or a post in history.json, and no daily.yml run active.
      - fewer than yt_backfill_per_day backfill uploads today (UTC).
      - the title isn't on the channel already (history ids, backfill.json, the channel's uploads when the token
@@ -189,28 +188,11 @@ def _score(line: str, text: str) -> float:
 
 
 def match_posted(state: dict) -> bool:
-    """Mark TikTok-published videos from the owner list or recorded TikTok publish IDs.
-
-    The text inventory remains the preferred source when present. When it is absent,
-    the explicit config flag yt_backfill_trust_publish_ids allows the existing
-    tiktok_publish_id recorded in backfill.json to act as the eligibility signal.
-    """
+    """Mark the videos the owner PUBLISHED on TikTok, from data/tiktok_posted.txt only (no file = paused)."""
     if not POSTED.exists():
-        if CONFIG.get("yt_backfill_trust_publish_ids", False):
-            matched = 0
-            for v in state["videos"]:
-                v["tiktok_published"] = bool(v.get("tiktok_publish_id"))
-                v.pop("tiktok_line", None)
-                if v["tiktok_published"]:
-                    v["tiktok_match_source"] = "backfill.json:tiktok_publish_id"
-                    matched += 1
-                    log(f"TikTok publish ID accepted: {v['stamp']} {v['title']!r} ({v['tiktok_publish_id']})")
-                else:
-                    v.pop("tiktok_match_source", None)
-            if matched:
-                log(f"TikTok inventory: {matched} video(s) eligible from recorded publish IDs because data/tiktok_posted.txt is absent")
-                return True
-        log("data/tiktok_posted.txt is missing and recorded TikTok publish IDs are not enabled: nothing is backfilled")
+        # A TikTok publish_id only means "sent to the owner's drafts", not "published": no list = backfill paused.
+        log("Backfill PAUSED: data/tiktok_posted.txt is missing (only videos the owner published on TikTok are "
+            "uploaded; a publish_id only means 'sent to drafts')")
         return False
     lines = [ln.strip() for ln in POSTED.read_text(encoding="utf-8").splitlines()
              if ln.strip() and not ln.strip().startswith("//")]

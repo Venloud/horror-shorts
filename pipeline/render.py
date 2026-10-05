@@ -725,6 +725,47 @@ def frame_visuals(path: Path, fps: float = 2.0) -> dict:
             "longest_run_s": best_run / fps, "blank_s": blank / fps}
 
 
+def _sharpness(path: Path, t: float, w: int = 540, h: int = 960) -> float | None:
+    """Contrast-normalised sharpness of one frame (Laplacian variance / intensity variance, caption rows masked;
+    grain is averaged out by the half-size area scale). None for a blank frame. Calibrated Oct 5: native 0.47,
+    576 px upscale 0.19, VHS analog 0.21, 270 px upscale 0.04, gaussian blur 0.02."""
+    import numpy as np
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-ss", f"{t:.2f}", "-i", str(path), "-frames:v", "1", "-vf",
+                          f"scale={w}:{h}:flags=area,format=gray", "-f", "rawvideo", "-"],
+                         capture_output=True, check=True).stdout
+    if len(raw) < w * h:
+        return None
+    f = np.frombuffer(raw[:w * h], np.uint8).reshape(h, w).astype(np.float32)
+    f = f[np.r_[int(h * .15):int(h * .38), int(h * .62):int(h * .88)]]
+    if float(f.std()) < 4:
+        return None
+    lap = f[1:-1, :-2] + f[1:-1, 2:] + f[:-2, 1:-1] + f[2:, 1:-1] - 4 * f[1:-1, 1:-1]
+    return float(lap.var()) / max(1.0, float(f.var()))
+
+
+def start_blur_problems(path: Path, dur: float) -> list[str]:
+    """The first 2 seconds (the hook viewers judge the video by) must not be blurry: their median sharpness must be
+    >= qa_blur_min (0.06) and >= qa_blur_ratio (25%) of the rest of the video's median."""
+    import statistics
+    try:
+        first = [s for s in (_sharpness(path, t) for t in (0.2, 0.7, 1.2, 1.7)) if s is not None]
+        rest = [s for s in (_sharpness(path, t) for t in [3.0 + 3 * i for i in range(int((dur - 6) / 3))])
+                if s is not None]
+    except Exception as e:  # noqa: BLE001
+        log(f"Blur check failed to run ({str(e)[:100]})")
+        return []
+    if not first:
+        return ["blurry start: the first 2 seconds are blank"]
+    a = statistics.median(first)
+    b = statistics.median(rest) if rest else a
+    log(f"Start sharpness: first 2 s {a:.3f}, rest of the video {b:.3f}")
+    lo, ratio = float(CONFIG.get("qa_blur_min", 0.06)), float(CONFIG.get("qa_blur_ratio", 0.25))
+    if a < lo or a < ratio * b:
+        return [f"blurry start: the first 2 seconds have sharpness {a:.3f} (rest of the video {b:.3f}; "
+                f"min {lo:g} and {ratio:.0%} of the rest)"]
+    return []
+
+
 def visual_problems(path: Path, story: dict | None, dur: float) -> list[str]:
     """No single picture may be on screen > qa_max_visual_share (20%) of the video, and a ~60 s video needs
     >= qa_min_visuals (8) distinct pictures: checked on the shot list (source pictures) AND on the final frames."""
@@ -762,6 +803,7 @@ def qa_gate(path: Path, ass_path: Path | None, narration: dict, story: dict | No
     lo, hi = CONFIG.get("target_seconds", [61, 68])
     dur = media_duration(path)
     problems += visual_problems(path, story, dur)
+    problems += start_blur_problems(path, dur)
     if backfill:
         if not 15 <= dur <= 180:
             problems.append(f"duration {dur:.1f}s (Shorts: 15-180s)")

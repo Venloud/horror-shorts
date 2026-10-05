@@ -23,6 +23,9 @@ def _gh_output(key: str, value) -> None:
             f.write(f"{key}={value}\n")
 
 
+HARD_QA = ("one picture", "the finished video shows the same picture", "blurry start")  # never buffered
+
+
 def fit_duration(story: dict, workdir, narrate, allow_rewrite: bool) -> tuple[dict, dict]:
     """Voice it, then get the narration into config target_seconds: first by voice speed (config voice_speed_range),
     then, if still outside, by asking Gemini to trim/extend by the needed word count (max 2 tries)."""
@@ -285,9 +288,36 @@ def main() -> int:
         problems = qa_gate(video, ass, narration, story)
         manifest.stage("qa", "complete" if not problems else "report", problems=problems)
         write_summary(workdir, story, video, problems)
-        if problems:
-            # QA is report-only in production. A rendered video is still buffered and posted.
-            # This keeps QA useful for diagnostics without turning it into a publishing gate.
+        # HARD block (owner, Oct 5; the #28 frozen-gavel bug): a frozen / one-image video or a blurry start never
+        # enters the buffer. Every other QA problem is report-only.
+        hard = [p for p in problems if p.startswith(HARD_QA)]
+        if hard:
+            reason = "; ".join(hard)
+            log(f"QA gate HARD FAIL: {reason}")
+            if story.get("_low_quota"):
+                # a low-quota video that isn't good enough: wait for the quota (not counted against the story);
+                # SD-Turbo gap fillers are dropped so Cloudflare redraws those shots next time
+                for tag, prov in (story.get("_shot_provider") or {}).items():
+                    if prov == "local_sd":
+                        (img_dir / f"scene_{tag}.png").unlink(missing_ok=True)
+                try:
+                    images._quota_stop(f"low-quota build failed the QA gate ({reason}); the story is kept and "
+                                       "the next build (with Cloudflare) continues it.")
+                except images.ImageQuotaWait:
+                    pass
+                return 0
+            fails = checkpoint.qa_failed(story, hard)
+            if fails >= 2:  # same story failed twice: skip it for good so the builder can't loop on it
+                history.append({"date": stamp, "story_id": story.get("story_id"), "title": story["title"],
+                                "mode": story.get("mode"), "source": story.get("source"), "case": story.get("case"),
+                                "skipped": True, "reason": f"QA gate: {reason}"})
+                save_history(history)
+                checkpoint.finish(story)
+                notify(story, None, error=f"QA gate failed twice, story skipped for good: {reason}")
+            else:
+                notify(story, None, error=f"QA gate failed, not added to the buffer (next build retries): {reason}")
+            return 0  # alert sent; exit 0 so the workflow still saves history + checkpoint
+        if problems:  # report-only problems: the video is still buffered and posted
             reason = "; ".join(problems)
             log(f"QA gate REPORT ONLY: {reason}")
             try:

@@ -43,7 +43,12 @@ jobs:
           node-version: "20"
 
       - name: Install Remotion composition layer
-        run: npm install --prefix remotion --no-audit --no-fund
+        run: |  # only when config remotion_join is on (off since Oct 5: it failed every run with "registerRoot")
+          if python -c "import json,sys;sys.exit(0 if json.load(open('config.json')).get('remotion_join') else 1)"; then
+            npm install --prefix remotion --no-audit --no-fund
+          else
+            echo "Remotion join is off (config remotion_join): not installed"
+          fi
 
       - name: Install system tools
         run: |

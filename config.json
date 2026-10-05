@@ -50,11 +50,11 @@
     896
   ],
   "local_image_steps": 2,
-  "local_image_budget_minutes": 18,
-  "local_image_max": 12,
+  "local_image_budget_minutes": 12,
+  "local_image_max": 6,
   "space_images_max": 12,
   "render_style": "classic",
-  "remotion_join": true,
+  "remotion_join": false,
   "autoclip": {
     "enabled": false,
     "binary": "autoclip",
@@ -250,7 +250,7 @@
   "analytics_start": "2026-09-01",
   "youtube_privacy": "public",
   "yt_backfill_per_day": 3,
-  "yt_backfill_trust_publish_ids": true,
+  "yt_backfill_trust_publish_ids": false,
   "packaging": true,
   "asset_library": true,
   "asset_min_similarity": 0.27,
