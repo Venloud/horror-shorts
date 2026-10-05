@@ -25,7 +25,7 @@ import re
 
 import requests
 
-from common import ROOT, blocked_topic, log
+from common import CONFIG, ROOT, blocked_topic, log
 
 INBOX = ROOT / "inbox"
 CASES_FILE = ROOT / "data" / "cases.json"
@@ -101,6 +101,10 @@ def next_case(history: list[dict]) -> dict:
     fresh = [c for c in pool if c["title"] not in used and not blocked_topic(c.get("title"), c.get("wiki"))]
     if not fresh:
         raise RuntimeError("All FBI cases have been used. Add more to data/cases.json.")
+    import repeat_guard
+    fresh = [c for c in fresh if not repeat_guard.repeat_of(c["title"], c.get("wiki"), history=history)]
+    if not fresh:
+        raise RuntimeError(f"Every unused case repeats one of the last {CONFIG.get('repeat_window', 15)} videos")
     import trends
     return trends.pick(fresh, lambda c: c.get("wiki") or c["title"])  # prefer a case people are looking up now
 
@@ -145,6 +149,11 @@ def next_inbox(history: list[dict]) -> dict | None:
             kind, _, url = line.partition(" ") if line.split()[0].lower() in ("true", "fiction") else ("true", "", line)
             url = url.strip()
             if url.startswith("http") and url not in used and not blocked_topic(url.replace("_", " ")):
+                import repeat_guard
+                why = repeat_guard.repeat_of(url.rsplit("/", 1)[-1].replace("_", " "), history=history)
+                if why:
+                    log(f"Inbox link {url}: {why}; it waits")
+                    continue
                 return {"key": url, "kind": kind.lower(), "url": url}
     def order(f):
         """QUEUE: n header first (lower = sooner); topic files (REMAKE / LORE / TRUE: <topic>) before the rest."""
@@ -162,6 +171,12 @@ def next_inbox(history: list[dict]) -> dict | None:
         hit = blocked_topic(f.name, f.read_text(encoding="utf-8", errors="ignore")[:4000])
         if hit:
             log(f"Inbox {f.name}: blocked topic ({hit}), skipped")
+            continue
+        import repeat_guard  # the topic (file name + first line) must not repeat a recent video; the file waits
+        why = repeat_guard.repeat_of(f.stem.replace("_", " "), (f.read_text(encoding="utf-8", errors="ignore")
+                                                                 .strip().splitlines() or [""])[0], history=history)
+        if why:
+            log(f"Inbox {f.name}: {why}; it waits")
             continue
         lines = f.read_text(encoding="utf-8").strip().splitlines()
         if not lines:

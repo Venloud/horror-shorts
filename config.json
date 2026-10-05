@@ -1,4 +1,9 @@
 {
+  "repeat_window": 15,
+  "topic_families": {
+    "bloody mary": ["bloody mary"],
+    "lizzie borden": ["lizzie borden", "borden"]
+  },
   "blocked_topics": ["Lizzie Borden"],
   "channel_name": "Night Files",
   "story_min_score": 80,
@@ -319,6 +324,6 @@
     "Bloody Mary fictional bathroom rumor spin-off",
     "Bloody Mary fictional aftermath spin-off"
   ],
-  "priority_subgenre_probability": 0.4,
+  "priority_subgenre_probability": 0.15,
   "priority_subgenre_recent_window": 3
 }

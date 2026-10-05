@@ -176,7 +176,9 @@ def resize_story(story: dict, api_key: str, want_words: int) -> dict:
 
 def pick_subgenre(history: list[dict]) -> str:
     """Pick a fresh subgenre, with an analytics-driven priority lane for proven topics."""
-    subs = [s for s in CONFIG["subgenres"] if not blocked_topic(s)]
+    import repeat_guard
+    allowed = [s for s in CONFIG["subgenres"] if not blocked_topic(s)]
+    subs = [s for s in allowed if not repeat_guard.repeat_of(s, history=history)] or allowed
     recent = [h.get("subgenre") for h in history[-len(subs):]]
     counts = Counter(recent)
 
@@ -1192,6 +1194,14 @@ def write_story(history: list[dict]) -> dict:
                         " ".join(sc.get("narration", "") for sc in story.get("scenes") or []))
     if hit:  # last line of defence: a blocked topic that slipped past a picker never gets voiced or posted
         raise RuntimeError(f"Story '{story.get('title')}' is about a blocked topic ({hit}): discarded")
+    import repeat_guard
+    from common import opening_line
+    why = (repeat_guard.repeat_of(story.get("title"), story.get("case"), story.get("subgenre"),
+                                  story.get("source") if not str(story.get("source") or "").startswith("http") else "",
+                                  history=history)
+           or repeat_guard.opening_reused(opening_line(story), history))
+    if why:  # last line of defence: a picker let a repeat through (or a resumed checkpoint is already buffered)
+        raise RuntimeError(f"Story '{story.get('title')}' repeats a recent video: {why}: discarded")
     mark_true_story(story)
     if story.get("mode") != "inbox-script":  # the owner's exact words are never changed
         speak_numbers(story)

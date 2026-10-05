@@ -255,8 +255,11 @@ def pick_case(history: list[dict], kind: str = "mystery") -> str | dict:
     try:
         import discover
         found = discover.lead(kind, history)
+        import repeat_guard
         if found and blocked_topic(found.get("title"), found.get("text", "")[:3000]):
             log(f"Discovery lead '{found.get('title')}' is a blocked topic: skipped")
+        elif found and repeat_guard.repeat_of(found.get("title"), history=history):
+            log(f"Discovery lead '{found.get('title')}': {repeat_guard.repeat_of(found.get('title'), history=history)}")
         elif found:
             return found
     except Exception as e:  # noqa: BLE001
@@ -266,6 +269,10 @@ def pick_case(history: list[dict], kind: str = "mystery") -> str | dict:
     fresh = [c for c in json.loads(file.read_text()) if c not in used and not blocked_topic(c)]
     if not fresh:
         raise RuntimeError(f"All topics in {file.name} have been used. Add more titles.")
+    import repeat_guard
+    fresh = [c for c in fresh if not repeat_guard.repeat_of(c, history=history)]
+    if not fresh:
+        raise RuntimeError(f"Every unused topic in {file.name} repeats one of the last videos")
     import trends
     return trends.pick(fresh)  # prefer a topic whose Wikipedia views just jumped
 
