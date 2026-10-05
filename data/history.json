@@ -701,5 +701,101 @@
       "wanted": "public"
     },
     "posted": "2026-10-02_2112"
+  },
+  {
+    "date": "2026-10-03_0426",
+    "story_id": "50faf2e6f0f0",
+    "title": "The Lizzie Borden Murders",
+    "mode": "case",
+    "true_story": true,
+    "case": "Lizzie Borden",
+    "source": "Lizzie Borden",
+    "buffered": "2026-10-03_0426",
+    "posted": "2026-10-03_0547",
+    "video_number": 34,
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7692313352663959583",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "id": "3FeuDEbs7HY",
+      "url": "https://youtube.com/shorts/3FeuDEbs7HY",
+      "privacy": "public",
+      "wanted": "public"
+    },
+    "history_rebuilt": "Oct 5 from daily.yml run 37100777945 log (buffer_fill.yml never saved this entry)"
+  },
+  {
+    "date": "2026-10-03_2113",
+    "story_id": "50faf2e6f0f0",
+    "title": "The Lizzie Borden Murders",
+    "mode": "case",
+    "true_story": true,
+    "case": "Lizzie Borden",
+    "source": "Lizzie Borden",
+    "buffered": "2026-10-03_2113",
+    "posted": "2026-10-04_0623",
+    "video_number": 35,
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7692693829459675167",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "id": "RKBYDkxzakA",
+      "url": "https://youtube.com/shorts/RKBYDkxzakA",
+      "privacy": "public",
+      "wanted": "public"
+    },
+    "history_rebuilt": "Oct 5 from daily.yml run 37182531781 log (buffer_fill.yml never saved this entry)"
+  },
+  {
+    "date": "2026-10-04_0548",
+    "story_id": "50faf2e6f0f0",
+    "title": "The Lizzie Borden Murders",
+    "mode": "case",
+    "true_story": true,
+    "case": "Lizzie Borden",
+    "source": "Lizzie Borden",
+    "buffered": "2026-10-04_0548",
+    "posted": "2026-10-04_1848",
+    "video_number": 36,
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7692886020173383710",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "id": "wib_Seddb7o",
+      "url": "https://youtube.com/shorts/wib_Seddb7o",
+      "privacy": "public",
+      "wanted": "public"
+    },
+    "history_rebuilt": "Oct 5 from daily.yml run 37225664966 log (buffer_fill.yml never saved this entry)"
+  },
+  {
+    "date": "2026-10-04_1218",
+    "story_id": "f6594884c9be",
+    "title": "The Lizzie Borden Mystery",
+    "mode": "case",
+    "true_story": true,
+    "case": "Lizzie Borden",
+    "source": "Lizzie Borden",
+    "buffered": "2026-10-04_1218",
+    "posted": "2026-10-05_0616",
+    "video_number": 37,
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7693062956413913119",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "id": "u7HcPPSL-YI",
+      "url": "https://youtube.com/shorts/u7HcPPSL-YI",
+      "privacy": "public",
+      "wanted": "public"
+    },
+    "history_rebuilt": "Oct 5 from daily.yml run 37271287181 log (buffer_fill.yml never saved this entry)"
   }
 ]
