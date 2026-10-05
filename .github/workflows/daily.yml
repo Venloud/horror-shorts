@@ -123,6 +123,7 @@ jobs:
 
       - name: Make video when buffer is empty or a checkpoint is pending
         id: make
+        continue-on-error: true  # a failed build must not block posting a buffered video (or recording the missed slot)
         if: steps.buffer.outputs.count == '0' || steps.checkpoint.outputs.pending == 'true'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -194,8 +195,14 @@ jobs:
           rm -f .new_refresh_token
 
       - name: Save history after posting
-        if: success()
+        if: always()
         run: bash pipeline/push_state.sh "Posted story"
+
+      - name: Check history has every buffered/posted video
+        if: always()
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: cd pipeline && python history_check.py
 
       - name: Keep the generated/post result for download (7 days)
         id: artifact

@@ -12,12 +12,19 @@ from common import CONFIG, ROOT, log, media_duration, run
 AUDIO_EXTS = {".mp3", ".wav", ".m4a", ".ogg", ".flac"}
 
 def _pick_approved() -> Path | None:
+    """Rotate config music_rotation (approved files + "procedural") by the number of videos in history.
+    None = the generated ambient bed this time."""
     if str(CONFIG.get("music_policy", "procedural_only")).strip().lower() != "approved_files":
         return None
     approved = set(CONFIG.get("approved_music") or [])
-    files = [p for p in (ROOT / "assets" / "music").glob("*")
-             if p.is_file() and p.name in approved and p.suffix.lower() in AUDIO_EXTS]
-    return files[0] if files else None
+    rotation = [x for x in CONFIG.get("music_rotation") or sorted(approved)
+                if x == "procedural" or (x in approved and (ROOT / "assets" / "music" / x).is_file()
+                                         and Path(x).suffix.lower() in AUDIO_EXTS)]
+    if not rotation:
+        return None
+    from common import load_history
+    pick = rotation[len(load_history()) % len(rotation)]
+    return None if pick == "procedural" else ROOT / "assets" / "music" / pick
 
 def _procedural_music(workdir: Path, seconds: float) -> Path:
     out = workdir / "background_music.mp3"

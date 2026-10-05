@@ -1,7 +1,7 @@
 name: Night Files buffer fill
 
-# Generates finished videos into the FIFO buffer only.
-# It never calls publish.py, TikTok, or YouTube.
+# Generates finished videos into the FIFO buffer. Posts only to make up a missed slot
+# (data/missed_slot.json, publish.post_missed_slot rules: buffer 2+, no post within 3 h).
 
 on:
   schedule:
@@ -77,6 +77,13 @@ jobs:
           echo "count=$count" >> "$GITHUB_OUTPUT"
           echo "Buffer has $count complete waiting video(s)."
 
+      - name: Cloudflare neurons used today (every build adds to it)
+        uses: actions/cache/restore@v4
+        with:
+          path: cache/cf-usage
+          key: cf-usage-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: cf-usage-
+
       - name: Restore checkpoint cache
         uses: actions/cache/restore@v4
         with:
@@ -135,7 +142,44 @@ jobs:
           POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
           MODELSCOPE_TOKEN: ${{ secrets.MODELSCOPE_TOKEN }}
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+          TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          MAKEUP_POSTS: "1"  # publish.post_missed_slot() after the video is buffered
         run: cd pipeline && python main.py
+
+      - name: Save today's Cloudflare usage (also when the build failed)
+        if: always() && hashFiles('cache/cf-usage/usage.json') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: cache/cf-usage
+          key: cf-usage-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Save new TikTok token if TikTok rotated it (make-up post)
+        if: always() && hashFiles('.new_refresh_token') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          if [ -n "$GH_TOKEN" ]; then
+            gh secret set TIKTOK_REFRESH_TOKEN --repo "${{ github.repository }}" < .new_refresh_token
+            echo "Refresh token updated."
+          else
+            echo "::warning::TikTok gave a new refresh token but GH_PAT is not set, so it could not be saved."
+          fi
+          rm -f .new_refresh_token
+
+      - name: Save history (used topics, skipped stories, make-up post, counter)
+        if: always() && steps.decide.outputs.generate == 'true'
+        run: bash pipeline/push_state.sh "Buffer story"
+
+      - name: Check history has every buffered/posted video
+        if: always() && steps.decide.outputs.generate == 'true'
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: cd pipeline && python history_check.py
 
       - name: Upload generated buffer artifacts
         id: artifact

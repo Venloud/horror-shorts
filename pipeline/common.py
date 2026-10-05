@@ -135,3 +135,12 @@ def trim_sources(prompt: str, limit: int) -> str:
         end = max(part.rfind(". "), part.rfind(".\n"))
         return (part[:end + 1] if end > limit * 0.6 else part) + "\n[source shortened]"
     return _re.sub(_re.escape(SRC_OPEN) + r"(.*?)" + _re.escape(SRC_CLOSE), cut, prompt, flags=_re.DOTALL)
+
+
+def opening_line(story: dict) -> str:
+    """The first spoken sentence (scene 1), for the repeat guard's 'no reused opening line' check."""
+    import re
+    scenes = story.get("scenes") or []
+    text = str((scenes[0] or {}).get("narration", "") if scenes else "").strip()
+    m = re.match(r"(.+?[.!?])(\s|$)", text)
+    return (m.group(1) if m else text)[:200]

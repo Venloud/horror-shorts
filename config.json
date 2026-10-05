@@ -218,10 +218,15 @@
   "caption_highlight": "#FFD84D",
   "caption_words_per_group": 1,
   "music_volume": 0.14,
-  "music_policy": "procedural_only",
-  "approved_music": [],
-  "track_volumes": {},
+  "music_policy": "approved_files",
+  "approved_music": ["unsolved_mystery.mp3", "bk_grnde.mp3"],
+  "music_rotation": ["unsolved_mystery.mp3", "bk_grnde.mp3", "procedural"],
+  "track_volumes": {
+    "unsolved_mystery.mp3": 0.14,
+    "bk_grnde.mp3": 0.1
+  },
   "music_credits": {
+    "bk_grnde.mp3": "\ud83c\udfb5 Music: bk grnde by Kitty katzzz",
     "procedural_original": "Generated locally by FFmpeg for Night Files; no third-party recording."
   },
   "sting_volume": 0.55,

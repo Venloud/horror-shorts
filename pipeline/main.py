@@ -11,7 +11,7 @@ import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 
-from common import CONFIG, ROOT, env, load_history, log, save_history
+from common import CONFIG, ROOT, env, load_history, log, opening_line, save_history
 import yt_packaging as packaging  # NOT "packaging": that name shadows the pip package transformers needs
 
 
@@ -299,6 +299,8 @@ def main() -> int:
         meta.write_text(json.dumps({
             "stamp": stamp, "story_id": story["story_id"], "title": story["title"], "caption_text": caption,
             "pinned_comment": story.get("pinned_comment", ""), "mode": story.get("mode", "fiction"),
+            "case": story.get("case"), "source": story.get("source"), "subgenre": story.get("subgenre", ""),
+            "premise": story.get("premise", ""), "opening": opening_line(story),
             "hashtags": story.get("hashtags", []),
             **({"yt_title": story["packaging"]["yt_title"], "yt_tags": story["packaging"]["yt_tags"],
                 "yt_description": packaging.youtube_description(story)} if story.get("packaging") else {}),
@@ -363,6 +365,8 @@ def main() -> int:
             "yt_title": (story.get("packaging") or {}).get("yt_title"),  # packaging, for tag/title analytics
             "hashtags": story.get("hashtags"),
             "yt_tags": (story.get("packaging") or {}).get("yt_tags"),
+            "opening": opening_line(story),  # repeat guard: no reused opening line
+            "music_file": story.get("music_file"),
             "buffered": stamp,
             "tiktok": None,  # filled in by publish.py when it's posted
         })
@@ -378,6 +382,13 @@ def main() -> int:
             except Exception as e:  # noqa: BLE001
                 log(f"AUTOCLIP: non-fatal integration error ({type(e).__name__}: {str(e)[:240]})")
         log(f"Done: '{story['title']}' is in the buffer.")
+        if os.environ.get("MAKEUP_POSTS") == "1":  # buffer_fill.yml: make up a slot that found the buffer empty
+            try:
+                import publish
+                publish.post_missed_slot()
+            except Exception as e:  # noqa: BLE001
+                traceback.print_exc()
+                log(f"Make-up post failed ({e}); the video stays in the buffer for the next slot")
         return 0
     except Exception as e:  # noqa: BLE001
         manifest.stage("run", "failed", error=f"{type(e).__name__}: {str(e)[:400]}")
