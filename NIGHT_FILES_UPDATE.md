@@ -806,6 +806,13 @@ The CI workflow itself was added but not executed by this edit operation. The fi
 
 ## Copyrighted music claim fix, 2026-10-03
 
+> **CORRECTION, 2026-10-05 (Claude Code, owner-confirmed):** the claimed recording ("Everything In Its Right Place" by
+> Radiohead) was `assets/music/everything_in_its_right_place.mp3`, which had already been removed on Oct 1 (18c9268);
+> the claimed video was rendered before that. `unsolved_mystery.mp3` is the owner's own track and was deleted here by
+> mistake. Restored Oct 5 together with the owner's `bk_grnde.mp3`; both rotate with the procedural ambient bed
+> (`music_policy=approved_files`, `approved_music`, `music_rotation`). Radiohead and "Tonight You Belong To Me" stay
+> deleted. The "Immediate fix" below is history, not the current state.
+
 The YouTube screenshots supplied by the owner show a published Night Files video blocked globally because YouTube Content ID identified **“Everything In Its Right Place” by Radiohead**, with **Beggars Group Digital** listed as claimant. The claim is on the audio track and YouTube states the claimed content exceeds the copyright holder's length limits.
 
 Repository inspection identified the previous Night Files music configuration pointing at `assets/music/unsolved_mystery.mp3`. The render selected a random file from `assets/music`, so that repository recording could enter every generated video.

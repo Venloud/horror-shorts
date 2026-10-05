@@ -10,12 +10,16 @@ so a new session can pick up without starting over.
 - **Night Files** is a fully automated, faceless AI horror / true-crime / folklore channel on **TikTok**
   (account "Nightfiles Stories", @istwatrajiks). Goal: go viral fast, spend as close to $0 as possible.
 - Everything runs on **GitHub Actions** in this private repo.
-- Repo is **private** (owner's call). `assets/music`: only his own "Unsolved Mystery". Oct 1 copyright audit (owner's
-  request after a YouTube "Notices" flag): removed "Everything In Its Right Place" (Radiohead, (P) 2016 XL
-  Recordings), "Tonight You Belong To Me" (Patience & Prudence, 1956 Liberty recording ripped from a YouTube upload;
-  the 1926 song is public domain but US pre-1972 recordings from 1947-1956 stay protected until 2067 under the Music
-  Modernization Act) and "bk grnde" by Kitty katzzz ((P) 2026 "12309505 Records DK", a DistroKid release; no license
-  in the repo). Only add a track whose specific recording is verifiably public domain / CC0 / licensed for
+- Repo is **private** (owner's call). `assets/music` (Oct 5): ONLY the owner's own tracks "Unsolved Mystery"
+  (`unsolved_mystery.mp3`) and "bk grnde" (`bk_grnde.mp3`, credited "Music: bk grnde by Kitty katzzz"); the owner
+  confirmed both are his. They rotate with the FFmpeg-generated ambient bed (config `music_policy` approved_files,
+  `approved_music`, `music_rotation` [unsolved_mystery, bk_grnde, procedural], picked by history length in
+  `background_music._pick_approved`). Oct 1 copyright audit (owner's request after a YouTube "Notices" flag): removed
+  "Everything In Its Right Place" (Radiohead, (P) 2016 XL Recordings: the YouTube Content ID claim was THIS file) and
+  "Tonight You Belong To Me" (Patience & Prudence, 1956 Liberty recording ripped from a YouTube upload; the 1926
+  song is public domain but US pre-1972 recordings from 1947-1956 stay protected until 2067 under the Music
+  Modernization Act). Those two must never come back. ChatGPT deleted "Unsolved Mystery" on Oct 3 (c89e26b) blaming it
+  for the Radiohead claim by mistake; both owner tracks were restored Oct 5. Only add a track whose specific recording is verifiably public domain / CC0 / licensed for
   monetized use, with its source + license noted here. `assets/stings/default_impact.mp3` has no recorded source
   (uploaded Sept 25): unverified. Music choices are his decision; don't lecture about it.
 - Secrets/keys go ONLY in GitHub repo secrets. Never ask the owner to paste keys into chat.
@@ -29,7 +33,7 @@ so a new session can pick up without starting over.
 
 ## External project integrations (implementation order)
 - These integrations are added one at a time. Do not replace the working Night Files production pipeline wholesale.
-- **Remotion: ACTIVE**. Used for the shot-joining/composition layer when `remotion_join=true`; FFmpeg remains the automatic fallback if the Remotion join fails. A production run that never reaches render does not prove Remotion ran.
+- **Remotion: OFF (Oct 5)**. `remotion_join` false: every production run logged `REMOTION: FAILED ... does not contain "registerRoot"` and fell back to FFmpeg, so the attempt (and its npm install in daily.yml / buffer_fill.yml) is skipped. The code stays; FFmpeg `render._join` renders every video.
 - **PersonaLive: INTEGRATED, OFF by default**. Optional adapter in `pipeline/ai_motion.py`; requires an explicitly configured local PersonaLive checkout, reference/driving assets, and a suitable environment. GitHub-hosted CPU production stays on the existing motion path.
 - **MuMuAINovel: INTEGRATED**. Deterministic local story-bible stage in `pipeline/story_bible.py`, after story writing and before shot planning. It carries canonical characters, locations, threat/twist, timeline, and visual continuity. Do not copy the GPL application wholesale.
 - **AutoClip: INTEGRATED, OFF by default**. `pipeline/autoclip_adapter.py` runs only after the primary render succeeds, uses the rendered video path, produces optional alternate clips/publish kits, and is non-fatal. Latest AutoClip fix commit: `79d803d65f0e11aa242e2573e2abfc065472579a`.
@@ -149,6 +153,13 @@ so a new session can pick up without starting over.
      states it (e.g. Beast of Gevaudan -> Teen Wolf). Never invent references.
    - Anti-repeat: `data/history.json` stores title, premise, setting, threat, twist; the last 40 are
      sent as "ALREADY USED".
+     **Repeat guard** (`pipeline/repeat_guard.py`, Oct 5): no topic from the same case / topic / subgenre family as
+     any of the last `repeat_window` (15) made videos AND the videos waiting in the buffer (their caption.json), and
+     no reused opening line (history `opening`, caption.json `opening`). Families = a recent video's case / source /
+     subgenre name found in the new topic, or a shared `topic_families` keyword (bloody mary, lizzie borden). Checked
+     in next_case, mystery.pick_case (+ discovery leads), pick_subgenre, inbox links/files (a repeating inbox item
+     waits) and once more on the finished story (`write_story`: discarded). `blocked_topics` (["Lizzie Borden"]) is a
+     hard block in the same places. `priority_subgenre_probability` 0.15 (was 0.4).
    - Length: TikTok Creator Rewards needs videos OVER 60 s. Config `target_seconds` [61, 68] = the FINISHED VIDEO
      (narration + the 3.4 s end-card tail); `story_words` [138, 152] (prompts get the range from config; the
      Kokoro voice reads ~2.2-2.4 words/sec at speed 1.1). NEVER under 61 s: `render.tail_for()` holds the end card
@@ -237,7 +248,7 @@ so a new session can pick up without starting over.
    **2 images per scene** (`shots_per_scene` 2, was 4; 3-4 still work if configured): shot a = the narration's
    main visual, shot b = a DIFFERENT subject/action/angle of the same words (render motion covers the rest).
    Quota order: every scene's "a" shot first, then every "b", then "c"/"d", so running out of quota (or the local
-   time budget) loses extra cuts, never whole scenes. SD-Turbo is a GAP FILLER only: max `local_image_max` (6)
+   time budget) loses extra cuts, never whole scenes. SD-Turbo is a GAP FILLER only: max `local_image_max` (6; ChatGPT's 12 reverted Oct 5)
    local images per video (test builds too). No early stop any more (low-quota builds): a scene still empty after
    its redraw = `images.ImageQuotaWait` (ntfy "waiting for image quota"; the checkpoint keeps story + narration).
    Hook shot (scene 0 shot a): up to 3 draws (new seed, then `build_simple_prompt`) before it's dropped.
@@ -444,6 +455,9 @@ so a new session can pick up without starting over.
    summaries). Needs the yt-analytics.readonly scope (connect_youtube.py now asks for it; re-run once and update
    YT_REFRESH_TOKEN); without it the log says "analytics scope missing" and it exits 0. Any other API / token
    failure prints the exact error and exits 1 (red run).
+   Status Oct 5: red every day since Sept 30 because the YouTube Analytics API is NOT ENABLED in Google Cloud project
+   685200856292 (enable it in the console). `yt_check.yml` now reads the token's real scopes from Google's tokeninfo
+   (it used to echo the requested scopes as "granted") and fails if yt-analytics.readonly is missing.
 
 8. **YouTube backfill** (`yt_backfill.yml` 04:20 / 08:20 / 20:20 UTC, `pipeline/yt_backfill.py`, state
    `data/backfill.json`): uploads the videos that were on TikTok before YouTube upload worked. Every run first copies
@@ -451,29 +465,34 @@ so a new session can pick up without starting over.
    then uploads ONE (max `yt_backfill_per_day` 3/day; oldest first; public; same title/description/tags as daily
    posts via yt_packaging.py + youtube.upload; yt_backfill.yml has GEMINI/GROQ keys for it). Only videos the owner PUBLISHED on TikTok: `data/tiktok_posted.txt`
    (one title or caption per line, fuzzy-matched; unmatched lines in backfill.json `unmatched_lines`); no file =
-   nothing uploads. Waits within 60 min of a publish slot / post or while daily.yml runs; skips titles already on the
+   backfill PAUSED, nothing uploads (log "Backfill PAUSED"). A TikTok publish_id only means "sent to drafts", never
+   "published" (the Oct 3 `yt_backfill_trust_publish_ids` path was removed Oct 5; it had uploaded 6 videos from
+   publish ids: Footsteps on the Ceiling, Jim Thompson, Manananggal, Platform Four, Beast of Gevaudan, Backward Shadow). Waits within 60 min of a publish slot / post or while daily.yml runs; skips titles already on the
    channel (history, backfill.json, channel list when the token allows); `render.qa_gate(backfill=True)` (no 61 s
    floor, no TikTok size cap). Known bad: #27 airplane-cabin D.B. Cooper (panel grids), #28 frozen gavel. #26 Louvre
    was uploaded by hand (yt_upload_test, Khcw2HPvxTU). When nothing is left: drafts not in the list are skipped,
    `done` is set and the workflow disables itself (re-enable + remove `done` to run again).
 
-## Buffer (build.yml fills it, daily.yml posts from it)
-- `build.yml` runs every 3 h: if fewer than 3 (`BUFFER_SIZE`) videos wait on the GitHub Release **"buffer"**
-  (assets `<stamp>.mp4` + `<stamp>.json`), it makes one (`pipeline/main.py`) and uploads it (`pipeline/buffer.py`).
-  Inbox items / cases / history are marked used when the video enters the buffer. A failed build exits quietly
-  (next run retries); the phone alert only fires when the buffer is empty. The images + story are saved to the
-  Actions cache (`last-images-*`) after each build.
-- `build.yml` "test" input (workflow_dispatch): not added to the buffer, no history, mp4 kept as an artifact,
-  ntfy "[TEST]". ZERO CONFIG: a test reuses the last built video's full story.json + images (`images.save_cache` /
-  `cached_story`; log "Test: reused story <id>"; no Cloudflare, no story writing). Input `inbox_file` (test builds
-  only, env INBOX_FILE) forces one inbox file even if it was already used (same story for an A/B render test).
-  Checkbox `fresh_images`
-  (default off; env TEST_FRESH) = a NEW story with real Cloudflare images like a production build; the same
-  happens automatically when nothing is cached (older caches only kept the scene count). The old
-  `test_cloudflare_images` count input is gone.
+## Buffer (buffer_fill.yml fills it, daily.yml posts from it) — workflows as of Oct 5
+- **build.yml, deferred_test.yml and test mode are GONE** (ChatGPT, Oct 2: 28b2b8b, 4181116, 130adcb). There are no
+  test builds; every run of main.py is production. Older notes below that mention build.yml / test builds /
+  `--test` / TEST_MODE describe code that no longer runs.
+- `buffer_fill.yml` (producer, cron `10 */6 * * *`, input `target_buffer` default 2): resumes an unfinished
+  checkpoint first, else builds one video when fewer than 2 wait on the GitHub Release **"buffer"** (assets
+  `<stamp>.mp4` + `<stamp>.json`). Inbox items / cases / history are marked used when the video enters the buffer.
+  Then (always) it saves the Cloudflare ledger cache (`cf-usage-*`), the rotated TikTok token, and history.json /
+  counter.json / missed_slot.json with `push_state.sh "Buffer story"` (until Oct 5 it saved NOTHING: posts #34-#37
+  never reached history, so Lizzie Borden was picked 4 times and #34-#36 were the same story 50faf2e6f0f0; entries
+  rebuilt by hand, `history_rebuilt`). It also makes up a missed slot (env MAKEUP_POSTS=1 -> `publish.post_missed_slot`),
+  so it has the TikTok/YouTube secrets.
+- **History hard check** (`pipeline/history_check.py`, last step of buffer_fill.yml and daily.yml): every video this
+  run buffered (`.built`) or posted (`.posted`) must have its history entry on origin/main; else the run fails red +
+  ntfy "history NOT saved". publish.py also rebuilds a missing entry from caption.json at post time (+ ntfy).
 - `notify.notify` never crashes on a missing story (a failure while writing it): clean "FAILED" alert with the
   error text.
-- `daily.yml` (`pipeline/publish.py`) does NO generation: oldest buffered video -> TikTok + YouTube Shorts ->
+- `daily.yml` (slots 15:40 / 00:40 UTC; GitHub's cron runs it 3-5.5 h late): if the buffer is empty (or a checkpoint
+  is pending) it first builds one video with main.py (`continue-on-error`, so a failed build never blocks posting a
+  buffered video), then `pipeline/publish.py`: oldest buffered video -> TikTok + YouTube Shorts ->
   delete from buffer -> both results + "posted" time saved in history -> phone alert with the YouTube link
   (+ "buffer low" alert at 1 left). Only if both platforms fail does the video stay in the buffer.
 - **Missed-slot make-up** (`publish.makeup_blocker`): a missed slot (data/missed_slot.json, max
@@ -490,14 +509,11 @@ so a new session can pick up without starting over.
 - **Concurrency groups**: build.yml, daily.yml, buffer_cleanup.yml (everything that writes history.json or the
   buffer) share `night-files`; analytics.yml (`analytics`), freeze_summary.yml (`freeze-summary`) and
   yt_backfill.yml (`yt-backfill`) have their own, so reports never wait behind or replace a build / publish run.
-- **Empty buffer at a slot**: the publisher does NOT fail. It writes `data/missed_slot.json` {"slot", "at"}, sends
-  "Buffer empty: building now, will post when ready", and daily.yml starts build.yml at once (`gh workflow run`,
-  github.token with actions: write; GH_PAT only as fallback: the
-  fine-grained PAT has no Actions permission, its 403 had turned daily runs 28-32 red; both failing = red run + ntfy). When a video passes QA and enters the buffer, main.py calls
-  `publish.post_missed_slot()`: missed slot < 6 h old -> post it right away (same publish code, TikTok + YouTube,
-  so build.yml also has the TikTok/YouTube secrets + token-save step), then delete the file; older -> just delete
-  it and the next slot posts normally. Both workflows save history.json + missed_slot.json with  `pipeline/push_state.sh` (merge_history.py + 3 push tries). The 6 h make-up window was replaced by the
-  make-up rules above.
+- **Empty buffer at a slot** (Oct 5 restore of what 249ea6a / 0bc8abb removed): daily.yml's own build made no video
+  either, so publish.py writes `data/missed_slot.json` {"slot", "at"}, sends "publish FAILED (slot missed)" and the
+  run is red. When buffer_fill.yml then buffers a video, main.py (MAKEUP_POSTS=1) calls `publish.post_missed_slot()`
+  with the make-up rules above. Both workflows save history.json + missed_slot.json + counter.json with
+  `pipeline/push_state.sh` (merge_history.py + 3 push tries), `if: always()`.
 - **Video numbers** (`data/counter.json` {"next_video": N}): GitHub run numbers are per workflow, so the bot keeps
   its own post counter. `publish.take_video_number()` gives the number only once a video actually went out
   (TikTok or YouTube accepted it, also for a make-up post from build.yml); test builds, failed publishes and
@@ -521,6 +537,13 @@ so a new session can pick up without starting over.
 - **QA gate** (`render.qa_gate`) before the buffer: 1080x1920, video 61-68 s (hard floor 61.0 s), audio
   stream, integrated loudness -18..-12 LUFS (ffmpeg ebur128; the mix is loudnormed to -14), caption lines in the
   burned-in .ass cover the words, 5-64 MB.
+  **What blocks (Oct 5)**: HARD = `main.HARD_QA`: one picture over 20% of the video, a frozen / one-image finished
+  video, and a **blurry start** (`render.start_blur_problems`: median contrast-normalised sharpness of 4 frames in the
+  first 2 s must be >= `qa_blur_min` 0.06 and >= `qa_blur_ratio` 25% of the rest of the video; calibrated: native
+  0.47, 576 px upscale 0.19, VHS analog 0.21, 270 px upscale 0.04). A hard fail is never buffered (twice = story
+  skipped for good; low-quota builds wait for quota). Everything else in qa_gate (duration, loudness, captions, size,
+  too few distinct pictures) is REPORT-ONLY since ChatGPT's 130adcb: logged + ntfy, the video still ships. The
+  separate production gate below (file / duration / streams / provenance) is also hard.
   **Visual variety** (`render.visual_problems`, after video #28 froze on ONE gavel frame for 56 of 62 s):
   (1) shot list: seconds per SOURCE picture (`images.source_key`: content hash; virtual crops point to their
   source via `scene_XXl.origin`, fast-mode framings / borrowed / copied files are the same picture) -> fail if
@@ -725,7 +748,7 @@ The Night Files production queue is now the durable source of truth between gene
 - `.github/workflows/daily.yml` checks the buffer before generating anything. If one or more complete videos are waiting, it does not generate another video and publishes the oldest buffered item.
 - If the buffer is empty, the daily workflow generates exactly one video. `pipeline/main.py` places it into the buffer, and the same daily run then publishes the next buffered item.
 - `.github/workflows/buffer_fill.yml` is the separate producer lane. It runs every six hours and can be manually dispatched. It checks the queue and generates one video only when the queue is below its target, defaulting to two waiting videos.
-- The buffer-fill workflow never calls `publish.py`, TikTok, or YouTube. Its generated video, caption, story, and supporting artifacts are uploaded to the GitHub Actions run.
+- The buffer-fill workflow calls TikTok / YouTube ONLY to make up a missed slot (`publish.post_missed_slot`, Oct 5). Its generated video, caption, story, and supporting artifacts are uploaded to the GitHub Actions run.
 - `pipeline/media_production_test.py` now uses the real `buffer.add()` path. Media tests therefore queue finished videos for later scheduled publication instead of discarding them.
 - `pipeline/publish.py` remains the consumer. After at least one platform succeeds, it removes the buffered pair. Existing history-based duplicate protection remains in place.
 
@@ -746,7 +769,9 @@ Artifacts from the producer/test workflows remain downloadable from their GitHub
 - External media review must expose provenance/license metadata. yt-dlp downloading a file does not make that file copyright-free.
 
 
-## YouTube backfill eligibility update, 2026-10-03
+## YouTube backfill eligibility update, 2026-10-03 (REVERTED Oct 5)
+
+REVERTED by the owner on Oct 5: only videos listed in data/tiktok_posted.txt are backfilled; without the file the backfill is paused. A publish_id only means "sent to drafts". The text below is the Oct 3 history.
 
 The YouTube historical backfill no longer hard-depends on data/tiktok_posted.txt when the explicit config flag yt_backfill_trust_publish_ids is enabled. The current config enables this mode because data/backfill.json already contains tiktok_publish_id values captured during TikTok publishing.
 
@@ -768,8 +793,9 @@ The gate validates the actual final MP4 with ffprobe + full FFmpeg decode, requi
 configured 61-68s duration, and a sane file size. It also validates external-media provenance and the configured
 music policy. `production_gate.json` is written beside the final artifact.
 
-Do not downgrade this gate to report-only. The existing `render.qa_gate()` remains useful for diagnostic/visual
-QA, but a missing/corrupt final file must be a hard failure.
+Do not downgrade this gate to report-only. `render.qa_gate()` is report-only EXCEPT the visual hard blocks
+(`main.HARD_QA`: one picture > 20%, frozen / one-image video, blurry first 2 s; Oct 5), and a missing/corrupt
+final file must be a hard failure.
 
 `pipeline/publish.py` repeats the media/provenance validation after downloading the buffered asset. This protects
 the publish boundary from corrupted or incomplete durable-buffer entries.
@@ -781,7 +807,7 @@ provider-probing step in the normal free-tier workflow.
 
 ### Background music and checkpoint completion boundary
 
-The production renderer intentionally separates soundtrack work from the core visual render. `pipeline/render.py` creates the complete visual + narration/SFX video; `pipeline/background_music.py` then adds the background music. The default is an original FFmpeg-generated ambient bed. Do not restore the removed copyrighted recording. Deliberately approved local tracks remain possible only through `music_policy=approved_files` plus `approved_music`.
+The production renderer intentionally separates soundtrack work from the core visual render. `pipeline/render.py` creates the complete visual + narration/SFX video; `pipeline/background_music.py` then adds the background music. Since Oct 5 the owner's own tracks (`unsolved_mystery.mp3`, `bk_grnde.mp3`) rotate with the original FFmpeg-generated ambient bed (`music_policy=approved_files`, `approved_music`, `music_rotation`). Never restore the Radiohead or Patience & Prudence recordings.
 
 The production gate runs after the separate music stage.
 
