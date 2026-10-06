@@ -797,5 +797,74 @@
       "wanted": "public"
     },
     "history_rebuilt": "Oct 5 from daily.yml run 37271287181 log (buffer_fill.yml never saved this entry)"
+  },
+  {
+    "date": "2026-10-06_0144",
+    "story_id": "4860b26e831b",
+    "title": "The Legend of the Lougawou",
+    "premise": "In Caribbean folklore, a villager sheds their human skin under a silk cotton tree to hunt the night as a floating flame.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Lougawou",
+    "source": "inbox/lougawou.txt",
+    "prompt_file": null,
+    "setting": "A Caribbean village at night near an ancient silk cotton tree.",
+    "threat": "The lougawou, a skin-shedding sorcerer flying as a blue fireball to harvest blood.",
+    "twist": "The blue flame entering homes is the discarded skin's owner hunting to pay a nightly devil's bargain.",
+    "score": null,
+    "seconds": 64.1,
+    "voice_speed": 1.0,
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [],
+    "visual_mode": "analog",
+    "render_style": "classic",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": {
+      "reused": 0,
+      "archive_stock": 0,
+      "ai": 16
+    },
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 84,
+    "visuals": {
+      "distinct": 16,
+      "longest_s": 5.0,
+      "longest_share": 0.074,
+      "longest_name": "scene_07b.png"
+    },
+    "yt_title": "Empty Skin Beneath Tree... Lougawou of Caribbean #shorts",
+    "hashtags": [
+      "lougawou",
+      "caribbean",
+      "folklore",
+      "legends"
+    ],
+    "yt_tags": [
+      "lougawou",
+      "lougawou legend",
+      "lougawou folklore",
+      "caribbean folklore",
+      "caribbean legend",
+      "soucouyant",
+      "soucouyant legend",
+      "night hunter legend",
+      "silk cotton tree myth",
+      "caribbean night creature",
+      "creature that sheds skin",
+      "scary caribbean legend",
+      "scary legend",
+      "folklore",
+      "creepy legend"
+    ],
+    "opening": "Beneath a silk cotton tree, an empty human skin lies neatly folded in the cold dirt.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-10-06_0144",
+    "tiktok": null
   }
 ]
