@@ -865,6 +865,91 @@
     "opening": "Beneath a silk cotton tree, an empty human skin lies neatly folded in the cold dirt.",
     "music_file": "bk_grnde.mp3",
     "buffered": "2026-10-06_0144",
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7693391237726472222",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "video_number": 38,
+    "youtube": {
+      "error": "RefreshError: ('disabled_client: The OAuth client was disabled.', {'error': 'disabled_client', 'error_description': 'The OAuth client was disabled.'})"
+    },
+    "posted": "2026-10-06_0329"
+  },
+  {
+    "date": "2026-10-06_0316",
+    "story_id": "78e1c924502d",
+    "title": "The Last Song of Chalino Sánchez",
+    "premise": "A legendary Mexican singer received a mysterious note on stage during a concert in Culiacán and was killed hours later.",
+    "subgenre": "true story",
+    "mode": "inbox-true",
+    "true_story": true,
+    "case": "Chalino Sánchez",
+    "source": "inbox/chalino_sanchez.txt",
+    "prompt_file": null,
+    "setting": "Mexico and California, 1992",
+    "threat": "Unidentified armed assailants disguised as police officers",
+    "twist": "He received an unverified note on stage during his final concert before being intercepted by men dressed as police officers.",
+    "score": null,
+    "seconds": 62.6,
+    "voice_speed": 1.1,
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:18138660",
+      "pexels:7271824",
+      "pexels:30233284",
+      "pexels:26617030",
+      "pexels:13897894"
+    ],
+    "visual_mode": "classic",
+    "render_style": "classic",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org",
+      "es.wikipedia.org"
+    ],
+    "visual_sources": {
+      "reused": 0,
+      "archive_stock": 5,
+      "ai": 11
+    },
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 89,
+    "visuals": {
+      "distinct": 15,
+      "longest_s": 7.3,
+      "longest_share": 0.111,
+      "longest_name": "scene_04b.png"
+    },
+    "yt_title": "Someone Handed Him A Note... Chalino Sánchez of Mexico #shorts",
+    "hashtags": [
+      "chalinosanchez",
+      "mexico",
+      "truecrime",
+      "unsolvedmysteries"
+    ],
+    "yt_tags": [
+      "chalino sanchez",
+      "chalino sanchez note",
+      "king of corrido",
+      "true crime story",
+      "unsolved mystery",
+      "mexico true crime",
+      "culiacan sinaloa case",
+      "chalino sanchez death",
+      "mysterious note on stage",
+      "unsolved murder case",
+      "true story",
+      "chalino sánchez",
+      "chalino sánchez story",
+      "mexico mystery",
+      "mystery explained"
+    ],
+    "opening": "Someone handed him a note in the middle of his show.",
+    "music_file": "background_music.mp3",
+    "buffered": "2026-10-06_0316",
     "tiktok": null
   }
 ]
