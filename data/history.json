@@ -951,5 +951,72 @@
     "music_file": "background_music.mp3",
     "buffered": "2026-10-06_0316",
     "tiktok": null
+  },
+  {
+    "date": "2026-10-06_0332",
+    "story_id": "6c71afd151ee",
+    "title": "The Louvre Security Password Heist",
+    "premise": "Thieves stole eighty-eight million euros in royal jewels from the Louvre after discovering the security camera password was simply Louvre.",
+    "subgenre": "creator script",
+    "mode": "inbox-script",
+    "true_story": true,
+    "case": null,
+    "source": "inbox/louvre_password.txt",
+    "prompt_file": null,
+    "setting": "The Louvre Museum in Paris",
+    "threat": "Bolder thieves exploiting shockingly weak cyber security to steal priceless royal treasures.",
+    "twist": "Despite meticulous planning and a seven-minute escape, the thieves accidentally dropped the crown in the street.",
+    "score": null,
+    "seconds": 62.6,
+    "voice_speed": 1.1,
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [],
+    "visual_mode": "fast",
+    "render_style": "classic",
+    "story_shape": null,
+    "research_sources": [],
+    "visual_sources": {
+      "reused": 0,
+      "archive_stock": 0,
+      "ai": 25
+    },
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": null,
+    "visuals": {
+      "distinct": 24,
+      "longest_s": 5.7,
+      "longest_share": 0.087,
+      "longest_name": "scene_00b.png"
+    },
+    "yt_title": "The Louvre Security Password Heist of Paris | True Heist #shorts",
+    "hashtags": [
+      "louvre",
+      "paris",
+      "heist",
+      "truecrime"
+    ],
+    "yt_tags": [
+      "louvre heist",
+      "louvre crown jewels theft",
+      "paris museum heist",
+      "eighty million euro heist",
+      "apolly gallery robbery",
+      "true crime story",
+      "louvre security password",
+      "french crown jewels stolen",
+      "october 2025 heist",
+      "real museum theft",
+      "louvre museum robbery",
+      "louvre security password heist",
+      "paris mystery",
+      "unsolved mystery",
+      "true story"
+    ],
+    "opening": "The password to the Louvre's security cameras was Louvre.",
+    "music_file": "unsolved_mystery.mp3",
+    "buffered": "2026-10-06_0332",
+    "tiktok": null
   }
 ]
