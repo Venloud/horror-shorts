@@ -155,10 +155,16 @@ so a new session can pick up without starting over.
      sent as "ALREADY USED".
      **Repeat guard** (`pipeline/repeat_guard.py`, Oct 5): no topic from the same case / topic / subgenre family as
      any of the last `repeat_window` (15) made videos AND the videos waiting in the buffer (their caption.json), and
-     no reused opening line (history `opening`, caption.json `opening`). Families = a recent video's case / source /
-     subgenre name found in the new topic, or a shared `topic_families` keyword (bloody mary, lizzie borden). Checked
-     in next_case, mystery.pick_case (+ discovery leads), pick_subgenre, inbox links/files (a repeating inbox item
-     waits) and once more on the finished story (`write_story`: discarded). `blocked_topics` (["Lizzie Borden"]) is a
+     no reused opening line (history `opening`, caption.json `opening`). Families = a recent video's SUBJECT (case /
+     source / title with generic words like "The Legend of", "Disappearance of", nationalities removed:
+     `repeat_guard._subject`) found in the new topic or vice versa, the same subgenre for fiction / coldcase ONLY
+     (for lore / mystery / case the subgenre is just the mode label "legend / folklore": Oct 5 it blocked Baba Yaga as
+     "the same topic" as the Cornish Owlman, buffer_fill #12 / #13 / daily #53), or a shared `topic_families`
+     keyword (bloody mary, lizzie borden). Checked in next_case, mystery.pick_case (+ discovery leads), pick_subgenre,
+     inbox links/files (a repeating inbox item waits) BEFORE any script is written, and once more on the finished
+     story (`story._final_problem`): ONE retry with the rejected topic excluded (a local list for the pickers, never
+     saved; `save_history` also drops any `rejected_this_run` / "[rejected" entry). Tests on real history:
+     `pipeline/test_repeat_guard.py`. (babddea by another model had a 5-full-story retry loop; replaced Oct 6.) `blocked_topics` (["Lizzie Borden"]) is a
      hard block in the same places. `priority_subgenre_probability` 0.15 (was 0.4).
    - Length: TikTok Creator Rewards needs videos OVER 60 s. Config `target_seconds` [61, 68] = the FINISHED VIDEO
      (narration + the 3.4 s end-card tail); `story_words` [138, 152] (prompts get the range from config; the
@@ -414,7 +420,11 @@ so a new session can pick up without starting over.
    not 3, when scene 0 already has real media), empty scenes' 2nd shots, then extra cuts. Never invents a place; if scenes still lack images, "waiting for image
    quota" is the correct result (the early-stop count skips scenes that already have ANY image, real media incl.).
 4. **Render** (`render.py`, `effects.py`, `ai_motion.py`), FFmpeg 1080x1920:
-   - Hook shot: real AI animation via free Hugging Face ZeroGPU Spaces (list in config `ai_motion.spaces`,
+   - Hook shot (Oct 6): NEVER the AI clip: shot 0 always starts on the original sharp still with 3D parallax
+     (`render.py` pops ai_targets[0]); the ZeroGPU clip, upscaled from <= 576 px and smeared by the video model, made
+     the first ~2 s look blurry (Lougawou 2026-10-06_0144). Fast mode's twist clip stays. Note: `start_blur_problems`
+     did NOT catch that smear (sharpen + grain + scanlines read as detail); it only catches plain low-res / blur.
+     Old text: real AI animation via free Hugging Face ZeroGPU Spaces (list in config `ai_motion.spaces`,
      live API discovery, never hard-wired) -> falls back to 3D parallax -> falls back to Ken Burns zoom.
      The Space is asked for its HIGHEST 9:16 size (`ai_motion._size`: the max its API publishes, height <= 1280;
      1024x576 if it publishes none; a refused size -> once more at its default). `render._ai_into_still`: a clip
