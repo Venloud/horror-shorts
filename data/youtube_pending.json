@@ -7,11 +7,20 @@
       "video_number": 38,
       "posted": "2026-10-06_0329",
       "status": "pending",
-      "file": false,
+      "file": true,
       "artifact_id": 11386311733,
       "note": "YouTube failed with disabled_client before the pause; mp4 in artifact buffer-fill-37400524601 (expires 2026-10-13)"
+    },
+    {
+      "stamp": "2026-10-06_0316",
+      "story_id": "78e1c924502d",
+      "title": "The Last Song of Chalino Sánchez",
+      "video_number": 39,
+      "posted": "2026-10-06_0653",
+      "status": "pending",
+      "file": true
     }
   ],
   "uploads": {},
-  "last_alert": null
+  "last_alert": "2026-10-06"
 }
