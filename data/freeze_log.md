@@ -60,3 +60,14 @@ first production build passes QA and left lifted.
 - Buffer now: 1 video(s)
 - Missed slot waiting for a make-up: Fri Oct 02, 02:12 AM New York
 - Cloudflare 2026-10-04 UTC: no record
+
+## 2026-10-06 06:55 UTC: Night Files freeze day 5/7
+- Posted #38 The Legend of the Lougawou (lore): YouTube FAILED RefreshError: ('disabled_client: The OAuth client was disabl; TikTok ok
+- Posted #39 The Last Song of Chalino Sánchez (inbox-true): YouTube PAUSED (pending); TikTok ok
+- Built: The Legend of the Lougawou (lore, writer gemini (gemini-3.5-flash-lite), critic 84, 16 AI / 0 real)
+- Built: The Last Song of Chalino Sánchez (inbox-true, writer gemini (gemini-3.5-flash-lite), critic 89, 11 AI / 5 real)
+- Built: The Louvre Security Password Heist (inbox-script, writer gemini (gemini-3.5-flash-lite), critic None, 25 AI / 0 real)
+- Build runs (buffer_fill.yml): 6 (2 failed: 37391607952, 37325104197)
+- Slot runs (daily.yml): 2 (1 failed: 37380608217)
+- Buffer now: 1 video(s)
+- Cloudflare 2026-10-05 UTC: no record
