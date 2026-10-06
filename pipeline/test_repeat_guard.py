@@ -1,111 +1,103 @@
-"""Unit tests for repeat_guard.py to verify false positive fixes."""
-from repeat_guard import repeat_of
+"""Repeat guard tests on REAL data/history.json entries (run: cd pipeline && python test_repeat_guard.py, or pytest).
+
+Each test takes the real history up to and including the real entry it needs, so the 15-video window is the one
+production saw. The buffer is stubbed empty (no network).
+"""
+import copy
+
+import repeat_guard as rg
+from common import load_history
+
+rg._BUFFER["metas"] = []  # no buffer reads in tests
+HISTORY = load_history()
 
 
-def test_different_folklore_creatures_allowed():
-    """Baba Yaga vs Cornish Owlman = allowed (different specific subjects, same broad subgenre)."""
-    history = [
-        {
-            "title": "The Legend of the Cornish Owlman",
-            "case": "Owlman",
-            "subgenre": "legend / folklore",
-            "buffered": "2026-10-01_0000"
-        }
-    ]
-
-    # Baba Yaga should be allowed even though both are "legend / folklore"
-    result = repeat_of("Baba Yaga", "The Witch In The Woods", history=history)
-    assert result == "", f"Expected Baba Yaga to be allowed, but got: {result}"
+def _upto(title: str) -> list[dict]:
+    """Real history up to (and including) the last entry with this title."""
+    i = max(k for k, h in enumerate(HISTORY) if h.get("title") == title)
+    return HISTORY[: i + 1]
 
 
-def test_same_case_name_blocked():
-    """Lizzie Borden Murders vs Lizzie Borden Mystery = blocked (same specific case)."""
-    history = [
-        {
-            "title": "The Lizzie Borden Murders",
-            "case": "Lizzie Borden",
-            "subgenre": "true crime case file",
-            "buffered": "2026-10-03_0000"
-        }
-    ]
-
-    # Any Lizzie Borden topic should be blocked
-    result = repeat_of("Lizzie Borden Mystery", "The Lizzie Borden Case", history=history)
-    assert result != "", "Expected Lizzie Borden Mystery to be blocked"
-    assert "lizzie borden" in result.lower(), f"Expected 'lizzie borden' in reason, got: {result}"
+def _entry(title: str) -> dict:
+    return copy.deepcopy(next(h for h in reversed(HISTORY) if h.get("title") == title))
 
 
-def test_remake_of_same_topic_blocked():
-    """Nachzehrer vs Nachzehrer remake = blocked (same case name)."""
-    history = [
-        {
-            "title": "The German Legend of the Nachzehrer",
-            "case": "Nachzehrer",
-            "subgenre": "legend / folklore",
-            "buffered": "2026-09-26_0000"
-        }
-    ]
-
-    # Remake with same case name should be blocked
-    result = repeat_of("The Corpse That Chewed Its Shroud", "Nachzehrer", history=history)
-    assert result != "", "Expected Nachzehrer remake to be blocked"
-    assert "nachzehrer" in result.lower(), f"Expected 'nachzehrer' in reason, got: {result}"
+def test_baba_yaga_allowed_after_owlman():
+    """The real Oct 5 false positive: every legend has subgenre 'legend / folklore'."""
+    h = _upto("The Legend of the Cornish Owlman")
+    assert rg.repeat_of("Baba Yaga", history=h) == ""  # picker stage
+    assert rg.repeat_of("Baba Yaga The Witch In The Woods", "Baba Yaga", "legend / folklore", "Baba Yaga",
+                        history=h) == ""  # finished-story stage (exactly what buffer_fill #12/#13 checked)
 
 
-def test_topic_family_match_blocked():
-    """Topic families (e.g., bloody mary) should still block."""
-    history = [
-        {
-            "title": "Bloody Mary Mirror Legend",
-            "case": "Bloody Mary (folklore)",
-            "subgenre": "legend / folklore",
-            "buffered": "2026-09-30_0000"
-        }
-    ]
-
-    # Another Bloody Mary should be blocked via topic_families
-    result = repeat_of("Bloody Mary origins", "Where did Bloody Mary come from", history=history)
-    assert result != "", "Expected Bloody Mary repeat to be blocked via topic families"
+def test_second_baba_yaga_blocked():
+    h = HISTORY + [{**_entry("The Legend of the Lougawou"), "date": "2099-01-01_0000", "buffered": "2099-01-01_0000",
+                    "title": "Baba Yaga The Witch In The Woods", "case": "Baba Yaga", "source": "Baba Yaga",
+                    "opening": None}]
+    assert "baba yaga" in rg.repeat_of("Baba Yaga", history=h)
+    assert rg.repeat_of("The Bone Hut of Baba Yaga", history=h)
 
 
-def test_different_cases_same_category_allowed():
-    """Different true crime cases should be allowed even if same subgenre."""
-    history = [
-        {
-            "title": "The Kidnapping of Patty Hearst",
-            "case": "Patty Hearst",
-            "subgenre": "true crime case file",
-            "buffered": "2026-09-26_0000"
-        }
-    ]
+def test_second_baba_yaga_blocked_without_case():
+    """A legend entry that has no case / source: the subject comes from the title."""
+    h = HISTORY + [{"date": "2099-01-01_0000", "buffered": "2099-01-01_0000", "mode": "lore",
+                    "title": "Baba Yaga The Witch In The Woods", "subgenre": "legend / folklore"}]
+    assert rg.repeat_of("Baba Yaga", history=h)
 
-    # Different true crime case should be allowed
-    result = repeat_of("The Unabomber Sketch", "Ted Kaczynski", history=history)
-    assert result == "", f"Expected different true crime case to be allowed, but got: {result}"
+
+def test_lizzie_borden_blocked():
+    h = _upto("The Lizzie Borden Murders")
+    assert "lizzie borden" in rg.repeat_of("The Lizzie Borden Mystery", "Lizzie Borden", history=h)
+    assert rg.repeat_of("Lizzie Borden", history=h)
+
+
+def test_nachzehrer_remake_blocked():
+    """The real remake entry's title ('The Corpse That Chewed Its Shroud') never names it; its case does."""
+    h = _upto("The Corpse That Chewed Its Shroud")
+    assert "nachzehrer" in rg.repeat_of("Nachzehrer", history=h)
+
+
+def test_nachzehrer_blocked_without_case():
+    e = _entry("The German Legend of the Nachzehrer")
+    e.pop("case", None)
+    h = HISTORY + [{**e, "buffered": "2099-01-01_0000"}]
+    assert "nachzehrer" in rg.repeat_of("Nachzehrer", history=h)
+
+
+def test_bloody_mary_blocked():
+    h = _upto("Bloody Mary Mirror Legend")
+    assert rg.repeat_of("Bloody Mary", history=h)
+    assert rg.repeat_of("Bloody Mary origins: where did the name come from?", history=h)
+    e = _entry("Bloody Mary Mirror Legend")
+    e.pop("case", None)
+    assert rg.repeat_of("Bloody Mary", history=HISTORY + [{**e, "buffered": "2099-01-01_0000"}])
+
+
+def test_other_legends_allowed():
+    h = _upto("The Legend of the Lougawou")
+    for topic in ("Soucouyant", "Baba Yaga", "Wendigo", "Kappa"):
+        assert rg.repeat_of(topic, history=h) == "", topic
+
+
+def test_outside_window_allowed():
+    """The Manananggal (Sept 25) is more than 15 videos back."""
+    assert rg.repeat_of("Manananggal", history=HISTORY) == ""
+
+
+def test_same_fiction_subgenre_blocked():
+    h = _upto("Municipal Water Reservoir Security Camera")
+    assert rg.repeat_of("found footage / old tape or camera roll", history=h)
+
+
+def test_generic_words_never_match():
+    h = _upto("The Legend of the Lougawou")
+    assert rg.repeat_of("The Legend of the Witch", history=h) == ""
+    assert rg.repeat_of("The Mysterious Disappearance", history=h) == ""
 
 
 if __name__ == "__main__":
-    tests = [
-        ("Different folklore creatures allowed", test_different_folklore_creatures_allowed),
-        ("Same case name blocked", test_same_case_name_blocked),
-        ("Remake of same topic blocked", test_remake_of_same_topic_blocked),
-        ("Topic family match blocked", test_topic_family_match_blocked),
-        ("Different cases same category allowed", test_different_cases_same_category_allowed),
-    ]
-
-    passed = 0
-    failed = 0
-
-    for name, test_func in tests:
-        try:
-            test_func()
-            print(f"✓ {name} PASSED")
-            passed += 1
-        except AssertionError as e:
-            print(f"✗ {name} FAILED: {e}")
-            failed += 1
-        except Exception as e:
-            print(f"✗ {name} ERROR: {e}")
-            failed += 1
-
-    print(f"\n{passed} passed, {failed} failed")
+    tests = [(n, f) for n, f in globals().items() if n.startswith("test_")]
+    for n, f in tests:
+        f()
+        print(f"PASS {n}")
+    print(f"{len(tests)} passed")

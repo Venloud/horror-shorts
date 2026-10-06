@@ -66,6 +66,8 @@ def load_history() -> list[dict]:
 
 
 def save_history(items: list[dict]) -> None:
+    # a story writer's retry markers (rejected topics, babddea's "[rejected N]") are never real videos
+    items = [h for h in items if not h.get("rejected_this_run") and not str(h.get("title", "")).startswith("[rejected")]
     HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
     HISTORY_FILE.write_text(json.dumps(items, indent=2, ensure_ascii=False))
 

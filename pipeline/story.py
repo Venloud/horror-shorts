@@ -1187,66 +1187,45 @@ def _transient(e: Exception) -> bool:
                                   "temporarily", "unavailable", "could not write a story"))
 
 
+def _final_problem(story: dict, history: list[dict]) -> str:
+    """Last line of defence on the FINISHED story (the pickers already check every topic before a word is
+    written): a blocked topic, a recent repeat that only shows in the written title, or a reused opening line."""
+    hit = blocked_topic(story.get("title"), story.get("case"), story.get("premise"), story.get("source"),
+                        " ".join(sc.get("narration", "") for sc in story.get("scenes") or []))
+    if hit:
+        return f"blocked topic ({hit})"
+    import repeat_guard
+    from common import opening_line
+    return (repeat_guard.repeat_of(story.get("title"), story.get("case"), story.get("subgenre"),
+                                   story.get("source") if not str(story.get("source") or "").startswith("http") else "",
+                                   history=history)
+            or repeat_guard.opening_reused(opening_line(story), history))
+
+
 def write_story(history: list[dict]) -> dict:
-    """Write a story with retry logic: up to 5 topic attempts if repeat guard rejects."""
-    max_attempts = 5
-    rejected_topics = []
-
-    for attempt in range(max_attempts):
-        try:
-            skipped: list[dict] = []
-            # Add rejected topics to history so picker avoids them
-            extended_history = history + [{"case": t, "title": f"[rejected {i+1}]"}
-                                          for i, t in enumerate(rejected_topics)]
-
-            story = _write_story(extended_history, skipped)
-
-            # Check blocked topics
-            hit = blocked_topic(story.get("title"), story.get("case"), story.get("premise"), story.get("source"),
-                                " ".join(sc.get("narration", "") for sc in story.get("scenes") or []))
-            if hit:
-                raise RuntimeError(f"Story '{story.get('title')}' is about a blocked topic ({hit}): discarded")
-
-            # Check repeat guard
-            import repeat_guard
-            from common import opening_line
-            why = (repeat_guard.repeat_of(story.get("title"), story.get("case"), story.get("subgenre"),
-                                          story.get("source") if not str(story.get("source") or "").startswith("http") else "",
-                                          history=history)
-                   or repeat_guard.opening_reused(opening_line(story), history))
-            if why:
-                topic_id = story.get("case") or story.get("title") or "unknown"
-                log(f"Attempt {attempt + 1}/{max_attempts}: Story '{story.get('title')}' rejected: {why}")
-                rejected_topics.append(topic_id)
-                if attempt < max_attempts - 1:
-                    log(f"Trying a different topic (excluding: {', '.join(rejected_topics)})")
-                    continue
-                else:
-                    # All 5 attempts rejected
-                    raise RuntimeError(f"All {max_attempts} topic attempts were rejected by repeat guard. "
-                                       f"Rejected: {', '.join(rejected_topics)}. Last reason: {why}")
-
-            # Story passed all checks
-            mark_true_story(story)
-            if story.get("mode") != "inbox-script":
-                speak_numbers(story)
-            clean_sfx(story)
-            story["_skipped"] = skipped
-
-            if rejected_topics:
-                log(f"Story succeeded on attempt {attempt + 1} after rejecting: {', '.join(rejected_topics)}")
-
-            return story
-
-        except RuntimeError as e:
-            # Re-raise if it's not a repeat guard rejection
-            if "repeats a recent video" not in str(e) and "blocked topic" not in str(e):
-                raise
-            if attempt == max_attempts - 1:
-                raise
-            # Otherwise continue to next attempt
-
-    raise RuntimeError(f"Could not generate a story after {max_attempts} attempts")
+    """Write one story. Repeats are caught when the topic is PICKED (repeat_guard in next_case / pick_case /
+    pick_subgenre / next_inbox), before any script is written; the check here runs on the finished story and allows
+    ONE retry with the rejected topic excluded (babddea's 5 full-story attempts cost up to 5 stories of quota).
+    The excluded topic lives only in this local list for the pickers; it never reaches history.json."""
+    skipped: list[dict] = []
+    rejected: list[str] = []
+    for attempt in (1, 2):
+        pick_history = history + [{"case": t, "title": t, "rejected_this_run": True} for t in rejected]
+        story = _write_story(pick_history, skipped)
+        why = _final_problem(story, history)
+        if not why:
+            break
+        log(f"Story '{story.get('title')}' rejected after writing (attempt {attempt}/2): {why}")
+        rejected.append(story.get("case") or story.get("title") or "?")
+    else:
+        raise RuntimeError(f"Story '{story.get('title')}' repeats a recent video or is blocked: {why}: discarded "
+                           f"(rejected this run: {', '.join(rejected)})")
+    mark_true_story(story)
+    if story.get("mode") != "inbox-script":  # the owner's exact words are never changed
+        speak_numbers(story)
+    clean_sfx(story)
+    story["_skipped"] = skipped
+    return story
 
 
 def _write_story(history: list[dict], skipped: list[dict]) -> dict:
