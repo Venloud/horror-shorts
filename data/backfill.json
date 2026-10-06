@@ -16,7 +16,7 @@
       "reason": null,
       "qa": "passed",
       "stashed": true,
-      "tiktok_published": true,
+      "tiktok_published": false,
       "tiktok_match_source": "backfill.json:tiktok_publish_id",
       "yt_title": "Blindfold To Sleep Every Night... Footsteps on the Ceiling #shorts",
       "hashtags": [
@@ -96,7 +96,8 @@
         "privacy": "public",
         "wanted": "public"
       },
-      "uploaded_at": "2026-10-03T13:24Z"
+      "uploaded_at": "2026-10-03T13:24Z",
+      "tiktok_line": "Did Jim Thompson's body remain hidden in the jungle all this time?"
     },
     {
       "stamp": "2026-09-25_0412",
@@ -145,7 +146,8 @@
         "privacy": "public",
         "wanted": "public"
       },
-      "uploaded_at": "2026-10-03T23:06Z"
+      "uploaded_at": "2026-10-03T23:06Z",
+      "tiktok_line": "Would you survive a night in the village?"
     },
     {
       "stamp": "2026-09-25_0637",
@@ -193,7 +195,8 @@
         "privacy": "public",
         "wanted": "public"
       },
-      "uploaded_at": "2026-10-04T10:37Z"
+      "uploaded_at": "2026-10-04T10:37Z",
+      "tiktok_line": "There was only one rule on platform four."
     },
     {
       "stamp": "2026-09-25_1930",
@@ -241,7 +244,8 @@
         "privacy": "public",
         "wanted": "public"
       },
-      "uploaded_at": "2026-10-04T14:05Z"
+      "uploaded_at": "2026-10-04T14:05Z",
+      "tiktok_line": "A terrifying mystery from 18th-century France. What do you think the beast was?"
     },
     {
       "stamp": "2026-09-26_0327",
@@ -260,7 +264,7 @@
       "stashed": true,
       "note": "one shot with a garbled name plate",
       "remade": true,
-      "tiktok_published": true,
+      "tiktok_published": false,
       "tiktok_match_source": "backfill.json:tiktok_publish_id"
     },
     {
@@ -278,7 +282,7 @@
       "reason": null,
       "qa": "passed",
       "stashed": true,
-      "tiktok_published": true,
+      "tiktok_published": false,
       "tiktok_match_source": "backfill.json:tiktok_publish_id",
       "yt_title": "Whispering My Full Childhood Name... The Backward Shadow #shorts",
       "hashtags": [
@@ -327,7 +331,8 @@
       "qa": "passed (local check 2026-10-01)",
       "stashed": true,
       "tiktok_published": true,
-      "tiktok_match_source": "backfill.json:tiktok_publish_id"
+      "tiktok_match_source": "backfill.json:tiktok_publish_id",
+      "tiktok_line": "The Kidnapping of Patty Hearst: Heiress Turned Bank Robber."
     },
     {
       "stamp": "2026-09-26_0529",
@@ -346,7 +351,8 @@
       "stashed": true,
       "note": "one shot with a garbled court document",
       "tiktok_published": true,
-      "tiktok_match_source": "backfill.json:tiktok_publish_id"
+      "tiktok_match_source": "backfill.json:tiktok_publish_id",
+      "tiktok_line": "The father of cinema vanished before his biggest premiere."
     },
     {
       "stamp": "2026-09-26_2244",
@@ -364,7 +370,8 @@
       "qa": "passed (local check 2026-10-01)",
       "stashed": true,
       "tiktok_published": true,
-      "tiktok_match_source": "backfill.json:tiktok_publish_id"
+      "tiktok_match_source": "backfill.json:tiktok_publish_id",
+      "tiktok_line": "The terrifying folklore that birthed Dracula. Would you survive a visit from a Strigoi?"
     },
     {
       "stamp": "2026-09-26_2325",
@@ -382,7 +389,7 @@
       "qa": "passed (local check 2026-10-01)",
       "stashed": true,
       "note": "garbled diner sign in one shot",
-      "tiktok_published": true,
+      "tiktok_published": false,
       "tiktok_match_source": "backfill.json:tiktok_publish_id"
     },
     {
@@ -400,7 +407,7 @@
       "reason": null,
       "qa": "passed (local check 2026-10-01)",
       "stashed": true,
-      "tiktok_published": true,
+      "tiktok_published": false,
       "tiktok_match_source": "backfill.json:tiktok_publish_id"
     },
     {
@@ -419,7 +426,8 @@
       "qa": "passed (local check 2026-10-01)",
       "stashed": true,
       "tiktok_published": true,
-      "tiktok_match_source": "backfill.json:tiktok_publish_id"
+      "tiktok_match_source": "backfill.json:tiktok_publish_id",
+      "tiktok_line": "How the Mona Lisa Was Stolen in Plain Sight"
     },
     {
       "stamp": "2026-09-28_0943",
@@ -441,7 +449,7 @@
         "url": "https://youtube.com/shorts/Khcw2HPvxTU",
         "privacy": "public"
       },
-      "tiktok_published": true,
+      "tiktok_published": false,
       "tiktok_match_source": "backfill.json:tiktok_publish_id"
     },
     {
@@ -459,7 +467,7 @@
       "reason": "known bad: the airplane-cabin D.B. Cooper (comic panel grids, garbled note, '20k' slang)",
       "qa": "passed (local check 2026-10-01)",
       "stashed": false,
-      "tiktok_published": true,
+      "tiktok_published": false,
       "tiktok_match_source": "backfill.json:tiktok_publish_id"
     },
     {
@@ -518,5 +526,10 @@
       "tiktok_published": false
     }
   ],
-  "unmatched_lines": []
+  "unmatched_lines": [
+    "A night shift worker watches a security monitor showing a woman standing on the surface",
+    "During the reign of King Stephen, villagers discovered two children with skin as green a",
+    "What is the Lagahoo? Have you ever heard phantom chains at night?",
+    "Why does Death carry a scythe? The dark agricultural origin of the Grim Reaper explained."
+  ]
 }
