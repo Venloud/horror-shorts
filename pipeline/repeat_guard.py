@@ -44,9 +44,13 @@ def recent(history: list[dict]) -> list[dict]:
 
 
 def _names(entry: dict) -> list[str]:
-    """Case / topic names of a recent video (urls and inbox paths are not names)."""
+    """Case / topic names of a recent video (urls and inbox paths are not names).
+
+    Only checks SPECIFIC subjects (case, source) - NOT broad categories like subgenre.
+    E.g. "Lizzie Borden" is specific, "legend / folklore" is too broad.
+    """
     out = []
-    for k in ("case", "source", "subgenre"):
+    for k in ("case", "source"):  # Removed "subgenre" - too broad, causes false positives
         v = entry.get(k)
         if isinstance(v, dict):
             v = v.get("title")
