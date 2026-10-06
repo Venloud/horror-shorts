@@ -58,7 +58,8 @@ def summary(now: datetime | None = None) -> tuple[str, str] | None:
         yt = h.get("youtube") or {}
         tt = h.get("tiktok") or {}
         lines.append(f"Posted #{h.get('video_number')} {h.get('title')} ({h.get('mode')}): YouTube "
-                     + (f"{yt.get('privacy')} {yt.get('url')}" if yt.get("url") else f"FAILED {yt.get('error', '')[:60]}")
+                     + (f"{yt.get('privacy')} {yt.get('url')}" if yt.get("url") else
+                        "PAUSED (pending)" if yt.get("pending") else f"FAILED {yt.get('error', '')[:60]}")
                      + "; TikTok " + ("FAILED" if tt.get("error") else "ok"))
     if not posts:
         lines.append("Posted: nothing in the last 24 h")

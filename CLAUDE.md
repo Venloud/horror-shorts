@@ -457,6 +457,17 @@ so a new session can pick up without starting over.
    TikTok and YouTube are independent: the video leaves the buffer if at least one worked (never double-posted);
    only if both fail does it stay for the next slot. Refresh token: run `pipeline/connect_youtube.py` once
    locally (OAuth consent screen must be "In production", or Google expires the token after 7 days).
+   **YOUTUBE PAUSED (Oct 6, owner)**: the Google account that owns project night-files-510012 has its Google
+   Cloud access restricted (appeal submitted). Config `youtube_paused` true until the OWNER says it is restored. Do
+   NOT create or suggest new Google projects or credentials. While paused: publish.py makes no YouTube call
+   (TikTok only), `pipeline/youtube_pending.py` records each video in `data/youtube_pending.json` and keeps its mp4
+   + caption.json in the release **"youtube-pending"** (the buffer and the 7-day artifacts would lose it; #38
+   Lougawou is stashed from its artifact by `stash()`); history `youtube` = {"pending": "youtube_paused"}; at most
+   ONE ntfy a day about the pause; yt_backfill.py (TikTok-era backfill) only stashes, no upload; analytics.py exits 0.
+   push_state.sh merges youtube_pending.json (uploaded beats pending). On restore: set `youtube_paused` false;
+   every daily post then runs `upload_some()`: oldest first, max `youtube_pending_per_day` (6) per UTC day, history
+   gets the YouTube link, the release copy is deleted. Quota note: 6 backfill + 2 daily uploads ~ 12,800 units >
+   YouTube's 10,000/day default, so some days a quota error leaves the rest pending for the next day (non-fatal).
 6. **Notify**: ntfy phone alert with caption + pinned comment + YouTube link (`NTFY_TOPIC`).
 7. **Analytics** (`analytics.yml` daily 09:17 UTC + manual, `pipeline/analytics.py`, flag `analytics`): YouTube
    Analytics API per Short (creatorContentType==SHORTS): views, engagedViews, averageViewDuration,

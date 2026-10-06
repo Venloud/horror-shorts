@@ -1,0 +1,17 @@
+{
+  "videos": [
+    {
+      "stamp": "2026-10-06_0144",
+      "story_id": "4860b26e831b",
+      "title": "The Legend of the Lougawou",
+      "video_number": 38,
+      "posted": "2026-10-06_0329",
+      "status": "pending",
+      "file": false,
+      "artifact_id": 11386311733,
+      "note": "YouTube failed with disabled_client before the pause; mp4 in artifact buffer-fill-37400524601 (expires 2026-10-13)"
+    }
+  ],
+  "uploads": {},
+  "last_alert": null
+}

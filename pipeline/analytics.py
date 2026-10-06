@@ -59,6 +59,9 @@ def main() -> int:
     if not CONFIG.get("analytics", True):
         log("Analytics: off (config analytics)")
         return 0
+    if CONFIG.get("youtube_paused"):
+        log("Analytics: skipped, YouTube is PAUSED (config youtube_paused: Google account restricted)")
+        return 0
     if not all(env(k, required=False) for k in ("YT_CLIENT_ID", "YT_CLIENT_SECRET", "YT_REFRESH_TOKEN")):
         log("Analytics: YouTube secrets missing, nothing to do")
         return 0

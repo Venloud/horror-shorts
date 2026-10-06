@@ -21,6 +21,7 @@ on:
 
 permissions:
   contents: write
+  actions: read   # youtube_pending.stash: copy a pending video out of its 7-day build artifact
 
 concurrency:
   group: night-files

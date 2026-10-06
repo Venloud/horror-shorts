@@ -293,8 +293,12 @@ def main(from_build: bool = False) -> int:
         traceback.print_exc()
         tt_error = f"{type(e).__name__}: {str(e)[:300]}"
 
+    import youtube_pending
     yt, yt_error = None, None
-    if not CONFIG.get("youtube_enabled", True):
+    yt_paused = youtube_pending.paused()
+    if yt_paused:  # Google account restricted (Oct 6): no upload attempt, the video is kept for later
+        log("YouTube: PAUSED (config youtube_paused): not uploading, kept in youtube_pending for later")
+    elif not CONFIG.get("youtube_enabled", True):
         log("YouTube: off (config youtube_enabled)")
     elif not youtube.configured():
         log(
@@ -339,6 +343,8 @@ def main(from_build: bool = False) -> int:
 
     number = take_video_number()
     _gh_output("video_number", number)
+    if yt_paused and result:  # on TikTok, not on YouTube: keep the mp4 for the upload once YouTube is back
+        youtube_pending.record(video["stamp"], mp4, out / "caption.json", number)
     log(
         f"Video #{number}: '{meta['title']}' "
         f"(story {meta.get('story_id', '?')}, buffered {video['stamp']})"
@@ -353,7 +359,8 @@ def main(from_build: bool = False) -> int:
         ):
             h["video_number"] = number
             h["tiktok"] = result if result else {"error": tt_error}
-            h["youtube"] = yt if yt else ({"error": yt_error} if yt_error else None)
+            h["youtube"] = yt if yt else ({"pending": "youtube_paused"} if yt_paused else
+                                          ({"error": yt_error} if yt_error else None))
             h["posted"] = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M")
             if removal_pending:
                 h["removal_pending"] = True
@@ -370,7 +377,8 @@ def main(from_build: bool = False) -> int:
             "premise": meta.get("premise"), "opening": meta.get("opening"),
             "visual_mode": meta.get("visual_mode"), "seconds": meta.get("seconds"),
             "video_number": number, "tiktok": result if result else {"error": tt_error},
-            "youtube": yt if yt else ({"error": yt_error} if yt_error else None),
+            "youtube": yt if yt else ({"pending": "youtube_paused"} if yt_paused else
+                                      ({"error": yt_error} if yt_error else None)),
             "posted": datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M"),
             "yt_title": meta.get("yt_title"), "hashtags": meta.get("hashtags"), "yt_tags": meta.get("yt_tags"),
             "history_rebuilt": "from caption.json at post time",
@@ -395,6 +403,9 @@ def main(from_build: bool = False) -> int:
             )
             + ")"
         )
+    elif yt_paused:
+        lines.append(f"YouTube: paused, queued for later "
+                     f"({sum(1 for v in youtube_pending.load()['videos'] if v.get('status') == 'pending')} waiting)")
     elif yt_error:
         lines.append(f"YouTube FAILED: {yt_error}")
 
@@ -417,6 +428,11 @@ def main(from_build: bool = False) -> int:
 
     left = len(waiting) - 1
     log(f"Done: video #{number} posted. {left} video(s) left in the buffer.")
+    try:  # keep artifact-only pending videos safe; upload pending ones once YouTube is back (max 6/day)
+        youtube_pending.stash()
+        youtube_pending.upload_some()
+    except Exception as e:  # noqa: BLE001
+        log(f"YouTube pending step failed ({e}); next run tries again")
     return 0
 
 

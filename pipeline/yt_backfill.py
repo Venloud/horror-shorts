@@ -426,6 +426,9 @@ def main() -> None:
         save_state(state)
     if cmd == "stash":
         return
+    if CONFIG.get("youtube_paused"):
+        log("YouTube PAUSED (config youtube_paused): artifacts stashed, no upload this run")
+        return
     have_list = match_posted(state)
     save_state(state)
     if not have_list:
