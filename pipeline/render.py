@@ -470,6 +470,10 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
         ai_targets = {0: hook_prompts[0]}
         if first_tw and 0 < tw < len(story.get("scenes", [])):
             ai_targets[first_tw] = story["scenes"][tw].get("image_prompt", "")
+    # Frame one must be the sharp picture (Oct 6): the ZeroGPU clip is upscaled from <= 576 px and the video model
+    # smears faces, so _ai_into_still showed ~2 s of mush before crossfading into the crisp still (Lougawou
+    # 2026-10-06_0144). The hook shot now always starts on the original still with 3D parallax.
+    ai_targets.pop(0, None)
     for k, (img, s) in enumerate(zip(shot_imgs, seg)):
         length = s + (trans[k + 1][1] if k < len(shot_imgs) - 1 else 0)
         out = workdir / f"clip_{k:02d}.mp4"
