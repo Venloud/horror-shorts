@@ -1027,5 +1027,73 @@
     "music_file": "unsolved_mystery.mp3",
     "buffered": "2026-10-06_0332",
     "tiktok": null
+  },
+  {
+    "date": "2026-10-06_1821",
+    "story_id": "c9e6174e20ea",
+    "title": "The Forty Second Mask at the Charity Gala",
+    "premise": "At a masked charity gala, the host counts the discarded disguises and finds one more mask than guests invited.",
+    "subgenre": "randomly catching feelings for a stranger (fictional romantic psychological horror)",
+    "mode": "fiction",
+    "true_story": false,
+    "case": null,
+    "source": "inbox/masked_ball.txt",
+    "prompt_file": "fiction_stranger_feelings.txt",
+    "setting": "A grand lakeside manor ballroom during an autumn charity gala.",
+    "threat": "An uninvited entity that mimics the guests and waits in the reflection.",
+    "twist": "The forty-second mask belongs to a reflection in the mirror that has no living counterpart in the room.",
+    "score": 83,
+    "seconds": 59.3,
+    "voice_speed": 1.164,
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:7056745"
+    ],
+    "visual_mode": "analog",
+    "render_style": "classic",
+    "story_shape": "strange rule",
+    "research_sources": [],
+    "visual_sources": {
+      "reused": 0,
+      "archive_stock": 1,
+      "ai": 12
+    },
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": null,
+    "visuals": {
+      "distinct": 12,
+      "longest_s": 11.9,
+      "longest_share": 0.19,
+      "longest_name": "scene_06b.png"
+    },
+    "yt_title": "There Were Forty One Guests | Scary Story #shorts",
+    "hashtags": [
+      "thefortysecondmask",
+      "horrorstory",
+      "scarystories"
+    ],
+    "yt_tags": [
+      "the forty second mask",
+      "charity gala scary story",
+      "masked gala horror",
+      "scary story",
+      "horror story",
+      "creepy party story",
+      "lakeside gala mystery",
+      "porcelain mask horror",
+      "midnight mask count",
+      "extra reflection horror",
+      "fictional scary story",
+      "creepy short story",
+      "forty second mask",
+      "forty second mask story",
+      "creepy story"
+    ],
+    "opening": "There were forty-one guests at the lakeside charity gala.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-10-06_1821",
+    "tiktok": null
   }
 ]
