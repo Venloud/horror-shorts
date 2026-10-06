@@ -97,8 +97,9 @@ def research(topic: str, kind: str = "lore", notes: str = "") -> dict | None:
     """{"text": block for the source, "sources": [{title, url, domain}], "facts": n} or None (Wikipedia only)."""
     if not CONFIG.get("research", True):
         return None
-    if STATE["out"]:
-        log("Research: grounding used up for today: Wikipedia only")
+    from common import GEMINI
+    if STATE["out"] or GEMINI.get("auth"):  # (a writer's daily quota does not stop research: other models)
+        log("Research: grounding used up for today (or Gemini refused this run): Wikipedia only")
         return None
     limit = int(CONFIG.get("research_daily_limit", 400))
     if used_today() >= limit:
@@ -119,6 +120,11 @@ def research(topic: str, kind: str = "lore", notes: str = "") -> dict | None:
                 log(f"Research: {model} request failed ({str(e)[:120]})")
                 break
             _count()
+            from common import is_gemini_auth_error, note_gemini_auth
+            if is_gemini_auth_error(r.status_code, r.text):
+                note_gemini_auth(r.status_code, r.text, f"research ({model})")
+                STATE["out"] = True
+                return None
             if r.status_code == 429:
                 if re.search(r"PerDay|per day", r.text, re.IGNORECASE):
                     log(f"Research: {model} daily grounding limit reached")

@@ -16,7 +16,8 @@ from pathlib import Path
 import requests
 from PIL import Image
 
-from common import CONFIG, ROOT, env, gemini_model_out, gemini_out, log, note_gemini_429, strip_marks
+from common import (CONFIG, ROOT, env, gemini_model_out, gemini_out, is_gemini_auth_error, log, note_gemini_429,
+                    note_gemini_auth, strip_marks)
 
 _STATE = {"cf_out": False, "spaces_out": False, "local_out": False, "cf_neurons": 0.0, "local_secs": 0.0,
           "clients": {}, "sd": None}
@@ -681,6 +682,9 @@ def _gemini_json(prompt: str, models: list[str] | None = None) -> dict | None:
             if r.status_code == 200:
                 return json.loads(r.json()["candidates"][0]["content"]["parts"][0]["text"])
             log(f"Gemini ({model}) HTTP {r.status_code}")
+            if is_gemini_auth_error(r.status_code, r.text):
+                note_gemini_auth(r.status_code, r.text, "image prompt helper")
+                break
             if r.status_code == 429 and note_gemini_429(r.text, model):
                 break
         except Exception as e:  # noqa: BLE001
@@ -933,6 +937,9 @@ def check_image(path: Path, request: str, wait: bool = True, kind: str = "ai") -
                               "generationConfig": {"temperature": 0, "maxOutputTokens": 20}})
     except Exception as e:  # noqa: BLE001 (timeout / network: Groq instead, else skip)
         return _groq_check(buf.getvalue(), question) or (None, f"error {str(e)[:60]}")
+    if is_gemini_auth_error(r.status_code, r.text):  # suspended / bad key: Groq vision now and for the rest of the run
+        note_gemini_auth(r.status_code, r.text, "image QA")
+        return _groq_check(buf.getvalue(), question) or (None, f"http_{r.status_code}")
     if r.status_code == 429:  # Gemini rate-limited: ask Groq's vision model instead (if set up), else skip
         note_gemini_429(r.text, model)
         return _groq_check(buf.getvalue(), question) or (None, "rate_limited")
@@ -996,6 +1003,8 @@ def same_character(ref: Path, img: Path) -> tuple[bool | None, str]:
                                   "generationConfig": {"temperature": 0, "maxOutputTokens": 20}})
             if r.status_code == 200:
                 return parse(r.json()["candidates"][0]["content"]["parts"][0]["text"])
+            if is_gemini_auth_error(r.status_code, r.text):
+                note_gemini_auth(r.status_code, r.text, "pose consistency check")
             if r.status_code == 429:
                 note_gemini_429(r.text, model)
         except Exception as e:  # noqa: BLE001

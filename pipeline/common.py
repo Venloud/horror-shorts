@@ -112,6 +112,35 @@ def note_gemini_429(body: str, model: str | None = None) -> bool:
     return GEMINI["out"]
 
 
+_AUTH_MARKERS = ("permission_denied", "api_key_invalid", "api key not valid", "consumer_suspended", "suspended",
+                 "has been disabled", "service_disabled", "billing", "api key expired", "unauthenticated")
+
+
+def is_gemini_auth_error(status: int, body: str) -> bool:
+    """401 / 403, or a 400 that says the key is invalid / the project is suspended: Gemini is unusable this run
+    (unlike a 429 or 503, waiting never helps)."""
+    low = (body or "").lower()
+    return status in (401, 403) or (status == 400 and any(m in low for m in _AUTH_MARKERS))
+
+
+def note_gemini_auth(status: int, body: str, where: str) -> None:
+    """First auth / permission failure in a run: every Gemini call is skipped from now on (writer -> Groq, image QA ->
+    Groq vision, research -> Wikipedia only), and ONE ntfy alert says so."""
+    if GEMINI.get("auth"):
+        return
+    GEMINI["out"] = True
+    GEMINI["auth"] = f"HTTP {status}: {(body or '')[:200]}"
+    log(f"Gemini AUTH/PERMISSION error in {where} ({GEMINI['auth']}): no more Gemini calls this run, Groq instead")
+    try:
+        from notify import notify_text
+        notify_text("Night Files: Gemini key/project refused (HTTP %d)" % status,
+                    f"Gemini answered {GEMINI['auth']} (in {where}). This run skips Gemini (Groq writes, Groq vision "
+                    "checks images, research is Wikipedia only). Check the Google AI Studio / Cloud project behind "
+                    "GEMINI_API_KEY.", warn=True)
+    except Exception as e:  # noqa: BLE001
+        log(f"Gemini auth alert not sent ({e})")
+
+
 # Source text inside prompts is wrapped in invisible markers, so a Groq call (small tokens-per-minute budget) can
 # shorten just the source and keep every instruction; Gemini gets the full text with the markers removed.
 SRC_OPEN, SRC_CLOSE = "\u2063\u2063", "\u2064\u2064"

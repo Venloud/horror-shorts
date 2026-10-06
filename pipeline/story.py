@@ -7,7 +7,8 @@ from collections import Counter
 
 import requests
 
-from common import (CONFIG, blocked_topic, env, gemini_model_out, gemini_out, log, mark_source, note_gemini_429, strip_marks,
+from common import (CONFIG, blocked_topic, env, gemini_model_out, gemini_out, is_gemini_auth_error, log, mark_source,
+                    note_gemini_429, note_gemini_auth, strip_marks,
                     trim_sources)
 
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
@@ -214,11 +215,16 @@ def _call_gemini(model: str, prompt: str, api_key: str, temperature: float = 1.0
             "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT")],
     }
     if gemini_model_out(model):
-        raise DailyLimit(f"{model} skipped: its daily quota is used up")
+        from common import GEMINI
+        raise DailyLimit(f"{model} skipped: " + ("Gemini refused this run's key/project" if GEMINI.get("auth")
+                                                  else "its daily quota is used up"))
     body["contents"][0]["parts"][0]["text"] = strip_marks(prompt)
     _gemini_pace()
     r = requests.post(GEMINI_URL.format(model=model), json=body, timeout=120,
                       headers={"x-goog-api-key": api_key})
+    if is_gemini_auth_error(r.status_code, r.text):  # suspended project / bad key: Gemini is done for the run
+        note_gemini_auth(r.status_code, r.text, f"story writer ({model})")
+        raise DailyLimit(f"{model} HTTP {r.status_code} auth/permission: {r.text[:300]}")
     if r.status_code == 429:
         note_gemini_429(r.text, model)
         if gemini_model_out(model):
