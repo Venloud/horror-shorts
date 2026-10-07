@@ -28,8 +28,17 @@
       "posted": "2026-10-06_2034",
       "status": "pending",
       "file": true
+    },
+    {
+      "stamp": "2026-10-06_1821",
+      "story_id": "c9e6174e20ea",
+      "title": "The Forty Second Mask at the Charity Gala",
+      "video_number": 41,
+      "posted": "2026-10-07_0643",
+      "status": "pending",
+      "file": true
     }
   ],
   "uploads": {},
-  "last_alert": "2026-10-06"
+  "last_alert": "2026-10-07"
 }
