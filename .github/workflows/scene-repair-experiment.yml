@@ -1,0 +1,23 @@
+name: Scene Repair Experiment Tests
+on:
+  push:
+    branches: [experiment/agenttube-reliability]
+    paths:
+      - 'pipeline/scene_repair.py'
+      - 'tests/test_scene_repair.py'
+      - '.github/workflows/scene-repair-experiment.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check Python syntax
+        run: python -m py_compile pipeline/scene_repair.py tests/test_scene_repair.py
+      - name: Run isolated scene repair tests
+        run: python -m unittest discover -s tests -p 'test_scene_repair.py' -v
