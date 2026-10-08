@@ -1,0 +1,70 @@
+name: Testing the Flow
+
+# Manual-only, isolated research lane. No production generation/publishing.
+on:
+  workflow_dispatch:
+    inputs:
+      test_id:
+        description: "Stable checkpoint identifier for resume"
+        required: true
+        default: "default"
+        type: string
+      generate_story:
+        description: "Use Gemini/Groq to generate and immediately preserve a story (costs provider quota)"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: testing-the-flow-${{ inputs.test_id }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore isolated test checkpoint
+        uses: actions/cache/restore@v4
+        with:
+          path: testing-the-flow/checkpoint
+          key: testing-flow-${{ inputs.test_id }}-${{ github.run_id }}
+          restore-keys: |
+            testing-flow-${{ inputs.test_id }}-
+      - name: Install story dependencies
+        if: inputs.generate_story
+        run: pip install -q -r requirements.txt
+      - name: Preflight and preserve story
+        id: preserve
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          if [ "${{ inputs.generate_story }}" = "true" ]; then
+            python testing_flow/runner.py --test-id "${{ inputs.test_id }}" --generate-story
+          else
+            python testing_flow/runner.py --test-id "${{ inputs.test_id }}"
+          fi
+      - name: Save isolated checkpoint
+        if: always() && hashFiles('testing-the-flow/checkpoint/**') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: testing-the-flow/checkpoint
+          key: testing-flow-${{ inputs.test_id }}-${{ github.run_id }}
+      - name: Archive scripts and test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testing-flow-${{ inputs.test_id }}-${{ github.run_id }}
+          path: |
+            testing-the-flow/saved/**
+            testing-the-flow/checkpoint/** 
+          retention-days: 90
+          if-no-files-found: warn
