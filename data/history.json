@@ -1119,12 +1119,114 @@
     "story_id": "e80c240ef3f5",
     "title": "The Last Viewer",
     "buffered": "2026-10-07_2304",
-    "tiktok": null,
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7694120869182982175",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
     "mode": "inbox-script",
     "source": "inbox/the_last_viewer.txt",
     "premise": "A man streaming an obscure horror film realizes the broadcast is mirroring his own living room in real time.",
     "opening": "There's a horror movie you should never watch alone.",
     "seconds": 70.233,
-    "recovered_from_artifact": 11516994982
+    "recovered_from_artifact": 11516994982,
+    "video_number": 42,
+    "youtube": {
+      "pending": "youtube_paused"
+    },
+    "posted": "2026-10-08_0240",
+    "yt_title": "Never Watch Alone... The Last Viewer #shorts",
+    "hashtags": [
+      "thelastviewer",
+      "scarystories",
+      "horrorstory"
+    ],
+    "yt_tags": [
+      "the last viewer",
+      "the last viewer movie",
+      "scary story",
+      "horror story",
+      "creepy streaming story",
+      "obscure horror film",
+      "living room horror",
+      "horror movie mirroring room",
+      "creepy video story",
+      "short horror fiction",
+      "scary internet legend",
+      "horror short",
+      "last viewer",
+      "last viewer story",
+      "creepy story"
+    ]
+  },
+  {
+    "date": "2026-10-08_0223",
+    "story_id": "9b18a840807d",
+    "title": "The Secondhand Shearling Coat",
+    "premise": "A man picking up an online marketplace purchase notices that every man in the seller's framed photos is wearing the exact jacket he bought from her weeks ago.",
+    "subgenre": "online marketplace or app meetup that goes wrong",
+    "mode": "fiction",
+    "true_story": false,
+    "case": null,
+    "source": "inbox/the_trap_house.txt",
+    "prompt_file": "fiction_reddit_thriller.txt",
+    "setting": "an elderly seller's dim suburban house",
+    "threat": "an elderly serial killer who uses marketplace listings and a recycled winter coat as bait",
+    "twist": "the men in her photos were previous victims who bought the coat before being killed, and she lured the narrator back to retrieve it",
+    "score": 91,
+    "seconds": 58.3,
+    "voice_speed": 1.1,
+    "writer": "gemini (gemini-3.8-flash)",
+    "media_ids": [
+      "pexels:37410264",
+      "pexels:38883117",
+      "pexels:4747493"
+    ],
+    "visual_mode": "fast",
+    "render_style": "classic",
+    "story_shape": "uncanny normal",
+    "research_sources": [],
+    "visual_sources": {
+      "reused": 0,
+      "archive_stock": 3,
+      "ai": 17
+    },
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": null,
+    "visuals": {
+      "distinct": 18,
+      "longest_s": 7.9,
+      "longest_share": 0.129,
+      "longest_name": "scene_01b.png"
+    },
+    "yt_title": "Every Portrait Showed My Coat | Scary Story #shorts",
+    "hashtags": [
+      "shearlingcoat",
+      "scarystories",
+      "creepypasta"
+    ],
+    "yt_tags": [
+      "the secondhand shearling coat",
+      "shearling coat horror story",
+      "marketplace pickup scary story",
+      "vintage coat scary story",
+      "creepy marketplace encounter",
+      "horror story about a coat",
+      "scary fiction story",
+      "creepy house mystery",
+      "short horror fiction",
+      "suspenseful scary story",
+      "creepy old house story",
+      "secondhand shearling coat",
+      "scary story",
+      "horror story",
+      "creepy story"
+    ],
+    "opening": "Every framed family photo in the seller’s hallway showed a different man wearing my exact winter coat.",
+    "music_file": "unsolved_mystery.mp3",
+    "buffered": "2026-10-08_0223",
+    "tiktok": null
   }
 ]

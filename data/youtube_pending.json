@@ -37,8 +37,17 @@
       "posted": "2026-10-07_0643",
       "status": "pending",
       "file": true
+    },
+    {
+      "stamp": "2026-10-07_2304",
+      "story_id": "e80c240ef3f5",
+      "title": "The Last Viewer",
+      "video_number": 42,
+      "posted": "2026-10-08_0240",
+      "status": "pending",
+      "file": true
     }
   ],
   "uploads": {},
-  "last_alert": "2026-10-07"
+  "last_alert": "2026-10-08"
 }
