@@ -1,10 +1,17 @@
 {
   "repeat_window": 15,
   "topic_families": {
-    "bloody mary": ["bloody mary"],
-    "lizzie borden": ["lizzie borden", "borden"]
+    "bloody mary": [
+      "bloody mary"
+    ],
+    "lizzie borden": [
+      "lizzie borden",
+      "borden"
+    ]
   },
-  "blocked_topics": ["Lizzie Borden"],
+  "blocked_topics": [
+    "Lizzie Borden"
+  ],
   "channel_name": "Night Files",
   "story_min_score": 80,
   "story_max_drafts": 3,
@@ -94,8 +101,8 @@
   "real_media_max_candidates": 4,
   "stock_reuse_window": 20,
   "target_seconds": [
-    61,
-    68
+    56,
+    73
   ],
   "qa_max_visual_share": 0.2,
   "qa_min_visuals": 8,
@@ -224,14 +231,21 @@
   "caption_words_per_group": 1,
   "music_volume": 0.14,
   "music_policy": "approved_files",
-  "approved_music": ["unsolved_mystery.mp3", "bk_grnde.mp3"],
-  "music_rotation": ["unsolved_mystery.mp3", "bk_grnde.mp3", "procedural"],
+  "approved_music": [
+    "unsolved_mystery.mp3",
+    "bk_grnde.mp3"
+  ],
+  "music_rotation": [
+    "unsolved_mystery.mp3",
+    "bk_grnde.mp3",
+    "procedural"
+  ],
   "track_volumes": {
     "unsolved_mystery.mp3": 0.14,
     "bk_grnde.mp3": 0.1
   },
   "music_credits": {
-    "bk_grnde.mp3": "\ud83c\udfb5 Music: bk grnde by Kitty katzzz",
+    "bk_grnde.mp3": "🎵 Music: bk grnde by Kitty katzzz",
     "procedural_original": "Generated locally by FFmpeg for Night Files; no third-party recording."
   },
   "sting_volume": 0.55,

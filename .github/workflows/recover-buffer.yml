@@ -1,0 +1,46 @@
+name: Recover finished buffer video
+
+on:
+  push:
+    branches: [main]
+    paths: [pipeline/recover_buffer.py]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: night-files
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install recovery tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          pip install -q requests
+      - name: Validate saved build and add to buffer
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: cd pipeline && python recover_buffer.py --artifact-id 11516994982 --story-id e80c240ef3f5
+      - name: Save recovered history
+        run: bash pipeline/push_state.sh "Recovered buffer story"
+      - name: Save completed checkpoint
+        uses: actions/cache/save@v4
+        with:
+          path: cache/checkpoint
+          key: ckpt-${{ github.run_id }}
+      - name: Keep recovery evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: recovered-buffer-${{ github.run_id }}
+          path: output/recover-*/production_gate.json
