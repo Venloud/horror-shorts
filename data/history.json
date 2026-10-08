@@ -1304,7 +1304,16 @@
     "opening": "Fire shot from rotating blades while a silent golden disc descended toward a lonely flashlight beam.",
     "music_file": "bk_grnde.mp3",
     "buffered": "2026-10-08_0247",
-    "tiktok": null
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7694401870005094431",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "video_number": 44,
+    "youtube": {
+      "pending": "youtube_paused"
+    },
+    "posted": "2026-10-08_2050"
   },
   {
     "date": "2026-10-08_0641",
