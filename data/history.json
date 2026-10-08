@@ -1227,7 +1227,16 @@
     "opening": "Every framed family photo in the seller’s hallway showed a different man wearing my exact winter coat.",
     "music_file": "unsolved_mystery.mp3",
     "buffered": "2026-10-08_0223",
-    "tiktok": null
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7694186783587813407",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "video_number": 43,
+    "youtube": {
+      "pending": "youtube_paused"
+    },
+    "posted": "2026-10-08_0656"
   },
   {
     "date": "2026-10-08_0247",
@@ -1295,6 +1304,75 @@
     "opening": "Fire shot from rotating blades while a silent golden disc descended toward a lonely flashlight beam.",
     "music_file": "bk_grnde.mp3",
     "buffered": "2026-10-08_0247",
+    "tiktok": null
+  },
+  {
+    "date": "2026-10-08_0641",
+    "story_id": "6e0f6e8e8882",
+    "title": "Why Bloody Mary Appears",
+    "premise": "A dark bathroom dare summons a distorted face in the mirror, fueled by an old divination ritual and a trick of the human brain.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Bloody Mary",
+    "source": "inbox/bloody_mary_remake.txt",
+    "prompt_file": null,
+    "setting": "A dim candle-lit bathroom mirror at night, transitioning between folklore and sensory adaptation.",
+    "threat": "A terrifying reflection transforming into a monstrous corpse due to sensory fading and psychological fear.",
+    "twist": "The apparition in the mirror is an optical illusion known as Troxler's fading, created when your brain stops processing your own unmoving face.",
+    "score": null,
+    "seconds": 54.7,
+    "voice_speed": 1.1,
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [],
+    "visual_mode": "classic",
+    "render_style": "classic",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org",
+      "en.wikipedia.org"
+    ],
+    "visual_sources": {
+      "reused": 0,
+      "archive_stock": 0,
+      "ai": 16
+    },
+    "low_quota": false,
+    "remake_of": "Bloody Mary Mirror Legend",
+    "remake_angle": "The sleepover dare and why it \"works\": kids dare each other to stand in a dark bathroom, say her name into the mirror, and stare. Staring at your own face in a dim mirror makes it distort and fade (the Troxler effect / strange-face illusion, if the sources say so). Then the older roots: the divination version (walking backward up the stairs with a candle and a hand mirror to see a future husband's face, or a skull for someone who would die first), as a middle beat, not the opener.",
+    "critic_score": 84,
+    "visuals": {
+      "distinct": 12,
+      "longest_s": 7.9,
+      "longest_share": 0.136,
+      "longest_name": "scene_01b.png"
+    },
+    "yt_title": "Staring At Your Own Face... Bloody Mary #shorts",
+    "hashtags": [
+      "bloodymary",
+      "urbanlegend",
+      "legends"
+    ],
+    "yt_tags": [
+      "bloody mary",
+      "mary worth",
+      "hell mary",
+      "bloody mary legend",
+      "bloody mary mirror ritual",
+      "bloody mary urban legend",
+      "troxlers fading",
+      "mirror illusion",
+      "scary legend",
+      "folklore story",
+      "bathroom mirror dare",
+      "ghost legend",
+      "folklore",
+      "creepy legend",
+      "folklore creatures"
+    ],
+    "opening": "Staring at your own face in a dim mirror will slowly erase your features.",
+    "music_file": "background_music.mp3",
+    "buffered": "2026-10-08_0641",
     "tiktok": null
   }
 ]
