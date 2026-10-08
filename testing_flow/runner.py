@@ -55,9 +55,12 @@ def main():
             atomic_text(story_file, json.dumps(story, ensure_ascii=False, indent=2))
             log["story"] = "generated_and_checkpointed"
         else:
-            log["story"] = "dry_run_no_api_calls"
-            print(json.dumps(log, indent=2))
-            return
+            feeder = ROOT / "testing_flow" / "feeder" / "flow-001-ten-seconds-ahead.json"
+            if not feeder.is_file():
+                raise FileNotFoundError("No seeded test story found in isolated feeder")
+            story = json.loads(feeder.read_text(encoding="utf-8"))
+            atomic_text(story_file, json.dumps(story, ensure_ascii=False, indent=2))
+            log["story"] = "seeded_from_isolated_feeder_no_api_calls"
         script = script_text(story)
         digest = hashlib.sha256(script.encode()).hexdigest()[:16]
         target = OUT / ("flow-script-" + digest + ".txt")
