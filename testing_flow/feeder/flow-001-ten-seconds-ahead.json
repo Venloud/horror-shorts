@@ -1,0 +1,16 @@
+{
+  "title": "Ten Seconds Ahead",
+  "mode": "inbox-script",
+  "source": "testing-the-flow-original",
+  "test_only": true,
+  "story_id": "flow-001-ten-seconds-ahead",
+  "premise": "At a Sunday football gathering, a mysterious video shows the living room ten seconds into the future.",
+  "scenes": [
+    {
+      "narration": "The first knock came from inside the closet. Everybody heard it, but nobody moved.\n\nIt was Sunday night on Sixty-Third Street. Football on the TV, wings on the table, my cousins arguing over a missed field goal. Two girls from down the block were over, and the whole house smelled like somebody had burned the popcorn.\n\nThen three knocks came from the hallway closet.\n\nMy cousin Dre laughed. Said it was the pipes.\n\nBut the closet door had been taken off its hinges last summer.\n\nWe all turned. The doorway was empty.\n\nThen my phone lit up. A video from an unknown number. It showed us sitting in the living room, right now, filmed from the hallway.\n\nI zoomed in. Behind our couch stood a tall figure with its head bent sideways.\n\nNobody was behind us when I looked.\n\nThe TV went black. In the reflection, the figure was closer.\n\nThen Dre whispered, \"Don't turn around.\"\n\nI asked how he knew.\n\nHe pointed at his phone. Same video. But his was ten seconds ahead.\n\nOn his screen, we had already turned around.\n\nAnd every single one of us was gone.",
+      "image_prompt": "Nighttime rowhouse living room, Sunday football gathering, friends and cousins on sofa, ominous open closet in hallway, cinematic horror lighting",
+      "sfx": "three knocks"
+    }
+  ],
+  "notes": "Original draft for isolated Flow testing. Exact words must be preserved. Review duration after TTS. Never auto-consume in production."
+}
