@@ -108,3 +108,20 @@ A manual test starts without touching production; Gemini/Groq story is saved imm
 **Research: Fish Audio, 2026-10-08.** Official Fish Audio developer pages advertise a `s2.1-pro-free` API model, Python SDK and REST endpoint, and an initial fair-use free access window through **2026-11-30**, without SLA. Sources: https://fish.audio/developers/ and https://fish.audio/blog/s2-1-pro-free-api/ . Fish Audio's general free website plan says non-commercial only; the developer free API page describes additional commercial conditions. **Do not assume monetized Shorts rights without verifying the exact API model terms.** The official Fish Audio Python SDK is https://github.com/fishaudio/fish-audio-python . Potential role: experimental alternative to Kokoro narration, not a production voice replacement until tested for quality, timing, stability, and commercial rights. No Fish Audio calls made.
 
 **Known risks:** The workflow has not been executed, and GitHub's event YAML and actual story dependencies need validation on first dry run. Do not enable story generation before confirming dry run and checkpoint/artifact behavior. GitHub cache entries are immutable and subject to eviction; uploaded artifacts expire after 90 days. Long-term script preservation requires a separate explicit promotion/storage implementation.
+
+
+## Unofficial Google Flow integration shortlist, 2026-10-08
+
+**Decision:** Evaluate existing third-party integrations before writing our own automation. Do not add a Google login secret, session cookie, paid subscription or Flow credit-spending action to hosted CI without separate approval.
+
+1. **gflow-cli**, https://github.com/ffroliva/gflow-cli — alpha Python CLI/MCP for generating, batching and downloading via authenticated Chrome. Promising for local Mac runner, but ephemeral GitHub-hosted runner authentication remains unsolved. The tool's own documentation warns of UI drift and account risk.
+2. **ParkSangGwon/google-flow-mcp**, https://github.com/ParkSangGwon/google-flow-mcp — local Chrome/CDP MCP with dry-run confirmation and on-disk resume records. Strong fit for checkpoint safety and explicit credit-spend approval. Does not establish unattended hosted CI support.
+3. **eddie-fqh/flow-py**, https://github.com/eddie-fqh/flow-py — Python CLI/API and browser-mediated generation, credit checks, media downloads. Unofficial and UI-dependent.
+4. **useapi/google-flow-api**, https://github.com/useapi/google-flow-api — examples for third-party hosted REST intermediary that advertises use of a user's Flow credits and $15/month useapi.net service charge, plus Google subscription. Good hosted-CI fit in principle, but paid and requires linking a Google account to an outside provider; user approval and trust review required.
+5. **miyakejima/google-flow-mcp**, https://github.com/miyakejima/google-flow-mcp — local MCP with existing subscription and media download, additional candidate.
+
+**Recommendation:** Try gflow-cli locally for a single no-credit auth/status test first, then explicitly approve one low-cost video generation only after confirming status, credit balance and export path. Keep generated media in testing-the-flow storage. If hosted CI is mandatory, separately evaluate the cost, security and service reliability of useapi.net before connecting an account.
+
+**Verification status:** Repositories and documented claims identified; no tool installed or run against the user's account, no authentication, no credits spent, no MP4 produced. Do not mistake a README feature claim for a verified working integration. Existing production workflows remain unchanged.
+
+**Baseline Test1:** GitHub Actions run 37728539150 successfully saved isolated seeded story, script, checkpoint cache and four artifact files; log says `flow: not_attempted_no_verified_adapter`. No actual Flow generation occurred.
