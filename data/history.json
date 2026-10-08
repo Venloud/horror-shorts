@@ -1383,5 +1383,74 @@
     "music_file": "background_music.mp3",
     "buffered": "2026-10-08_0641",
     "tiktok": null
+  },
+  {
+    "date": "2026-10-08_2319",
+    "story_id": "67f2f11e97c2",
+    "title": "The Dancing Plague of 1518",
+    "premise": "Hundreds of people in Strasbourg danced uncontrollably for weeks until they collapsed from exhaustion.",
+    "subgenre": "real unsolved mystery",
+    "mode": "mystery",
+    "true_story": true,
+    "case": "Dancing plague of 1518",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Strasbourg, Alsace in 1518",
+    "threat": "Uncontrollable dancing mania leading to exhaustion and collapse",
+    "twist": "Some sources claimed fifteen people died daily from the sheer exhaustion of dancing.",
+    "score": null,
+    "seconds": 69.0,
+    "voice_speed": 1.15,
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [],
+    "visual_mode": "fast",
+    "render_style": "classic",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": {
+      "reused": 0,
+      "archive_stock": 0,
+      "ai": 17
+    },
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 94,
+    "visuals": {
+      "distinct": 17,
+      "longest_s": 8.0,
+      "longest_share": 0.111,
+      "longest_name": "scene_04b.png"
+    },
+    "yt_title": "Danced Until Blood Pooled... The Dancing Plague of 1518 #shorts",
+    "hashtags": [
+      "dancingplagueof1518",
+      "strasbourg",
+      "darkhistory",
+      "history"
+    ],
+    "yt_tags": [
+      "the dancing plague of 1518",
+      "dancing plague 1518",
+      "strasbourg dancing plague",
+      "frau troffea",
+      "true history story",
+      "dark history facts",
+      "mass hysteria history",
+      "strange history events",
+      "st vitus dance",
+      "1518 dancing plague",
+      "historical mysteries",
+      "true historical events",
+      "dancing plague of 1518",
+      "dancing plague of 1518 story",
+      "strasbourg mystery"
+    ],
+    "opening": "Victims danced until blood pooled in their swollen feet and they bled into their shoes.",
+    "music_file": "unsolved_mystery.mp3",
+    "buffered": "2026-10-08_2319",
+    "tiktok": null
   }
 ]
