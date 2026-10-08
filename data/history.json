@@ -1228,5 +1228,73 @@
     "music_file": "unsolved_mystery.mp3",
     "buffered": "2026-10-08_0223",
     "tiktok": null
+  },
+  {
+    "date": "2026-10-08_0247",
+    "story_id": "b73013ac3c2d",
+    "title": "The Golden Saucer of Arkansas",
+    "premise": "An injured storyteller in Arkansas attempts to communicate with silent craft descending with blazing fan blades in the dark.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "&#8220;And a fire come out at night&#8221;: UFOs, space exploration and folklife",
+    "source": "https://blogs.loc.gov/folklife/2024/07/and-a-fire-come-out-at-night-ufos-space-exploration-and-folklife/",
+    "prompt_file": null,
+    "setting": "Rural Arkansas night meadow by highway 21",
+    "threat": "Unidentified golden disc shooting silent fire from rotating blades",
+    "twist": "The silent vessel answered his light signals, revealing rotating blades spitting fire before vanishing without noise",
+    "score": null,
+    "seconds": 59.7,
+    "voice_speed": 1.1,
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [],
+    "visual_mode": "analog",
+    "render_style": "classic",
+    "story_shape": null,
+    "research_sources": [
+      "https://blogs.loc.gov/folklife/2024/07/and-a-fire-come-out-at-night-ufos-space-exploration-and-folklife/"
+    ],
+    "visual_sources": {
+      "reused": 0,
+      "archive_stock": 0,
+      "ai": 14
+    },
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 81,
+    "visuals": {
+      "distinct": 12,
+      "longest_s": 8.3,
+      "longest_share": 0.131,
+      "longest_name": "scene_02b.png"
+    },
+    "yt_title": "Silent Golden Disc Descended | Scary Story #shorts",
+    "hashtags": [
+      "arkansas",
+      "legends",
+      "folklore"
+    ],
+    "yt_tags": [
+      "the golden saucer of arkansas",
+      "arkansas flying saucer",
+      "arkansas legend",
+      "ozarks legend",
+      "highway twenty one legend",
+      "flying saucer encounter",
+      "arkansas folklore",
+      "silent golden disc",
+      "ozarks flying saucer",
+      "scary legend",
+      "arkansas mystery",
+      "burning saucer encounter",
+      "golden saucer of arkansas",
+      "folklore",
+      "creepy legend"
+    ],
+    "opening": "Fire shot from rotating blades while a silent golden disc descended toward a lonely flashlight beam.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-10-08_0247",
+    "tiktok": null
   }
 ]
