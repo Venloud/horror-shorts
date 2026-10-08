@@ -9,6 +9,11 @@ on:
         required: true
         default: "default"
         type: string
+      clip_path:
+        description: "Optional repo path to an exported MP4 under testing_flow/imports/ (leave blank to prepare prompt)"
+        required: false
+        default: ""
+        type: string
       generate_story:
         description: "Use Gemini/Groq to generate and immediately preserve a story (costs provider quota)"
         required: true
@@ -52,6 +57,12 @@ jobs:
           else
             python testing_flow/runner.py --test-id "${{ inputs.test_id }}"
           fi
+      - name: Prepare Flow shot and archive optional exported MP4
+        if: success()
+        env:
+          TEST_ID: ${{ inputs.test_id }}
+          CLIP_PATH: ${{ inputs.clip_path }}
+        run: python testing_flow/flow_clip.py --test-id "$TEST_ID" --clip-path "$CLIP_PATH"
       - name: Save isolated checkpoint
         if: always() && hashFiles('testing-the-flow/checkpoint/**') != ''
         uses: actions/cache/save@v4
