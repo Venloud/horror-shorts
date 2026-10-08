@@ -1113,5 +1113,18 @@
       "pending": "youtube_paused"
     },
     "posted": "2026-10-07_0643"
+  },
+  {
+    "date": "2026-10-07_2304",
+    "story_id": "e80c240ef3f5",
+    "title": "The Last Viewer",
+    "buffered": "2026-10-07_2304",
+    "tiktok": null,
+    "mode": "inbox-script",
+    "source": "inbox/the_last_viewer.txt",
+    "premise": "A man streaming an obscure horror film realizes the broadcast is mirroring his own living room in real time.",
+    "opening": "There's a horror movie you should never watch alone.",
+    "seconds": 70.233,
+    "recovered_from_artifact": 11516994982
   }
 ]
