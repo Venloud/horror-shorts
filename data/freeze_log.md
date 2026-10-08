@@ -80,3 +80,14 @@ first production build passes QA and left lifted.
 - Slot runs (daily.yml): 3 (0 failed)
 - Buffer now: 1 video(s)
 - Cloudflare 2026-10-06 UTC: 11405/10000 neurons (tests 0, production 11405, ~66 images)
+
+## 2026-10-08 06:42 UTC: Night Files freeze day 7/7 (last day)
+- Posted #41 The Forty Second Mask at the Charity Gala (fiction): YouTube PAUSED (pending); TikTok ok
+- Posted #42 The Last Viewer (inbox-script): YouTube PAUSED (pending); TikTok ok
+- Built: The Last Viewer (inbox-script, writer None, critic None, ? AI / ? real)
+- Built: The Secondhand Shearling Coat (fiction, writer gemini (gemini-3.8-flash), critic None, 17 AI / 3 real)
+- Built: The Golden Saucer of Arkansas (lore, writer gemini (gemini-3.5-flash-lite), critic 81, 14 AI / 0 real)
+- Build runs (buffer_fill.yml): 6 (2 failed: 37699895772, 37627042909)
+- Slot runs (daily.yml): 2 (1 failed: 37684414042)
+- Buffer now: 2 video(s)
+- Cloudflare 2026-10-07 UTC: 6394/10000 neurons (tests 0, production 6394, ~37 images)
