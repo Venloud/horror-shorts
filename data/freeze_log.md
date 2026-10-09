@@ -91,3 +91,13 @@ first production build passes QA and left lifted.
 - Slot runs (daily.yml): 2 (1 failed: 37684414042)
 - Buffer now: 2 video(s)
 - Cloudflare 2026-10-07 UTC: 6394/10000 neurons (tests 0, production 6394, ~37 images)
+
+## 2026-10-09 06:49 UTC: Night Files freeze day 7/7 (last day)
+- Posted #43 The Secondhand Shearling Coat (fiction): YouTube PAUSED (pending); TikTok ok
+- Posted #44 The Golden Saucer of Arkansas (lore): YouTube PAUSED (pending); TikTok ok
+- Posted #45 Why Bloody Mary Appears (lore): YouTube PAUSED (pending); TikTok ok
+- Built: The Dancing Plague of 1518 (mystery, writer gemini (gemini-3.5-flash-lite), critic 94, 17 AI / 0 real)
+- Build runs (buffer_fill.yml): 3 (0 failed)
+- Slot runs (daily.yml): 2 (0 failed)
+- Buffer now: 1 video(s)
+- Cloudflare 2026-10-08 UTC: 10714/10000 neurons (tests 0, production 10714, ~62 images)
