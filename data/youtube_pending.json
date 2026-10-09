@@ -64,8 +64,17 @@
       "posted": "2026-10-08_2050",
       "status": "pending",
       "file": true
+    },
+    {
+      "stamp": "2026-10-08_0641",
+      "story_id": "6e0f6e8e8882",
+      "title": "Why Bloody Mary Appears",
+      "video_number": 45,
+      "posted": "2026-10-09_0644",
+      "status": "pending",
+      "file": true
     }
   ],
   "uploads": {},
-  "last_alert": "2026-10-08"
+  "last_alert": "2026-10-09"
 }
