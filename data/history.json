@@ -1470,5 +1470,73 @@
       "pending": "youtube_paused"
     },
     "posted": "2026-10-09_2020"
+  },
+  {
+    "date": "2026-10-09_2236",
+    "story_id": "a32355ee6c30",
+    "title": "The Pictures in the Dark",
+    "premise": "A man receives creepy late-night photos of his own bedroom from his missing girlfriend's phone, realizing the photographer is right behind him.",
+    "subgenre": "creator script",
+    "mode": "inbox-script",
+    "true_story": false,
+    "case": null,
+    "source": "inbox/are_you_getting_ghosted.txt",
+    "prompt_file": null,
+    "setting": "dimly lit bedroom in the middle of the night",
+    "threat": "A terrifying entity mimicking his missing girlfriend that hides inside his bedroom.",
+    "twist": "The girlfriend has already been missing for days, and a smiling imposter is standing directly behind him.",
+    "score": null,
+    "seconds": 53.4,
+    "voice_speed": 1.069,
+    "writer": "gemini (gemini-3.8-flash)",
+    "media_ids": [
+      "pexels:32365211"
+    ],
+    "visual_mode": "analog",
+    "render_style": "classic",
+    "story_shape": null,
+    "research_sources": [],
+    "visual_sources": {
+      "reused": 0,
+      "archive_stock": 1,
+      "ai": 18
+    },
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": null,
+    "visuals": {
+      "distinct": 12,
+      "longest_s": 11.2,
+      "longest_share": 0.197,
+      "longest_name": "scene_09a.png"
+    },
+    "yt_title": "My Girlfriend Stopped Replying... The Pictures in the Dark #shorts",
+    "hashtags": [
+      "thepicturesinthedark",
+      "scarystories",
+      "horrorstory"
+    ],
+    "yt_tags": [
+      "the pictures in the dark",
+      "pictures in the dark story",
+      "missing girlfriend scary story",
+      "creepy bedroom photos story",
+      "scary bedtime stories",
+      "creepy text message stories",
+      "scary narrative stories",
+      "terrifying bedroom encounters",
+      "horror shorts stories",
+      "creepy thriller stories",
+      "short scary story",
+      "pictures in the dark",
+      "scary story",
+      "horror story",
+      "creepy story"
+    ],
+    "opening": "My girlfriend stopped replying on Tuesday.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-10-09_2236",
+    "tiktok": null
   }
 ]
