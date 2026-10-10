@@ -1538,5 +1538,73 @@
     "music_file": "bk_grnde.mp3",
     "buffered": "2026-10-09_2236",
     "tiktok": null
+  },
+  {
+    "date": "2026-10-10_0547",
+    "story_id": "9dbb79dfe1ce",
+    "title": "The Infinite Office",
+    "premise": "A man gets trapped in an endless labyrinth of yellow rooms until he finds his apartment, only to realize the woman inside is not his mother.",
+    "subgenre": "creator script",
+    "mode": "inbox-script",
+    "true_story": false,
+    "case": null,
+    "source": "inbox/lost_inside_backrooms.txt",
+    "prompt_file": null,
+    "setting": "infinite office maze and mimic apartment",
+    "threat": "an entity mimicking his home and mother to consume him",
+    "twist": "the person in the apartment is an entity while his actual mother is trapped behind the walls",
+    "score": null,
+    "seconds": 52.8,
+    "voice_speed": 1.009,
+    "writer": "gemini (gemini-3.8-flash)",
+    "media_ids": [
+      "pexels:37856633"
+    ],
+    "visual_mode": "classic",
+    "render_style": "classic",
+    "story_shape": null,
+    "research_sources": [],
+    "visual_sources": {
+      "reused": 0,
+      "archive_stock": 1,
+      "ai": 17
+    },
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": null,
+    "visuals": {
+      "distinct": 17,
+      "longest_s": 6.9,
+      "longest_share": 0.123,
+      "longest_name": "scene_08a.png"
+    },
+    "yt_title": "He Entered An Empty Office | Scary Story #shorts",
+    "hashtags": [
+      "marcus",
+      "scarystories",
+      "horrorstory"
+    ],
+    "yt_tags": [
+      "the infinite office",
+      "infinite office maze",
+      "yellow rooms story",
+      "endless office labyrinth",
+      "scary office story",
+      "creepy office legend",
+      "yellow room horror",
+      "office maze creepypasta",
+      "missing in office video",
+      "the infinite office story",
+      "yellow office rooms",
+      "scary story",
+      "infinite office",
+      "infinite office story",
+      "horror story"
+    ],
+    "opening": "The security camera showed him entering an empty office hallway.",
+    "music_file": "background_music.mp3",
+    "buffered": "2026-10-10_0547",
+    "tiktok": null
   }
 ]
