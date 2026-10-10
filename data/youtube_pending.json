@@ -82,8 +82,17 @@
       "posted": "2026-10-09_2020",
       "status": "pending",
       "file": true
+    },
+    {
+      "stamp": "2026-10-09_2236",
+      "story_id": "a32355ee6c30",
+      "title": "The Pictures in the Dark",
+      "video_number": 47,
+      "posted": "2026-10-10_0625",
+      "status": "pending",
+      "file": true
     }
   ],
   "uploads": {},
-  "last_alert": "2026-10-09"
+  "last_alert": "2026-10-10"
 }
