@@ -7,8 +7,9 @@ on:
         required: true
         default: https://youtu.be/plN7JMbadRg
       background_url:
-        description: Direct HTTPS URL to reusable MP4 background footage
-        required: true
+        description: Optional custom gameplay URL (YouTube or direct MP4)
+        required: false
+        default: ''
       start_seconds:
         description: Start time in source (seconds), -1 selects automatically
         default: '-1'
@@ -42,27 +43,11 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg
           python -m pip install -q yt-dlp requests faster-whisper
-      - name: Download background
+      - name: Download licensed gameplay background
         env:
           BG_URL: ${{ inputs.background_url }}
         run: |
-          python - <<'PY'
-          import os, urllib.parse, urllib.request
-          u=os.environ["BG_URL"]
-          p=urllib.parse.urlparse(u)
-          if p.scheme!="https" or not p.hostname or p.username or p.password:
-              raise SystemExit("A public HTTPS MP4 URL is required")
-          # Use the same public-source rule for background videos, never secrets.
-          req=urllib.request.Request(u,headers={"User-Agent":"night-files-clipper/1.0"})
-          with urllib.request.urlopen(req,timeout=60) as r,open("/tmp/clipper_background.mp4","wb") as f:
-              total=0
-              while True:
-                  b=r.read(1024*1024)
-                  if not b:break
-                  total+=len(b)
-                  if total>150*1024*1024:raise SystemExit("Background exceeds 150 MB")
-                  f.write(b)
-          PY
+          python clipper/background.py --url "$BG_URL" --output /tmp/clipper_background.mp4
       - name: Download source and select highlights
         env:
           SOURCE: ${{ inputs.source_url }}
