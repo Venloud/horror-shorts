@@ -1,0 +1,23 @@
+name: Split clipper smoke test
+on:
+  pull_request:
+    paths:
+      - 'clipper/**'
+      - '.github/workflows/split_clipper.yml'
+      - '.github/workflows/split_clipper_test.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          python clipper/test_smoke.py
