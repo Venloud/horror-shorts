@@ -29,7 +29,7 @@ def pick(segments,duration):
     return best[1]
 
 def make_ass(words,start,duration,path):
-    # PlayResY=1920, top half occupies y=0..960. Captions centered at y=820.
+    # PlayResY=1920, caption band occupies y=1056..1152. Captions centered at y=1104.
     header="""[Script Info]
 ScriptType: v4.00+
 PlayResX: 1080
@@ -50,7 +50,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         label=re.sub(r"[{}\\]","",w.word.strip().upper()).replace("\n"," ")
         if not label:continue
         # Animated pop-in: scale from 65% to 110%, settling at 100%.
-        effect=r"{\an5\pos(540,820)\fscx65\fscy65\t(0,110,\fscx110\fscy110)\t(110,190,\fscx100\fscy100)}"
+        effect=r"{\an5\pos(540,1104)\fscx65\fscy65\t(0,110,\fscx110\fscy110)\t(110,190,\fscx100\fscy100)}"
         events.append(f"Dialogue: 0,{ass_time(begin)},{ass_time(end)},Word,,0,0,0,,{effect}{label}\n")
     Path(path).write_text(header+"".join(events),encoding="utf-8")
     return len(events)
@@ -70,10 +70,18 @@ def main():
     segments=list(segments)
     items=[{"start":x.start,"end":x.end,"text":x.text.strip()} for x in segments]
     start=a.start if a.start>=0 else pick(items,a.duration)
+    # Heuristic only, not a forecast of views.
+    selected=[x for x in items if start<=x["start"]<start+a.duration]
+    transcript=" ".join(x["text"] for x in selected).lower()
+    hook_hits=sum(transcript.count(w) for w in ("why","how","what","never","secret","million","challenge","win","lose","crazy","impossible"))
+    speech_seconds=sum(max(0,min(x["end"],start+a.duration)-max(x["start"],start)) for x in selected)
+    density=min(1.0,speech_seconds/a.duration)
+    words_per_second=len(transcript.split())/a.duration
+    viral_score=round(100*(0.45*min(hook_hits/6,1)+0.35*density+0.20*min(words_per_second/3.5,1)),1)
     words=[w for s in segments for w in (s.words or []) if w.end>start and w.start<start+a.duration]
     count=make_ass(words,start,a.duration,out/"captions.ass")
     (out/"selection.json").write_text(json.dumps({"start":start,"duration":a.duration,
-        "transcript_segments":len(items),"caption_words":count},indent=2))
+        "transcript_segments":len(items),"caption_words":count,"viral_potential_score":viral_score,"viral_score_note":"Transcript-based heuristic only, not a forecast of views"},indent=2))
     print(f"Selected {start:.2f}s, {count} animated caption words")
 
 if __name__=="__main__":main()
