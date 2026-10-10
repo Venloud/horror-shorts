@@ -33,7 +33,7 @@ def main():
          "-stream_loop","-1","-t",str(a.duration),"-i",str(bg),
          "-filter_complex",filters,"-map","[video]","-map","0:a:0?",
          "-c:v","libx264","-preset","veryfast","-crf","23","-r","30",
-         "-c:a","aac","-b:a","128k","-movflags","+faststart","-shortest",str(out)]
+         "-c:a","aac","-b:a","128k","-movflags","+faststart","-t",str(a.duration),str(out)]
     if a.subtitles:
         s=Path(a.subtitles).resolve()
         if not s.is_file():p.error(f"Subtitles not found: {s}")
