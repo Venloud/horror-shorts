@@ -1,4 +1,4 @@
-"""Find an engaging short excerpt using word-timed transcription; write synced SRT."""
+"""Select an excerpt and generate one-word ASS captions for animated top-panel text."""
 import argparse
 import json
 import re
@@ -9,20 +9,51 @@ def stamp(seconds):
     h,ms=divmod(ms,3600000);m,ms=divmod(ms,60000);s,ms=divmod(ms,1000)
     return f"{h:02}:{m:02}:{s:02},{ms:03}"
 
+def ass_time(seconds):
+    cs=max(0,round(seconds*100))
+    h,cs=divmod(cs,360000);m,cs=divmod(cs,6000);s,cs=divmod(cs,100)
+    return f"{h}:{m:02}:{s:02}.{cs:02}"
+
 def pick(segments,duration):
-    if not segments: return 0.0
+    if not segments:return 0.0
     best=(-1e9,0.0)
     for i,segment in enumerate(segments):
         start=float(segment["start"])
         if start+duration>float(segments[-1]["end"]):continue
         window=[x for x in segments[i:] if float(x["start"])<start+duration]
-        speech=sum(min(float(x["end"]),start+duration)-max(float(x["start"]),start) for x in window)
+        speech=sum(max(0,min(float(x["end"]),start+duration)-max(float(x["start"]),start)) for x in window)
         words=" ".join(x["text"] for x in window).lower()
         hooks=len(re.findall(r"\b(why|how|what|never|secret|million|challenge|win|lose|crazy|impossible|last|first)\b",words))
-        # Prefer a full, high-energy passage, not a mostly silent intro.
         score=speech/max(duration,1)*8+hooks*0.6+min(len(words.split())/100,2)
         if score>best[0]:best=(score,start)
     return best[1]
+
+def make_ass(words,start,duration,path):
+    # PlayResY=1920, top half occupies y=0..960. Captions centered at y=820.
+    header="""[Script Info]
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Word,Arial,78,&H0000FFFF,&H0000FFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,5,2,5,30,30,0,1
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+"""
+    events=[]
+    for w in words:
+        begin=max(0,float(w.start)-start)
+        end=min(duration,float(w.end)-start)
+        if end<=begin:continue
+        label=re.sub(r"[{}\\]","",w.word.strip().upper()).replace("\n"," ")
+        if not label:continue
+        # Animated pop-in: scale from 65% to 110%, settling at 100%.
+        effect=r"{\an5\pos(540,820)\fscx65\fscy65\t(0,110,\fscx110\fscy110)\t(110,190,\fscx100\fscy100)}"
+        events.append(f"Dialogue: 0,{ass_time(begin)},{ass_time(end)},Word,,0,0,0,,{effect}{label}\n")
+    Path(path).write_text(header+"".join(events),encoding="utf-8")
+    return len(events)
 
 def main():
     p=argparse.ArgumentParser()
@@ -30,7 +61,7 @@ def main():
     p.add_argument("--duration",type=float,default=45)
     p.add_argument("--output",default="clipper/output")
     p.add_argument("--model",default="tiny.en")
-    p.add_argument("--start",type=float,default=-1,help="Manual start, -1 for auto")
+    p.add_argument("--start",type=float,default=-1)
     a=p.parse_args()
     from faster_whisper import WhisperModel
     out=Path(a.output);out.mkdir(parents=True,exist_ok=True)
@@ -39,16 +70,10 @@ def main():
     segments=list(segments)
     items=[{"start":x.start,"end":x.end,"text":x.text.strip()} for x in segments]
     start=a.start if a.start>=0 else pick(items,a.duration)
-    end=start+a.duration
-    words=[w for s in segments for w in (s.words or []) if w.end>start and w.start<end]
-    groups=[words[i:i+4] for i in range(0,len(words),4)]
-    lines=[]
-    for i,g in enumerate(groups,1):
-        begin=max(0,g[0].start-start);finish=min(a.duration,g[-1].end-start)
-        if finish<=begin:continue
-        label=" ".join(w.word.strip() for w in g).upper()
-        lines.append(f"{i}\n{stamp(begin)} --> {stamp(finish)}\n{label}\n")
-    (out/"captions.srt").write_text("\n".join(lines),encoding="utf-8")
-    (out/"selection.json").write_text(json.dumps({"start":start,"duration":a.duration,"transcript_segments":len(items),"caption_groups":len(lines)},indent=2))
-    print(f"Selected {start:.2f}s, {len(lines)} caption groups")
+    words=[w for s in segments for w in (s.words or []) if w.end>start and w.start<start+a.duration]
+    count=make_ass(words,start,a.duration,out/"captions.ass")
+    (out/"selection.json").write_text(json.dumps({"start":start,"duration":a.duration,
+        "transcript_segments":len(items),"caption_words":count},indent=2))
+    print(f"Selected {start:.2f}s, {count} animated caption words")
+
 if __name__=="__main__":main()
