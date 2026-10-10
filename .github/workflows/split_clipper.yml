@@ -1,0 +1,85 @@
+name: Split-screen TikTok clipper
+on:
+  workflow_dispatch:
+    inputs:
+      source_url:
+        description: YouTube source URL
+        required: true
+        default: https://youtu.be/plN7JMbadRg
+      background_url:
+        description: Direct HTTPS URL to reusable MP4 background footage
+        required: true
+      start_seconds:
+        description: Start time in source (seconds)
+        default: '0'
+      duration_seconds:
+        description: Duration, 1 to 59 seconds
+        default: '45'
+      upload_mode:
+        description: Preview only, TikTok draft, or direct post
+        type: choice
+        options:
+          - preview
+          - draft
+          - direct
+        default: preview
+permissions:
+  contents: read
+concurrency:
+  group: split-clipper
+  cancel-in-progress: false
+jobs:
+  clip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install media tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          python -m pip install -q yt-dlp requests
+      - name: Download background
+        env:
+          BG_URL: ${{ inputs.background_url }}
+        run: |
+          python - <<'PY'
+          import os, urllib.parse, urllib.request
+          u=os.environ["BG_URL"]
+          p=urllib.parse.urlparse(u)
+          if p.scheme!="https" or not p.hostname or p.username or p.password:
+              raise SystemExit("A public HTTPS MP4 URL is required")
+          # Use the same public-source rule for background videos, never secrets.
+          req=urllib.request.Request(u,headers={"User-Agent":"night-files-clipper/1.0"})
+          with urllib.request.urlopen(req,timeout=60) as r,open("/tmp/clipper_background.mp4","wb") as f:
+              total=0
+              while True:
+                  b=r.read(1024*1024)
+                  if not b:break
+                  total+=len(b)
+                  if total>150*1024*1024:raise SystemExit("Background exceeds 150 MB")
+                  f.write(b)
+          PY
+      - name: Render preview
+        env:
+          SOURCE: ${{ inputs.source_url }}
+          START: ${{ inputs.start_seconds }}
+          DURATION: ${{ inputs.duration_seconds }}
+        run: |
+          python clipper/render.py --source "$SOURCE" --background /tmp/clipper_background.mp4 --start "$START" --duration "$DURATION"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: split-screen-preview
+          path: clipper/output/tiktok.mp4
+          retention-days: 7
+      - name: Upload to TikTok
+        if: inputs.upload_mode != 'preview'
+        env:
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+          TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
+          MODE: ${{ inputs.upload_mode }}
+        run: python clipper/post.py --video clipper/output/tiktok.mp4 --mode "$MODE"
