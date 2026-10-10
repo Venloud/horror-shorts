@@ -1,0 +1,104 @@
+name: Split-screen TikTok clipper
+on:
+  workflow_dispatch:
+    inputs:
+      source_url:
+        description: YouTube source URL
+        required: true
+        default: https://youtu.be/plN7JMbadRg
+      source_mp4_url:
+        description: Optional direct HTTPS source MP4, bypasses YouTube bot checks
+        required: false
+        default: ''
+      background_mp4_url:
+        description: Optional direct HTTPS background MP4
+        required: false
+        default: ''
+      background_url:
+        description: Optional custom gameplay URL (YouTube or direct MP4)
+        required: false
+        default: ''
+      start_seconds:
+        description: Start time in source (seconds), -1 selects automatically
+        default: '-1'
+      duration_seconds:
+        description: Duration, 1 to 59 seconds
+        default: '45'
+      upload_mode:
+        description: Preview only, TikTok draft, or direct post
+        type: choice
+        options:
+          - preview
+          - draft
+          - direct
+        default: preview
+permissions:
+  contents: read
+concurrency:
+  group: split-clipper
+  cancel-in-progress: false
+jobs:
+  clip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install media tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          python -m pip install -q 'yt-dlp[default]' requests faster-whisper
+      - name: Download licensed gameplay background
+        env:
+          BG_URL: ${{ inputs.background_url }}
+          BG_MP4_URL: ${{ inputs.background_mp4_url }}
+        run: |
+          if [ -n "$BG_MP4_URL" ]; then
+            python clipper/direct_download.py --url "$BG_MP4_URL" --output /tmp/clipper_background.mp4
+          else
+            python clipper/background.py --url "$BG_URL" --output /tmp/clipper_background.mp4
+          fi
+      - name: Download source and select highlights
+        env:
+          SOURCE: ${{ inputs.source_url }}
+          SOURCE_MP4: ${{ inputs.source_mp4_url }}
+          START: ${{ inputs.start_seconds }}
+          DURATION: ${{ inputs.duration_seconds }}
+        run: |
+          mkdir -p clipper/output
+          if [ -n "$SOURCE_MP4" ]; then
+            python clipper/direct_download.py --url "$SOURCE_MP4" --output clipper/output/source.mp4
+          else
+            yt-dlp --no-playlist -f 'bv*+ba/b' --merge-output-format mp4 -o clipper/output/source.mp4 "$SOURCE"
+          fi
+          python clipper/highlights.py --source clipper/output/source.mp4 --start "$START" --duration "$DURATION"
+      - name: Render preview
+        env:
+          SOURCE: ${{ inputs.source_url }}
+          START: ${{ inputs.start_seconds }}
+          DURATION: ${{ inputs.duration_seconds }}
+        run: |
+          python - <<'PY'
+          import json,subprocess
+          x=json.load(open('clipper/output/selection.json'))
+          subprocess.run(['python','clipper/render.py','--source','clipper/output/source.mp4','--background','/tmp/clipper_background.mp4','--start',str(x['start']),'--duration',str(x['duration']),'--subtitles','clipper/output/captions.srt'],check=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: split-screen-preview
+          path: |
+            clipper/output/tiktok.mp4
+            clipper/output/selection.json
+            clipper/output/captions.srt
+          retention-days: 7
+      - name: Upload to TikTok
+        if: inputs.upload_mode != 'preview'
+        env:
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+          TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
+          MODE: ${{ inputs.upload_mode }}
+        run: python clipper/post.py --video clipper/output/tiktok.mp4 --mode "$MODE"
