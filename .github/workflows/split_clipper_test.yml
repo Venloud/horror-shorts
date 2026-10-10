@@ -21,3 +21,34 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg
           python clipper/test_smoke.py
+          python -m pip install -q yt-dlp
+
+  real-download:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install download tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          python -m pip install -q yt-dlp
+      - name: Download short source sample
+        run: |
+          mkdir -p clipper/output
+          yt-dlp --no-playlist --download-sections '*0-8' -f 'bv*[height<=480]+ba/b[height<=480]/b' --merge-output-format mp4 -o clipper/output/source_sample.mp4 'https://youtu.be/plN7JMbadRg'
+      - name: Download selected gameplay
+        run: python clipper/background.py --url 'https://www.youtube.com/watch?v=u7kdVe8q5zs' --output clipper/output/gameplay.mp4
+      - name: Render real split-screen sample
+        run: python clipper/render.py --source clipper/output/source_sample.mp4 --background clipper/output/gameplay.mp4 --duration 5 --output clipper/output/real_preview.mp4
+      - name: Upload real preview
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-split-screen-sample
+          path: clipper/output/real_preview.mp4
+          retention-days: 3
