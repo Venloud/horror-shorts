@@ -1615,5 +1615,74 @@
     "music_file": "background_music.mp3",
     "buffered": "2026-10-10_0547",
     "tiktok": null
+  },
+  {
+    "date": "2026-10-10_1227",
+    "story_id": "f1af4ec880b4",
+    "title": "The Edward in the Walls",
+    "premise": "A Victorian séance reveals that the head of the house has been dead for decades.",
+    "subgenre": "creator script",
+    "mode": "inbox-script",
+    "true_story": false,
+    "case": null,
+    "source": "inbox/victorian_ghost_stories.txt",
+    "prompt_file": null,
+    "setting": "Victorian London townhouse",
+    "threat": "A duplicate or ghost posing as a living father for decades",
+    "twist": "The father attending the séance had already been dead inside the wall for thirty years",
+    "score": null,
+    "seconds": 52.8,
+    "voice_speed": 1.0,
+    "writer": "gemini (gemini-3.8-flash)",
+    "media_ids": [
+      "pexels:6270175"
+    ],
+    "visual_mode": "fast",
+    "render_style": "classic",
+    "story_shape": null,
+    "research_sources": [],
+    "visual_sources": {
+      "reused": 0,
+      "archive_stock": 1,
+      "ai": 15
+    },
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": null,
+    "visuals": {
+      "distinct": 14,
+      "longest_s": 8.4,
+      "longest_share": 0.149,
+      "longest_name": "scene_06a.png"
+    },
+    "yt_title": "In 1891, A Wealthy London Family... The Edward in the Walls #shorts",
+    "hashtags": [
+      "edward",
+      "london",
+      "scarystories",
+      "horrorstory"
+    ],
+    "yt_tags": [
+      "the edward in the walls",
+      "edward in the walls story",
+      "victorian seance story",
+      "london scary story",
+      "medium seance horror",
+      "victorian london ghost story",
+      "scary stories",
+      "horror story",
+      "creepy house story",
+      "unsolved mystery story",
+      "victorian ghost legend",
+      "wall spirit story",
+      "edward in the walls",
+      "london mystery",
+      "scary story"
+    ],
+    "opening": "In 1891, a wealthy London family invited a medium into their home.",
+    "music_file": "unsolved_mystery.mp3",
+    "buffered": "2026-10-10_1227",
+    "tiktok": null
   }
 ]
