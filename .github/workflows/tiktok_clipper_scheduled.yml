@@ -56,27 +56,27 @@ jobs:
           import os,subprocess,math
           source='clipper/assets/MrBeast_compressed.mp4'
           seconds=float(subprocess.check_output(['ffprobe','-v','error','-show_entries','format=duration','-of','default=noprint_wrappers=1:nokey=1',source],text=True).strip())
-          count=int(seconds//120)
-          if count<1:raise RuntimeError('Source video is shorter than two minutes')
+          count=int(seconds//60)
+          if count<1:raise RuntimeError('Source video is shorter than one minute')
           slot=int(os.environ['SLOT'])
           # Reverse part order, still uniquely covers all full parts before repeating.
           part=1+((-slot)%count)
           with open(os.environ['GITHUB_OUTPUT'],'a') as f:
               f.write(f'number={part}\n')
               f.write(f'count={count}\n')
-          print(f'Original duration: {seconds:.1f}s; Part {part} of {count}; source offset {(part-1)*120}s')
+          print(f'Original duration: {seconds:.1f}s; Part {part} of {count}; source offset {(part-1)*60}s')
           PY
-      - name: Prepare 120-second background
+      - name: Prepare 60-second background
         env:
           OFFSET: ${{ steps.rotation.outputs.background }}
         run: |
-          python clipper/background.py --assets-dir clipper/assets --duration 120 --offset "$OFFSET" --output /tmp/clipper_background.mp4
+          python clipper/background.py --assets-dir clipper/assets --duration 60 --offset "$OFFSET" --output /tmp/clipper_background.mp4
       - name: Generate captions for selected original part
         env:
           PART: ${{ steps.part.outputs.number }}
         run: |
-          python clipper/highlights.py --source clipper/assets/MrBeast_compressed.mp4 --duration 120 --part-number "$PART"
-      - name: Render 120-second TikTok
+          python clipper/highlights.py --source clipper/assets/MrBeast_compressed.mp4 --duration 60 --part-number "$PART"
+      - name: Render 60-second TikTok
         run: |
           python - <<'PY'
           import json,subprocess
@@ -84,7 +84,7 @@ jobs:
           subprocess.run(['python','clipper/render.py',
             '--source','clipper/assets/MrBeast_compressed.mp4',
             '--background','/tmp/clipper_background.mp4',
-            '--start',str(s['start']),'--duration','120',
+            '--start',str(s['start']),'--duration','60',
             '--subtitles','clipper/output/captions.ass'],check=True)
           PY
       - name: Ensure TikTok upload is under 64 MB
