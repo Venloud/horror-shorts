@@ -1693,5 +1693,73 @@
     "music_file": "unsolved_mystery.mp3",
     "buffered": "2026-10-10_1227",
     "tiktok": null
+  },
+  {
+    "date": "2026-10-11_0542",
+    "story_id": "86769f7ea519",
+    "title": "The 1923 Doll Photograph",
+    "premise": "A family discovers an antique porcelain doll appears in century-old photographs before it terrorizes their home.",
+    "subgenre": "creator script",
+    "mode": "inbox-script",
+    "true_story": false,
+    "case": null,
+    "source": "inbox/worlds_most_haunted_doll.txt",
+    "prompt_file": null,
+    "setting": "suburban home night",
+    "threat": "A malevolent entity bound to an antique porcelain doll that stalks the family through photos.",
+    "twist": "A photo taken moments ago shows the doll standing behind the father with a knife.",
+    "score": null,
+    "seconds": 54.2,
+    "voice_speed": 1.1,
+    "writer": "gemini (gemini-3.8-flash)",
+    "media_ids": [
+      "pexels:12601907"
+    ],
+    "visual_mode": "analog",
+    "render_style": "classic",
+    "story_shape": null,
+    "research_sources": [],
+    "visual_sources": {
+      "reused": 0,
+      "archive_stock": 1,
+      "ai": 20
+    },
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": null,
+    "visuals": {
+      "distinct": 20,
+      "longest_s": 11.3,
+      "longest_share": 0.196,
+      "longest_name": "scene_10b.png"
+    },
+    "yt_title": "They Said The Doll Was Haunted | Scary Story #shorts",
+    "hashtags": [
+      "1923dollphotograph",
+      "scarystories",
+      "horrorstory"
+    ],
+    "yt_tags": [
+      "the 1923 doll photograph",
+      "haunted antique doll",
+      "porcelain doll scary story",
+      "creepy old photographs",
+      "estate sale doll legend",
+      "scary legend",
+      "creepy story",
+      "horror story",
+      "haunted doll in old photo",
+      "spooky short story",
+      "doll terrorizes family",
+      "haunted doll tale",
+      "1923 doll photograph",
+      "1923 doll photograph story",
+      "scary story"
+    ],
+    "opening": "They said the doll was haunted.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-10-11_0542",
+    "tiktok": null
   }
 ]
