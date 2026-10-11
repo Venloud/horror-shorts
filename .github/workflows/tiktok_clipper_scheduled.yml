@@ -34,7 +34,7 @@ jobs:
           slot=int(datetime.now(timezone.utc).timestamp()//43200)
           with open(os.environ["GITHUB_OUTPUT"],"a") as f:
               f.write(f"slot={slot}\n")
-              f.write(f"background={slot%9}\n")
+              f.write(f"background={slot}\n")
           PY
       - name: Download source assets
         run: |
@@ -87,6 +87,23 @@ jobs:
             '--start',str(s['start']),'--duration','60',
             '--subtitles','clipper/output/captions.ass'],check=True)
           PY
+      - name: Prepare copy-ready TikTok caption
+        env:
+          PART: ${{ steps.part.outputs.number }}
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          part=int(os.environ["PART"])
+          caption=(f"Would you last in MrBeast's grocery store challenge? 🛒😳 | Part {part}\n\n"
+                   "#MrBeast #TeamJuan #GroceryStoreChallenge #MrBeastChallenge #MrBeastClips")
+          Path("clipper/output/caption.txt").write_text(caption+"\n",encoding="utf-8")
+          with open(os.environ["GITHUB_STEP_SUMMARY"],"a",encoding="utf-8") as summary:
+              summary.write("## Copy-ready TikTok caption\n\n")
+              summary.write(f"**Part {part}**\n\n```\n{caption}\n```\n\n")
+              summary.write("TikTok inbox video uploads don't prefill captions. Paste this in the TikTok editor.\n")
+          print(f"Caption and five hashtags saved for Part {part}")
+          PY
       - name: Ensure TikTok upload is under 64 MB
         run: |
           python - <<'PY'
@@ -112,6 +129,7 @@ jobs:
             clipper/output/tiktok.mp4
             clipper/output/selection.json
             clipper/output/captions.ass
+            clipper/output/caption.txt
           retention-days: 7
       - name: Send to TikTok inbox notification
         env:
@@ -119,4 +137,4 @@ jobs:
           TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
           TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
         run: |
-          python clipper/post.py --video clipper/output/tiktok.mp4 --mode draft --caption "MrBeast Part ${{ steps.part.outputs.number }} #MrBeast #clips"
+          python clipper/post.py --video clipper/output/tiktok.mp4 --mode draft
