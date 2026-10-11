@@ -57,7 +57,7 @@ def main():
     p.add_argument("--duration",type=float,default=45)
     p.add_argument("--offset",type=int,default=0)
     a=p.parse_args()
-    if not 1<=a.duration<=60:p.error("Duration must be 1-60")
+    if not 1<=a.duration<=120:p.error("Duration must be 1-120")
     build(a.assets_dir,a.output,a.duration,a.offset)
 
 if __name__=="__main__":main()
