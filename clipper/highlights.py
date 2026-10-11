@@ -28,7 +28,7 @@ def pick(segments,duration):
         if score>best[0]:best=(score,start)
     return best[1]
 
-def make_ass(words,start,duration,path):
+def make_ass(words,start,duration,path,part_number=None):
     # PlayResY=1920, caption band occupies y=1056..1152. Captions centered at y=1104.
     header="""[Script Info]
 ScriptType: v4.00+
@@ -43,6 +43,8 @@ Style: Word,Arial,78,&H0000FFFF,&H0000FFFF,&H00000000,&H80000000,-1,0,0,0,100,10
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
     events=[]
+    if part_number is not None:
+        events.append(f"Dialogue: 1,0:00:00.00,{ass_time(duration)},Word,,0,0,0,,{{\\an8\\pos(540,125)\\fs74\\bord6}}PART {part_number}\\n")
     for w in words:
         begin=max(0,float(w.start)-start)
         end=min(duration,float(w.end)-start)
@@ -63,6 +65,7 @@ def main():
     p.add_argument("--model",default="tiny.en")
     p.add_argument("--start",type=float,default=-1)
     p.add_argument("--rotation",type=int,default=0,help="Advance to another high-scoring highlight")
+    p.add_argument("--part-number",type=int,default=0,help="One-based original video part number")
     a=p.parse_args()
     from faster_whisper import WhisperModel
     out=Path(a.output);out.mkdir(parents=True,exist_ok=True)
@@ -70,7 +73,9 @@ def main():
     segments,_=model.transcribe(a.source,word_timestamps=True,vad_filter=True)
     segments=list(segments)
     items=[{"start":x.start,"end":x.end,"text":x.text.strip()} for x in segments]
-    if a.start>=0:
+    if a.part_number>0:
+        start=(a.part_number-1)*a.duration
+    elif a.start>=0:
         start=a.start
     else:
         # Rank candidate windows, then rotate through the best 12 to avoid
@@ -101,9 +106,9 @@ def main():
     words_per_second=len(transcript.split())/a.duration
     viral_score=round(100*(0.45*min(hook_hits/6,1)+0.35*density+0.20*min(words_per_second/3.5,1)),1)
     words=[w for s in segments for w in (s.words or []) if w.end>start and w.start<start+a.duration]
-    count=make_ass(words,start,a.duration,out/"captions.ass")
+    count=make_ass(words,start,a.duration,out/"captions.ass",a.part_number or None)
     (out/"selection.json").write_text(json.dumps({"start":start,"duration":a.duration,
-        "transcript_segments":len(items),"caption_words":count,"viral_potential_score":viral_score,"viral_score_note":"Transcript-based heuristic only, not a forecast of views"},indent=2))
+        "transcript_segments":len(items),"caption_words":count,"part_number":a.part_number,"viral_potential_score":viral_score,"viral_score_note":"Transcript-based heuristic only, not a forecast of views"},indent=2))
     print(f"Selected {start:.2f}s, {count} animated caption words")
 
 if __name__=="__main__":main()
