@@ -1848,5 +1848,71 @@
     "music_file": "background_music.mp3",
     "buffered": "2026-10-11_1244",
     "tiktok": null
+  },
+  {
+    "date": "2026-10-11_2156",
+    "story_id": "70b997c38b00",
+    "title": "The Krupp Diamond Heist",
+    "premise": "Three robbers violently rip a thirty-three carat diamond ring from a woman's hand, triggering a cross-country manhunt.",
+    "subgenre": "true crime case file",
+    "mode": "case",
+    "true_story": true,
+    "case": "Krupp Diamond Theft",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Nevada ranch and across the United States, 1959",
+    "threat": "Violent home invaders and diamond thieves",
+    "twist": "The 33-carat stolen gem was found sewn secretly inside a coat lining in New Jersey.",
+    "score": null,
+    "seconds": 60.7,
+    "voice_speed": 1.1,
+    "writer": "gemini (gemini-3.8-flash)",
+    "media_ids": [],
+    "visual_mode": "fast",
+    "render_style": "classic",
+    "story_shape": null,
+    "research_sources": [],
+    "visual_sources": {
+      "reused": 0,
+      "archive_stock": 0,
+      "ai": 16
+    },
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 96,
+    "visuals": {
+      "distinct": 14,
+      "longest_s": 9.5,
+      "longest_share": 0.148,
+      "longest_name": "scene_01a.png"
+    },
+    "yt_title": "Torn Straight Off A Finger... The Krupp Diamond Heist #shorts",
+    "hashtags": [
+      "kruppdiamond",
+      "nevada",
+      "heist",
+      "truecrime"
+    ],
+    "yt_tags": [
+      "the krupp diamond heist",
+      "vera krupp",
+      "john william hagenson",
+      "nevada true crime",
+      "diamond robbery 1959",
+      "fbi diamond manhunt",
+      "true heist stories",
+      "historic diamond theft",
+      "las vegas fbi case",
+      "1959 crime history",
+      "krupp diamond heist",
+      "krupp diamond heist story",
+      "nevada mystery",
+      "true crime story"
+    ],
+    "opening": "Three robbers tore a thirty-three carat diamond straight off a woman's finger, drawing blood.",
+    "music_file": "unsolved_mystery.mp3",
+    "buffered": "2026-10-11_2156",
+    "tiktok": null
   }
 ]
