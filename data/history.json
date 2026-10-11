@@ -1770,5 +1770,74 @@
     "music_file": "bk_grnde.mp3",
     "buffered": "2026-10-11_0542",
     "tiktok": null
+  },
+  {
+    "date": "2026-10-11_1244",
+    "story_id": "a6fc9acabdc0",
+    "title": "The True Headless Horseman",
+    "premise": "A lone medieval traveller encounters the terrifying Irish dullahan, the original headless horseman whose spoken word brings instant death.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Headless Horseman",
+    "source": null,
+    "prompt_file": null,
+    "setting": "A secluded misty medieval country road at midnight",
+    "threat": "The dullahan, an ancient headless horseman whose spoken curse causes instant death",
+    "twist": "The severed head held under the rider's arm awakens to speak the traveller's name",
+    "score": null,
+    "seconds": 65.3,
+    "voice_speed": 1.1,
+    "writer": "gemini (gemini-3.8-flash)",
+    "media_ids": [],
+    "visual_mode": "classic",
+    "render_style": "classic",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": {
+      "reused": 0,
+      "archive_stock": 0,
+      "ai": 16
+    },
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 98,
+    "visuals": {
+      "distinct": 13,
+      "longest_s": 8.9,
+      "longest_share": 0.129,
+      "longest_name": "scene_03b.png"
+    },
+    "yt_title": "The Severed Head Calls Your Name... The Dullahan of Ireland #shorts",
+    "hashtags": [
+      "dullahan",
+      "ireland",
+      "folklore",
+      "legends"
+    ],
+    "yt_tags": [
+      "the dullahan",
+      "headless horseman",
+      "irish folklore",
+      "dullahan legend",
+      "ireland folklore",
+      "headless rider",
+      "medieval traveller",
+      "scary legend",
+      "sleepy hollow origin",
+      "phantom horseman",
+      "irish mythology",
+      "headless demon",
+      "dullahan",
+      "folklore",
+      "creepy legend"
+    ],
+    "opening": "The severed head tucked beneath the rider's arm calls your name, and you drop dead instantly.",
+    "music_file": "background_music.mp3",
+    "buffered": "2026-10-11_1244",
+    "tiktok": null
   }
 ]
