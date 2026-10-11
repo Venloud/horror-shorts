@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"pipeline"))
 from tiktok import send_to_drafts, post_direct
+from common import CONFIG
 
 p=argparse.ArgumentParser()
 p.add_argument("--video",required=True)
@@ -12,4 +13,9 @@ p.add_argument("--caption",default="MrBeast moments #MrBeast #clips")
 a=p.parse_args()
 video=Path(a.video)
 if not video.is_file():p.error("Video not found")
-print(send_to_drafts(video) if a.mode=="draft" else post_direct(video,a.caption))
+if a.mode=="direct":
+    # Never silently publish as private when public posting was requested.
+    CONFIG["direct_privacy"]="PUBLIC_TO_EVERYONE"
+    print(post_direct(video,a.caption))
+else:
+    print(send_to_drafts(video))
