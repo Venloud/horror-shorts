@@ -16,7 +16,7 @@ def main():
     p.add_argument("--output",default="clipper/output/tiktok.mp4")
     p.add_argument("--subtitles",default="")
     a=p.parse_args()
-    if a.start<0 or not 1<=a.duration<=59:p.error("Invalid start or duration")
+    if a.start<0 or not 1<=a.duration<=60:p.error("Invalid start or duration")
     src=Path(a.source);bg=Path(a.background)
     if not src.is_file() or not bg.is_file():p.error("Missing local source/background")
     out=Path(a.output);out.parent.mkdir(parents=True,exist_ok=True)
@@ -32,7 +32,7 @@ def main():
     cmd=["ffmpeg","-hide_banner","-loglevel","error","-y","-ss",str(a.start),
          "-t",str(a.duration),"-i",str(src),"-i",str(bg),
          "-filter_complex",filters,"-map","[video]","-map","0:a:0?",
-         "-c:v","libx264","-preset","veryfast","-crf","23","-r","30",
+         "-c:v","libx264","-preset","veryfast","-crf","29","-maxrate","6500k","-bufsize","13000k","-r","30",
          "-c:a","aac","-b:a","128k","-movflags","+faststart","-t",str(a.duration)]
     if a.subtitles:
         s=Path(a.subtitles).resolve()
@@ -42,7 +42,7 @@ def main():
         escaped=s.as_posix().replace(":","\\:").replace("'","\\'")
         run("ffmpeg","-hide_banner","-loglevel","error","-y","-i",str(tmp),
             "-vf",f"subtitles='{escaped}'","-c:v","libx264","-preset","veryfast",
-            "-crf","23","-c:a","copy","-movflags","+faststart",str(out))
+            "-crf","29","-maxrate","6500k","-bufsize","13000k","-c:a","copy","-movflags","+faststart",str(out))
         tmp.unlink()
     else:run(*(cmd+[str(out)]))
     print(json.dumps({"output":str(out),"duration_requested":a.duration}))
