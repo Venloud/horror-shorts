@@ -62,6 +62,7 @@ def main():
     p.add_argument("--output",default="clipper/output")
     p.add_argument("--model",default="tiny.en")
     p.add_argument("--start",type=float,default=-1)
+    p.add_argument("--rotation",type=int,default=0,help="Advance to another high-scoring highlight")
     a=p.parse_args()
     from faster_whisper import WhisperModel
     out=Path(a.output);out.mkdir(parents=True,exist_ok=True)
@@ -69,7 +70,28 @@ def main():
     segments,_=model.transcribe(a.source,word_timestamps=True,vad_filter=True)
     segments=list(segments)
     items=[{"start":x.start,"end":x.end,"text":x.text.strip()} for x in segments]
-    start=a.start if a.start>=0 else pick(items,a.duration)
+    if a.start>=0:
+        start=a.start
+    else:
+        # Rank candidate windows, then rotate through the best 12 to avoid
+        # publishing the same passage every scheduled run.
+        candidates=[]
+        for segment in items:
+            t=float(segment["start"])
+            if t+a.duration>float(items[-1]["end"]):continue
+            window=[x for x in items if t<=x["start"]<t+a.duration]
+            spoken=" ".join(x["text"] for x in window).lower()
+            speech=sum(max(0,min(x["end"],t+a.duration)-max(x["start"],t)) for x in window)
+            hooks=sum(spoken.count(w) for w in ("why","how","what","never","secret","million","challenge","win","lose","crazy","impossible"))
+            score=speech/a.duration*8+hooks*.6+min(len(spoken.split())/100,2)
+            candidates.append((score,t))
+        ranked=sorted(candidates,reverse=True)
+        distinct=[]
+        for score,t in ranked:
+            if all(abs(t-other)>=a.duration for other in distinct):
+                distinct.append(t)
+            if len(distinct)>=12:break
+        start=distinct[a.rotation%len(distinct)] if distinct else pick(items,a.duration)
     # Heuristic only, not a forecast of views.
     selected=[x for x in items if start<=x["start"]<start+a.duration]
     transcript=" ".join(x["text"] for x in selected).lower()
