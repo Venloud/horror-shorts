@@ -16,7 +16,7 @@ def main():
     p.add_argument("--output",default="clipper/output/tiktok.mp4")
     p.add_argument("--subtitles",default="")
     a=p.parse_args()
-    if a.start<0 or not 1<=a.duration<=60:p.error("Invalid start or duration")
+    if a.start<0 or not 1<=a.duration<=120:p.error("Invalid start or duration")
     src=Path(a.source);bg=Path(a.background)
     if not src.is_file() or not bg.is_file():p.error("Missing local source/background")
     out=Path(a.output);out.parent.mkdir(parents=True,exist_ok=True)
