@@ -44,7 +44,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
     events=[]
     if part_number is not None:
-        events.append(f"Dialogue: 1,0:00:00.00,{ass_time(duration)},Word,,0,0,0,,{{\\an8\\pos(540,125)\\fs74\\bord6}}PART {part_number}\\n")
+        events.append(f"Dialogue: 1,0:00:00.00,{ass_time(duration)},Word,,0,0,0,,{{\\an8\\pos(540,125)\\fs74\\bord6}}PART {part_number}\n")
     for w in words:
         begin=max(0,float(w.start)-start)
         end=min(duration,float(w.end)-start)
