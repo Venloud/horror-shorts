@@ -118,8 +118,17 @@
       "posted": "2026-10-11_1943",
       "status": "pending",
       "file": true
+    },
+    {
+      "stamp": "2026-10-11_1244",
+      "story_id": "a6fc9acabdc0",
+      "title": "The True Headless Horseman",
+      "video_number": 51,
+      "posted": "2026-10-12_0634",
+      "status": "pending",
+      "file": true
     }
   ],
   "uploads": {},
-  "last_alert": "2026-10-11"
+  "last_alert": "2026-10-12"
 }

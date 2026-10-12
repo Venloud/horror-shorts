@@ -1847,7 +1847,16 @@
     "opening": "The severed head tucked beneath the rider's arm calls your name, and you drop dead instantly.",
     "music_file": "background_music.mp3",
     "buffered": "2026-10-11_1244",
-    "tiktok": null
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7695665186619263006",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "video_number": 51,
+    "youtube": {
+      "pending": "youtube_paused"
+    },
+    "posted": "2026-10-12_0634"
   },
   {
     "date": "2026-10-11_2156",
