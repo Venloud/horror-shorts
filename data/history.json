@@ -1922,7 +1922,16 @@
     "opening": "Three robbers tore a thirty-three carat diamond straight off a woman's finger, drawing blood.",
     "music_file": "unsolved_mystery.mp3",
     "buffered": "2026-10-11_2156",
-    "tiktok": null
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7695913532684535839",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "video_number": 52,
+    "youtube": {
+      "pending": "youtube_paused"
+    },
+    "posted": "2026-10-12_2237"
   },
   {
     "date": "2026-10-12_1517",
