@@ -1923,5 +1923,79 @@
     "music_file": "unsolved_mystery.mp3",
     "buffered": "2026-10-11_2156",
     "tiktok": null
+  },
+  {
+    "date": "2026-10-12_1517",
+    "story_id": "a82316579203",
+    "title": "The Curse of the Doppelgänger",
+    "premise": "In 1822, poet Percy Shelley encountered his living double on an Italian terrace shortly before drowning at sea.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Doppelgänger",
+    "source": null,
+    "prompt_file": null,
+    "setting": "An isolated seaside villa in Italy during the summer of 1822.",
+    "threat": "A spectral double that appears to living people as an inescapable harbinger of death.",
+    "twist": "The double was seen walking outside an upper window while the real person was miles away.",
+    "score": null,
+    "seconds": 62.4,
+    "voice_speed": 1.1,
+    "writer": "gemini (gemini-flash-latest)",
+    "media_ids": [
+      "pexels:19997487",
+      "pexels:35257540",
+      "pexels:32719391",
+      "pexels:35853593"
+    ],
+    "visual_mode": "analog",
+    "render_style": "classic",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": {
+      "reused": 0,
+      "archive_stock": 4,
+      "ai": 12
+    },
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 97,
+    "visuals": {
+      "distinct": 16,
+      "longest_s": 5.8,
+      "longest_share": 0.089,
+      "longest_name": "scene_07a.png"
+    },
+    "yt_title": "A Figure Identical To Yourself | Scary Story #shorts",
+    "hashtags": [
+      "doppelganger",
+      "italy",
+      "legends",
+      "folklore"
+    ],
+    "yt_tags": [
+      "the curse of the doppelganger",
+      "doppelganger legend",
+      "italy folklore",
+      "percy shelley doppelganger",
+      "doppelganger omen of death",
+      "mary shelley letters",
+      "scary legend",
+      "percy shelley death",
+      "bay of spezia storm",
+      "german folklore doppelganger",
+      "supernatural omen",
+      "curse of the doppelgänger",
+      "folklore",
+      "creepy legend",
+      "folklore creatures"
+    ],
+    "opening": "A ghostly figure identical to yourself steps from the shadows, whispering with your own voice.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-10-12_1517",
+    "tiktok": null
   }
 ]
