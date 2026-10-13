@@ -136,8 +136,17 @@
       "posted": "2026-10-12_2237",
       "status": "pending",
       "file": true
+    },
+    {
+      "stamp": "2026-10-12_1517",
+      "story_id": "a82316579203",
+      "title": "The Curse of the Doppelgänger",
+      "video_number": 53,
+      "posted": "2026-10-13_0709",
+      "status": "pending",
+      "file": true
     }
   ],
   "uploads": {},
-  "last_alert": "2026-10-12"
+  "last_alert": "2026-10-13"
 }

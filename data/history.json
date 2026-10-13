@@ -2005,7 +2005,16 @@
     "opening": "A ghostly figure identical to yourself steps from the shadows, whispering with your own voice.",
     "music_file": "bk_grnde.mp3",
     "buffered": "2026-10-12_1517",
-    "tiktok": null
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7696045559651764255",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "video_number": 53,
+    "youtube": {
+      "pending": "youtube_paused"
+    },
+    "posted": "2026-10-13_0709"
   },
   {
     "date": "2026-10-13_0037",
