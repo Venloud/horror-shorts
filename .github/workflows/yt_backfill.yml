@@ -6,27 +6,23 @@ name: yt_backfill
 # "backfill" release. Progress: data/backfill.json. Disables itself when done.
 # Run times keep >= 3.5 h away from the publish slots (15:40 / 00:40 UTC); the script also waits within 60 min
 # of a slot or a post. Quota: 3 x ~1600 units + 2 daily posts stays under YouTube's 10,000/day.
+# PAUSED BY USER 2026-10-13: original triggers preserved below.
+# on:
+#   schedule:
+#     - cron: "20 4 * * *"
+#     - cron: "20 8 * * *"
+#     - cron: "20 20 * * *"
+#   workflow_dispatch:
+#     inputs:
+#       mode:
+#         description: "upload (stash + 1 upload) or stash (only copy artifacts into the backfill release)"
+#         default: "upload"
+# 
 on:
-  schedule:
-    - cron: "20 4 * * *"
-    - cron: "20 8 * * *"
-    - cron: "20 20 * * *"
   workflow_dispatch:
-    inputs:
-      mode:
-        description: "upload (stash + 1 upload) or stash (only copy artifacts into the backfill release)"
-        default: "upload"
-
-permissions:
-  contents: write   # backfill release + data/backfill.json
-  actions: write    # read artifacts, check daily.yml runs, disable this workflow when done
-
-concurrency:
-  group: yt-backfill
-  cancel-in-progress: false
-
 jobs:
   backfill:
+    if: ${{ false }} # USER PAUSE
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
