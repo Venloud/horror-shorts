@@ -1,13 +1,14 @@
 name: Recover finished buffer video
 
+# PAUSED BY USER 2026-10-13: all automation disabled, preserve original trigger config below.
+# on:
+#   push:
+#     branches: [main]
+#     paths: [pipeline/recover_buffer.py]
+#   workflow_dispatch:
+# 
 on:
-  push:
-    branches: [main]
-    paths: [pipeline/recover_buffer.py]
   workflow_dispatch:
-
-permissions:
-  contents: write
   actions: read
 
 concurrency:
@@ -16,6 +17,7 @@ concurrency:
 
 jobs:
   recover:
+    if: ${{ false }} # USER PAUSE: do not execute any jobs
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
