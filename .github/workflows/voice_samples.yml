@@ -6,6 +6,7 @@ on:
 
 jobs:
   samples:
+    if: ${{ false }} # USER PAUSE 2026-10-13
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
