@@ -2006,5 +2006,77 @@
     "music_file": "bk_grnde.mp3",
     "buffered": "2026-10-12_1517",
     "tiktok": null
+  },
+  {
+    "date": "2026-10-13_0037",
+    "story_id": "5f365efdd802",
+    "title": "The Bunyip of the Black Waterholes",
+    "premise": "In the secluded billabongs of southeastern Australia, an amphibious spirit punishes those who wander too close to unfamiliar depths.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Bunyip",
+    "source": null,
+    "prompt_file": null,
+    "setting": "A remote Australian billabong shrouded in nocturnal mist",
+    "threat": "The bunyip, an amphibious water spirit that pulls greedy fishermen under",
+    "twist": "The creature rising from the water is a shaggy seal-dog predator with a bulldog head and long whiskers",
+    "score": null,
+    "seconds": 65.0,
+    "voice_speed": 1.1,
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:35072027",
+      "pexels:39592688"
+    ],
+    "visual_mode": "classic",
+    "render_style": "classic",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": {
+      "reused": 0,
+      "archive_stock": 2,
+      "ai": 14
+    },
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 88,
+    "visuals": {
+      "distinct": 15,
+      "longest_s": 8.2,
+      "longest_share": 0.121,
+      "longest_name": "scene_05a.png"
+    },
+    "yt_title": "Roar From the Black Water... The Bunyip #shorts",
+    "hashtags": [
+      "bunyip",
+      "australia",
+      "legends",
+      "folklore"
+    ],
+    "yt_tags": [
+      "the bunyip",
+      "bunyip legend",
+      "australian folklore",
+      "black waterholes",
+      "amphibious beast",
+      "billabong monster",
+      "scary legend",
+      "bunyip creature",
+      "evil water spirit",
+      "bunyip attack",
+      "australian waterhole legend",
+      "bunyip",
+      "folklore",
+      "creepy legend",
+      "folklore creatures"
+    ],
+    "opening": "A deafening roar broke the billabong whenever someone stepped too close to the black water where the bunyip lurks.",
+    "music_file": "background_music.mp3",
+    "buffered": "2026-10-13_0037",
+    "tiktok": null
   }
 ]
