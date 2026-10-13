@@ -3,32 +3,31 @@ name: Night Files buffer fill
 # Generates finished videos into the FIFO buffer. Posts only to make up a missed slot
 # (data/missed_slot.json, publish.post_missed_slot rules: buffer 2+, no post within 3 h).
 
+# PAUSED BY USER 2026-10-13: all automation disabled, preserve original trigger config below.
+# on:
+#   schedule:
+#     - cron: "10 */6 * * *"
+#   workflow_dispatch:
+#     inputs:
+#       target_buffer:
+#         description: "Generate only when fewer than this many complete videos are waiting"
+#         type: number
+#         default: 2
+#         required: false
+#       fresh_images:
+#         description: "Generate fresh images"
+#         type: boolean
+#         default: true
+#         required: false
+# 
 on:
-  schedule:
-    - cron: "10 */6 * * *"
   workflow_dispatch:
-    inputs:
-      target_buffer:
-        description: "Generate only when fewer than this many complete videos are waiting"
-        type: number
-        default: 2
-        required: false
-      fresh_images:
-        description: "Generate fresh images"
-        type: boolean
-        default: true
-        required: false
-
-permissions:
-  contents: write
-  actions: read   # youtube_pending.stash: copy a pending video out of its 7-day build artifact
-
-concurrency:
   group: night-files
   cancel-in-progress: false
 
 jobs:
   fill:
+    if: ${{ false }} # USER PAUSE: do not execute any jobs
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
