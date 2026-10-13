@@ -1,0 +1,88 @@
+name: Split-screen TikTok clipper
+on:
+  workflow_dispatch:
+    inputs:
+      start_seconds:
+        description: Start time in source, -1 selects automatically
+        default: '-1'
+      duration_seconds:
+        description: Duration, 1 to 59 seconds
+        default: '45'
+      background_offset:
+        description: First background index (0-9)
+        default: '0'
+      upload_mode:
+        description: Preview only, TikTok draft, or direct post
+        type: choice
+        options:
+          - preview
+          - draft
+          - direct
+        default: preview
+permissions:
+  contents: read
+concurrency:
+  group: split-clipper
+  cancel-in-progress: false
+jobs:
+  clip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install media tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          python -m pip install -q requests faster-whisper
+      - name: Download released source and backgrounds
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from clipper.background import ASSETS, RELEASE
+          from clipper.direct_download import download
+          root=Path('clipper/assets')
+          root.mkdir(parents=True,exist_ok=True)
+          for name in ['MrBeast_compressed.mp4']+ASSETS:
+              download(RELEASE+name,root/name,max_mb=900)
+          PY
+      - name: Build ten-second background montage
+        env:
+          DURATION: ${{ inputs.duration_seconds }}
+          OFFSET: ${{ inputs.background_offset }}
+        run: |
+          python clipper/background.py --assets-dir clipper/assets --output /tmp/clipper_background.mp4 --duration "$DURATION" --offset "$OFFSET"
+      - name: Select highlight and animated captions
+        env:
+          START: ${{ inputs.start_seconds }}
+          DURATION: ${{ inputs.duration_seconds }}
+        run: |
+          python clipper/highlights.py --source clipper/assets/MrBeast_compressed.mp4 --start "$START" --duration "$DURATION"
+      - name: Render preview
+        run: |
+          python - <<'PY'
+          import json,subprocess
+          x=json.load(open('clipper/output/selection.json'))
+          subprocess.run(['python','clipper/render.py','--source','clipper/assets/MrBeast_compressed.mp4',
+            '--background','/tmp/clipper_background.mp4','--start',str(x['start']),
+            '--duration',str(x['duration']),'--subtitles','clipper/output/captions.ass'],check=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: split-screen-preview
+          path: |
+            clipper/output/tiktok.mp4
+            clipper/output/selection.json
+            clipper/output/captions.ass
+          retention-days: 7
+      - name: Upload to TikTok
+        if: inputs.upload_mode != 'preview'
+        env:
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+          TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
+          MODE: ${{ inputs.upload_mode }}
+        run: python clipper/post.py --video clipper/output/tiktok.mp4 --mode "$MODE"

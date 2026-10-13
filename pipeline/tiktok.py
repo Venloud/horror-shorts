@@ -98,6 +98,8 @@ def post_direct(path: Path, caption: str) -> dict:
                   "Creator info")
     wanted = CONFIG.get("direct_privacy", "SELF_ONLY")
     options = info.get("privacy_level_options") or ["SELF_ONLY"]
+    if wanted == "PUBLIC_TO_EVERYONE" and wanted not in options:
+        raise RuntimeError("Public TikTok posting unavailable for this account; refusing to post privately")
     privacy = wanted if wanted in options else ("SELF_ONLY" if "SELF_ONLY" in options else options[0])
     body = {
         "post_info": {
