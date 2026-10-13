@@ -2086,7 +2086,16 @@
     "opening": "A deafening roar broke the billabong whenever someone stepped too close to the black water where the bunyip lurks.",
     "music_file": "background_music.mp3",
     "buffered": "2026-10-13_0037",
-    "tiktok": null
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7696257408053987358",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "video_number": 54,
+    "youtube": {
+      "pending": "youtube_paused"
+    },
+    "posted": "2026-10-13_2051"
   },
   {
     "date": "2026-10-13_1407",
