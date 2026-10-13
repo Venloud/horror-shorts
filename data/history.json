@@ -2087,5 +2087,77 @@
     "music_file": "background_music.mp3",
     "buffered": "2026-10-13_0037",
     "tiktok": null
+  },
+  {
+    "date": "2026-10-13_1407",
+    "story_id": "cd1ae8e40a28",
+    "title": "The Mapimí Silent Zone",
+    "premise": "A stray rocket carrying radioactive material crashed in Mexico, giving rise to an enduring urban legend.",
+    "subgenre": "real unsolved mystery",
+    "mode": "mystery",
+    "true_story": true,
+    "case": "Mapimí Silent Zone",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Mapimí Desert, Durango, Mexico, nineteen seventy",
+    "threat": "Radioactive fallout and military crash recovery rumors",
+    "twist": "The famous zone of silence urban legend traces back to rumors spread by a hired guard after a rocket crash.",
+    "score": null,
+    "seconds": 57.7,
+    "voice_speed": 1.1,
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:18360844",
+      "pexels:39137889"
+    ],
+    "visual_mode": "fast",
+    "render_style": "classic",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": {
+      "reused": 0,
+      "archive_stock": 2,
+      "ai": 12
+    },
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 94,
+    "visuals": {
+      "distinct": 14,
+      "longest_s": 5.2,
+      "longest_share": 0.085,
+      "longest_name": "scene_05b.png"
+    },
+    "yt_title": "Radioactive Cobalt Fell From The Sky... The Mapimí Silent Zone #shorts",
+    "hashtags": [
+      "mapimisilentzone",
+      "mexico",
+      "darkhistory",
+      "history"
+    ],
+    "yt_tags": [
+      "the mapimí silent zone",
+      "mapimí silent zone",
+      "silent zone legend",
+      "mexico true story",
+      "athena test rocket crash",
+      "radioactive cobalt crash",
+      "durango mexico mystery",
+      "mexico urban legend",
+      "true history story",
+      "1970 rocket crash",
+      "secret military cleanup",
+      "zone of silence origin",
+      "mapimí silent zone story",
+      "durango, mexico mystery",
+      "true crime story"
+    ],
+    "opening": "Radioactive cobalt fell from the sky, and hundreds of tons of earth were hauled away.",
+    "music_file": "unsolved_mystery.mp3",
+    "buffered": "2026-10-13_1407",
+    "tiktok": null
   }
 ]
