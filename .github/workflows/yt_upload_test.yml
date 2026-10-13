@@ -2,22 +2,22 @@ name: yt_upload_test
 
 # Manual: re-upload an already posted video (artifact "video-N" of a daily.yml run) to YouTube Shorts with
 # pipeline/youtube.py, the same way publish.py does. Read-only for the repo: no buffer, history, counter or TikTok.
+# PAUSED BY USER 2026-10-13: original triggers preserved below.
+# on:
+#   workflow_dispatch:
+#     inputs:
+#       run_id:
+#         description: "daily.yml run id that has the artifact"
+#         required: true
+#       artifact:
+#         description: "artifact name"
+#         default: "video-26"
+# 
 on:
   workflow_dispatch:
-    inputs:
-      run_id:
-        description: "daily.yml run id that has the artifact"
-        required: true
-      artifact:
-        description: "artifact name"
-        default: "video-26"
-
-permissions:
-  contents: read
-  actions: read
-
 jobs:
   upload:
+    if: ${{ false }} # USER PAUSE
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
