@@ -2,15 +2,14 @@ name: YouTube analytics
 
 # Daily: per-Short YouTube Analytics (views, engaged views, watch %, likes, comments, shares, subs) matched to
 # video_number / mode / visual_mode, saved to data/analytics.json. Read-only for the channel; never posts.
+# PAUSED BY USER 2026-10-13: all automation disabled, preserve original trigger config below.
+# on:
+#   schedule:
+#     - cron: "17 9 * * *"   # 09:17 UTC, away from the build (:50) and publish (:40) slots
+#   workflow_dispatch:
+# 
 on:
-  schedule:
-    - cron: "17 9 * * *"   # 09:17 UTC, away from the build (:50) and publish (:40) slots
   workflow_dispatch:
-
-permissions:
-  contents: write
-
-# Own group: a report never waits behind, cancels or replaces a build / publish run (it only writes
 # data/analytics.json, never history.json).
 concurrency:
   group: analytics
@@ -18,6 +17,7 @@ concurrency:
 
 jobs:
   analytics:
+    if: ${{ false }} # USER PAUSE: do not execute any jobs
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
