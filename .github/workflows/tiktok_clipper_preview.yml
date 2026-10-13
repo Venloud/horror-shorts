@@ -1,26 +1,29 @@
 name: TikTok Clipper Preview
+# PAUSED BY USER 2026-10-13: all automation disabled, preserve original trigger config below.
+# on:
+#   workflow_dispatch:
+#     inputs:
+#       duration_seconds:
+#         description: Preview length in seconds (1-59)
+#         required: true
+#         default: '45'
+#       start_seconds:
+#         description: Source start, -1 selects automatically
+#         required: true
+#         default: '-1'
+#       background_offset:
+#         description: Background rotation offset (0-9)
+#         required: true
+#         default: '0'
 on:
   workflow_dispatch:
-    inputs:
-      duration_seconds:
-        description: Preview length in seconds (1-59)
-        required: true
-        default: '45'
-      start_seconds:
-        description: Source start, -1 selects automatically
-        required: true
-        default: '-1'
-      background_offset:
-        description: Background rotation offset (0-9)
-        required: true
-        default: '0'
-permissions:
   contents: read
 concurrency:
   group: tiktok-clipper-preview
   cancel-in-progress: false
 jobs:
   preview:
+    if: ${{ false }} # USER PAUSE: do not execute any jobs
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
