@@ -1,13 +1,15 @@
 name: Download sound effects (one time)
 
+# PAUSED BY USER 2026-10-13: all automation disabled, preserve original trigger config below.
+# on:
+#   workflow_dispatch:
+# 
 on:
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
   sfx:
+    if: ${{ false }} # USER PAUSE: do not execute any jobs
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
