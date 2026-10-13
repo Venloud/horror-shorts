@@ -1,15 +1,18 @@
 name: TikTok Clipper Scheduled Posts
+# PAUSED BY USER 2026-10-13: all automation disabled, preserve original trigger config below.
+# on:
+#   schedule:
+#     - cron: '10 7,19 * * *'
+#   workflow_dispatch:
 on:
-  schedule:
-    - cron: '10 7,19 * * *'
   workflow_dispatch:
-permissions:
   contents: read
 concurrency:
   group: tiktok-clipper-posts
   cancel-in-progress: false
 jobs:
   tiktok:
+    if: ${{ false }} # USER PAUSE: do not execute any jobs
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
