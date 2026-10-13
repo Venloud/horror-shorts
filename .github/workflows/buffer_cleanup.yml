@@ -1,18 +1,19 @@
 name: buffer_cleanup
 
 # Manual: delete buffered videos built before config "buffer_purge_before" (daily.yml also does this before posting).
+# PAUSED BY USER 2026-10-13: all automation disabled, preserve original trigger config below.
+# on:
+#   workflow_dispatch:
+# 
 on:
   workflow_dispatch:
-
-permissions:
-  contents: write
-
 concurrency:
   group: night-files
   cancel-in-progress: false
 
 jobs:
   cleanup:
+    if: ${{ false }} # USER PAUSE: do not execute any jobs
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
