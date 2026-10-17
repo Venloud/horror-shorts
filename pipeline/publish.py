@@ -276,19 +276,14 @@ def main(from_build: bool = False) -> int:
     result, tt_error = None, None
     try:
         if CONFIG.get("tiktok_mode") == "direct":
-            try:
-                result = tiktok.post_direct(mp4, meta["caption_text"])
-            except Exception as e:  # noqa: BLE001
-                # Keep the existing safe fallback. Direct-post failure does not
-                # throw away the video or prevent a YouTube upload.
-                log(
-                    f"Direct post failed ({str(e)[:300]}), "
-                    "sending it to drafts instead"
-                )
-                result = tiktok.send_to_drafts(mp4)
-                result["direct_error"] = str(e)[:300]
+            result = tiktok.post_direct(mp4, meta["caption_text"])
+            if result.get("status") != "PUBLISH_COMPLETE":
+                raise RuntimeError("TikTok direct post not confirmed: " + str(result))
         else:
             result = tiktok.send_to_drafts(mp4)
+            # A draft is not a published video; don't consume the queue item.
+            raise RuntimeError("TikTok is configured for drafts, not public autoposting")
+
     except Exception as e:  # noqa: BLE001
         traceback.print_exc()
         tt_error = f"{type(e).__name__}: {str(e)[:300]}"
