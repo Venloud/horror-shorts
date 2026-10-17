@@ -256,7 +256,7 @@
   "image_check_cloudflare": true,
   "image_style_fallback": "single full-frame cinematic horror illustration, painterly, dark lighting, realistic adult proportions, vertical composition",
   "mascot_intro": false,
-  "tiktok_mode": "draft",
+  "tiktok_mode": "direct",
   "buffer_purge": true,
   "buffer_purge_before": "2026-10-04T21:48:00Z",
   "youtube_enabled": true,
@@ -283,7 +283,7 @@
     "gemini-2.5-flash-lite"
   ],
   "research_daily_limit": 400,
-  "direct_privacy": "SELF_ONLY",
+  "direct_privacy": "PUBLIC_TO_EVERYONE",
   "tiktok_ai_label": true,
   "cloudflare_daily_neurons": 10000,
   "cloudflare_test_share": 0.35,
