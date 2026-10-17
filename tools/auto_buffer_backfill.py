@@ -107,7 +107,7 @@ def main():
         desc = (metadata.get("yt_description") or item.get("caption") or "").strip()
         if not title:
             raise RuntimeError("Missing YouTube title")
-        text = (title + "\\n\\n" + desc)[:4500]
+        text = (title + "\n\n" + desc)[:4500]
         mutation = ("mutation { createPost(input: { text: " + json.dumps(text)
                     + " channelId: " + json.dumps(CHANNEL)
                     + " schedulingType: automatic mode: addToQueue assets: [{ video: { url: "
@@ -120,7 +120,7 @@ def main():
             raise RuntimeError("Queueing rejected: " + repr(response))
         queued[stamp] = {"buffer_post_id": post["id"], "due_at": post.get("dueAt"), "title": title}
         STATE.parent.mkdir(exist_ok=True, parents=True)
-        STATE.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\\n")
+        STATE.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n")
         print("Queued exactly one video:", stamp, "Buffer ID:", post["id"])
         return
     print("No new videos to queue")
