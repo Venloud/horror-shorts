@@ -87,7 +87,10 @@ def main():
     selected = [v for v in videos if v.get("status") == "queued"
                 and v.get("tiktok_published") is True
                 and v.get("stashed") is True
-                and not v.get("remade") and not v.get("youtube", {}).get("id")]
+                and not v.get("remade") and not v.get("youtube", {}).get("id")
+                and not v.get("youtube_excluded")
+                and "mrbeast" not in " ".join(str(v.get(k, "")) for k in
+                    ("title", "yt_title", "caption")).lower().replace(" ", "")]
     selected.sort(key=lambda v: v["stamp"])
     if not selected:
         print("No eligible backfill videos")
