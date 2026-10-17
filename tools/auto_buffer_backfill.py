@@ -39,13 +39,26 @@ def gh(path):
 
 
 def posts(organization_id, status):
-    query = ("query { posts(input: { organizationId: " + json.dumps(organization_id)
-             + " filter: { status: [" + status + "], channelIds: ["
-             + json.dumps(CHANNEL) + "] } }) { edges { node { id text channelId } } pageInfo { hasNextPage endCursor } } }")
-    data = graph(query)["posts"]
-    if data.get("pageInfo", {}).get("hasNextPage"):
-        raise RuntimeError("More Buffer posts than one page; refusing to risk duplicates")
-    return [edge["node"] for edge in data["edges"]]
+    found = []
+    cursor = None
+    seen_cursors = set()
+    for _ in range(200):
+        after = (" after: " + json.dumps(cursor)) if cursor else ""
+        query = ("query { posts(first: 50" + after + ", input: { organizationId: "
+                 + json.dumps(organization_id) + " filter: { status: [" + status
+                 + "], channelIds: [" + json.dumps(CHANNEL)
+                 + "] } }) { edges { node { id text channelId } }"
+                 + " pageInfo { hasNextPage endCursor } } }")
+        data = graph(query)["posts"]
+        found.extend(edge["node"] for edge in data["edges"])
+        page = data["pageInfo"]
+        if not page["hasNextPage"]:
+            return found
+        cursor = page.get("endCursor")
+        if not cursor or cursor in seen_cursors:
+            raise RuntimeError("Buffer pagination cursor missing or repeated, refusing duplicates")
+        seen_cursors.add(cursor)
+    raise RuntimeError("Buffer pagination exceeded safe page limit")
 
 
 def existing_posts():
