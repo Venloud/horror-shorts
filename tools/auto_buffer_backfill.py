@@ -120,11 +120,13 @@ def main():
         desc = (metadata.get("yt_description") or item.get("caption") or "").strip()
         if not title:
             raise RuntimeError("Missing YouTube title")
-        text = (title + "\n\n" + desc)[:4500]
+        text = desc[:4500]
         mutation = ("mutation { createPost(input: { text: " + json.dumps(text)
                     + " channelId: " + json.dumps(CHANNEL)
-                    + " schedulingType: automatic mode: addToQueue assets: [{ video: { url: "
-                    + json.dumps(media)
+                    + " schedulingType: automatic mode: addToQueue"
+                    + " metadata: { youtube: { title: " + json.dumps(title[:100])
+                    + " categoryId: \"24\" madeForKids: false isAiGenerated: true } }"
+                    + " assets: [{ video: { url: " + json.dumps(media)
                     + " } }] }) { ... on PostActionSuccess { post { id dueAt } }"
                     + " ... on MutationError { message } } }")
         response = graph(mutation)["createPost"]
