@@ -1,0 +1,45 @@
+name: Automated Buffer YouTube backfill
+
+on:
+  schedule:
+    - cron: "20 9 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: buffer-backfill-queue
+  cancel-in-progress: false
+
+jobs:
+  queue_one:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
+      BUFFER_YOUTUBE_CHANNEL_ID: "6ad2d7d2778b240e2f331d8e"
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install requests
+      - name: Queue one eligible video with Buffer
+        run: python tools/auto_buffer_backfill.py
+      - name: Persist Buffer queue receipt
+        if: success()
+        run: |
+          git config user.name "horror-bot"
+          git config user.email "horror-bot@users.noreply.github.com"
+          git add data/buffer_backfill_queue.json
+          if git diff --cached --quiet; then
+            echo "No new Buffer receipt"
+            exit 0
+          fi
+          git commit -m "Record Buffer backfill queued video"
+          git push origin HEAD:main
