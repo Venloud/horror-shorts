@@ -5,20 +5,17 @@ name: Continuous Integration
 # It never exchanges OAuth codes, stores tokens, publishes videos, or calls TikTok/YouTube.
 
 # PAUSED BY USER 2026-10-13: all automation disabled, preserve original trigger config below.
-# on:
-#   push:
-#     branches:
-#       - main
-#   pull_request:
-#     branches:
-#       - main
-# 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   validate:
-    if: ${{ false }} # USER PAUSE: do not execute any jobs
+
     name: Validate Night Files
     runs-on: ubuntu-latest
 

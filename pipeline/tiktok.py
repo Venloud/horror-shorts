@@ -98,7 +98,9 @@ def post_direct(path: Path, caption: str) -> dict:
                   "Creator info")
     wanted = CONFIG.get("direct_privacy", "SELF_ONLY")
     options = info.get("privacy_level_options") or ["SELF_ONLY"]
-    privacy = wanted if wanted in options else ("SELF_ONLY" if "SELF_ONLY" in options else options[0])
+    if wanted not in options:
+        raise RuntimeError(f"TikTok has not approved {wanted} direct posting; available: {options}")
+    privacy = wanted
     body = {
         "post_info": {
             "title": caption[:2200],

@@ -1,14 +1,11 @@
 name: Daily horror video
 
 # Twice a day: publish the next buffered video. Generate when the buffer is empty, or resume an unfinished checkpoint.
-# PAUSED BY USER 2026-10-13: all automation disabled, preserve original trigger config below.
-# on:
-#   schedule:
-#     - cron: "40 15 * * *"
-#     - cron: "40 0 * * *"
-#   workflow_dispatch:
-# 
+# Restored by user request 2026-10-16; YouTube API uploader remains paused in config.
 on:
+  schedule:
+    - cron: "40 15 * * *"
+    - cron: "40 0 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -17,7 +14,7 @@ concurrency:
 
 jobs:
   daily:
-    if: ${{ false }} # USER PAUSE: do not execute any jobs
+
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
