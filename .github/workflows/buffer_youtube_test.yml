@@ -1,0 +1,38 @@
+name: Buffer YouTube bridge test
+
+# Manual only. Original Horror Shorts scheduled workflows remain paused.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Dry run only, use --channels for discovery"
+        required: true
+        default: "channels"
+        type: choice
+        options:
+          - channels
+          - dry_run
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install requests
+      - name: Check Buffer connection without publishing
+        env:
+          BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          if [ "$MODE" = "channels" ]; then
+            python tools/buffer_youtube_bridge.py --channels
+          else
+            python tools/buffer_youtube_bridge.py
+          fi
