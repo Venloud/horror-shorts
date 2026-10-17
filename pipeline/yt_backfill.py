@@ -329,7 +329,10 @@ def upload_one(state: dict) -> None:
         return
 
     todo = [v for v in state["videos"] if v["status"] == "queued" and v.get("tiktok_published")
-            and not v.get("remade")]  # remade topics: the new video replaces the old one, never upload the old
+            and not v.get("remade")
+            and not v.get("youtube_excluded")
+            and "mrbeast" not in " ".join(str(v.get(k, "")) for k in
+                ("title", "yt_title", "caption")).lower().replace(" ", "")]  # TikTok-only exclusions
     todo.sort(key=lambda v: v["stamp"])  # oldest first
     if not todo:
         log("Backfill: nothing left to upload")
