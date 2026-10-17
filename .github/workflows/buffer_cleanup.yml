@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   cleanup:
-    if: ${{ false }} # USER PAUSE: do not execute any jobs
+
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
