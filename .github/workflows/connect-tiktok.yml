@@ -9,7 +9,7 @@ on:
 
 jobs:
   connect:
-    if: ${{ false }} # USER PAUSE 2026-10-13
+
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
