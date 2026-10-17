@@ -1,0 +1,2 @@
+# Premium motion integration
+Adapted from project owner's provided instructions. Stack for the future production site: pinned Vite, Three.js, GSAP/ScrollTrigger and Lenis. One lazy-loaded WebGL canvas and one rendering loop. Preserve static semantic content and reduced-motion fallback. Prefer interaction-driven animation that shows how an upload travels to connected channels. Set a real performance budget, run production build, screenshot 390px/mobile and desktop, check console and Lighthouse before declaring production ready. 
