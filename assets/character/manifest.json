@@ -1,44 +1,72 @@
 {
   "poses": {
     "worried": {
-      "prompt": "flat 2D vector cartoon, clean thick black outlines, flat colors, no shading, single character, full body, centered, plain flat medium-gray background, even lighting, no text, no letters, an original stick-figure character: a perfectly round plain white head with a thick black outline, a big expressive cartoon face with thick black eyebrows, large white oval eyes with black pupils and a simple bold mouth, a forest-green baseball cap with a small orange button on top, an oversized charcoal-gray hoodie with orange drawstrings, thin black stick arms with round white hands, thin black stick legs with no pants, chunky white sneakers with orange soles, standing, facing the viewer, worried expression, eyebrows raised in the middle, small frown, hands held together in front",
-      "raw": "worried_2.png",
+      "prompt": "flat 2D vector cartoon, clean thick black outlines, flat colors, no shading, single character, full body, centered, plain flat medium-gray background, even lighting, no text, no letters, an original stick-figure character: a perfectly round plain white bald head with a thick black outline, no hair, no ears, no blush, a big expressive cartoon face with thick black eyebrows, large white oval eyes with black pupils and a simple bold mouth, a forest-green baseball cap with a small orange button on top, an oversized charcoal-gray hoodie with orange drawstrings, thin black stick arms with round white hands, two thin black stick legs, chunky white sneakers with orange soles, standing, facing the viewer, worried expression, eyebrows raised in the middle, small frown, hands held together in front",
+      "raw": "worried_0.png",
       "qa": "YES",
       "same_as_reference": "YES",
-      "draw": 3,
+      "draw": 1,
+      "side_view_facing": "front"
+    },
+    "angry": {
+      "prompt": "flat 2D vector cartoon, clean thick black outlines, flat colors, no shading, single character, full body, centered, plain flat medium-gray background, even lighting, no text, no letters, an original stick-figure character: a perfectly round plain white bald head with a thick black outline, no hair, no ears, no blush, a big expressive cartoon face with thick black eyebrows, large white oval eyes with black pupils and a simple bold mouth, a forest-green baseball cap with a small orange button on top, an oversized charcoal-gray hoodie with orange drawstrings, thin black stick arms with round white hands, two thin black stick legs, chunky white sneakers with orange soles, standing, facing the viewer, angry expression, eyebrows pulled down, gritted teeth, fists clenched",
+      "raw": "angry_0.png",
+      "qa": "YES",
+      "same_as_reference": "YES",
+      "draw": 1,
       "side_view_facing": "front"
     },
     "scared": {
-      "prompt": "flat 2D vector cartoon, clean thick black outlines, flat colors, no shading, single character, full body, centered, plain flat medium-gray background, even lighting, no text, no letters, an original stick-figure character: a perfectly round plain white head with a thick black outline, a big expressive cartoon face with thick black eyebrows, large white oval eyes with black pupils and a simple bold mouth, a forest-green baseball cap with a small orange button on top, an oversized charcoal-gray hoodie with orange drawstrings, thin black stick arms with round white hands, thin black stick legs with no pants, chunky white sneakers with orange soles, standing and leaning back, scared expression, wide eyes, mouth open, both arms raised defensively",
-      "raw": "scared_1.png",
+      "prompt": "flat 2D vector cartoon, clean thick black outlines, flat colors, no shading, single character, full body, centered, plain flat medium-gray background, even lighting, no text, no letters, an original stick-figure character: a perfectly round plain white bald head with a thick black outline, no hair, no ears, no blush, a big expressive cartoon face with thick black eyebrows, large white oval eyes with black pupils and a simple bold mouth, a forest-green baseball cap with a small orange button on top, an oversized charcoal-gray hoodie with orange drawstrings, thin black stick arms with round white hands, two thin black stick legs, chunky white sneakers with orange soles, standing and leaning back, scared expression, wide eyes, mouth open, both arms raised defensively",
+      "raw": "scared_0.png",
       "qa": "YES",
       "same_as_reference": "YES",
-      "draw": 2,
+      "draw": 1,
       "side_view_facing": "front"
     },
     "shocked": {
-      "prompt": "flat 2D vector cartoon, clean thick black outlines, flat colors, no shading, single character, full body, centered, plain flat medium-gray background, even lighting, no text, no letters, an original stick-figure character: a perfectly round plain white head with a thick black outline, a big expressive cartoon face with thick black eyebrows, large white oval eyes with black pupils and a simple bold mouth, a forest-green baseball cap with a small orange button on top, an oversized charcoal-gray hoodie with orange drawstrings, thin black stick arms with round white hands, thin black stick legs with no pants, chunky white sneakers with orange soles, standing, facing the viewer, shocked expression, huge round eyes, jaw dropped, hands on cheeks",
-      "raw": "shocked_1.png",
+      "prompt": "flat 2D vector cartoon, clean thick black outlines, flat colors, no shading, single character, full body, centered, plain flat medium-gray background, even lighting, no text, no letters, an original stick-figure character: a perfectly round plain white bald head with a thick black outline, no hair, no ears, no blush, a big expressive cartoon face with thick black eyebrows, large white oval eyes with black pupils and a simple bold mouth, a forest-green baseball cap with a small orange button on top, an oversized charcoal-gray hoodie with orange drawstrings, thin black stick arms with round white hands, two thin black stick legs, chunky white sneakers with orange soles, standing, facing the viewer, shocked expression, huge round eyes, jaw dropped, hands on cheeks",
+      "raw": "shocked_0.png",
+      "qa": "YES",
+      "same_as_reference": "YES",
+      "draw": 1,
+      "side_view_facing": "front"
+    },
+    "sneaky": {
+      "prompt": "flat 2D vector cartoon, clean thick black outlines, flat colors, no shading, single character, full body, centered, plain flat medium-gray background, even lighting, no text, no letters, an original stick-figure character: a perfectly round plain white bald head with a thick black outline, no hair, no ears, no blush, a big expressive cartoon face with thick black eyebrows, large white oval eyes with black pupils and a simple bold mouth, a forest-green baseball cap with a small orange button on top, an oversized charcoal-gray hoodie with orange drawstrings, thin black stick arms with round white hands, two thin black stick legs, chunky white sneakers with orange soles, tiptoeing sneakily, side view facing left, sly narrowed eyes, one finger on the lips",
+      "raw": "sneaky_5.png",
+      "qa": "YES",
+      "same_as_reference": "YES",
+      "draw": 6,
+      "side_view_facing": "left"
+    },
+    "running": {
+      "prompt": "flat 2D vector cartoon, clean thick black outlines, flat colors, no shading, single character, full body, centered, plain flat medium-gray background, even lighting, no text, no letters, an original stick-figure character: a perfectly round plain white bald head with a thick black outline, no hair, no ears, no blush, a big expressive cartoon face with thick black eyebrows, large white oval eyes with black pupils and a simple bold mouth, a forest-green baseball cap with a small orange button on top, an oversized charcoal-gray hoodie with orange drawstrings, thin black stick arms with round white hands, two thin black stick legs, chunky white sneakers with orange soles, running fast, side view facing left, panicked expression, arms pumping, one leg lifted",
+      "raw": "running_1.png",
+      "qa": "YES",
+      "same_as_reference": "YES",
+      "draw": 2,
+      "side_view_facing": "left"
+    },
+    "sitting": {
+      "prompt": "flat 2D vector cartoon, clean thick black outlines, flat colors, no shading, single character, full body, centered, plain flat medium-gray background, even lighting, no text, no letters, an original stick-figure character: a perfectly round plain white bald head with a thick black outline, no hair, no ears, no blush, a big expressive cartoon face with thick black eyebrows, large white oval eyes with black pupils and a simple bold mouth, a forest-green baseball cap with a small orange button on top, an oversized charcoal-gray hoodie with orange drawstrings, thin black stick arms with round white hands, two thin black stick legs, chunky white sneakers with orange soles, sitting on a plain wooden crate, thinking expression, chin resting on one hand",
+      "raw": "sitting_1.png",
       "qa": "YES",
       "same_as_reference": "YES",
       "draw": 2,
       "side_view_facing": "front"
     }
   },
-  "look": "an original stick-figure character: a perfectly round plain white head with a thick black outline, a big expressive cartoon face with thick black eyebrows, large white oval eyes with black pupils and a simple bold mouth, a forest-green baseball cap with a small orange button on top, an oversized charcoal-gray hoodie with orange drawstrings, thin black stick arms with round white hands, thin black stick legs with no pants, chunky white sneakers with orange soles",
+  "look": "an original stick-figure character: a perfectly round plain white bald head with a thick black outline, no hair, no ears, no blush, a big expressive cartoon face with thick black eyebrows, large white oval eyes with black pupils and a simple bold mouth, a forest-green baseball cap with a small orange button on top, an oversized charcoal-gray hoodie with orange drawstrings, thin black stick arms with round white hands, two thin black stick legs, chunky white sneakers with orange soles",
   "style": "flat 2D vector cartoon, clean thick black outlines, flat colors, no shading, single character, full body, centered, plain flat medium-gray background, even lighting, no text, no letters",
   "reference": "worried",
   "source": "Cloudflare Workers AI @cf/black-forest-labs/flux-1-schnell (original design)",
   "seed": "not supported by Workers AI FLUX schnell; same description word-for-word instead",
-  "updated": "2026-10-19 22:39 UTC",
+  "updated": "2026-10-19 22:46 UTC",
   "missing": [
-    "angry",
     "determined",
-    "sneaky",
     "sweating",
     "looking_back",
-    "running",
-    "sitting",
     "holding",
     "pointing"
   ]
