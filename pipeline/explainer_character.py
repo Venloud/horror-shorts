@@ -37,11 +37,11 @@ POSES = {
 }
 SIDE = {"sneaky", "looking_back", "running"}  # drawn facing left; the renderer flips them when needed
 
-LOOK = ("an original stick-figure character: a perfectly round plain white head with a thick black outline, a big "
-        "expressive cartoon face with thick black eyebrows, large white oval eyes with black pupils and a simple bold "
-        "mouth, a forest-green baseball cap with a small orange button on top, an oversized charcoal-gray hoodie "
-        "with orange drawstrings, thin black stick arms with round white hands, thin black stick legs with no "
-        "pants, chunky white sneakers with orange soles")
+LOOK = ("an original stick-figure character: a perfectly round plain white bald head with a thick black outline, no "
+        "hair, no ears, no blush, a big expressive cartoon face with thick black eyebrows, large white oval eyes with "
+        "black pupils and a simple bold mouth, a forest-green baseball cap with a small orange button on top, an "
+        "oversized charcoal-gray hoodie with orange drawstrings, thin black stick arms with round white hands, two "
+        "thin black stick legs, chunky white sneakers with orange soles")
 STYLE = ("flat 2D vector cartoon, clean thick black outlines, flat colors, no shading, single character, full body, "
          "centered, plain flat medium-gray background, even lighting, no text, no letters")
 
@@ -77,6 +77,12 @@ def draw_set(redo: set | None = None, max_draws: int | None = None) -> dict:
     except (OSError, ValueError):
         manifest = {"poses": {}}
     redo = redo or set()
+    if manifest.get("look") and (manifest["look"] != look() or manifest.get("style") != style()):
+        log("Character: the description changed since the set was drawn; every pose is redrawn (word-for-word rule)")
+        redo = set(POSES)
+        manifest["poses"] = {}
+        for p in POSES:  # never a mixed set: old poses go (git history keeps them)
+            (CHAR_DIR / f"{p}.png").unlink(missing_ok=True)
     max_draws = int(max_draws or CONFIG.get("explainer_character_max_draws", 20))
     draws = 0
     log(cf_budget.line())
@@ -86,7 +92,10 @@ def draw_set(redo: set | None = None, max_draws: int | None = None) -> dict:
         if dest.exists() and pose not in redo:
             continue
         ok = False
-        for attempt in range(3):
+        refused = 0
+        for attempt in range(6):
+            if attempt - refused >= 3:
+                break
             if draws >= max_draws:
                 log(f"Character: {draws} draws used (max {max_draws}); {pose} left for the next run")
                 break
@@ -101,6 +110,9 @@ def draw_set(redo: set | None = None, max_draws: int | None = None) -> dict:
                 log(f"Character {pose}: draw failed ({str(e)[:160]})")
                 if images._STATE.get("cf_out"):
                     return manifest
+                if "8007" in str(e) or "NSFW" in str(e):  # Cloudflare's prompt filter: refused, nothing billed
+                    refused += 1
+                    continue
                 draws += 1
                 continue
             draws += 1
