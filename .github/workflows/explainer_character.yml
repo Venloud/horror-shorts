@@ -1,0 +1,87 @@
+name: Explainer character set (one-time)
+
+# EXPERIMENTAL explainer render style: draws the recurring stick-figure "you" ONCE (12 poses, Cloudflare FLUX,
+# same description word-for-word, checked against pose 1, cut out with rembg) and commits the cut-outs to
+# assets/character/. Poses already there are kept; a re-run only draws the missing ones (or --redo).
+# Uses the TEST share of the Cloudflare ledger. No story, no video, no buffer, no posting.
+on:
+  workflow_dispatch:
+    inputs:
+      redo:
+        description: "comma-separated poses to redraw (empty = only the missing ones)"
+        default: ""
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: explainer-character
+  cancel-in-progress: false
+
+jobs:
+  draw:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Python packages
+        run: |
+          pip install -q requests numpy Pillow "rembg[cpu]"
+
+      - name: Restore today's Cloudflare usage
+        uses: actions/cache/restore@v4
+        with:
+          path: cache/cf-usage
+          key: cf-usage-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: cf-usage-
+
+      - name: Draw the character set
+        env:
+          TEST_MODE: "true"
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          REDO: ${{ inputs.redo }}
+        run: |
+          cd pipeline
+          if [ -n "$REDO" ]; then python explainer_character.py --redo "$REDO"; else python explainer_character.py; fi
+
+      - name: Save today's Cloudflare usage
+        if: always() && hashFiles('cache/cf-usage/usage.json') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: cache/cf-usage
+          key: cf-usage-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Keep the raw draws + sheet (7 days)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: explainer-character-${{ github.run_id }}
+          path: |
+            output/character/
+            assets/character/
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Commit the character set
+        if: always()
+        run: |
+          git config user.name "night-files-bot"
+          git config user.email "night-files-bot@users.noreply.github.com"
+          git add assets/character
+          if git diff --cached --quiet; then echo "No new poses"; exit 0; fi
+          git commit -q -m "Explainer character set: $(python -c "import json;m=json.load(open('assets/character/manifest.json'));print(12-len(m.get('missing',[])),'/12 poses')")"
+          for i in 1 2 3; do
+            git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0
+            sleep $((i * 5))
+          done
+          exit 1
