@@ -1,0 +1,113 @@
+name: Explainer test build
+
+# EXPERIMENTAL render style "explainer": ONE full test video, never buffered, never posted, no history.
+# Story exactly like production (inbox file or forced mode) -> explainer rewrite -> voice -> painted plates
+# (test share of the Cloudflare ledger, max config explainer_max_images) -> render -> music -> QA (report only).
+# Artifact: MP4 + 8-frame sheet + report; the sheet is also committed to previews/explainer/.
+on:
+  workflow_dispatch:
+    inputs:
+      render_style:
+        description: "render style"
+        type: choice
+        options: [explainer]
+        default: explainer
+      inbox_file:
+        description: "inbox file to use (e.g. le_prince_remake.txt); empty = use story_mode"
+        default: "le_prince_remake.txt"
+        required: false
+      story_mode:
+        description: "story mode when inbox_file is empty"
+        type: choice
+        options: ["", lore, mystery, case, coldcase, fiction]
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: explainer-test
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install system tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg espeak-ng fonts-dejavu-core > /dev/null
+
+      - name: Cache models
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-models-v4
+          restore-keys: hf-models-
+
+      - name: Install Python packages
+        run: |
+          pip install -q torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -q -r requirements.txt
+
+      - name: Restore today's Cloudflare usage
+        uses: actions/cache/restore@v4
+        with:
+          path: cache/cf-usage
+          key: cf-usage-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: cf-usage-
+
+      - name: Build the explainer test video
+        env:
+          RENDER_STYLE: ${{ inputs.render_style }}
+          INBOX_FILE: ${{ inputs.inbox_file }}
+          STORY_MODE: ${{ inputs.story_mode }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: cd pipeline && python explainer_test.py
+
+      - name: Save today's Cloudflare usage
+        if: always() && hashFiles('cache/cf-usage/usage.json') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: cache/cf-usage
+          key: cf-usage-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Keep the video, sheet and report (7 days)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: explainer-test-${{ github.run_id }}
+          path: |
+            output/explainer_test/explainer_final.mp4
+            output/explainer_test/frame_sheet.png
+            output/explainer_test/report.txt
+            output/explainer_test/story.json
+            output/explainer_test/explainer_plan.json
+            output/explainer_test/images/
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Commit the frame sheet to previews/explainer
+        if: success()
+        run: |
+          git config user.name "night-files-bot"
+          git config user.email "night-files-bot@users.noreply.github.com"
+          git add previews/explainer/*.png
+          if git diff --cached --quiet; then echo "No sheet"; exit 0; fi
+          git commit -q -m "Explainer test sheet (run ${{ github.run_id }})"
+          for i in 1 2 3; do
+            git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0
+            sleep $((i * 5))
+          done
+          exit 1

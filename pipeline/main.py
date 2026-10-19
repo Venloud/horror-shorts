@@ -177,13 +177,20 @@ def main() -> int:
             manifest.stage("story", "complete", writer=story.get("writer") or story.get("model"))
             if not testing:
                 checkpoint.start(story)
+        import explainer
+        use_explainer = explainer.style_for(story) == "explainer"
+        if use_explainer and not story.get("explainer_adapted"):  # second-person rewrite, before voicing
+            story = explainer.adapt(story)
+            if not testing:
+                checkpoint.save_story(story)
         if not reused:  # creature on screen (legends), real subjects for the hook + twist, no filler shots
             if CONFIG.get("story_bible", True):
                 import story_bible
                 story_bible.build(story)
                 log(story_bible.summary(story))
             import shot_rules
-            shot_rules.apply(story)
+            if not use_explainer:  # the explainer plans its own shots (explainer.plan)
+                shot_rules.apply(story)
             if not testing:
                 checkpoint.save_story(story)
             manifest.stage("story_bible", "complete" if CONFIG.get("story_bible", True) else "skipped")
@@ -213,54 +220,70 @@ def main() -> int:
 
         log(f"Final narration: {narration['duration']:.1f}s at speed {narration.get('speed')}")
         img_dir = workdir / "images" if testing else checkpoint.IMAGES  # images are kept as soon as they exist
-        imgs = None
-        if cutout.style_for(story) == "cutout":  # EXPERIMENTAL: pose-set characters on background plates
+        video, imgs = None, None
+        if use_explainer:  # EXPERIMENTAL: stick-figure "you" on painted plates + code-drawn cards (explainer.py)
             try:
-                if story.get("visual_mode") == "fast":
-                    story["visual_mode"] = "classic"  # fast mode's crops would cut the characters apart
-                imgs = cutout.build(story, img_dir, workdir)
+                manifest.stage("render", "started")
+                video = explainer.build(story, narration, img_dir, workdir)
+                manifest.stage("render", "complete")
+                ass = None  # captions are drawn into the frames
             except Exception as e:  # noqa: BLE001
                 traceback.print_exc()
-                story["_cutout_error"] = f"{type(e).__name__}: {str(e)[:300]}"
-                if (os.environ.get("RENDER_STYLE") or "").strip().lower() == "cutout":
-                    # a FORCED cutout run (test build input) never ships a classic video in its place
-                    raise RuntimeError(f"Cutout render was forced but failed in cutout.build: {story['_cutout_error']}")
-                log(f"Cutout mode failed ({story['_cutout_error']}); rendering this video classic")
-                imgs = None
-        if imgs is None and reused:  # test build: the cached images belong to this very story
-            story["render_style"] = "classic"
-            img_dir.mkdir(parents=True, exist_ok=True)
-            imgs = images._cached_images(story, img_dir)
-        if imgs is None:
-            story["render_style"] = "classic"
-            if testing and images.test_cloudflare_images() and not images._STATE["cf_out"]:
-                import cf_budget  # tests may use 35% of the day's neurons; the rest is production's
-                need = len(story["scenes"]) * int(CONFIG.get("shots_per_scene", 2)) * cf_budget.IMAGE_NEURONS
-                if cf_budget.test_room() < need:
-                    images._STATE["cf_out"] = True
-                    log(f"Test cap: this video needs ~{need:.0f} neurons, tests have {cf_budget.test_room():.0f} "
-                        f"left ({cf_budget.line()}): no Cloudflare, real media + library + local gap fillers only")
-            import library
-            library.fill_shots(story, img_dir, history)  # 1) asset library reuse (never raises)
-            media.fill_shots(story, img_dir, history)  # 2) stock video / archive photos + prints (never raises)
-            manifest.stage("visual_sources", "started")
-            imgs = images.generate_images(story, img_dir)  # 3) AI for the rest
-            manifest.stage("visual_sources", "complete", summary=library.summary(img_dir))
-            vs = library.summary(img_dir)
-            story["_visual_sources"] = vs
-            log(f"Visual sources: {vs['reused']} reused, {vs['archive_stock']} archive/stock, {vs['ai']} AI")
-            if images._STATE["cf_out"]:
-                story["_low_quota"] = True
-                log(f"Low-quota build: {vs['reused'] + vs['archive_stock']} real, {vs['ai']} AI")
-        from render import END_CARD_DELAY, tail_for
-        ass = build_ass(narration["words"], story.get("hook_overlay", ""),
-                        narration["duration"] + tail_for(narration["duration"]), workdir / "captions.ass",
-                        end_start=narration["duration"] + END_CARD_DELAY,
-                        badge="TRUE STORY" if story.get("true_story") else None)
-        manifest.stage("render", "started")
-        video = render(story, imgs, narration, ass, workdir)
-        manifest.artifact(video, "rendered-video-no-music")
-        manifest.stage("render", "complete")
+                story["_explainer_error"] = f"{type(e).__name__}: {str(e)[:300]}"
+                if explainer.forced():
+                    raise RuntimeError(f"Explainer render was forced but failed: {story['_explainer_error']}")
+                log(f"Explainer render failed ({story['_explainer_error']}); rendering this video classic")
+                story["render_style"] = "classic"
+                video = None
+        if video is None:
+            imgs = None
+            if cutout.style_for(story) == "cutout":  # EXPERIMENTAL: pose-set characters on background plates
+                try:
+                    if story.get("visual_mode") == "fast":
+                        story["visual_mode"] = "classic"  # fast mode's crops would cut the characters apart
+                    imgs = cutout.build(story, img_dir, workdir)
+                except Exception as e:  # noqa: BLE001
+                    traceback.print_exc()
+                    story["_cutout_error"] = f"{type(e).__name__}: {str(e)[:300]}"
+                    if (os.environ.get("RENDER_STYLE") or "").strip().lower() == "cutout":
+                        # a FORCED cutout run (test build input) never ships a classic video in its place
+                        raise RuntimeError(f"Cutout render was forced but failed in cutout.build: {story['_cutout_error']}")
+                    log(f"Cutout mode failed ({story['_cutout_error']}); rendering this video classic")
+                    imgs = None
+            if imgs is None and reused:  # test build: the cached images belong to this very story
+                story["render_style"] = "classic"
+                img_dir.mkdir(parents=True, exist_ok=True)
+                imgs = images._cached_images(story, img_dir)
+            if imgs is None:
+                story["render_style"] = "classic"
+                if testing and images.test_cloudflare_images() and not images._STATE["cf_out"]:
+                    import cf_budget  # tests may use 35% of the day's neurons; the rest is production's
+                    need = len(story["scenes"]) * int(CONFIG.get("shots_per_scene", 2)) * cf_budget.IMAGE_NEURONS
+                    if cf_budget.test_room() < need:
+                        images._STATE["cf_out"] = True
+                        log(f"Test cap: this video needs ~{need:.0f} neurons, tests have {cf_budget.test_room():.0f} "
+                            f"left ({cf_budget.line()}): no Cloudflare, real media + library + local gap fillers only")
+                import library
+                library.fill_shots(story, img_dir, history)  # 1) asset library reuse (never raises)
+                media.fill_shots(story, img_dir, history)  # 2) stock video / archive photos + prints (never raises)
+                manifest.stage("visual_sources", "started")
+                imgs = images.generate_images(story, img_dir)  # 3) AI for the rest
+                manifest.stage("visual_sources", "complete", summary=library.summary(img_dir))
+                vs = library.summary(img_dir)
+                story["_visual_sources"] = vs
+                log(f"Visual sources: {vs['reused']} reused, {vs['archive_stock']} archive/stock, {vs['ai']} AI")
+                if images._STATE["cf_out"]:
+                    story["_low_quota"] = True
+                    log(f"Low-quota build: {vs['reused'] + vs['archive_stock']} real, {vs['ai']} AI")
+            from render import END_CARD_DELAY, tail_for
+            ass = build_ass(narration["words"], story.get("hook_overlay", ""),
+                            narration["duration"] + tail_for(narration["duration"]), workdir / "captions.ass",
+                            end_start=narration["duration"] + END_CARD_DELAY,
+                            badge="TRUE STORY" if story.get("true_story") else None)
+            manifest.stage("render", "started")
+            video = render(story, imgs, narration, ass, workdir)
+            manifest.artifact(video, "rendered-video-no-music")
+            manifest.stage("render", "complete")
 
         # Music is a separate post-render layer. The visual/narration render
         # can be reused if a soundtrack is ever rejected.
@@ -286,6 +309,8 @@ def main() -> int:
         (workdir / "caption.txt").write_text(caption + "\n\nPIN: " + story.get("pinned_comment", ""))
 
         problems = qa_gate(video, ass, narration, story)
+        if story.get("render_style") == "explainer":  # captions are burned into the frames, not an .ass file
+            problems = [p for p in problems if not p.startswith("captions:")]
         manifest.stage("qa", "complete" if not problems else "report", problems=problems)
         write_summary(workdir, story, video, problems)
         # HARD block (owner, Oct 5; the #28 frozen-gavel bug): a frozen / one-image video or a blurry start never
@@ -401,7 +426,8 @@ def main() -> int:
             "tiktok": None,  # filled in by publish.py when it's posted
         })
         save_history(history)
-        images.save_cache(story, imgs)
+        if imgs is not None:  # classic / cutout pictures (the explainer has its own plates)
+            images.save_cache(story, imgs)
         checkpoint.finish(story)
         (ROOT / ".built").write_text(stamp)  # tells build.yml to save the image cache
         # Optional AutoClip repurposing runs only when explicitly enabled and never blocks production.

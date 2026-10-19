@@ -13,7 +13,6 @@ ledger (TEST_MODE=true): stops when today's test room is used up.
 import json
 import sys
 from datetime import datetime, timezone
-from pathlib import Path
 
 from common import CONFIG, ROOT, log
 

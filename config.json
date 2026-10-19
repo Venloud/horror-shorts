@@ -78,6 +78,11 @@
   "cutout_style": "flat 2D cartoon illustration, clean dark outlines, simple shading, muted night palette, no text",
   "cutout_max_images": 18,
   "cutout_hard_max_images": 20,
+  "explainer_for_modes": [],
+  "explainer_accent": "#FF2D87",
+  "explainer_max_images": 12,
+  "explainer_max_plates": 6,
+  "explainer_max_inserts": 4,
   "visual_ab": true,
   "visual_modes": [
     "classic",

@@ -378,6 +378,10 @@ def _validate(story: dict) -> None:
 def pick_mode(history: list[dict]) -> str:
     """Position-based rotation through config story_modes, so a mode can repeat (e.g. lore, mystery, lore, case)."""
     modes = CONFIG.get("story_modes", ["lore"])
+    import os
+    forced = (os.environ.get("STORY_MODE") or "").strip().lower()
+    if forced:  # test workflows only (explainer_test.yml story_mode input)
+        return forced
     count = sum(1 for h in history if h.get("title") and not h.get("skipped")
                 and not str(h.get("mode", "")).startswith("inbox") and not h.get("remake_of"))
     return modes[count % len(modes)]
@@ -678,8 +682,8 @@ class StoryDiscarded(Exception):
     """The critic rejected a story after the allowed rewrites: throw it away, the next attempt tries again."""
 
 
-def _json_call(prompt: str, api_key: str, temperature: float = 0.3) -> dict:
-    """A small JSON answer (premise pitch, critic scores) from the model chain."""
+def _json_call(prompt: str, api_key: str, temperature: float = 0.3, light: bool = True) -> dict:
+    """A small JSON answer (premise pitch, critic scores) from the model chain (light=False: strongest first)."""
     def call(model):
         if model.startswith("groq:"):
             return _call_groq(model[5:], prompt, temperature, True, {"type": "OBJECT"})
@@ -701,7 +705,7 @@ def _json_call(prompt: str, api_key: str, temperature: float = 0.3) -> dict:
             raise RuntimeError(f"{model} HTTP {r.status_code}")
         parts = r.json()["candidates"][0]["content"]["parts"]
         return json.loads("".join(p.get("text", "") for p in parts))
-    return _with_models(call, "JSON answer", light=True)
+    return _with_models(call, "JSON answer", light=light)
 
 
 _PACE = {"last": 0.0}
@@ -1243,7 +1247,10 @@ def _write_story(history: list[dict], skipped: list[dict]) -> dict:
 
     # 1) The creator's inbox (links / pasted stories) jumps the queue
     item = None
+    import os
     try:
+        if os.environ.get("STORY_MODE") and not os.environ.get("INBOX_FILE"):
+            raise LookupError("STORY_MODE forced (test): inbox skipped")
         item = sources.next_inbox(history)
     except Exception as e:  # noqa: BLE001
         log(f"Inbox read failed: {str(e)[:150]}")
