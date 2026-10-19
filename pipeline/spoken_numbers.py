@@ -75,7 +75,8 @@ def spoken(text: str) -> str:
                   lambda m: (year(int(m.group(1) + m.group(2) + "0"))[:-1] + "ies") if m.group(2) != "0"
                   else year(int(m.group(1) + "00")) + "s", text)
     text = re.sub(r"\b(\d+)(st|nd|rd|th)\b", lambda m: ordinal(int(m.group(1))), text)
-    text = re.sub(r"(?<![\d,.$€£])\b(1[0-9]\d\d|20\d\d)\b(?![\d,]|\s?(?:million|billion|thousand|people|men|women))",
+    # a year may be followed by a clause comma ("In 1890, he"); only ",<digit>" is a thousands separator
+    text = re.sub(r"(?<![\d,.$€£])\b(1[0-9]\d\d|20\d\d)\b(?!\d|,\d|\s?(?:million|billion|thousand|people|men|women))",
                   lambda m: year(int(m.group(1))), text)
     text = re.sub(r"\b\d[\d,]*(?:\.\d+)?\b", lambda m: _say_number(m.group(0)), text)
     return text
