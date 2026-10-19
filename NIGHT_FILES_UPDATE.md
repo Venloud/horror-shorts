@@ -1116,3 +1116,42 @@ Modified:
 ### Validation boundary
 
 The change is configuration/prompt/selection logic only. It does not alter rendering, music, buffer, publishing, or YouTube authentication. The next normal generation run is the live validation that the selected Bloody Mary prompt produces a distinct script and still passes the existing story critic, visual QA, production gate, and buffer flow.
+
+
+## Le Prince analytics cluster, 2026-10-19
+
+YouTube analytics: **The Disappearance of Louis Le Prince** (the 2026-09-26 mystery video) reached **891 views**, about
+**7.4x** the channel's usual and the channel high. Retention: **37% average**, with the big drop at **0:04-0:12**.
+Same play as the Bloody Mary cluster: more of what works, never copies of the same video.
+
+### Added (inbox topic files only; next_video was 55)
+
+Le Prince cluster (`CLUSTER: le prince`, QUEUE 1-4):
+- `inbox/le_prince_remake.txt` REMAKE (NOT_BEFORE 55): opens on the Roundhay Garden Scene as the payoff, owner HOOK,
+  AVOID the old premise and the old train-first structure. Title "The Disappearance of the First Filmmaker".
+- `inbox/le_prince_edison.txt` TRUE (NOT_BEFORE 59): the patent fight; theories only as theories, Edison never blamed.
+- `inbox/le_prince_photo.txt` TRUE (NOT_BEFORE 63): later leads (1890 Paris police photo only if sourced) and the
+  theories side by side, ending unsolved. Title "The Train Disappearance Nobody Can Explain".
+- `inbox/le_prince_son.txt` TRUE (NOT_BEFORE 67): Lizzie and Adolphe Le Prince, the family left behind.
+
+"Vanished" cluster, interleaved (QUEUE 5-8): `vanished_diesel.txt` (57), `vanished_majorana.txt` (61),
+`vanished_christie.txt` (65), `vanished_small.txt` (69). None of the four was in history.json.
+
+All eight: facts only from SOURCES (+ grounded research), HOOK/ANGLE details only if sourced, "This is a true story."
+once, no suicide angle or wording (BAN lines, now enforced for TRUE files too), no gore, retention owner notes
+(payoff in 5 s, a new fact every 6-8 s, no background stretch 0:04-0:15, 61-68 s), Le Prince's fixed look
+(1880s, full beard, period suit) in every shot.
+
+### Small code changes that the cluster needed
+
+- `config.json` `topic_families`: `"le prince": ["le prince", "roundhay"]`, so any other Le Prince / Roundhay pick
+  counts as a repeat for 15 videos.
+- New inbox header `CLUSTER: <family>`: the cluster's own videos don't block each other (otherwise files 4 posts apart
+  would wait 15 posts); everything outside the cluster is still blocked (`repeat_guard.repeat_of(allow=...)`).
+- New inbox header `TITLE:`: the owner's title for the story AND the YouTube title ("The Disappearance of ..." /
+  "The ... Nobody Can Explain" style).
+- REMAKE of a TRUE video (mystery / case / inbox-true) now goes through the fact-locked TRUE path (TRUE STORY rules,
+  fact check), not the legend path; AVOID and BAN are checked on every TRUE draft (max 3).
+- The post ntfy now carries the YouTube title and tags (copy-ready for Buffer / manual uploads).
+- `story_dry_run.yml` + `pipeline/story_dry_run.py`: writes + voices one inbox story and reports the script, length,
+  critic and fact check; never publishes, buffers or writes history.

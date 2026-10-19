@@ -90,11 +90,12 @@ def _has(phrase: str, text: str) -> bool:
     return bool(phrase) and re.search(rf"\b{re.escape(phrase)}\b", text) is not None
 
 
-def repeat_of(*texts, history: list[dict]) -> str:
+def repeat_of(*texts, history: list[dict], allow=()) -> str:
     """Why this topic repeats a recent video ("" = it doesn't). A recent subject found in the new topic's text
     ("lizzie borden" in "The Lizzie Borden Mystery"), or the new topic's own subject found in a recent subject
     ("baba yaga" in "baba yaga witch woods"; one-word subjects need 6+ letters so "witch" alone blocks nothing),
-    or a shared `topic_families` keyword."""
+    or a shared `topic_families` keyword. allow = cluster families (inbox CLUSTER: header) whose own recent videos
+    are skipped: an owner-scheduled cluster (NOT_BEFORE spacing) never blocks itself, everything else still is."""
     raw = [str(t or "") for t in texts if t]
     hay = _norm(" ".join(raw))
     if not hay:
@@ -102,8 +103,12 @@ def repeat_of(*texts, history: list[dict]) -> str:
     hay_s = " ".join(w for w in hay.split() if w not in _GENERIC)
     mine = [x for x in (_subject(t) for t in raw) if len(x.split()) >= 2 or len(x) >= 6]
     fams = _families(hay)
+    allow = {str(a).lower() for a in allow if a}
     for e in recent(history):
         title = e.get("title") or e.get("stamp") or "?"
+        if allow and allow & _families(_norm(" ".join(str(e.get(k) or "") for k in ("title", "case", "subgenre",
+                                                                                      "source", "cluster")))):
+            continue
         for name in _names(e):
             if _has(name, hay) or _has(name, hay_s):
                 return f"same topic as recent video '{title}' ({name})"

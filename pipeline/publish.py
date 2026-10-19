@@ -403,6 +403,10 @@ def main(from_build: bool = False) -> int:
                      f"({sum(1 for v in youtube_pending.load()['videos'] if v.get('status') == 'pending')} waiting)")
     elif yt_error:
         lines.append(f"YouTube FAILED: {yt_error}")
+    if meta.get("yt_title"):  # copy-ready for a manual / Buffer YouTube upload
+        lines.append(f"YouTube title: {meta['yt_title']}")
+        if meta.get("yt_tags"):
+            lines.append("YouTube tags: " + ", ".join(meta["yt_tags"]))
 
     if tt_error:
         lines.append(

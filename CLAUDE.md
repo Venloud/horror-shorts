@@ -115,7 +115,12 @@ so a new session can pick up without starting over.
      lines: `SOURCES: Title; es:Spanish title` (Wikipedia pages, `xx:` = that language; default the topic),
      `ANGLE:`, `HOOK:` (scene 1 opens with it if sourced; a multi-sentence hook keeps "This is a true story." after
      the whole hook), repeatable `AVOID:`, `NOT_BEFORE: N`, `QUEUE: n` (lower = sooner; topic files without it come
-     before other inbox files), `NO_CHILDREN: yes`; other lines = owner notes (instructions, not facts). The topic
+     before other inbox files), `NO_CHILDREN: yes`; other lines = owner notes (instructions, not facts).
+     Oct 19: `TITLE:` (the owner's title, also the YouTube title via `fixed_title`), `CLUSTER: <topic_families name>`
+     (an owner-scheduled cluster: its own videos never block each other in the repeat guard; e.g. the Le Prince
+     cluster, NIGHT_FILES_UPDATE.md "Le Prince analytics cluster"); `BAN:` is now enforced for TRUE files too; a
+     REMAKE of a TRUE video goes through the fact-locked TRUE path. Dry run of one inbox story (script, length,
+     critic, fact check; nothing published): `story_dry_run.yml` (input inbox_file). The topic
      comes from the file, so the used-topic check (mystery.pick_case) is bypassed for that topic only; a failure
      keeps the file queued. REMAKE: old history title/premise/twist + AVOID lines; a draft whose opening / hook
      overlay (or a near-identical title) matches them is rewritten (max 3 drafts); new story id = new images.

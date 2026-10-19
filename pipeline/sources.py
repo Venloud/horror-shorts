@@ -173,8 +173,10 @@ def next_inbox(history: list[dict]) -> dict | None:
             log(f"Inbox {f.name}: blocked topic ({hit}), skipped")
             continue
         import repeat_guard  # the topic (file name + first line) must not repeat a recent video; the file waits
+        cl = re.search(r"^\s*CLUSTER:\s*(.+?)\s*$", f.read_text(encoding="utf-8", errors="ignore"), re.I | re.M)
         why = repeat_guard.repeat_of(f.stem.replace("_", " "), (f.read_text(encoding="utf-8", errors="ignore")
-                                                                 .strip().splitlines() or [""])[0], history=history)
+                                                                 .strip().splitlines() or [""])[0], history=history,
+                                     allow=(cl.group(1).lower(),) if cl else ())
         if why:
             log(f"Inbox {f.name}: {why}; it waits")
             continue
@@ -184,10 +186,12 @@ def next_inbox(history: list[dict]) -> dict | None:
         m = re.match(r"\s*(REMAKE|LORE|TRUE):\s*(.+?)\s*$", lines[0], re.IGNORECASE)
         if m:  # topic file: the bot researches the topic itself (story.topic_story)
             item = {"key": f"inbox/{f.name}", "kind": m.group(1).lower(), "topic": m.group(2), "sources": [],
-                    "angle": "", "hook": "", "avoid": [], "ban": [], "text": "", "no_children": False}
+                    "angle": "", "hook": "", "avoid": [], "ban": [], "text": "", "no_children": False,
+                    "cluster": "", "title": ""}
             notes, wait = [], None
             for ln in lines[1:]:
-                h = re.match(r"\s*(SOURCES|ANGLE|AVOID|BAN|HOOK|NOT_BEFORE|QUEUE|NO_CHILDREN):\s*(.*)$", ln, re.IGNORECASE)
+                h = re.match(r"\s*(SOURCES|ANGLE|AVOID|BAN|HOOK|NOT_BEFORE|QUEUE|NO_CHILDREN|CLUSTER|TITLE):\s*(.*)$", ln,
+                             re.IGNORECASE)
                 key = h.group(1).upper() if h else ""
                 if not h:
                     notes.append(ln)
@@ -201,8 +205,10 @@ def next_inbox(history: list[dict]) -> dict | None:
                     wait = int(re.sub(r"\D", "", h.group(2)) or 0)
                 elif key == "NO_CHILDREN":
                     item["no_children"] = h.group(2).strip().lower() in ("yes", "true", "1")
-                elif key in ("ANGLE", "HOOK"):
+                elif key in ("ANGLE", "HOOK", "TITLE"):  # TITLE: the owner's title (story + YouTube)
                     item[key.lower()] = h.group(2).strip()
+                elif key == "CLUSTER":  # an owner-scheduled cluster (topic_families name): never blocks itself
+                    item["cluster"] = h.group(2).strip().lower()
             if wait and _next_video_number(history) < wait:
                 log(f"Inbox {f.name}: waiting until video #{wait} (next is #{_next_video_number(history)})")
                 continue

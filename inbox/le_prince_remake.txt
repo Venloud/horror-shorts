@@ -1,0 +1,14 @@
+REMAKE: Disappearance of Louis Le Prince
+QUEUE: 1
+NOT_BEFORE: 55
+CLUSTER: le prince
+TITLE: The Disappearance of the First Filmmaker
+SOURCES: Louis Le Prince; Roundhay Garden Scene
+HOOK: The oldest surviving film is about two seconds long. The man who shot it got on a train and was never seen again.
+ANGLE: Open on the Roundhay Garden Scene (1888) as the payoff in the first 5 s. Then: the people in it, what happened to them (only as sourced), the September 1890 train from Dijon, the luggage that also vanished, and why he never got credit.
+AVOID: The pioneer of cinematography boarded a train in 1890 and vanished completely with his luggage.
+AVOID: The old 2026-09-26 video's structure: it opened on the 1890 train and the vanishing, then told his invention story in order. Do not open on the train or a date; open on the film itself.
+BAN: suicide; took his own life; killed himself; ended his life; kill himself; self-harm; took her own life; killed herself
+Owner notes (retention, from the Le Prince analytics: 891 views, 37% average, big drop at 0:04-0:12): the payoff lands in the first 5 seconds; then a new fact or turn every 6-8 seconds; no slow background stretch between 0:04 and 0:15 (no birth / childhood / career summary there). Start as if the viewer walked into the middle of a conversation about something fascinating; never "Today", "Did you know", "What if I told you". Explain like to a friend: what happened, why, how, why it matters. End on the open question the facts really leave, as something viewers can weigh in on; never ask for likes, follows or comments. 61-68 s finished video (the pipeline window; Creator Rewards needs over 60 s). "This is a true story." exactly once, right after the hook. No suicide angle or wording at all (channel rule): leave that theory out completely. No invented details, no gore.
+Images: Louis Le Prince has ONE fixed look in every shot: a man in his late 40s with a full dark beard, a dark three-piece 1880s suit and a bowler hat outdoors. Settings: 1880s Leeds streets and workshop, the Roundhay garden, steam trains and an 1890 railway carriage at night, his single-lens camera, film strips and paper negatives (no readable text). Never his body, never a drowned body: show the empty carriage, the station, the river at night instead.
+New hook, new images, new structure from the old video.

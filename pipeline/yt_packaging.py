@@ -276,6 +276,9 @@ def package(story: dict, use_llm: bool = True) -> dict:
     title = make_title(raw_hook, subject, place, category, story)
     if CLICKBAIT.search(title) or (kind != "true" and re.search(r"\btrue\b", title, re.IGNORECASE)):
         title = make_title("", subject, place, "", story)
+    fixed = _fix_caps(str(story.get("fixed_title") or "").strip())  # inbox TITLE: header (the owner's own title)
+    if fixed and len(fixed) <= 70 - len(" #shorts"):
+        title = fixed + " #shorts"
 
     sentence = str(ans.get("hook_sentence") or "").strip()
     sentence = "" if _shouty(sentence) or _misleading(sentence, story, kind) else _limit_emoji(sentence, 1)

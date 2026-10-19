@@ -1,0 +1,10 @@
+TRUE: Louis Le Prince
+QUEUE: 3
+NOT_BEFORE: 63
+CLUSTER: le prince
+TITLE: The Train Disappearance Nobody Can Explain
+SOURCES: Louis Le Prince
+ANGLE: The leads people found decades later (for example the 1890 Paris police photo of a drowned man, only if the source says so) and every main theory side by side, each one with what supports it and what doesn't. The suicide theory is left out entirely (channel rule). End unsolved.
+BAN: suicide; took his own life; killed himself; ended his life; kill himself; self-harm; took her own life; killed herself
+Owner notes (retention, from the Le Prince analytics: 891 views, 37% average, big drop at 0:04-0:12): the payoff lands in the first 5 seconds; then a new fact or turn every 6-8 seconds; no slow background stretch between 0:04 and 0:15 (no birth / childhood / career summary there). Start as if the viewer walked into the middle of a conversation about something fascinating; never "Today", "Did you know", "What if I told you". Explain like to a friend: what happened, why, how, why it matters. End on the open question the facts really leave, as something viewers can weigh in on; never ask for likes, follows or comments. 61-68 s finished video (the pipeline window; Creator Rewards needs over 60 s). "This is a true story." exactly once, right after the hook. No suicide angle or wording at all (channel rule): leave that theory out completely. No invented details, no gore.
+Images: Louis Le Prince has ONE fixed look in every shot: a man in his late 40s with a full dark beard, a dark three-piece 1880s suit and a bowler hat outdoors. Settings: 1880s Leeds streets and workshop, the Roundhay garden, steam trains and an 1890 railway carriage at night, his single-lens camera, film strips and paper negatives (no readable text). Never his body, never a drowned body: show the empty carriage, the station, the river at night instead.

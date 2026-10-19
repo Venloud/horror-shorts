@@ -1204,7 +1204,7 @@ def _final_problem(story: dict, history: list[dict]) -> str:
     from common import opening_line
     return (repeat_guard.repeat_of(story.get("title"), story.get("case"), story.get("subgenre"),
                                    story.get("source") if not str(story.get("source") or "").startswith("http") else "",
-                                   history=history)
+                                   history=history, allow=(story.get("cluster"),))
             or repeat_guard.opening_reused(opening_line(story), history))
 
 
@@ -1429,6 +1429,16 @@ def _true_line_after_hook(story: dict, hook: str) -> None:
     scenes[0]["narration"] = f"{head} {TRUE_OPENER} {rest}".strip()
 
 
+def _owner_fields(story: dict, item: dict) -> None:
+    """Inbox headers that go with the finished story: TITLE (the owner's title, also the YouTube title) and CLUSTER
+    (an owner-scheduled topic cluster: repeat_guard lets its own videos through, see repeat_guard.repeat_of)."""
+    if item.get("title"):
+        story["title"] = item["title"]
+        story["fixed_title"] = item["title"]
+    if item.get("cluster"):
+        story["cluster"] = item["cluster"]
+
+
 def topic_story(history: list[dict], item: dict, api_key: str, sfx_list: str) -> dict:
     """Inbox topic files: REMAKE (new lore video about a topic we already made: new angle / hook / structure /
     images), LORE (a legend) or TRUE (a real story). The topic comes from the file, so the "topic already used"
@@ -1437,22 +1447,49 @@ def topic_story(history: list[dict], item: dict, api_key: str, sfx_list: str) ->
     topic, kind = item["topic"], item["kind"]
     notes = "\n".join(x for x in [item.get("text", "")] if x)
     holder: dict = {}
-    if kind == "true":
+    old = {}
+    if kind == "remake":
+        old = next((h for h in reversed(history) if not h.get("skipped") and (
+            str(h.get("case") or "").lower() == topic.lower() or topic.lower() in str(h.get("title", "")).lower())), {})
+    # TRUE files, and REMAKEs of a TRUE video (Oct 19: Le Prince was a mystery, not a legend): fact-locked true story
+    if kind == "true" or (kind == "remake" and (old.get("true_story") or old.get("mode") in TRUE_MODES)):
+        avoid = [x for x in [old.get("title"), old.get("premise"), old.get("twist")] if x] + list(item.get("avoid", []))
+        if kind == "remake":
+            log(f"Remake of TRUE story {old.get('title') or topic} (posted {old.get('date', '?')}): new angle "
+                f"'{item.get('angle', '')[:110]}'")
         facts = _wiki_sources(item, topic, holder)
         brief = "\n".join(x for x in [
             f"ANGLE: {item['angle']}" if item.get("angle") else "",
             f"HOOK: scene 1 opens with this sentence if the SOURCE supports it: {item['hook']}" if item.get("hook") else "",
+            ("THE OLD VIDEO (never reuse its opening, hook overlay or structure):\n" + "\n".join(f"- {x}" for x in avoid))
+            if avoid else "",
+            ("NEVER use these words or ideas: " + "; ".join(item["ban"])) if item.get("ban") else "",
             notes] if x)
-        story = _true_story(facts, topic, api_key, sfx_list, notes=brief, holder=holder)
+        extra = ""
+        for attempt in range(3):
+            story = _true_story(facts, topic, api_key, sfx_list, notes=brief + extra, holder=holder)
+            opening = re.split(r"(?<=[.!?])\s+", story["scenes"][0]["narration"].strip())[0]
+            reused = [x for x in avoid if _too_close(opening, x) or _too_close(story.get("hook_overlay", ""), x)]
+            said = " ".join(sc.get("narration", "") for sc in story.get("scenes") or []).lower()
+            banned = [b for b in item.get("ban", []) if b in said]
+            if not reused and not banned:
+                break
+            why = f"used {banned[0]!r}" if banned else f"reused the old video ({reused[0][:80]!r})"
+            log(f"Draft {attempt + 1} {why}; writing it again")
+            extra = (f"\n\nYOUR LAST DRAFT {why.upper()}. " + ("Leave it out completely." if banned else
+                     "Use a different first sentence and hook overlay built on the ANGLE."))
+        else:
+            raise RuntimeError(f"{topic}: every draft reused the old video or used a banned word")
         story.update({"mode": "inbox-true", "source": item["key"], "subgenre": "true story", "case": topic,
                       "true_story": True, "no_child_images": item.get("no_children", False)})
+        if kind == "remake":
+            story.update({"remake_of": old.get("title") or topic, "remake_angle": item.get("angle", "")})
         _true_line_after_hook(story, item.get("hook", ""))
+        _owner_fields(story, item)
         return story
 
-    old, avoid, num = {}, list(item.get("avoid", [])), ""
+    avoid, num = list(item.get("avoid", [])), ""
     if kind == "remake":
-        old = next((h for h in reversed(history) if not h.get("skipped") and (
-            str(h.get("case") or "").lower() == topic.lower() or topic.lower() in str(h.get("title", "")).lower())), {})
         avoid = [x for x in [old.get("title"), old.get("premise"), old.get("twist")] if x] + avoid
         num = f"#{old['video_number']}" if old.get("video_number") else f"posted {old.get('date', '?')}"
     angle = item.get("angle") or ("a different detail of the legend than the old video led with" if kind == "remake"
@@ -1507,6 +1544,7 @@ def topic_story(history: list[dict], item: dict, api_key: str, sfx_list: str) ->
                   "no_child_images": item.get("no_children", False)})
     if kind == "remake":
         story.update({"remake_of": old.get("title") or topic, "remake_angle": angle})
+    _owner_fields(story, item)
     log(f"{'Remake' if kind == 'remake' else 'Lore'} '{story['title']}' ({len(story['scenes'])} scenes) via "
         f"{story.get('model')}; opening: {opening!r}")
     return story
