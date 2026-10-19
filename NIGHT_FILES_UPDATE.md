@@ -1155,3 +1155,12 @@ once, no suicide angle or wording (BAN lines, now enforced for TRUE files too), 
 - The post ntfy now carries the YouTube title and tags (copy-ready for Buffer / manual uploads).
 - `story_dry_run.yml` + `pipeline/story_dry_run.py`: writes + voices one inbox story and reports the script, length,
   critic and fact check; never publishes, buffers or writes history.
+
+
+## Explainer render style (experimental), 2026-10-19
+- New render_style "explainer" (pipeline/explainer.py): second-person problem-by-problem narration, painted FLUX
+  plates with the recurring stick figure "you" (assets/character, drawn once), code-drawn info cards (counting grids,
+  bars vs dashed threshold, counters, arrows, stamps, lists) and black title cards, HUD (3 stats + chapter chip),
+  karaoke captions, accent #FF2D87. Max 12 FLUX images per video. Config render_style stays "classic".
+- One-time character workflow: explainer_character.yml. Test builds: explainer_test.yml (nothing buffered/posted);
+  review sheets in previews/explainer/. Details: CLAUDE.md "EXPERIMENTAL: explainer render style".

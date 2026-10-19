@@ -591,6 +591,36 @@ so a new session can pick up without starting over.
   no rebase conflicts. Note: GitHub keeps only ONE pending run per concurrency group; a newer queued run
   replaces an older pending one.
 
+## EXPERIMENTAL: explainer render style (`explainer.py`, off; Oct 19)
+- Owner's spec: a saveo.house-style explainer for ALL modes (the reference video is someone else's: NEVER commit it).
+  Config `render_style` stays "classic" until the owner approves; `explainer_for_modes` [] ; env RENDER_STYLE=explainer.
+- Character "you" (`explainer_character.py`, `explainer_character.yml`, once): ORIGINAL stick figure (round white
+  bald head, big cartoon face, forest-green cap with orange button, charcoal hoodie with orange drawstrings, stick
+  legs, white/orange sneakers). 12 poses, same description word-for-word, Cloudflare FLUX (Workers AI has NO seed:
+  400 "'/seed' not allowed"), QA + same-character check vs pose 1 ("worried"), rembg cut-outs in assets/character/
+  (+ manifest.json). Cloudflare's prompt filter refused "no pants" (code 8007, nothing billed): never use it.
+  A changed description redraws the whole set. Missing poses map to a fallback pose (explainer.POSE_FALLBACK).
+- Writing (`explainer.adapt`, before voicing): second person, mid-conversation open, problem by problem, ends on an
+  open question; true stories: "you" = investigator/witness, only facts the verified story already had (re-checked
+  with story.fact_check against the classic narration + ledger); hook rule; TRUE STORY line; exact-words SCRIPTs
+  are not rewritten. `explainer_before` keeps the classic narration.
+- Plan (`explainer.plan`, after fit_duration, strongest model via story._json_call(light=False)): per scene a chip,
+  3 HUD values (+ 3 labels per video), shots scene / card / title anchored to words ("at"); numbers on cards/HUD
+  must be said in the narration (spoken_numbers; HUD "you" meters in % allowed); keyword fallback plan.
+  `timeline`: cuts 1.3-3 s, long beats split into new framings (wide -> medium -> face) or reaction shots.
+- Assets: <= `explainer_max_images` 12 Cloudflare images per video (retries included; test share in TEST_MODE):
+  one plate per location (max 6) + object inserts (max 4); QA rejects people/letters; missing plate = code gradient.
+- Render: PIL frames piped to ffmpeg (4.5 Mbps), HUD (3 boxes y 150, chip y 292, TRUE STORY chip 0-3.5 s), karaoke
+  captions 1-3 words at y 1430 (Montserrat ExtraBold; cards: dark ink), cards (beige paper, Space Mono kicker,
+  Montserrat Black, accent `explainer_accent` #FF2D87; builds grid / bars+dashed threshold / counter / arrow /
+  stamp / list), black title cards, end card (mascot + FOLLOW FOR MORE / NIGHT FILES + click). SFX: whoosh into
+  cards, click on stamps + end card; music added after (background_music). Fonts: assets/fonts/explainer (OFL).
+- main.py: adapt after write_story, no shot_rules, explainer.build instead of images+render; failure -> classic
+  (unless forced). QA: captions-in-.ass check skipped (drawn in frame).
+- Tests: `explainer_test.yml` (inputs render_style [explainer], inbox_file, story_mode; STORY_MODE env forces a mode
+  and skips the inbox): never buffered/posted/history; artifact MP4 + frame sheet + report; sheet committed to
+  previews/explainer/.
+
 ## EXPERIMENTAL: cutout render style (`cutout.py`, off by default)
 - Switch: config `render_style` (classic | cutout), build.yml input `render_style` (env RENDER_STYLE),
   `cutout_for_modes` (e.g. ["coldcase"]). Any cutout failure -> logged, the video renders classic; a FORCED
