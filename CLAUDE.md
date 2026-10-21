@@ -591,6 +591,20 @@ so a new session can pick up without starting over.
   no rebase conflicts. Note: GitHub keeps only ONE pending run per concurrency group; a newer queued run
   replaces an older pending one.
 
+## TikTok inbox drafts, owner requested 2026-10-21
+
+- Production config `tiktok_mode` is `draft`. Do not switch back to public
+  direct posting without explicit owner instruction.
+- TikTok API `SEND_TO_USER_INBOX` means a video was delivered to the
+  creator's inbox, NOT published. The owner still finishes posting in TikTok.
+- Only a confirmed inbox delivery consumes the durable FIFO buffer item,
+  avoiding repeat drafts. A failed/unconfirmed upload leaves it queued.
+- Record `draft_sent` separately from `posted`; no public post number
+  for a draft-only delivery. History duplicate checking and validation
+  must recognize the inbox delivery receipt. Keep YouTube pending media
+  and existing YouTube pause intact.
+- Explainer remains the default style for newly generated videos.
+
 ## Explainer render style (`explainer.py`, enabled Oct 21; experimental fallback)
 - Owner's spec: a saveo.house-style explainer for ALL modes (the reference video is someone else's: NEVER commit it).
   Owner approved the style on 2026-10-21. Config `render_style` is now "explainer" for new builds in all modes; `explainer_for_modes` remains [] as the global selector is used. Existing buffered classic videos are preserved. If an explainer build fails, `pipeline/main.py` falls back to classic and records `_explainer_error`; env RENDER_STYLE=explainer remains strict for tests.
