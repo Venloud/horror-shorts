@@ -19,6 +19,11 @@ on:
         type: boolean
         default: true
         required: false
+# The builder saves history/checkpoints to this repository; GitHub's default token is read-only.
+permissions:
+  contents: write
+  actions: read
+
 concurrency:
   group: night-files
   cancel-in-progress: false
