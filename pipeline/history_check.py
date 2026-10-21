@@ -25,10 +25,11 @@ def problems(history: list[dict]) -> list[str]:
     posted = ROOT / ".posted"
     if posted.exists():
         p = json.loads(posted.read_text())
+        expected_field = "draft_sent" if p.get("mode") == "draft" else "posted"
         if not any((h.get("buffered") == p["stamp"] or h.get("date") == p["stamp"]
-                    or (p.get("story_id") and h.get("story_id") == p["story_id"])) and h.get("posted")
+                    or (p.get("story_id") and h.get("story_id") == p["story_id"])) and h.get(expected_field)
                    for h in history):
-            out.append(f"posted video #{p.get('video_number')} ({p['stamp']}) has no posted history entry on main")
+            out.append(f"video {p['stamp']} has no {expected_field} history entry on main")
     return out
 
 
