@@ -88,10 +88,11 @@ def post_missed_slot() -> None:
 def _last_post() -> datetime | None:
     times = []
     for h in load_history():
-        try:
-            times.append(datetime.strptime(h["posted"], "%Y-%m-%d_%H%M").replace(tzinfo=timezone.utc))
-        except (KeyError, TypeError, ValueError):
-            pass
+        for key in ("posted", "draft_sent"):
+            try:
+                times.append(datetime.strptime(h[key], "%Y-%m-%d_%H%M").replace(tzinfo=timezone.utc))
+            except (KeyError, TypeError, ValueError):
+                pass
     return max(times, default=None)
 
 
