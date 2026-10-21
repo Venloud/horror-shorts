@@ -5,6 +5,9 @@ name: Explainer test build
 # (test share of the Cloudflare ledger, max config explainer_max_images) -> render -> music -> QA (report only).
 # Artifact: MP4 + 8-frame sheet + report; the sheet is also committed to previews/explainer/.
 on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/explainer_test.yml']
   workflow_dispatch:
     inputs:
       render_style:
@@ -67,8 +70,8 @@ jobs:
 
       - name: Build the explainer test video
         env:
-          RENDER_STYLE: ${{ inputs.render_style }}
-          INBOX_FILE: ${{ inputs.inbox_file }}
+          RENDER_STYLE: ${{ inputs.render_style || 'explainer' }}
+          INBOX_FILE: ${{ inputs.inbox_file || 'le_prince_remake.txt' }}
           STORY_MODE: ${{ inputs.story_mode }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
