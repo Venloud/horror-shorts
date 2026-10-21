@@ -24,7 +24,7 @@ import subprocess
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 
 from common import CONFIG, ROOT, env, log
 
@@ -32,10 +32,7 @@ W, H, FPS = 1080, 1920, 30
 FONT_DIR = ROOT / "assets" / "fonts" / "explainer"
 SHOT_MIN, SHOT_MAX = 1.3, 3.0
 PAPER, INK, MUTED, BLACK = (238, 229, 210), (23, 23, 26), (112, 104, 90), (10, 10, 12)
-HUD_Y, CHIP_Y, CAP_Y = 150, 292, 1430  # TikTok's top bar ends ~140 px; captions centred in the lower third
-POSE_FALLBACK = {"angry": "determined", "scared": "shocked", "shocked": "scared", "determined": "pointing",
-                 "sneaky": "looking_back", "sweating": "worried", "looking_back": "sneaky", "running": "looking_back",
-                 "sitting": "worried", "holding": "pointing", "pointing": "determined"}
+CAP_Y = 1430  # captions centred in the lower third (TikTok's top bar ends ~140 px)
 BUILD_KINDS = ("grid", "bars", "counter", "arrow", "stamp", "list", "none")
 
 
@@ -159,48 +156,64 @@ def adapt(story: dict) -> dict:
 
 # ================================================================ planning
 
-PLAN_PROMPT = """You are the editor of a vertical explainer video. It cuts every 1.5-3 seconds between:
-- "scene": a painted background place with our stick-figure character "you" on it (or an object close-up),
-- "card": a beige paper info card: a small mono kicker, big bold text with ONE accent word, and ONE animated build-up,
-- "title": a black title card with big white text and ONE accent word.
+PLAN_PROMPT = """You are the storyboard artist of a vertical explainer video for the Night Files channel. Our host
+"you" is a stick figure in a suit jacket and tie; other people in the story are stick figures too, with their own
+props (hat, beard, dress). Backgrounds are painted places that stay still. Turn the narration into LITERAL story
+beats, like a storyboard: every shot shows exactly WHO does WHAT, WHERE, at that moment.
 TRUE STORY: {true}
 
 NARRATION (scene number: text, seconds):
 {scenes}
 
+PEOPLE ALREADY KNOWN (name: look): {cast}
+PLACES ALREADY KNOWN: {locs}
+
 Return JSON:
-{{"hud_labels": ["<3 short stat labels, max 7 letters each, e.g. NIGHT, CLUES, NERVE>"],
+{{"cast": [{{"name": "<an adult the narration names>", "look": "<props: hat type, beard, dress, coat colour; max 12 words>"}}],
  "locations": [{{"name": "<short name>", "look": "<18-28 words: the EMPTY place, era, light, mood; no people, no text>"}}],
  "inserts": [{{"name": "<short name>", "prompt": "<one object close-up, no people, no text, max 15 words>"}}],
- "scenes": [{{"chip": "<chapter label, max 12 chars: PROBLEM 1, NIGHT 2, CLUE 3>", "hud": ["<3 values, max 6 chars>"],
-             "shots": [SHOT, ...]}}]}}
+ "scenes": [{{"shots": [SHOT, ...]}}]}}
 one "scenes" entry per narration scene, in order. SHOT is one of:
 {{"type": "scene", "at": "<first 2-4 words where this shot starts, copied exactly from the narration>",
-  "location": "<a locations name>", "pose": "<{poses}>", "framing": "wide|medium|face", "insert": ""}}
-{{"type": "scene", "at": "...", "insert": "<an inserts name: show that object close-up instead of the character>"}}
-{{"type": "card", "at": "...", "kicker": "<MONO KICKER, max 26 chars, e.g. PROBLEM 1 · THE NOISE>",
-  "text": "<max 7 words>", "accent": "<one word of text>", "build": BUILD}}
+  "location": "<a locations name>",
+  "primary_subject": "you | <cast name> | none", "primary_action": "<{actions}>", "expression": "<{expressions}>",
+  "view": "front | three_quarter | side | back", "facing": "left | right",
+  "secondary_subject": "<cast name> | crowd | none", "secondary_action": "<{actions}>",
+  "shot_type": "wide | medium | close | over_shoulder",
+  "background_motion": "none | subtle_push | subtle_pan | parallax_light",
+  "insert": "<an inserts name to show that object close-up instead, or empty>",
+  "text_mode": "none | location | name | punch | evidence | quote | stamp", "text": "<max 5 words>", "accent": "<one word of text>"}}
+{{"type": "card", "at": "...", "kicker": "<MONO KICKER, max 26 chars>", "text": "<max 7 words>", "accent": "<one word>",
+  "build": BUILD}}
 {{"type": "title", "at": "...", "text": "<max 6 words>", "accent": "<one word of text>"}}
-BUILD is one of:
-{{"kind": "grid", "total": <4-60>, "filled": <n>, "label": "<max 4 words>"}}
-{{"kind": "bars", "bars": [{{"label": "<max 2 words>", "value": <number>}}, ...2-4], "threshold": <number>, "threshold_label": "<max 3 words>"}}
-{{"kind": "counter", "from": <number>, "to": <number>, "prefix": "<$ or empty>", "suffix": "<% or ' days' or empty>"}}
-{{"kind": "arrow", "from": "<max 3 words>", "to": "<max 3 words>"}}
-{{"kind": "stamp", "word": "<ONE WORD, e.g. AUTOMATICALLY, GONE, DENIED>"}}
-{{"kind": "list", "items": ["<max 4 words>", "...", "..."]}}
-{{"kind": "none"}}
+BUILD is one of: {{"kind": "grid", "total": <4-60>, "filled": <n>, "label": "<max 4 words>"}} |
+{{"kind": "bars", "bars": [{{"label": "<max 2 words>", "value": <number>}}, ...2-4], "threshold": <number>, "threshold_label": "<max 3 words>"}} |
+{{"kind": "counter", "from": <number>, "to": <number>, "prefix": "", "suffix": ""}} |
+{{"kind": "arrow", "from": "<max 3 words>", "to": "<max 3 words>"}} | {{"kind": "stamp", "word": "<ONE WORD>"}} |
+{{"kind": "list", "items": ["<max 4 words>", "..."]}} | {{"kind": "none"}}
 RULES
-- 3-5 shots per scene so there is a cut every 1.5-3 s. The FIRST shot of scene 1 is a "scene" shot with a strong
-  expression (the hook is frame one). "at" of a scene's first shot = the scene's first words.
-- Every shot shows EXACTLY what is said at that moment. About one shot in three is a card or title, for the key
-  numbers, rules and turns; never two titles in a row.
-- Every number on a card, title or HUD must be SAID in the narration{true_rule}. Card text uses the narration's words.
-- HUD: three values per scene that change as things escalate (counts said in the narration like day/clues/miles, or
-  a meter about YOU like NERVE 70%). chip = a short chapter label.
-- pose = the expression that fits the words. "face" = a close-up of the face for emotional beats.
-- At most {max_locs} locations and {max_inserts} inserts in total (each is one painted image); reuse locations.
-  No people, no text/signs/symbols, nothing occult, no gore, never a real victim's body.
+- STORYBOARD, not decoration. Split every sentence with two actions or two people into separate shots. Example:
+  "You are standing in the station while he boards the train" = (1) you standing in the station, watching (wide,
+  three_quarter); (2) he boards the train (wide, side view, walking toward the train); (3) you react (close).
+- The host ACTS what the words say (walking, pointing, observing, reaching, waiting, holding...), never just stands
+  around. Vary view (front, three_quarter, side, back) and shot_type. close only for emotional beats (max 1 in 4
+  shots); over_shoulder when you watch someone (you seen from behind, they in front of you).
+- 3-5 shots per scene, a cut every 1.5-3 s. The first shot of scene 1 is a scene shot.
+- background_motion is "none" unless slow motion clearly helps (at most 1 shot in 4).
+- text_mode on at most 1 shot in 3, words taken from the narration: location = the place name the first time it
+  appears; name = a person's name the first time they appear; punch = a key phrase; evidence = a clue; quote = words
+  someone said; stamp = 1-2 words. NO dates, years or day counters on scene shots; at most ONE card in the whole
+  video may show a date.
+- Cards and titles for key numbers, rules and turns: about one shot in four, never two titles in a row. Every number
+  on a card or title must be said in the narration{true_rule}.
+- People: only adults the narration names (or "crowd"); never a real victim's death, body or remains.
+- At most {max_locs} locations and {max_inserts} inserts in total; no people, no text, nothing occult, no gore.
 """
+
+STOP = set("a an the of in on at to and or but is was were be been it its his her their this that you your he she "
+           "they them with for from by as into onto".split())
+_DATE = re.compile(r"\b(1[0-9]{3}|20[0-9]{2}|january|february|march|april|may|june|july|august|september|october|"
+                   r"november|december|nineteen|eighteen|seventeen|sixteen hundred|day \d+)\b", re.IGNORECASE)
 
 
 def _norm_words(text: str) -> list[str]:
@@ -218,28 +231,43 @@ def _plan_call(prompt: str) -> dict | None:
 
 
 def plan(story: dict, narration: dict) -> dict:
-    """Beat plan on the FINAL narration: shots per scene (with start times from the word timings), HUD values,
-    chapter chips, locations and inserts. Invalid pieces are repaired or replaced by a keyword plan."""
-    import explainer_character as ec
+    """Storyboard on the FINAL narration: literal beats per scene (who does what, where, view, framing), cast with
+    props, locations, inserts, text overlays. Invalid pieces are repaired; nothing usable = keyword storyboard."""
+    import stickman as sm
     words = narration["words"]
     spans = _scene_spans(story, narration)
     max_locs = int(CONFIG.get("explainer_max_plates", 6))
     max_ins = int(CONFIG.get("explainer_max_inserts", 4))
+    narr_all = " ".join(sc.get("narration", "") for sc in story["scenes"])
     scenes_txt = "\n".join(f"{i + 1}: {sc.get('narration', '')} ({spans[i][1] - spans[i][0]:.1f}s)"
                            for i, sc in enumerate(story["scenes"]))
+    known = "; ".join(f"{c['name']}: {c.get('look', '')[:80]}" for c in story.get("characters") or [] if c.get("name"))
     true = bool(story.get("true_story"))
     data = _plan_call(PLAN_PROMPT.format(
-        true="yes" if true else "no", scenes=scenes_txt, poses="|".join(ec.POSES), max_locs=max_locs,
-        max_inserts=max_ins, true_rule=" (TRUE story: never invent a number)" if true else "")) or {}
+        true="yes" if true else "no", scenes=scenes_txt, cast=known or "none",
+        locs="; ".join(l["name"] for l in story.get("locations") or [] if l.get("name")) or "none",
+        actions="|".join(sm.ACTIONS), expressions="|".join(sm.EXPRESSIONS), max_locs=max_locs, max_inserts=max_ins,
+        true_rule=" (TRUE story: never invent a number)" if true else "")) or {}
     said = _said_values(story)
-    labels = [str(x).upper()[:7] for x in (data.get("hud_labels") or []) if str(x).strip()][:3]
-    if len(labels) < 3:
-        labels = ["SCENE", "CLUES", "NERVE"]
+    low_all = narr_all.lower()
+    cast = {}
+    sheet = {c["name"].lower(): c.get("look", "") for c in story.get("characters") or [] if c.get("name")}
+    for c in (data.get("cast") or []) + [{"name": n, "look": l} for n, l in sheet.items()]:
+        if not isinstance(c, dict) or not c.get("name"):
+            continue
+        name = str(c["name"]).strip()[:40]
+        key = name.lower()
+        first = key.split()[-1] if key.split() else key
+        if key in cast or key == "you" or _CHILD.search(f"{name} {c.get('look', '')}"):
+            continue
+        if first not in low_all:  # only people the narration actually names
+            continue
+        cast[key] = sm.look_for(name, f"{c.get('look', '')} {sheet.get(key, '')}")
     locs = []
     for l in data.get("locations") or []:
         if isinstance(l, dict) and l.get("name") and l.get("look") and len(locs) < max_locs:
             locs.append({"name": str(l["name"])[:40], "look": _clean_visual(str(l["look"]))})
-    if not locs:  # the story's own location sheet
+    if not locs:
         locs = [{"name": l["name"], "look": _clean_visual(l.get("look") or l["name"])}
                 for l in (story.get("locations") or [])[:max_locs] if l.get("name")]
     if not locs:
@@ -251,26 +279,20 @@ def plan(story: dict, narration: dict) -> dict:
             inserts.append({"name": str(x["name"])[:40], "prompt": _clean_visual(str(x["prompt"]))[:160]})
     ins_names = {x["name"].lower(): x["name"] for x in inserts}
     raw_scenes = data.get("scenes") if isinstance(data.get("scenes"), list) else []
-    out_scenes, prev_hud = [], ["", "", ""]
+    ctx = {"said": said, "low": low_all, "cast": cast, "locs": locs, "loc_names": loc_names, "ins": ins_names,
+           "dates": 0}
+    out_scenes = []
     for i, sc in enumerate(story["scenes"]):
         rs = raw_scenes[i] if i < len(raw_scenes) and isinstance(raw_scenes[i], dict) else {}
         s_words = [w for w in words if w.get("scene") == i]
-        shots = []
-        for s in (rs.get("shots") or [])[:6]:
-            v = _valid_shot(s, s_words, sc.get("narration", ""), said, loc_names, ins_names, locs)
-            if v:
-                shots.append(v)
+        shots = [v for v in (_valid_shot(s, s_words, ctx) for s in (rs.get("shots") or [])[:6]) if v]
         if not shots:
-            shots = _keyword_shots(sc.get("narration", ""), s_words, locs, i)
-        if shots[0]["type"] != "scene" and i == 0:
-            shots.insert(0, _keyword_shots(sc.get("narration", ""), s_words, locs, i)[0])
-        hud = [str(v).upper()[:6] for v in (rs.get("hud") or [])][:3]
-        hud = [h if _number_ok(h, said, meter=True) else prev_hud[k] if k < len(prev_hud) else "" for k, h in
-               enumerate(hud + [""] * (3 - len(hud)))]
-        prev_hud = hud
-        chip = re.sub(r"\s+", " ", str(rs.get("chip") or f"PART {i + 1}")).upper()[:12]
-        out_scenes.append({"chip": chip, "hud": hud, "shots": shots})
-    p = {"hud_labels": labels, "locations": locs, "inserts": inserts, "scenes": out_scenes}
+            shots = _keyword_shots(sc.get("narration", ""), s_words, ctx, i)
+        if i == 0 and shots[0]["type"] != "scene":
+            shots.insert(0, _keyword_shots(sc.get("narration", ""), s_words, ctx, i)[0])
+        out_scenes.append({"shots": shots})
+    _balance(out_scenes)
+    p = {"cast": cast, "locations": locs, "inserts": inserts, "scenes": out_scenes}
     used_locs = {s.get("location") for sc in out_scenes for s in sc["shots"] if s["type"] == "scene"}
     used_ins = {s.get("insert") for sc in out_scenes for s in sc["shots"] if s.get("insert")}
     p["locations"] = [l for l in locs if l["name"] in used_locs] or locs[:1]
@@ -279,9 +301,13 @@ def plan(story: dict, narration: dict) -> dict:
     for sc in out_scenes:
         for s in sc["shots"]:
             counts[s["type"]] += 1
-    log(f"Explainer plan ({'LLM' if raw_scenes else 'keyword fallback'}): {counts}, "
-        f"{len(p['locations'])} location(s), {len(p['inserts'])} insert(s), HUD {labels}")
+    log(f"Explainer storyboard ({'LLM' if raw_scenes else 'keyword fallback'}): {counts}, cast "
+        f"{[c['name'] for c in cast.values()] or 'host only'}, {len(p['locations'])} location(s), "
+        f"{len(p['inserts'])} insert(s)")
     return p
+
+
+_CHILD = re.compile(r"\b(child|children|kid|kids|boy|girl|baby|toddler|teen\w*|\d{1,2}-year-old)\b", re.IGNORECASE)
 
 
 def _clean_visual(text: str) -> str:
@@ -296,13 +322,16 @@ def _said_values(story: dict) -> set:
     return nums.values(" ".join(sc.get("narration", "") for sc in story["scenes"]))
 
 
-def _number_ok(text: str, said: set, meter: bool = False) -> bool:
-    """Every number on screen must be said in the narration (tiny counts <= 3 and, on the HUD, 'you' meters in %
-    are allowed)."""
+def _number_ok(text: str, said: set) -> bool:
+    """Every number on screen must be said in the narration (tiny counts <= 3 are fine)."""
     import spoken_numbers as nums
-    if meter and re.fullmatch(r"\s*\d{1,3}\s*%\s*", text or ""):
-        return True
     return all(v <= 3 or v in said for v in nums.values(str(text or "")))
+
+
+def _words_said(text: str, low: str) -> bool:
+    """The on-screen words come from the narration (stop words aside)."""
+    ws = [w for w in _norm_words(text) if w not in STOP]
+    return bool(ws) and all(re.search(rf"\b{re.escape(w)}", low) for w in ws)
 
 
 def _anchor(at: str, s_words: list[dict]) -> float | None:
@@ -317,33 +346,97 @@ def _anchor(at: str, s_words: list[dict]) -> float | None:
     return None
 
 
-def _valid_shot(s, s_words, narr, said, loc_names, ins_names, locs) -> dict | None:
-    import explainer_character as ec
+def _date_ok(text: str, ctx: dict) -> bool:
+    """At most ONE date / year on screen in the whole video (owner, Oct 21: no year/day clutter)."""
+    if not _DATE.search(text or ""):
+        return True
+    if ctx["dates"]:
+        return False
+    ctx["dates"] += 1
+    return True
+
+
+def _subject(name, ctx, allow_crowd=False) -> str:
+    n = str(name or "").strip().lower()
+    if n in ("you", "host", "the host", "narrator"):
+        return "you"
+    if allow_crowd and n in ("crowd", "passengers", "people", "villagers", "staff"):
+        return "crowd"
+    if n in ctx["cast"]:
+        return n
+    for k in ctx["cast"]:  # "Le Prince" -> "louis le prince"
+        if n and (n in k or k.split()[-1] == n.split()[-1]):
+            return k
+    return ""
+
+
+def _valid_shot(s, s_words, ctx) -> dict | None:
+    import stickman as sm
     if not isinstance(s, dict):
         return None
     kind = str(s.get("type") or "").lower()
     at = _anchor(str(s.get("at") or ""), s_words)
+    said, low = ctx["said"], ctx["low"]
     if kind == "scene":
-        ins = ins_names.get(str(s.get("insert") or "").lower(), "")
-        loc = loc_names.get(str(s.get("location") or "").lower()) or locs[0]["name"]
-        pose = s.get("pose") if s.get("pose") in ec.POSES else _pose_for(narr)
-        framing = s.get("framing") if s.get("framing") in ("wide", "medium", "face") else "wide"
-        return {"type": "scene", "at": at, "location": loc, "pose": pose, "framing": framing, "insert": ins}
+        prim = _subject(s.get("primary_subject"), ctx) if str(s.get("primary_subject") or "").lower() != "none" \
+            else ""
+        sec = _subject(s.get("secondary_subject"), ctx, allow_crowd=True)
+        if sec == prim:
+            sec = ""
+        act = s.get("primary_action") if s.get("primary_action") in sm.ACTIONS else "standing"
+        act2 = s.get("secondary_action") if s.get("secondary_action") in sm.ACTIONS else "standing"
+        text_mode = s.get("text_mode") if s.get("text_mode") in ("location", "name", "punch", "evidence", "quote",
+                                                                 "stamp") else "none"
+        text = re.sub(r"\s+", " ", str(s.get("text") or "")).strip()[:40]
+        if text_mode != "none" and not (text and _words_said(text, low) and _number_ok(text, said)
+                                        and not _DATE.search(text)):
+            text_mode, text = "none", ""
+        return {"type": "scene", "at": at,
+                "location": ctx["loc_names"].get(str(s.get("location") or "").lower()) or ctx["locs"][0]["name"],
+                "insert": ctx["ins"].get(str(s.get("insert") or "").lower(), ""),
+                "primary": prim, "action": act,
+                "expression": s.get("expression") if s.get("expression") in sm.EXPRESSIONS else "neutral",
+                "view": s.get("view") if s.get("view") in sm.VIEWS else "three_quarter",
+                "facing": "left" if s.get("facing") == "left" else "right",
+                "secondary": sec, "action2": act2,
+                "shot_type": s.get("shot_type") if s.get("shot_type") in ("wide", "medium", "close",
+                                                                          "over_shoulder") else "wide",
+                "motion": s.get("background_motion") if s.get("background_motion") in (
+                    "subtle_push", "subtle_pan", "parallax_light") else "none",
+                "text_mode": text_mode, "text": text, "accent": str(s.get("accent") or "")}
     if kind == "title":
         text = str(s.get("text") or "").strip()[:48]
-        if not text or not _number_ok(text, said):
+        if not text or not _number_ok(text, said) or not _date_ok(text, ctx):
             return None
         return {"type": "title", "at": at, "text": text, "accent": str(s.get("accent") or "")}
     if kind != "card":
         return None
     text = str(s.get("text") or "").strip()[:60]
     kicker = str(s.get("kicker") or "").strip().upper()[:28]
-    if not text or not _number_ok(text + " " + kicker, said):
+    if not text or not _number_ok(text + " " + kicker, said) or not _date_ok(f"{text} {kicker}", ctx):
         return None
     b = s.get("build") if isinstance(s.get("build"), dict) else {}
-    b = _valid_build(b, said)
     return {"type": "card", "at": at, "kicker": kicker, "text": text, "accent": str(s.get("accent") or ""),
-            "build": b}
+            "build": _valid_build(b, said)}
+
+
+def _balance(scenes: list[dict]) -> None:
+    """Close-ups max 1 in 4 scene shots, background motion max 1 in 4 (the rest stays still)."""
+    shots = [s for sc in scenes for s in sc["shots"] if s["type"] == "scene"]
+    closes = moving = 0
+    for k, s in enumerate(shots):
+        if s["shot_type"] == "close":
+            closes += 1
+            if closes > max(1, (k + 1) // 4):
+                s["shot_type"] = "medium"
+        if s["motion"] != "none":
+            moving += 1
+            if moving > max(1, (k + 1) // 4):
+                s["motion"] = "none"
+    for a, b in zip(shots, shots[1:]):  # never the same framing of the same person twice in a row
+        if (a["primary"], a["view"], a["shot_type"]) == (b["primary"], b["view"], b["shot_type"]):
+            b["view"] = {"front": "three_quarter", "three_quarter": "side", "side": "front",
+                         "back": "three_quarter"}[b["view"]]
 
 
 def _valid_build(b: dict, said: set) -> dict:
@@ -370,7 +463,7 @@ def _valid_build(b: dict, said: set) -> dict:
                     "threshold_label": str(b.get("threshold_label") or "")[:20]}
     elif kind == "counter":
         a, z = num(b.get("from")) or 0.0, num(b.get("to"))
-        if ok(z) and (a <= 3 or ok(a)):
+        if ok(z) and (a <= 3 or ok(a)) and not (z and 1000 <= z <= 2100):  # a year is not a counter
             return {"kind": "counter", "from": a, "to": z, "prefix": str(b.get("prefix") or "")[:2],
                     "suffix": str(b.get("suffix") or "")[:8]}
     elif kind == "arrow" and b.get("from") and b.get("to"):
@@ -387,27 +480,42 @@ def _valid_build(b: dict, said: set) -> dict:
     return {"kind": "none"}
 
 
-_POSE_WORDS = [("running", r"\b(run|ran|running|chase|flee|fled|escape)"), ("scared", r"\b(scream|terrif|afraid|fear)"),
-               ("shocked", r"\b(gone|vanish|disappear|impossible|never|nobody|no one)"),
-               ("sweating", r"\b(sweat|nervous|panic|deadline|hours? left)"),
-               ("sneaky", r"\b(sneak|quiet|silent|hide|hid|tiptoe)"), ("looking_back", r"\b(behind|follow|watch)"),
-               ("angry", r"\b(angry|furious|lie|lied|refus)"), ("holding", r"\b(flashlight|lamp|hold|found|pick)"),
-               ("pointing", r"\b(look at|there|this is|clue|notice)"), ("sitting", r"\b(sit|sat|wait|desk|think)"),
-               ("determined", r"\b(decide|plan|first|you need|you check)")]
+_ACTION_WORDS = [("running", r"\b(run|ran|running|chase|flee|fled|escape)"), ("walking", r"\b(walk|follow|head|went|go)"),
+                 ("boarding", r"\b(board|boarded|boards|train)"), ("pointing", r"\b(look at|there|this|clue|notice)"),
+                 ("observing", r"\b(watch|see|saw|look|stare)"), ("reaching", r"\b(find|found|pick|grab|open)"),
+                 ("thinking", r"\b(think|wonder|why|theor|question|what would)"), ("waiting", r"\b(wait|hours|days)"),
+                 ("holding", r"\b(hold|camera|film|letter|luggage)"), ("reacting", r"\b(gone|vanish|disappear|never)"),
+                 ("seated", r"\b(sit|sat|desk|court)")]
+_EXPR_WORDS = [("shocked", r"\b(gone|vanish|disappear|impossible|never|nobody|no one|dead)"),
+               ("scared", r"\b(scream|terrif|afraid|fear)"), ("worried", r"\b(missing|search|wait|worr)"),
+               ("curious", r"\b(why|what|how|wonder|theor)"), ("determined", r"\b(you check|decide|first|follow)")]
 
 
-def _pose_for(text: str) -> str:
-    return next((p for p, rx in _POSE_WORDS if re.search(rx, text, re.IGNORECASE)), "worried")
+def _action_for(text: str) -> str:
+    return next((a for a, rx in _ACTION_WORDS if re.search(rx, text, re.IGNORECASE)), "observing")
 
 
-def _keyword_shots(narr: str, s_words: list[dict], locs: list[dict], i: int) -> list[dict]:
-    loc = locs[i % len(locs)]["name"]
+def _expr_for(text: str) -> str:
+    return next((e for e, rx in _EXPR_WORDS if re.search(rx, text, re.IGNORECASE)), "neutral")
+
+
+def _keyword_shots(narr: str, s_words: list[dict], ctx: dict, i: int) -> list[dict]:
+    loc = ctx["locs"][i % len(ctx["locs"])]["name"]
     first = " ".join(re.split(r"[.,!?;:]", narr)[0].split()[:6])
-    return [{"type": "scene", "at": s_words[0]["start"] if s_words else None, "location": loc,
-             "pose": _pose_for(narr), "framing": "wide", "insert": ""},
-            {"type": "title", "at": None, "text": first, "accent": ""},
-            {"type": "scene", "at": None, "location": loc, "pose": _pose_for(narr[len(narr) // 2:]),
-             "framing": "face", "insert": ""}]
+    half = narr[len(narr) // 2:]
+    other = next((k for k in ctx["cast"] if k.split()[-1] in narr.lower()), "")
+    base = {"type": "scene", "location": loc, "insert": "", "secondary": "", "action2": "standing", "motion": "none",
+            "text_mode": "none", "text": "", "accent": ""}
+    shots = [dict(base, at=s_words[0]["start"] if s_words else None, primary="you", action=_action_for(narr),
+                  expression=_expr_for(narr), view="three_quarter", facing="right", shot_type="wide")]
+    if other:
+        shots.append(dict(base, at=None, primary=other, action=_action_for(half), expression="neutral", view="side",
+                          facing="left", shot_type="wide"))
+    elif _number_ok(first, ctx["said"]) and _date_ok(first, ctx):
+        shots.append({"type": "title", "at": None, "text": first, "accent": ""})
+    shots.append(dict(base, at=None, primary="you", action=_action_for(half), expression=_expr_for(half),
+                      view="front", facing="left", shot_type="medium"))
+    return shots
 
 
 # ================================================================ timeline
@@ -425,9 +533,17 @@ def _scene_spans(story: dict, narration: dict) -> list[tuple[float, float]]:
             for i, (a, b) in enumerate(spans)]
 
 
+def opener_length(story: dict) -> tuple[float, float]:
+    """(TRUE STORY graphic end, title end): true stories open with the TRUE STORY motion graphic, then the title;
+    other stories with the title only (owner, Oct 21). The narration's hook is heard from 0.0 s under both."""
+    t_true = float(CONFIG.get("explainer_true_story_seconds", 1.2)) if story.get("true_story") else 0.0
+    t_title = float(CONFIG.get("explainer_title_seconds", 1.6)) if story.get("title") else 0.0
+    return t_true, t_true + t_title
+
+
 def timeline(story: dict, narration: dict, p: dict) -> list[dict]:
-    """Segments {start, end, shot, scene}: planned shots at their anchor words, every segment 1.3-3 s (long ones
-    are split: a painted shot gets a new framing, a card is followed by a reaction shot)."""
+    """Segments {start, end, shot, scene}: the opener, then the storyboard shots at their anchor words, every
+    segment 1.3-3 s (long beats are split into the next beat / framing)."""
     spans = _scene_spans(story, narration)
     words = narration["words"]
     segs = []
@@ -443,9 +559,8 @@ def timeline(story: dict, narration: dict, p: dict) -> list[dict]:
                 t = a + (b - a) * k / n
             times.append(t)
         order = sorted(range(n), key=lambda k: times[k])
-        pts = [(times[k], shots[k]) for k in order]
         merged = []
-        for t, s in pts:  # too close to the previous cut: drop this shot (the earlier one keeps the time)
+        for t, s in [(times[k], shots[k]) for k in order]:
             if merged and t - merged[-1][0] < SHOT_MIN:
                 continue
             merged.append((t, s))
@@ -454,6 +569,16 @@ def timeline(story: dict, narration: dict, p: dict) -> list[dict]:
         for k, (t, s) in enumerate(merged):
             end = merged[k + 1][0] if k + 1 < len(merged) else b
             segs.extend(_split(t, end, s, i, words, p))
+    t_true, t_title = opener_length(story)
+    if t_title:
+        segs = [s for s in segs if s["end"] - t_title >= SHOT_MIN or s["start"] >= t_title]
+        for s in segs:
+            s["start"] = max(s["start"], t_title)
+        head = []
+        if t_true:
+            head.append({"start": 0.0, "end": t_true, "shot": {"type": "opener"}, "scene": 0})
+        head.append({"start": t_true, "end": t_title, "shot": {"type": "opener_title"}, "scene": 0})
+        segs = head + segs
     return segs
 
 
@@ -467,24 +592,30 @@ def _split(t0: float, t1: float, shot: dict, scene: int, words: list[dict], p: d
         near = [w["start"] for w in words if t0 + SHOT_MIN < w["start"] < t1 - SHOT_MIN]
         cuts.append(min(near, key=lambda x: abs(x - want)) if near else want)
     cuts = sorted(set(cuts)) + [t1]
-    out = []
-    for k in range(len(cuts) - 1):
-        s = shot if k == 0 else _variant(shot, k, scene, p)
-        out.append({"start": cuts[k], "end": cuts[k + 1], "shot": s, "scene": scene})
-    return out
+    return [{"start": cuts[k], "end": cuts[k + 1], "shot": shot if k == 0 else _variant(shot, k, scene, p),
+             "scene": scene} for k in range(len(cuts) - 1)]
 
 
 def _variant(shot: dict, k: int, scene: int, p: dict) -> dict:
-    """The next framing of a long beat: wide -> medium -> face, or a reaction shot after a card / title."""
+    """The next beat of a long moment: the other person's side of it, or the host from another angle; after a card
+    or title, the scene's host shot again."""
     if shot["type"] == "scene" and not shot.get("insert"):
-        order = ["wide", "medium", "face"]
-        nxt = order[(order.index(shot.get("framing", "wide")) + k) % 3]
-        return dict(shot, framing=nxt, variant=k)
+        if shot.get("secondary") and shot["secondary"] != "crowd" and k % 2:
+            return dict(shot, primary=shot["secondary"], action=shot.get("action2", "standing"), secondary="",
+                        view="side" if shot["view"] != "side" else "three_quarter", shot_type="wide",
+                        text_mode="none", variant=k)
+        nxt = {"wide": "medium", "medium": "close" if k % 3 == 2 else "wide", "close": "medium",
+               "over_shoulder": "medium"}[shot["shot_type"]]
+        view = {"front": "three_quarter", "three_quarter": "front", "side": "three_quarter",
+                "back": "three_quarter"}[shot["view"]]
+        return dict(shot, shot_type=nxt, view=view, motion="none", text_mode="none", variant=k)
     base = next((s for s in p["scenes"][scene]["shots"] if s["type"] == "scene" and not s.get("insert")), None)
-    loc = (base or {}).get("location") or p["locations"][0]["name"]
-    pose = (base or {}).get("pose") or "worried"
-    return {"type": "scene", "location": loc, "pose": pose, "framing": "face" if k % 2 else "medium",
-            "insert": "", "variant": k}
+    if base:
+        return dict(base, shot_type="medium", view="front", text_mode="none", motion="none", variant=k)
+    return {"type": "scene", "location": p["locations"][0]["name"], "insert": "", "primary": "you",
+            "action": "thinking", "expression": "curious", "view": "front", "facing": "right", "secondary": "",
+            "action2": "standing", "shot_type": "medium", "motion": "none", "text_mode": "none", "text": "",
+            "accent": "", "variant": k}
 
 
 # ================================================================ painted assets
@@ -632,71 +763,327 @@ def _fmt(v: float) -> str:
 
 # ================================================================ renderer
 
-class Character:
-    def __init__(self):
-        import explainer_character as ec
-        self.files = ec.available()
-        if not self.files:
-            raise ExplainerUnavailable("no character set in assets/character (run the explainer_character workflow)")
-        self.side = ec.SIDE
-        self.cache: dict = {}
-        self.heads: dict = {}
-
-    def pose(self, name: str) -> str:
-        seen = set()
-        while name not in self.files and name not in seen:
-            seen.add(name)
-            name = POSE_FALLBACK.get(name, "worried")
-        return name if name in self.files else next(iter(self.files))
-
-    def image(self, name: str, height: int, flip: bool = False) -> Image.Image:
-        name = self.pose(name)
-        key = (name, height, flip)
-        if key not in self.cache:
-            im = Image.open(self.files[name]).convert("RGBA")
-            im = im.resize((max(1, round(im.width * height / im.height)), height), Image.LANCZOS)
-            self.cache[key] = ImageOps.mirror(im) if flip else im
-        return self.cache[key]
-
-    def head_box(self, name: str) -> tuple[float, float, float]:
-        """(centre x, centre y, radius) of the round head, as fractions of the cut-out (the largest bright blob in
-        the top half)."""
-        name = self.pose(name)
-        if name not in self.heads:
-            im = Image.open(self.files[name]).convert("RGBA")
-            a = np.asarray(im)
-            top = a[: max(1, int(a.shape[0] * 0.55))]
-            bright = (top[..., 3] > 200) & (top[..., :3].min(axis=2) > 215)
-            rows = bright.sum(axis=1)
-            cx, cy, r = 0.5, 0.15, 0.12
-            if rows.max() > 10:  # the first tall band of bright rows from the top = the head (hands come later)
-                on = rows > 0.3 * rows.max()
-                start = int(np.argmax(on))
-                end = start
-                while end < len(on) and (on[end] or (end + 3 < len(on) and on[end:end + 4].any())):
-                    end += 1
-                band = bright[start:end]
-                ys, xs = np.nonzero(band)
-                if len(xs) > 50:
-                    cx = float(np.median(xs)) / a.shape[1]
-                    cy = (start + end) / 2 / a.shape[0]
-                    r = max((xs.max() - xs.min()) / 2, (end - start) / 2) / a.shape[0]
-            self.heads[name] = (float(cx), float(cy), float(r if 0.06 <= r < 0.3 else 0.18))  # arms up: default size
-        return self.heads[name]
-
-
 class Renderer:
     def __init__(self, story: dict, narration: dict, p: dict, assets: dict, segs: list[dict]):
+        import stickman
+        self.sm = stickman
         self.story, self.narr, self.p, self.assets, self.segs = story, narration, p, assets, segs
-        self.char = Character()
         self.acc = accent()
         self.plate_cache: dict = {}
         self.layer_cache: dict = {}
         self.groups = _caption_groups(narration["words"])
         self.paper = self._paper()
         self.spans = _scene_spans(story, narration)
+        self.static: dict = {}  # still backgrounds, one per segment
+        self.t_true, self.t_title = opener_length(story)
 
-    # ---------------------------------------------------------------- backgrounds
+    def look(self, who: str) -> dict:
+        if who == "you":
+            return self.sm.HOST
+        return self.p["cast"].get(who) or self.sm.look_for(who)
+
+    def figure(self, who, action, expr, view, facing, t, height, alpha=1.0):
+        blink = (t % 3.7) < 0.12
+        tq = round(t * 15) / 15 if action in self.sm.MOVING or action in ("reacting", "scared", "turning") else \
+            round(t * 5) / 5  # idle breathing: 5 drawings a second are enough (cache)
+        im, foot = self.sm.draw(self.look(who), action, expr, view, facing, tq, height, blink)
+        if alpha < 1:
+            im = im.copy()
+            im.putalpha(im.getchannel("A").point(lambda a: int(a * alpha)))
+        return im, foot
+
+    # ---------------------------------------------------------------- scene shots
+    def scene_frame(self, seg: dict, t: float) -> Image.Image:
+        s = seg["shot"]
+        dur = seg["end"] - seg["start"]
+        x = t / max(dur, 0.01)
+        if s.get("insert") and s["insert"] in self.assets["inserts"]:
+            base = self._plate(self.assets["inserts"][s["insert"]], 1.12)
+            frame = self._crop(base, 0.5, 0.5, 1.0 + (0.05 * _ease(x) if s.get("motion") != "none" else 0.0))
+            frame.alpha_composite(self._vignette())
+            self.overlay(frame, s, t, None)
+            return frame
+        frame = self._background(seg, x)
+        st = s.get("shot_type", "wide")
+        prim, sec = s.get("primary") or "", s.get("secondary") or ""
+        move = 0.0
+        target = None
+        if sec == "crowd":  # passengers / villagers: small grey figures behind
+            for k, fx in enumerate((0.16, 0.36, 0.62, 0.84)):
+                im, (fxp, fyp) = self.figure("crowd", "standing" if k % 2 else "walking", "neutral",
+                                             "side" if k % 2 else "three_quarter", "left" if k % 2 else "right",
+                                             t + k, 470, alpha=0.55)
+                self._paste(frame, im, int(W * fx - fxp), int(1520 - fyp))
+        if st == "over_shoulder" and prim:  # the watched person small in front, "you" big from behind
+            if sec and sec != "crowd":
+                im, (fxp, fyp) = self.figure(sec, s.get("action2", "standing"), "neutral", "three_quarter", "left",
+                                             t, 640)
+                gx = W * 0.66 + self._travel(s.get("action2"), "left", x) * 0.6
+                self._paste(frame, self._shadow(int(im.width * 0.5)), int(gx - im.width * 0.25), 1590 - 30)
+                self._paste(frame, im, int(gx - fxp), int(1600 - fyp))
+                target = (gx, 1600 - 600)
+            im, (fxp, fyp) = self.figure(prim, s.get("action", "standing"), s.get("expression", "neutral"), "back",
+                                         "right", t, 2000)
+            self._paste(frame, im, int(W * 0.2 - fxp), int(2520 - fyp))
+        else:
+            spots = []
+            if prim and sec and sec != "crowd" and st == "wide":
+                spots = [(prim, s.get("action"), s.get("expression"), s.get("view"), s.get("facing", "right"), 0.31),
+                         (sec, s.get("action2"), "neutral", "three_quarter",
+                          "left" if s.get("facing", "right") == "right" else "right", 0.71)]
+            elif prim:
+                spots = [(prim, s.get("action"), s.get("expression"), s.get("view"), s.get("facing", "right"), 0.5)]
+            elif sec and sec != "crowd":
+                spots = [(sec, s.get("action2"), "neutral", "three_quarter", "left", 0.5)]
+            height, feet = {"wide": (780, 1660), "medium": (1300, 2120), "close": (2350, 2770)}.get(st, (780, 1660))
+            for who, act, expr, view, facing, fx in spots:
+                act = act or "standing"
+                move = self._travel(act, facing, x)
+                if len(spots) == 1 and act in self.sm.MOVING:
+                    fx = 0.5 - (0.22 if facing == "right" else -0.22) * (1 if st == "wide" else 0.4)
+                im, (fxp, fyp) = self.figure(who, act, expr or "neutral", view or "front", facing, t, height,
+                                             alpha=self._exit_alpha(act, x))
+                px = W * fx + move * (1 if st == "wide" else 0.5)
+                if act == "leaving":  # walks away from the camera: smaller and higher
+                    k = 1 - 0.25 * _ease(x)
+                    im = im.resize((max(1, int(im.width * k)), max(1, int(im.height * k))), Image.BILINEAR)
+                    fxp, fyp = fxp * k, fyp * k
+                    feet_y = feet - 120 * _ease(x)
+                else:
+                    feet_y = feet
+                if st == "wide":
+                    sh = self._shadow(int(height * 0.42))
+                    self._paste(frame, sh, int(px - sh.width / 2), int(feet_y - sh.height / 2))
+                self._paste(frame, im, int(px - fxp), int(feet_y - fyp))
+                if who != "you" and target is None:
+                    target = (px, feet_y - height * 0.95)
+        frame.alpha_composite(self._vignette())
+        self.overlay(frame, s, t, target)
+        return frame
+
+    @staticmethod
+    def _travel(action, facing, x) -> float:
+        speed = {"walking": 260, "boarding": 300, "sneaking": 160, "running": 520}.get(action or "", 0)
+        return (1 if facing == "right" else -1) * speed * (x - 0.5)
+
+    @staticmethod
+    def _exit_alpha(action, x) -> float:
+        return 1.0 - max(0.0, (x - 0.8) / 0.2) if action == "boarding" else 1.0
+
+    def _background(self, seg: dict, x: float) -> Image.Image:
+        """The painted place, STILL by default; subtle_push / subtle_pan / parallax_light only when planned."""
+        s = seg["shot"]
+        plate = self.assets["plates"].get(s.get("location")) or next(iter(self.assets["plates"].values()))
+        st = s.get("shot_type", "wide")
+        zoom = {"wide": 1.0, "medium": 1.18, "close": 1.4, "over_shoulder": 1.1}.get(st, 1.0)
+        motion = s.get("motion", "none")
+        if motion == "none":
+            key = (seg["start"], str(plate), st)
+            if key not in self.static:
+                if len(self.static) > 6:
+                    self.static.clear()
+                img = self._crop(self._plate(plate, zoom), 0.5, 0.5, 1.0)
+                if st == "close":
+                    img = img.filter(ImageFilter.GaussianBlur(5))
+                self.static[key] = img
+            return self.static[key].copy()
+        base = self._plate(plate, zoom * 1.06)
+        if motion == "subtle_push":
+            return self._crop(base, 0.5, 0.5, 1.0 + 0.045 * _ease(x))
+        drift = 0.035 * (x - 0.5) * (1 if motion == "subtle_pan" else -1)
+        return self._crop(base, 0.5 + drift, 0.5, 1.0)
+
+    # ---------------------------------------------------------------- text on scene shots
+    def overlay(self, frame: Image.Image, s: dict, t: float, target) -> None:
+        mode, text = s.get("text_mode", "none"), s.get("text") or ""
+        if mode == "none" or not text or t < 0.12:
+            return
+        t -= 0.12
+        getattr(self, f"_text_{mode}", lambda *a: None)(frame, text, s.get("accent", ""), t, target)
+
+    def _lower_third(self, frame, text, t, label):
+        d = ImageDraw.Draw(frame, "RGBA")
+        f = font("bold", 58)
+        shown = text.upper()[:max(0, int(len(text) * min(1.0, t / 0.45)))]  # typewriter
+        tw = d.textlength(text.upper(), font=f)
+        x0 = 70 - 520 * (1 - _ease(t / 0.22))
+        y0 = 1150
+        d.rectangle((x0, y0, x0 + 14, y0 + 118), fill=self.acc)
+        d.rectangle((x0 + 14, y0, x0 + 14 + tw + 60, y0 + 118), fill=(10, 10, 14, 200))
+        d.text((x0 + 44, y0 + 12), label, font=font("mono", 26), fill=self.acc)
+        d.text((x0 + 44, y0 + 46), shown, font=f, fill=(255, 255, 255))
+
+    def _text_location(self, frame, text, acc, t, target):
+        self._lower_third(frame, text, t, "LOCATION")
+
+    def _text_name(self, frame, text, acc, t, target):
+        self._lower_third(frame, text, t, "WHO")
+
+    def _text_punch(self, frame, text, acc, t, target):
+        f = font("black", 104)
+        words = text.upper().split()
+        lines = _wrap(" ".join(words), f, 900)
+        d = ImageDraw.Draw(frame, "RGBA")
+        y = 380
+        k = 0
+        for line in lines:
+            widths = [d.textlength(w, font=f) for w in line]
+            sp = d.textlength(" ", font=f)
+            xx = (W - (sum(widths) + sp * (len(line) - 1))) / 2
+            for w, ww in zip(line, widths):
+                pop = _back((t - 0.08 * k) / 0.22)
+                if pop > 0.02:
+                    if _is_accent(w, acc):
+                        g = _ease((t - 0.08 * k) / 0.2)
+                        d.rectangle((xx - 10, y + 6, xx - 10 + (ww + 20) * g, y + 118), fill=self.acc + (235,))
+                    self._word(frame, w, f, (255, 255, 255), xx + ww / 2, y + 62, max(0.01, pop), shadow=True)
+                xx += ww + sp
+                k += 1
+            y += 124
+
+    def _text_stamp(self, frame, text, acc, t, target):
+        self._build_stamp(frame, {"word": text.upper()[:18]}, t * 1.4, 300)
+
+    def _text_quote(self, frame, text, acc, t, target):
+        d = ImageDraw.Draw(frame, "RGBA")
+        f = font("semi", 60)
+        lines = _wrap(f"“{text}”", f, 820)
+        h = len(lines) * 76 + 60
+        a = _ease(t / 0.25)
+        d.rounded_rectangle((90, 360, 990, 360 + h), radius=24, fill=(10, 10, 14, int(200 * a)))
+        d.rectangle((90, 360, 102, 360 + h), fill=self.acc)
+        n = int(sum(len(" ".join(l)) for l in lines) * min(1.0, t / 0.7))
+        y = 390
+        for line in lines:
+            s_ = " ".join(line)[:max(0, n)]
+            n -= len(" ".join(line)) + 1
+            d.text((130, y), s_, font=f, fill=(255, 255, 255, int(255 * a)))
+            y += 76
+
+    def _text_evidence(self, frame, text, acc, t, target):
+        d = ImageDraw.Draw(frame, "RGBA")
+        f = font("bold", 50)
+        tw = d.textlength(text.upper(), font=f)
+        bx, by = min(W - 70 - tw - 60, 560), 330
+        g = _ease(t / 0.3)
+        d.rounded_rectangle((bx, by, bx + tw + 60, by + 120), radius=14, fill=(250, 246, 236, int(240 * g)),
+                            outline=self.acc + (255,), width=5)
+        d.text((bx + 30, by + 10), "EVIDENCE", font=font("mono", 24), fill=self.acc)
+        d.text((bx + 30, by + 44), text.upper()[:max(0, int(len(text) * min(1.0, t / 0.5)))], font=f, fill=INK)
+        tx, ty = target or (W * 0.5, 980)
+        sx, sy = bx + (tw + 60) / 2, by + 120
+        k = _ease((t - 0.2) / 0.35)
+        if k > 0:
+            ex, ey = sx + (tx - sx) * k, sy + (ty - 40 - sy) * k
+            d.line((sx, sy, ex, ey), fill=self.acc, width=7)
+            if k > 0.95:
+                d.ellipse((ex - 14, ey - 14, ex + 14, ey + 14), outline=self.acc, width=6)
+
+    # ---------------------------------------------------------------- opener
+    def opener_frame(self, t: float) -> Image.Image:
+        """TRUE STORY motion graphic: red block slams in (overshoot + shake + flash), sweep lines, then wipes out."""
+        frame = self._opener_bg()
+        d = ImageDraw.Draw(frame, "RGBA")
+        dur = self.t_true
+        k = _back(t / 0.2)
+        out = _ease((t - (dur - 0.22)) / 0.22)
+        shake = (8 * math.sin(t * 90) * max(0.0, 1 - abs(t - 0.24) / 0.12)) if 0.12 < t < 0.4 else 0.0
+        for j in range(3):  # sweep lines
+            g = _ease((t - 0.05 * j) / 0.35)
+            y = 760 + j * 22
+            d.line((W * (1 - g), y + 300 * j, W, y + 300 * j), fill=self.acc + (170,), width=6)
+        f = font("black", 150)
+        label = "TRUE STORY"
+        tw = d.textlength(label, font=f)
+        block = Image.new("RGBA", (int(tw + 120), 230), (0, 0, 0, 0))
+        db = ImageDraw.Draw(block)
+        db.rounded_rectangle((0, 0, block.width - 1, block.height - 1), radius=26, fill=(224, 36, 43, 255))
+        db.text((60, 18), label, font=f, fill=(255, 255, 255))
+        sc = max(0.05, 1.9 - 0.9 * min(1.15, k))
+        b2 = block.resize((max(1, int(block.width * sc * 0.82)), max(1, int(block.height * sc * 0.82))),
+                          Image.BILINEAR)
+        y_off = -900 * out
+        if out < 1:
+            b2.putalpha(b2.getchannel("A").point(lambda a: int(a * (1 - out))))
+            self._paste(frame, b2, int(W / 2 - b2.width / 2 + shake), int(860 - b2.height / 2 + y_off))
+        flash = max(0.0, 1 - abs(t - 0.2) / 0.1)
+        if flash > 0:
+            frame.alpha_composite(Image.new("RGBA", (W, H), (255, 255, 255, int(110 * flash))))
+        d.text((W / 2, 1080 + y_off), "NIGHT FILES", font=font("mono", 34), fill=(230, 230, 230), anchor="mm")
+        return frame
+
+    def opener_title(self, t: float) -> Image.Image:
+        """Title reveal: letters track in from wide spacing, an accent underline wipes across, then it slides up."""
+        frame = self._opener_bg()
+        dur = self.t_title - self.t_true
+        title = (self.story.get("fixed_title") or self.story.get("title") or "").upper()
+        f = font("black", 104 if len(title) <= 24 else 84)
+        lines = _wrap(title, f, 920)[:3]
+        d = ImageDraw.Draw(frame, "RGBA")
+        spacing = 34 * (1 - _ease(t / 0.55))
+        out = _ease((t - (dur - 0.2)) / 0.2)
+        y = 860 - len(lines) * 58 - 260 * out
+        k = 0
+        for line in lines:
+            text = " ".join(line)
+            widths = [d.textlength(ch, font=f) for ch in text]
+            total = sum(widths) + spacing * (len(text) - 1)
+            x = (W - total) / 2
+            for ch, w in zip(text, widths):
+                a = _ease((t - 0.025 * k) / 0.2) * (1 - out)
+                if a > 0.02 and ch != " ":
+                    d.text((x, y), ch, font=f, fill=(255, 255, 255, int(255 * a)))
+                x += w + spacing
+                k += 1
+            y += int(f.size * 1.1)
+        g = _ease((t - 0.3) / 0.4)
+        d.rectangle((W / 2 - 240 * g, y + 20, W / 2 + 240 * g, y + 34), fill=self.acc + (int(255 * (1 - out)),))
+        d.text((W / 2, y + 90), "NIGHT FILES", font=font("mono", 32), fill=(220, 220, 220, int(255 * (1 - out))),
+               anchor="mm")
+        return frame
+
+    def _opener_bg(self) -> Image.Image:
+        if "opener_bg" not in self.layer_cache:
+            first = next((s["shot"] for s in self.segs if s["shot"].get("type") == "scene"), {})
+            plate = self.assets["plates"].get(first.get("location")) if first else None
+            plate = plate or next(iter(self.assets["plates"].values()), None)
+            if plate:
+                bg = self._crop(self._plate(plate, 1.0), 0.5, 0.5, 1.0).filter(ImageFilter.GaussianBlur(10))
+                bg = ImageEnhance.Brightness(bg.convert("RGB")).enhance(0.38).convert("RGBA")
+            else:
+                bg = Image.new("RGBA", (W, H), BLACK + (255,))
+            self.layer_cache["opener_bg"] = bg
+        return self.layer_cache["opener_bg"].copy()
+
+    # ---------------------------------------------------------------- frames
+    def frame_at(self, t: float, end_start: float) -> Image.Image:
+        if t >= end_start:
+            return self.end_card(t - end_start)
+        seg = next((s for s in self.segs if s["start"] <= t < s["end"]), self.segs[-1])
+        local = t - seg["start"]
+        kind = seg["shot"]["type"]
+        if kind == "opener":
+            frame = self.opener_frame(local)
+        elif kind == "opener_title":
+            frame = self.opener_title(local)
+        elif kind == "card":
+            frame = self._slide_in(self.card_frame(seg, local), local)
+        elif kind == "title":
+            frame = self.title_frame(seg, local)
+        else:
+            frame = self.scene_frame(seg, local)
+        self.captions(frame, t, "card" if kind == "card" else "scene")
+        return frame
+
+    def _slide_in(self, frame: Image.Image, t: float) -> Image.Image:
+        """Cards wipe in from the right over 0.2 s."""
+        k = _ease(t / 0.2)
+        if k >= 1:
+            return frame
+        out = Image.new("RGBA", (W, H), BLACK + (255,))
+        out.alpha_composite(frame, (int(W * (1 - k)), 0))
+        return out
+
     def _paper(self) -> Image.Image:
         rng = np.random.default_rng(7)
         base = np.array(PAPER, dtype=np.float32)[None, None, :] + rng.normal(0, 5, (H // 4, W // 4, 1))
@@ -723,60 +1110,6 @@ class Renderer:
             v.putalpha(Image.fromarray(a))
             self.layer_cache["vig"] = v.resize((W, H), Image.BICUBIC)
         return self.layer_cache["vig"]
-
-    # ---------------------------------------------------------------- shots
-    def scene_frame(self, seg: dict, t: float) -> Image.Image:
-        s = seg["shot"]
-        dur = seg["end"] - seg["start"]
-        x = t / max(dur, 0.01)
-        rnd = random.Random(f"{seg['start']:.2f}")
-        if s.get("insert") and s["insert"] in self.assets["inserts"]:
-            base = self._plate(self.assets["inserts"][s["insert"]], 1.12)
-            z = 1.0 + 0.07 * _ease(x)
-            frame = self._crop(base, 0.5, 0.5, z)
-            frame.alpha_composite(self._vignette())
-            return frame
-        plate = self.assets["plates"].get(s.get("location")) or next(iter(self.assets["plates"].values()))
-        framing = s.get("framing", "wide")
-        zoom = {"wide": 1.1, "medium": 1.35, "face": 1.6}[framing]
-        base = self._plate(plate, zoom)
-        pan = rnd.choice([-1, 1])
-        cx = 0.5 + pan * 0.06 * (x - 0.5) if framing != "face" else 0.5
-        cy = 0.5 if framing == "wide" else 0.45
-        frame = self._crop(base, cx, cy, 1.0 + 0.05 * _ease(x))
-        if framing == "face":
-            frame = frame.filter(ImageFilter.GaussianBlur(4))
-        pose = s.get("pose") or "worried"
-        side = self.char.pose(pose) in self.char.side
-        hx, hy, hr = self.char.head_box(pose)
-        if framing == "face":  # head ~ 760 px wide, centred around y 820
-            height = int(760 / (2 * hr))
-            px, py = W / 2, 820
-            ch = self.char.image(pose, height)
-            pop = _back(t / 0.22)
-            sc = 0.94 + 0.06 * pop
-            ch = ch.resize((max(1, int(ch.width * sc)), max(1, int(ch.height * sc))), Image.BILINEAR)
-            ox = int(px - hx * ch.width)
-            oy = int(py - hy * ch.height + 6 * math.sin(t * 2.4))
-        else:
-            height = 980 if framing == "wide" else 1450
-            flip = side and pan < 0
-            ch = self.char.image(pose, height, flip=flip)
-            pop = _back(t / 0.22)
-            breath = 1 + 0.008 * math.sin(t * 2.6)
-            ch = ch.resize((max(1, int(ch.width * (0.93 + 0.07 * pop))),
-                            max(1, int(ch.height * (0.93 + 0.07 * pop) * breath))), Image.BILINEAR)
-            px = W * (0.5 if not side else (0.58 if not flip else 0.42))
-            if pose == "running":
-                px += (-1 if not flip else 1) * 120 * (x - 0.5)
-            feet = 1700 if framing == "wide" else 2080
-            ox, oy = int(px - ch.width / 2), int(feet - ch.height)
-            if framing == "wide":  # contact shadow
-                sh = self._shadow(int(ch.width * 0.9))
-                frame.alpha_composite(sh, (int(px - sh.width / 2), feet - sh.height // 2))
-        self._paste(frame, ch, ox, oy)
-        frame.alpha_composite(self._vignette())
-        return frame
 
     def _shadow(self, w: int) -> Image.Image:
         key = ("shadow", w)
@@ -805,6 +1138,9 @@ class Renderer:
     def title_frame(self, seg: dict, t: float) -> Image.Image:
         s = seg["shot"]
         frame = Image.new("RGBA", (W, H), BLACK + (255,))
+        d0 = ImageDraw.Draw(frame)  # thin accent rule wipes across under the title
+        g = _ease((t - 0.1) / 0.35)
+        d0.rectangle((W / 2 - 200 * g, 1105, W / 2 + 200 * g, 1115), fill=self.acc)
         f = font("black", 128)
         lines = _wrap(s["text"].upper(), f, 900)
         if len(lines) > 3:
@@ -827,13 +1163,17 @@ class Renderer:
                 k += 1
         return frame
 
-    def _word(self, frame, word, f, col, cx, cy, scale):
-        key = ("w", word, f.size, col, round(scale, 2))
+    def _word(self, frame, word, f, col, cx, cy, scale, shadow=False):
+        key = ("w", word, f.size, col, round(scale, 2), shadow)
         im = self.layer_cache.get(key)
         if im is None:
             box = ImageDraw.Draw(Image.new("L", (1, 1))).textbbox((0, 0), word, font=f)
-            im = Image.new("RGBA", (box[2] - box[0] + 8, box[3] - box[1] + 8), (0, 0, 0, 0))
-            ImageDraw.Draw(im).text((4 - box[0], 4 - box[1]), word, font=f, fill=col + (255,))
+            pad = 24 if shadow else 4
+            im = Image.new("RGBA", (box[2] - box[0] + 2 * pad, box[3] - box[1] + 2 * pad), (0, 0, 0, 0))
+            if shadow:
+                ImageDraw.Draw(im).text((pad - box[0], pad - box[1] + 6), word, font=f, fill=(0, 0, 0, 210))
+                im = im.filter(ImageFilter.GaussianBlur(8))
+            ImageDraw.Draw(im).text((pad - box[0], pad - box[1]), word, font=f, fill=col + (255,))
             if abs(scale - 1) > 0.01:
                 im = im.resize((max(1, int(im.width * scale)), max(1, int(im.height * scale))), Image.BILINEAR)
             if len(self.layer_cache) < 4000:
@@ -875,6 +1215,7 @@ class Renderer:
         return frame
 
     # builds (top = first free y; everything stays above the caption band at ~1330)
+
     def _build_grid(self, frame, b, x, top):
         n, filled = b["total"], b["filled"]
         cols = min(10, max(2, math.ceil(math.sqrt(n * 1.6))))
@@ -971,33 +1312,6 @@ class Renderer:
     def _build_none(self, *a):
         return None
 
-    # ---------------------------------------------------------------- overlays
-    def hud(self, frame: Image.Image, seg: dict, t_abs: float) -> None:
-        scene = seg["scene"]
-        sc = self.p["scenes"][scene]
-        prev = self.p["scenes"][scene - 1]["hud"] if scene else ["", "", ""]
-        scene_start = self.spans[scene][0]
-        since = t_abs - scene_start
-        d = ImageDraw.Draw(frame, "RGBA")
-        bw, gap = 300, 24
-        x0 = (W - (3 * bw + 2 * gap)) // 2
-        for k in range(3):
-            x = x0 + k * (bw + gap)
-            d.rounded_rectangle((x, HUD_Y, x + bw, HUD_Y + 118), radius=16, fill=(10, 10, 14, 185),
-                                outline=(255, 255, 255, 70), width=2)
-            d.text((x + 20, HUD_Y + 14), self.p["hud_labels"][k], font=font("mono", 26), fill=(190, 190, 196))
-            val = sc["hud"][k] or "—"
-            changed = sc["hud"][k] != (prev[k] if k < len(prev) else "") and since < 0.5
-            col = self.acc if changed else (255, 255, 255)
-            f = font("black", 52 if len(val) <= 4 else 42)
-            d.text((x + 20, HUD_Y + 50), val, font=f, fill=col)
-        chip = "TRUE STORY" if self.story.get("true_story") and t_abs < 3.5 else sc["chip"]
-        cfill = (224, 36, 43) if chip == "TRUE STORY" else self.acc
-        f = font("mono", 30)
-        tw = d.textlength(chip, font=f)
-        d.rounded_rectangle((x0, CHIP_Y, x0 + tw + 44, CHIP_Y + 54), radius=27, fill=cfill)
-        d.text((x0 + 22, CHIP_Y + 8), chip, font=f, fill=(255, 255, 255))
-
     def captions(self, frame: Image.Image, t: float, kind: str) -> None:
         g = next((g for g in self.groups if g["start"] <= t < g["end"]), None)
         if not g:
@@ -1056,23 +1370,6 @@ class Renderer:
         if a > 0.3:
             d.text((W / 2, 1150), "FOLLOW FOR MORE", font=font("black", 84), fill=(255, 255, 255), anchor="mm")
             d.text((W / 2, 1270), "NIGHT FILES", font=font("black", 116), fill=self.acc, anchor="mm")
-        return frame
-
-    # ---------------------------------------------------------------- frames
-    def frame_at(self, t: float, end_start: float) -> Image.Image:
-        if t >= end_start:
-            return self.end_card(t - end_start)
-        seg = next((s for s in self.segs if s["start"] <= t < s["end"]), self.segs[-1])
-        local = t - seg["start"]
-        kind = seg["shot"]["type"]
-        if kind == "card":
-            frame = self.card_frame(seg, local)
-        elif kind == "title":
-            frame = self.title_frame(seg, local)
-        else:
-            frame = self.scene_frame(seg, local)
-            self.hud(frame, seg, t)
-        self.captions(frame, t, kind)
         return frame
 
 
@@ -1146,6 +1443,11 @@ def render(story: dict, narration: dict, p: dict, assets: dict, workdir: Path) -
         if b.get("kind") == "stamp":
             events.append((s["start"] + 0.35 + 0.45 * max(0.6, min(1.8, s["end"] - s["start"] - 0.6)) / 2.2,
                            "ui_click", 0.6))
+    t_true, t_title = opener_length(story)
+    if t_true:
+        events.append((0.18, "ui_click", 0.8))  # the TRUE STORY slam
+    if t_title:
+        events.append((max(0.0, t_true - 0.1), "whoosh", 0.25))
     events.append((end_start, "ui_click", 0.7))
     audio = _mix_audio(narration, total, events, workdir / "explainer_audio.wav")
     out = workdir / "explainer.mp4"
@@ -1173,7 +1475,8 @@ def render(story: dict, narration: dict, p: dict, assets: dict, workdir: Path) -
     secs = {}
     for s in segs:
         sh = s["shot"]
-        key = (f"{sh['type']}:{sh.get('insert') or sh.get('location')}:{sh.get('framing')}" if sh["type"] == "scene"
+        key = (f"{sh['type']}:{sh.get('insert') or sh.get('location')}:{sh.get('primary')}:{sh.get('shot_type')}:"
+               f"{sh.get('view')}" if sh["type"] == "scene"
                else f"{sh['type']}:{s['start']:.1f}")
         secs[key] = secs.get(key, 0.0) + s["end"] - s["start"]
     top = max(secs, key=secs.get)
@@ -1192,11 +1495,11 @@ def render(story: dict, narration: dict, p: dict, assets: dict, workdir: Path) -
 
 def build(story: dict, narration: dict, img_dir: Path, workdir: Path) -> Path:
     """plan -> painted assets -> render (no music; main.py / the test add it like for classic)."""
-    Character()  # fail fast without the character set
     p = plan(story, narration)
     assets = make_assets(story, p, img_dir)
     story["render_style"] = "explainer"
-    story["explainer_plan"] = {"hud_labels": p["hud_labels"], "chips": [s["chip"] for s in p["scenes"]]}
+    story["explainer_plan"] = {"cast": [c["name"] for c in p["cast"].values()],
+                               "shots": sum(len(s["shots"]) for s in p["scenes"])}
     return render(story, narration, p, assets, workdir)
 
 
