@@ -87,7 +87,9 @@ def send_to_drafts(path: Path) -> dict:
     data = _check(r, "Draft upload init")
     _upload_file(data["upload_url"], path)
     status = _wait_status(token, data["publish_id"])
-    log(f"TikTok draft: {status} ({data['publish_id']})")
+    if status != "SEND_TO_USER_INBOX":
+        raise RuntimeError(f"TikTok draft delivery not confirmed: {status} ({data['publish_id']})")
+    log(f"TikTok draft sent to creator inbox: {status} ({data['publish_id']})")
     return {"publish_id": data["publish_id"], "status": status, "mode": "draft"}
 
 
