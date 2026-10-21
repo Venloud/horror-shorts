@@ -64,7 +64,7 @@
   "local_image_budget_minutes": 12,
   "local_image_max": 6,
   "space_images_max": 12,
-  "render_style": "classic",
+  "render_style": "explainer",
   "remotion_join": false,
   "autoclip": {
     "enabled": false,
