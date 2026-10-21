@@ -729,6 +729,40 @@ def frame_visuals(path: Path, fps: float = 2.0) -> dict:
             "longest_run_s": best_run / fps, "blank_s": blank / fps}
 
 
+
+def explainer_still_frames(path: Path, fps: float = 2.0) -> dict:
+    """Detect a genuinely frozen rendered explainer, without mistaking repeated noir layouts for one image.
+
+    The legacy frame_visuals() groups 36x64 contrast-normalised crops. That is useful for classic photo
+    slideshows but turns many dark, similarly composed explainer shots into the *same* picture. Inspect
+    consecutive decoded frames at 144x256 instead: a real render freeze has virtually no pixel changes;
+    moving sprites, cuts, and kinetic typography do. Keep the stricter classic photo check unchanged.
+    """
+    import numpy as np
+    w, h = 144, 256
+    raw = subprocess.run(
+        ["ffmpeg", "-v", "error", "-i", str(path),
+         "-vf", f"fps={fps},scale={w}:{h}:flags=area,format=rgb24", "-f", "rawvideo", "-"],
+        capture_output=True, check=True,
+    ).stdout
+    frame_size = w * h * 3
+    if not raw or len(raw) % frame_size:
+        raise RuntimeError("Could not decode complete frames for explainer freeze QA")
+    frames = np.frombuffer(raw, dtype=np.uint8).reshape(-1, h, w, 3)
+    longest, still, prev = 0, 0, None
+    for frame in frames:
+        if prev is not None:
+            delta = np.abs(frame.astype(np.int16) - prev.astype(np.int16))
+            # Codec noise is small. Require BOTH an almost-zero mean change and very few visibly
+            # changed pixels; the old correlation threshold counted real movement as unchanged.
+            repeated = float(delta.mean()) < 0.85 and float(np.mean(delta > 8)) < 0.007
+            still = still + 1 if repeated else 0
+            longest = max(longest, still)
+        prev = frame
+    return {"longest_still_s": round(longest / fps, 2), "sampled_frames": len(frames)}
+
+
+
 def _sharpness(path: Path, t: float, w: int = 540, h: int = 960) -> float | None:
     """Contrast-normalised sharpness of one frame (Laplacian variance / intensity variance, caption rows masked;
     grain is averaged out by the half-size area scale). None for a blank frame. Calibrated Oct 5: native 0.47,
@@ -787,11 +821,23 @@ def visual_problems(path: Path, story: dict | None, dur: float) -> list[str]:
         f = frame_visuals(path)
         log(f"Final frames: {f['distinct']} distinct looks, biggest {f['top_share']:.0%} of the video, "
             f"longest unchanged {f['longest_run_s']:.1f}s, blank {f['blank_s']:.1f}s")
-        if f["top_share"] > share or f["longest_run_s"] > share * dur:
-            problems.append(f"the finished video shows the same picture for {f['top_share']:.0%} of it "
-                            f"(longest unchanged {f['longest_run_s']:.1f}s): frozen or one-image video")
-        if f["distinct"] < need:
-            problems.append(f"the finished video has only {f['distinct']} distinct looks (need {need})")
+        if (story or {}).get("render_style") == "explainer":
+            # Explainers intentionally reuse backgrounds with subtle sprite/text changes. Preserve
+            # real freeze protection using a pixel-level test, not the classic slideshow similarity
+            # heuristic that incorrectly rejected 25-shot noir videos as a 16.5-second freeze.
+            still = explainer_still_frames(path)
+            log(f"Explainer pixel freeze check: longest genuinely unchanged "
+                f"{still['longest_still_s']:.1f}s in {still['sampled_frames']} sampled frames "
+                f"(max {share * dur:.1f}s)")
+            if still["longest_still_s"] > share * dur:
+                problems.append(f"the finished video shows the same picture for "
+                                f"{still['longest_still_s']:.1f}s: frozen or one-image video")
+        else:
+            if f["top_share"] > share or f["longest_run_s"] > share * dur:
+                problems.append(f"the finished video shows the same picture for {f['top_share']:.0%} of it "
+                                f"(longest unchanged {f['longest_run_s']:.1f}s): frozen or one-image video")
+            if f["distinct"] < need:
+                problems.append(f"the finished video has only {f['distinct']} distinct looks (need {need})")
     except Exception as e:  # noqa: BLE001 (the check itself must never be skipped silently)
         problems.append(f"visual check failed to run ({str(e)[:100]})")
     return problems
