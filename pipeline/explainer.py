@@ -246,7 +246,7 @@ def plan(story: dict, narration: dict) -> dict:
     data = _plan_call(PLAN_PROMPT.format(
         true="yes" if true else "no", scenes=scenes_txt, cast=known or "none",
         locs="; ".join(l["name"] for l in story.get("locations") or [] if l.get("name")) or "none",
-        actions="|".join(sm.ACTIONS), expressions="|".join(sm.EXPRESSIONS), max_locs=max_locs, max_inserts=max_ins,
+        actions="|".join(_actions()), expressions="|".join(_expressions()), max_locs=max_locs, max_inserts=max_ins,
         true_rule=" (TRUE story: never invent a number)" if true else "")) or {}
     said = _said_values(story)
     low_all = narr_all.lower()
@@ -383,8 +383,9 @@ def _valid_shot(s, s_words, ctx) -> dict | None:
         sec = _subject(s.get("secondary_subject"), ctx, allow_crowd=True)
         if sec == prim:
             sec = ""
-        act = s.get("primary_action") if s.get("primary_action") in sm.ACTIONS else "standing"
-        act2 = s.get("secondary_action") if s.get("secondary_action") in sm.ACTIONS else "standing"
+        acts = set(_actions())
+        act = s.get("primary_action") if s.get("primary_action") in acts else "standing"
+        act2 = s.get("secondary_action") if s.get("secondary_action") in acts else "standing"
         text_mode = s.get("text_mode") if s.get("text_mode") in ("location", "name", "punch", "evidence", "quote",
                                                                  "stamp") else "none"
         text = re.sub(r"\s+", " ", str(s.get("text") or "")).strip()[:40]
@@ -395,7 +396,7 @@ def _valid_shot(s, s_words, ctx) -> dict | None:
                 "location": ctx["loc_names"].get(str(s.get("location") or "").lower()) or ctx["locs"][0]["name"],
                 "insert": ctx["ins"].get(str(s.get("insert") or "").lower(), ""),
                 "primary": prim, "action": act,
-                "expression": s.get("expression") if s.get("expression") in sm.EXPRESSIONS else "neutral",
+                "expression": s.get("expression") if s.get("expression") in _expressions() else "neutral",
                 "view": s.get("view") if s.get("view") in sm.VIEWS else "three_quarter",
                 "facing": "left" if s.get("facing") == "left" else "right",
                 "secondary": sec, "action2": act2,
@@ -418,6 +419,18 @@ def _valid_shot(s, s_words, ctx) -> dict | None:
     b = s.get("build") if isinstance(s.get("build"), dict) else {}
     return {"type": "card", "at": at, "kicker": kicker, "text": text, "accent": str(s.get("accent") or ""),
             "build": _valid_build(b, said)}
+
+
+def _actions() -> list[str]:
+    import sprites
+    import stickman as sm
+    return sorted(set(sm.ACTIONS) | set(sprites.actions()))
+
+
+def _expressions() -> list[str]:
+    import sprites
+    import stickman as sm
+    return sorted(set(sm.EXPRESSIONS) | set(sprites.expressions()))
 
 
 def _balance(scenes: list[dict]) -> None:
@@ -786,7 +799,10 @@ class Renderer:
         blink = (t % 3.7) < 0.12
         tq = round(t * 15) / 15 if action in self.sm.MOVING or action in ("reacting", "scared", "turning") else \
             round(t * 5) / 5  # idle breathing: 5 drawings a second are enough (cache)
-        im, foot = self.sm.draw(self.look(who), action, expr, view, facing, tq, height, blink)
+        import sprites
+        got = sprites.draw(who, self.look(who), action, expr, view, facing, t, height) if sprites.available() \
+            else None  # the owner's drawn host (assets/character/host); the code rig only as a fallback
+        im, foot = got or self.sm.draw(self.look(who), action, expr, view, facing, tq, height, blink)
         if alpha < 1:
             im = im.copy()
             im.putalpha(im.getchannel("A").point(lambda a: int(a * alpha)))
@@ -823,8 +839,8 @@ class Renderer:
                 self._paste(frame, im, int(gx - fxp), int(1600 - fyp))
                 target = (gx, 1600 - 600)
             im, (fxp, fyp) = self.figure(prim, s.get("action", "standing"), s.get("expression", "neutral"), "back",
-                                         "right", t, 2000)
-            self._paste(frame, im, int(W * 0.2 - fxp), int(2520 - fyp))
+                                         "right", t, 1500)
+            self._paste(frame, im, int(W * 0.2 - fxp), int(2250 - fyp))
         else:
             spots = []
             if prim and sec and sec != "crowd" and st == "wide":
@@ -835,7 +851,7 @@ class Renderer:
                 spots = [(prim, s.get("action"), s.get("expression"), s.get("view"), s.get("facing", "right"), 0.5)]
             elif sec and sec != "crowd":
                 spots = [(sec, s.get("action2"), "neutral", "three_quarter", "left", 0.5)]
-            height, feet = {"wide": (780, 1660), "medium": (1300, 2120), "close": (2350, 2770)}.get(st, (780, 1660))
+            height, feet = {"wide": (820, 1660), "medium": (1150, 1980), "close": (1500, 2150)}.get(st, (820, 1660))
             for who, act, expr, view, facing, fx in spots:
                 act = act or "standing"
                 move = self._travel(act, facing, x)

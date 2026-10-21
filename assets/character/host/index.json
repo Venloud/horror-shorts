@@ -1,0 +1,1025 @@
+{
+ "note": "Owner-supplied host sprites (Oct 21), cut from his 2 sheets. Facing right; feet = bottom edge.",
+ "sprites": [
+  {
+   "file": "s1_00_standing_front.png",
+   "action": "standing",
+   "view": "front",
+   "expression": "happy",
+   "prop": "",
+   "facing": "right",
+   "height": 250,
+   "source": "owner sheet 1 #0"
+  },
+  {
+   "file": "s1_01_standing_three_quarter.png",
+   "action": "standing",
+   "view": "three_quarter",
+   "expression": "confident",
+   "prop": "",
+   "facing": "right",
+   "height": 250,
+   "source": "owner sheet 1 #1"
+  },
+  {
+   "file": "s1_02_standing_side.png",
+   "action": "standing",
+   "view": "side",
+   "expression": "neutral",
+   "prop": "",
+   "facing": "right",
+   "height": 251,
+   "source": "owner sheet 1 #2"
+  },
+  {
+   "file": "s1_03_standing_back.png",
+   "action": "standing",
+   "view": "back",
+   "expression": "neutral",
+   "prop": "",
+   "facing": "right",
+   "height": 250,
+   "source": "owner sheet 1 #3"
+  },
+  {
+   "file": "s1_04_standing_front.png",
+   "action": "standing",
+   "view": "front",
+   "expression": "excited",
+   "prop": "",
+   "facing": "right",
+   "height": 249,
+   "source": "owner sheet 1 #4"
+  },
+  {
+   "file": "s1_05_standing_front.png",
+   "action": "standing",
+   "view": "front",
+   "expression": "sneaky",
+   "prop": "",
+   "facing": "right",
+   "height": 247,
+   "source": "owner sheet 1 #5"
+  },
+  {
+   "file": "s1_06_standing_front.png",
+   "action": "standing",
+   "view": "front",
+   "expression": "determined",
+   "prop": "",
+   "facing": "right",
+   "height": 248,
+   "source": "owner sheet 1 #6"
+  },
+  {
+   "file": "s1_07_standing_front.png",
+   "action": "standing",
+   "view": "front",
+   "expression": "angry",
+   "prop": "",
+   "facing": "right",
+   "height": 246,
+   "source": "owner sheet 1 #7"
+  },
+  {
+   "file": "s1_08_standing_front.png",
+   "action": "standing",
+   "view": "front",
+   "expression": "scared",
+   "prop": "",
+   "facing": "right",
+   "height": 245,
+   "source": "owner sheet 1 #8"
+  },
+  {
+   "file": "s1_09_covering_mouth_front.png",
+   "action": "covering_mouth",
+   "view": "front",
+   "expression": "worried",
+   "prop": "",
+   "facing": "right",
+   "height": 246,
+   "source": "owner sheet 1 #9"
+  },
+  {
+   "file": "s1_10_standing_front.png",
+   "action": "standing",
+   "view": "front",
+   "expression": "shocked",
+   "prop": "",
+   "facing": "right",
+   "height": 246,
+   "source": "owner sheet 1 #10"
+  },
+  {
+   "file": "s1_11_standing_three_quarter.png",
+   "action": "standing",
+   "view": "three_quarter",
+   "expression": "determined",
+   "prop": "",
+   "facing": "right",
+   "height": 245,
+   "source": "owner sheet 1 #11"
+  },
+  {
+   "file": "s1_12_explaining_front.png",
+   "action": "explaining",
+   "view": "front",
+   "expression": "talking",
+   "prop": "",
+   "facing": "right",
+   "height": 245,
+   "source": "owner sheet 1 #12"
+  },
+  {
+   "file": "s1_13_presenting_three_quarter.png",
+   "action": "presenting",
+   "view": "three_quarter",
+   "expression": "determined",
+   "prop": "",
+   "facing": "right",
+   "height": 251,
+   "source": "owner sheet 1 #13"
+  },
+  {
+   "file": "s1_14_thinking_three_quarter.png",
+   "action": "thinking",
+   "view": "three_quarter",
+   "expression": "curious",
+   "prop": "",
+   "facing": "right",
+   "height": 253,
+   "source": "owner sheet 1 #14"
+  },
+  {
+   "file": "s1_15_pointing_three_quarter.png",
+   "action": "pointing",
+   "view": "three_quarter",
+   "expression": "angry",
+   "prop": "",
+   "facing": "right",
+   "height": 237,
+   "source": "owner sheet 1 #15"
+  },
+  {
+   "file": "s1_16_explaining_front.png",
+   "action": "explaining",
+   "view": "front",
+   "expression": "neutral",
+   "prop": "",
+   "facing": "right",
+   "height": 235,
+   "source": "owner sheet 1 #16"
+  },
+  {
+   "file": "s1_17_reading_three_quarter.png",
+   "action": "reading",
+   "view": "three_quarter",
+   "expression": "curious",
+   "prop": "paper",
+   "facing": "right",
+   "height": 232,
+   "source": "owner sheet 1 #17"
+  },
+  {
+   "file": "s1_18_holding_three_quarter.png",
+   "action": "holding",
+   "view": "three_quarter",
+   "expression": "angry",
+   "prop": "briefcase",
+   "facing": "right",
+   "height": 229,
+   "source": "owner sheet 1 #18"
+  },
+  {
+   "file": "s1_19_phone_three_quarter.png",
+   "action": "phone",
+   "view": "three_quarter",
+   "expression": "curious",
+   "prop": "phone",
+   "facing": "right",
+   "height": 227,
+   "source": "owner sheet 1 #19"
+  },
+  {
+   "file": "s1_20_waiting_front.png",
+   "action": "waiting",
+   "view": "front",
+   "expression": "angry",
+   "prop": "",
+   "facing": "right",
+   "height": 229,
+   "source": "owner sheet 1 #20"
+  },
+  {
+   "file": "s1_21_standing_three_quarter.png",
+   "action": "standing",
+   "view": "three_quarter",
+   "expression": "neutral",
+   "prop": "",
+   "facing": "right",
+   "height": 223,
+   "source": "owner sheet 1 #21"
+  },
+  {
+   "file": "s1_22_stopping_front.png",
+   "action": "stopping",
+   "view": "front",
+   "expression": "worried",
+   "prop": "",
+   "facing": "right",
+   "height": 227,
+   "source": "owner sheet 1 #22"
+  },
+  {
+   "file": "s1_23_holding_three_quarter.png",
+   "action": "holding",
+   "view": "three_quarter",
+   "expression": "neutral",
+   "prop": "folder",
+   "facing": "right",
+   "height": 226,
+   "source": "owner sheet 1 #23"
+  },
+  {
+   "file": "s1_24_thinking_front.png",
+   "action": "thinking",
+   "view": "front",
+   "expression": "curious",
+   "prop": "",
+   "facing": "right",
+   "height": 229,
+   "source": "owner sheet 1 #24"
+  },
+  {
+   "file": "s1_25_hands_on_hips_three_quarter.png",
+   "action": "hands_on_hips",
+   "view": "three_quarter",
+   "expression": "angry",
+   "prop": "",
+   "facing": "right",
+   "height": 234,
+   "source": "owner sheet 1 #25"
+  },
+  {
+   "file": "s1_26_standing_three_quarter.png",
+   "action": "standing",
+   "view": "three_quarter",
+   "expression": "neutral",
+   "prop": "wind",
+   "facing": "right",
+   "height": 234,
+   "source": "owner sheet 1 #26"
+  },
+  {
+   "file": "s1_27_walking_side.png",
+   "action": "walking",
+   "view": "side",
+   "expression": "determined",
+   "prop": "",
+   "facing": "right",
+   "height": 191,
+   "source": "owner sheet 1 #27"
+  },
+  {
+   "file": "s1_28_running_side.png",
+   "action": "running",
+   "view": "side",
+   "expression": "determined",
+   "prop": "",
+   "facing": "right",
+   "height": 190,
+   "source": "owner sheet 1 #28"
+  },
+  {
+   "file": "s1_29_running_side.png",
+   "action": "running",
+   "view": "side",
+   "expression": "angry",
+   "prop": "",
+   "facing": "right",
+   "height": 184,
+   "source": "owner sheet 1 #29"
+  },
+  {
+   "file": "s1_30_stepping_up_side.png",
+   "action": "stepping_up",
+   "view": "side",
+   "expression": "determined",
+   "prop": "stairs",
+   "facing": "right",
+   "height": 191,
+   "source": "owner sheet 1 #30"
+  },
+  {
+   "file": "s1_31_boarding_side.png",
+   "action": "boarding",
+   "view": "side",
+   "expression": "neutral",
+   "prop": "train_door",
+   "facing": "right",
+   "height": 208,
+   "source": "owner sheet 1 #31"
+  },
+  {
+   "file": "s1_32_knocking_side.png",
+   "action": "knocking",
+   "view": "side",
+   "expression": "neutral",
+   "prop": "door",
+   "facing": "right",
+   "height": 196,
+   "source": "owner sheet 1 #32"
+  },
+  {
+   "file": "s1_33_flashlight_side.png",
+   "action": "flashlight",
+   "view": "side",
+   "expression": "determined",
+   "prop": "flashlight",
+   "facing": "right",
+   "height": 187,
+   "source": "owner sheet 1 #33"
+  },
+  {
+   "file": "s1_34_looking_three_quarter.png",
+   "action": "looking",
+   "view": "three_quarter",
+   "expression": "curious",
+   "prop": "",
+   "facing": "right",
+   "height": 192,
+   "source": "owner sheet 1 #34"
+  },
+  {
+   "file": "s1_35_sneaking_side.png",
+   "action": "sneaking",
+   "view": "side",
+   "expression": "sneaky",
+   "prop": "",
+   "facing": "right",
+   "height": 179,
+   "source": "owner sheet 1 #35"
+  },
+  {
+   "file": "s1_36_standing_back.png",
+   "action": "standing",
+   "view": "back",
+   "expression": "neutral",
+   "prop": "wind",
+   "facing": "right",
+   "height": 201,
+   "source": "owner sheet 1 #36"
+  },
+  {
+   "file": "s1_37_seated_front.png",
+   "action": "seated",
+   "view": "front",
+   "expression": "angry",
+   "prop": "bench",
+   "facing": "right",
+   "height": 167,
+   "source": "owner sheet 1 #37"
+  },
+  {
+   "file": "s1_38_leaning_three_quarter.png",
+   "action": "leaning",
+   "view": "three_quarter",
+   "expression": "neutral",
+   "prop": "wall",
+   "facing": "right",
+   "height": 192,
+   "source": "owner sheet 1 #38"
+  },
+  {
+   "file": "s1_39_seated_front.png",
+   "action": "seated",
+   "view": "front",
+   "expression": "curious",
+   "prop": "crate",
+   "facing": "right",
+   "height": 154,
+   "source": "owner sheet 1 #39"
+  },
+  {
+   "file": "s1_40_sneaking_side.png",
+   "action": "sneaking",
+   "view": "side",
+   "expression": "determined",
+   "prop": "",
+   "facing": "right",
+   "height": 156,
+   "source": "owner sheet 1 #40"
+  },
+  {
+   "file": "s1_41_reacting_front.png",
+   "action": "reacting",
+   "view": "front",
+   "expression": "shocked",
+   "prop": "",
+   "facing": "right",
+   "height": 161,
+   "source": "owner sheet 1 #41"
+  },
+  {
+   "file": "s1_42_searching_side.png",
+   "action": "searching",
+   "view": "side",
+   "expression": "determined",
+   "prop": "flashlight",
+   "facing": "right",
+   "height": 133,
+   "source": "owner sheet 1 #42"
+  },
+  {
+   "file": "s1_43_inspecting_side.png",
+   "action": "inspecting",
+   "view": "side",
+   "expression": "curious",
+   "prop": "",
+   "facing": "right",
+   "height": 130,
+   "source": "owner sheet 1 #43"
+  },
+  {
+   "file": "s1_44_leaving_back.png",
+   "action": "leaving",
+   "view": "back",
+   "expression": "neutral",
+   "prop": "briefcase",
+   "facing": "right",
+   "height": 181,
+   "source": "owner sheet 1 #44"
+  },
+  {
+   "file": "s1_45_confused_three_quarter.png",
+   "action": "confused",
+   "view": "three_quarter",
+   "expression": "confused",
+   "prop": "",
+   "facing": "right",
+   "height": 176,
+   "source": "owner sheet 1 #45"
+  },
+  {
+   "file": "s1_46_hands_on_hips_front.png",
+   "action": "hands_on_hips",
+   "view": "front",
+   "expression": "determined",
+   "prop": "",
+   "facing": "right",
+   "height": 178,
+   "source": "owner sheet 1 #46"
+  },
+  {
+   "file": "s1_47_standing_three_quarter.png",
+   "action": "standing",
+   "view": "three_quarter",
+   "expression": "neutral",
+   "prop": "",
+   "facing": "right",
+   "height": 181,
+   "source": "owner sheet 1 #47"
+  },
+  {
+   "file": "s2_00_standing_front.png",
+   "action": "standing",
+   "view": "front",
+   "expression": "neutral",
+   "prop": "",
+   "facing": "right",
+   "height": 241,
+   "source": "owner sheet 2 #0"
+  },
+  {
+   "file": "s2_01_standing_front.png",
+   "action": "standing",
+   "view": "front",
+   "expression": "happy",
+   "prop": "",
+   "facing": "right",
+   "height": 243,
+   "source": "owner sheet 2 #1"
+  },
+  {
+   "file": "s2_02_standing_front.png",
+   "action": "standing",
+   "view": "front",
+   "expression": "angry",
+   "prop": "",
+   "facing": "right",
+   "height": 239,
+   "source": "owner sheet 2 #2"
+  },
+  {
+   "file": "s2_03_standing_front.png",
+   "action": "standing",
+   "view": "front",
+   "expression": "worried",
+   "prop": "",
+   "facing": "right",
+   "height": 237,
+   "source": "owner sheet 2 #3"
+  },
+  {
+   "file": "s2_04_waiting_front.png",
+   "action": "waiting",
+   "view": "front",
+   "expression": "worried",
+   "prop": "",
+   "facing": "right",
+   "height": 241,
+   "source": "owner sheet 2 #4"
+  },
+  {
+   "file": "s2_05_confused_front.png",
+   "action": "confused",
+   "view": "front",
+   "expression": "confused",
+   "prop": "",
+   "facing": "right",
+   "height": 243,
+   "source": "owner sheet 2 #5"
+  },
+  {
+   "file": "s2_06_reacting_front.png",
+   "action": "reacting",
+   "view": "front",
+   "expression": "shocked",
+   "prop": "",
+   "facing": "right",
+   "height": 249,
+   "source": "owner sheet 2 #6"
+  },
+  {
+   "file": "s2_07_scared_front.png",
+   "action": "scared",
+   "view": "front",
+   "expression": "scared",
+   "prop": "",
+   "facing": "right",
+   "height": 237,
+   "source": "owner sheet 2 #7"
+  },
+  {
+   "file": "s2_08_explaining_three_quarter.png",
+   "action": "explaining",
+   "view": "three_quarter",
+   "expression": "talking",
+   "prop": "",
+   "facing": "right",
+   "height": 238,
+   "source": "owner sheet 2 #8"
+  },
+  {
+   "file": "s2_09_explaining_three_quarter.png",
+   "action": "explaining",
+   "view": "three_quarter",
+   "expression": "excited",
+   "prop": "",
+   "facing": "right",
+   "height": 235,
+   "source": "owner sheet 2 #9"
+  },
+  {
+   "file": "s2_10_standing_front.png",
+   "action": "standing",
+   "view": "front",
+   "expression": "confident",
+   "prop": "",
+   "facing": "right",
+   "height": 245,
+   "source": "owner sheet 2 #10"
+  },
+  {
+   "file": "s2_11_standing_three_quarter.png",
+   "action": "standing",
+   "view": "three_quarter",
+   "expression": "neutral",
+   "prop": "",
+   "facing": "right",
+   "height": 244,
+   "source": "owner sheet 2 #11"
+  },
+  {
+   "file": "s2_12_standing_side.png",
+   "action": "standing",
+   "view": "side",
+   "expression": "neutral",
+   "prop": "",
+   "facing": "right",
+   "height": 246,
+   "source": "owner sheet 2 #12"
+  },
+  {
+   "file": "s2_13_standing_back.png",
+   "action": "standing",
+   "view": "back",
+   "expression": "neutral",
+   "prop": "",
+   "facing": "right",
+   "height": 242,
+   "source": "owner sheet 2 #13"
+  },
+  {
+   "file": "s2_14_standing_back.png",
+   "action": "standing",
+   "view": "back",
+   "expression": "neutral",
+   "prop": "",
+   "facing": "right",
+   "height": 241,
+   "source": "owner sheet 2 #14"
+  },
+  {
+   "file": "s2_15_standing_back.png",
+   "action": "standing",
+   "view": "back",
+   "expression": "neutral",
+   "prop": "",
+   "facing": "right",
+   "height": 241,
+   "source": "owner sheet 2 #15"
+  },
+  {
+   "file": "s2_16_pointing_three_quarter.png",
+   "action": "pointing",
+   "view": "three_quarter",
+   "expression": "happy",
+   "prop": "",
+   "facing": "right",
+   "height": 225,
+   "source": "owner sheet 2 #16"
+  },
+  {
+   "file": "s2_17_explaining_front.png",
+   "action": "explaining",
+   "view": "front",
+   "expression": "neutral",
+   "prop": "",
+   "facing": "right",
+   "height": 228,
+   "source": "owner sheet 2 #17"
+  },
+  {
+   "file": "s2_18_explaining_front.png",
+   "action": "explaining",
+   "view": "front",
+   "expression": "worried",
+   "prop": "",
+   "facing": "right",
+   "height": 227,
+   "source": "owner sheet 2 #18"
+  },
+  {
+   "file": "s2_19_waiting_three_quarter.png",
+   "action": "waiting",
+   "view": "three_quarter",
+   "expression": "angry",
+   "prop": "",
+   "facing": "right",
+   "height": 228,
+   "source": "owner sheet 2 #19"
+  },
+  {
+   "file": "s2_20_reading_three_quarter.png",
+   "action": "reading",
+   "view": "three_quarter",
+   "expression": "curious",
+   "prop": "paper",
+   "facing": "right",
+   "height": 231,
+   "source": "owner sheet 2 #20"
+  },
+  {
+   "file": "s2_21_holding_three_quarter.png",
+   "action": "holding",
+   "view": "three_quarter",
+   "expression": "angry",
+   "prop": "folder",
+   "facing": "right",
+   "height": 230,
+   "source": "owner sheet 2 #21"
+  },
+  {
+   "file": "s2_22_phone_three_quarter.png",
+   "action": "phone",
+   "view": "three_quarter",
+   "expression": "angry",
+   "prop": "briefcase",
+   "facing": "right",
+   "height": 228,
+   "source": "owner sheet 2 #22"
+  },
+  {
+   "file": "s2_23_phone_side.png",
+   "action": "phone",
+   "view": "side",
+   "expression": "curious",
+   "prop": "phone",
+   "facing": "right",
+   "height": 229,
+   "source": "owner sheet 2 #23"
+  },
+  {
+   "file": "s2_24_looking_side.png",
+   "action": "looking",
+   "view": "side",
+   "expression": "curious",
+   "prop": "",
+   "facing": "right",
+   "height": 222,
+   "source": "owner sheet 2 #24"
+  },
+  {
+   "file": "s2_25_waiting_three_quarter.png",
+   "action": "waiting",
+   "view": "three_quarter",
+   "expression": "neutral",
+   "prop": "",
+   "facing": "right",
+   "height": 228,
+   "source": "owner sheet 2 #25"
+  },
+  {
+   "file": "s2_26_thinking_three_quarter.png",
+   "action": "thinking",
+   "view": "three_quarter",
+   "expression": "curious",
+   "prop": "",
+   "facing": "right",
+   "height": 230,
+   "source": "owner sheet 2 #26"
+  },
+  {
+   "file": "s2_27_stopping_front.png",
+   "action": "stopping",
+   "view": "front",
+   "expression": "angry",
+   "prop": "",
+   "facing": "right",
+   "height": 238,
+   "source": "owner sheet 2 #27"
+  },
+  {
+   "file": "s2_28_confused_three_quarter.png",
+   "action": "confused",
+   "view": "three_quarter",
+   "expression": "confused",
+   "prop": "",
+   "facing": "right",
+   "height": 232,
+   "source": "owner sheet 2 #28"
+  },
+  {
+   "file": "s2_29_pointing_three_quarter.png",
+   "action": "pointing",
+   "view": "three_quarter",
+   "expression": "excited",
+   "prop": "",
+   "facing": "right",
+   "height": 230,
+   "source": "owner sheet 2 #29"
+  },
+  {
+   "file": "s2_30_walking_side.png",
+   "action": "walking",
+   "view": "side",
+   "expression": "neutral",
+   "prop": "",
+   "facing": "right",
+   "height": 193,
+   "source": "owner sheet 2 #30"
+  },
+  {
+   "file": "s2_31_walking_side.png",
+   "action": "walking",
+   "view": "side",
+   "expression": "determined",
+   "prop": "",
+   "facing": "right",
+   "height": 192,
+   "source": "owner sheet 2 #31"
+  },
+  {
+   "file": "s2_32_running_side.png",
+   "action": "running",
+   "view": "side",
+   "expression": "determined",
+   "prop": "",
+   "facing": "right",
+   "height": 182,
+   "source": "owner sheet 2 #32"
+  },
+  {
+   "file": "s2_33_running_side.png",
+   "action": "running",
+   "view": "side",
+   "expression": "neutral",
+   "prop": "",
+   "facing": "right",
+   "height": 176,
+   "source": "owner sheet 2 #33"
+  },
+  {
+   "file": "s2_34_running_side.png",
+   "action": "running",
+   "view": "side",
+   "expression": "angry",
+   "prop": "",
+   "facing": "right",
+   "height": 165,
+   "source": "owner sheet 2 #34"
+  },
+  {
+   "file": "s2_35_sneaking_side.png",
+   "action": "sneaking",
+   "view": "side",
+   "expression": "sneaky",
+   "prop": "",
+   "facing": "right",
+   "height": 169,
+   "source": "owner sheet 2 #35"
+  },
+  {
+   "file": "s2_36_sneaking_side.png",
+   "action": "sneaking",
+   "view": "side",
+   "expression": "determined",
+   "prop": "",
+   "facing": "right",
+   "height": 160,
+   "source": "owner sheet 2 #36"
+  },
+  {
+   "file": "s2_37_flashlight_side.png",
+   "action": "flashlight",
+   "view": "side",
+   "expression": "angry",
+   "prop": "flashlight",
+   "facing": "right",
+   "height": 171,
+   "source": "owner sheet 2 #37"
+  },
+  {
+   "file": "s2_38_inspecting_side.png",
+   "action": "inspecting",
+   "view": "side",
+   "expression": "curious",
+   "prop": "",
+   "facing": "right",
+   "height": 151,
+   "source": "owner sheet 2 #38"
+  },
+  {
+   "file": "s2_39_inspecting_side.png",
+   "action": "inspecting",
+   "view": "side",
+   "expression": "angry",
+   "prop": "",
+   "facing": "right",
+   "height": 121,
+   "source": "owner sheet 2 #39"
+  },
+  {
+   "file": "s2_40_standing_back.png",
+   "action": "standing",
+   "view": "back",
+   "expression": "neutral",
+   "prop": "wind",
+   "facing": "right",
+   "height": 187,
+   "source": "owner sheet 2 #40"
+  },
+  {
+   "file": "s2_41_seated_front.png",
+   "action": "seated",
+   "view": "front",
+   "expression": "neutral",
+   "prop": "",
+   "facing": "right",
+   "height": 196,
+   "source": "owner sheet 2 #41"
+  },
+  {
+   "file": "s2_42_seated_front.png",
+   "action": "seated",
+   "view": "front",
+   "expression": "curious",
+   "prop": "",
+   "facing": "right",
+   "height": 186,
+   "source": "owner sheet 2 #42"
+  },
+  {
+   "file": "s2_43_defeated_front.png",
+   "action": "defeated",
+   "view": "front",
+   "expression": "sad",
+   "prop": "",
+   "facing": "right",
+   "height": 159,
+   "source": "owner sheet 2 #43"
+  },
+  {
+   "file": "s2_44_seated_three_quarter.png",
+   "action": "seated",
+   "view": "three_quarter",
+   "expression": "worried",
+   "prop": "",
+   "facing": "right",
+   "height": 196,
+   "source": "owner sheet 2 #44"
+  },
+  {
+   "file": "s2_45_leaning_three_quarter.png",
+   "action": "leaning",
+   "view": "three_quarter",
+   "expression": "neutral",
+   "prop": "wall",
+   "facing": "right",
+   "height": 215,
+   "source": "owner sheet 2 #45"
+  },
+  {
+   "file": "s2_46_stepping_up_side.png",
+   "action": "stepping_up",
+   "view": "side",
+   "expression": "determined",
+   "prop": "stairs",
+   "facing": "right",
+   "height": 199,
+   "source": "owner sheet 2 #46"
+  },
+  {
+   "file": "s2_47_stepping_up_side.png",
+   "action": "stepping_up",
+   "view": "side",
+   "expression": "angry",
+   "prop": "stairs",
+   "facing": "right",
+   "height": 211,
+   "source": "owner sheet 2 #47"
+  },
+  {
+   "file": "s2_48_knocking_back.png",
+   "action": "knocking",
+   "view": "back",
+   "expression": "neutral",
+   "prop": "",
+   "facing": "right",
+   "height": 205,
+   "source": "owner sheet 2 #48"
+  },
+  {
+   "file": "s2_49_leaving_back.png",
+   "action": "leaving",
+   "view": "back",
+   "expression": "neutral",
+   "prop": "briefcase",
+   "facing": "right",
+   "height": 208,
+   "source": "owner sheet 2 #49"
+  },
+  {
+   "file": "s2_50_reacting_front.png",
+   "action": "reacting",
+   "view": "front",
+   "expression": "shocked",
+   "prop": "",
+   "facing": "right",
+   "height": 193,
+   "source": "owner sheet 2 #50"
+  },
+  {
+   "file": "s2_51_scared_three_quarter.png",
+   "action": "scared",
+   "view": "three_quarter",
+   "expression": "scared",
+   "prop": "",
+   "facing": "right",
+   "height": 189,
+   "source": "owner sheet 2 #51"
+  },
+  {
+   "file": "s2_52_walking_side.png",
+   "action": "walking",
+   "view": "side",
+   "expression": "neutral",
+   "prop": "wind",
+   "facing": "right",
+   "height": 194,
+   "source": "owner sheet 2 #52"
+  },
+  {
+   "file": "s2_53_phone_side.png",
+   "action": "phone",
+   "view": "side",
+   "expression": "curious",
+   "prop": "phone",
+   "facing": "right",
+   "height": 201,
+   "source": "owner sheet 2 #53"
+  }
+ ]
+}

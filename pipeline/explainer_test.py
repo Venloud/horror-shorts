@@ -30,7 +30,6 @@ def main() -> int:
 
     workdir = ROOT / "output" / "explainer_test"
     workdir.mkdir(parents=True, exist_ok=True)
-    explainer.Character()  # no character set = nothing to test (before any Gemini call)
     tests_before = cf_budget.load()["tests"]
     log(cf_budget.line())
     report = [f"EXPLAINER TEST (nothing published): inbox_file={os.environ.get('INBOX_FILE') or '-'} "
