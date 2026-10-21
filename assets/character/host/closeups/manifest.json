@@ -1,0 +1,226 @@
+{
+  "project": "Night Files",
+  "asset_set": "Optional hi-res vector closeups",
+  "source": "New original vector redraws matched to the approved suit stickman identity; NOT an image-superresolution of the approved art",
+  "format": "RGBA transparent PNG + editable SVG source for crisp 4K future exports",
+  "asset_directory": "assets/character/host/closeups/",
+  "file_naming": "host_<view>_<expression>_closeup.png",
+  "canvas": [
+    1600,
+    2000
+  ],
+  "alignment": "head top y~244, torso cropped naturally at bottom; CLOSEUPS have no feet anchor",
+  "integration": "Separate optional pack, no modification to existing 102 sprites, renderer, workflow, or repository",
+  "important": "Vector redrawn faces/outfit approximate approved reference, not pixel-perfect recreation. Review before integrating.",
+  "assets": [
+    {
+      "file": "assets/character/host/closeups/host_front_neutral_closeup.png",
+      "expression": "neutral",
+      "view": "front",
+      "native_vector": true,
+      "size": [
+        1600,
+        2000
+      ],
+      "sha256": "32fa9c4b421d66c886a9c873a2e253b7e1ae03f943545e921d7551e80f909940"
+    },
+    {
+      "file": "assets/character/host/closeups/host_front_happy_closeup.png",
+      "expression": "happy",
+      "view": "front",
+      "native_vector": true,
+      "size": [
+        1600,
+        2000
+      ],
+      "sha256": "cbbc2f16fd87906e17b05c8216aa924c2dd0f6ed466c8873200ff06ba83ffeb0"
+    },
+    {
+      "file": "assets/character/host/closeups/host_front_confident_closeup.png",
+      "expression": "confident",
+      "view": "front",
+      "native_vector": true,
+      "size": [
+        1600,
+        2000
+      ],
+      "sha256": "1ff6d11b315fcb75277e2dfc826f8795892c21acd06af8b5b4ec1acd0c40cd75"
+    },
+    {
+      "file": "assets/character/host/closeups/host_front_serious_closeup.png",
+      "expression": "serious",
+      "view": "front",
+      "native_vector": true,
+      "size": [
+        1600,
+        2000
+      ],
+      "sha256": "9218f339ddb4fae8fc29fc3737bb8d129f43d9f234bc287b04081e68790171eb"
+    },
+    {
+      "file": "assets/character/host/closeups/host_front_angry_closeup.png",
+      "expression": "angry",
+      "view": "front",
+      "native_vector": true,
+      "size": [
+        1600,
+        2000
+      ],
+      "sha256": "e576a5874c13f037cb70befb3b9ab5baf35233b8aac10a062bee29c16f1175aa"
+    },
+    {
+      "file": "assets/character/host/closeups/host_front_sad_closeup.png",
+      "expression": "sad",
+      "view": "front",
+      "native_vector": true,
+      "size": [
+        1600,
+        2000
+      ],
+      "sha256": "355f28ba4c26bca933d59eefc3c722357cae990614a1ff0854148521e9eb5719"
+    },
+    {
+      "file": "assets/character/host/closeups/host_front_worried_closeup.png",
+      "expression": "worried",
+      "view": "front",
+      "native_vector": true,
+      "size": [
+        1600,
+        2000
+      ],
+      "sha256": "51d09cf3d68562edc4758c2a57c152eee13b5a7d028e7c14dd5021fbdf378ab0"
+    },
+    {
+      "file": "assets/character/host/closeups/host_front_shocked_closeup.png",
+      "expression": "shocked",
+      "view": "front",
+      "native_vector": true,
+      "size": [
+        1600,
+        2000
+      ],
+      "sha256": "18b01d27d4e0a6e1ef0f689557d684efe46c016702d3218facf69f543aba4604"
+    },
+    {
+      "file": "assets/character/host/closeups/host_front_scared_closeup.png",
+      "expression": "scared",
+      "view": "front",
+      "native_vector": true,
+      "size": [
+        1600,
+        2000
+      ],
+      "sha256": "565a8ed74bd0dc92bf0745d21520b5f353e1e9055e10ab25eb615f93c7d281f0"
+    },
+    {
+      "file": "assets/character/host/closeups/host_front_confused_closeup.png",
+      "expression": "confused",
+      "view": "front",
+      "native_vector": true,
+      "size": [
+        1600,
+        2000
+      ],
+      "sha256": "4dc744ff9fece70c03bb845e48df77ff126e3bdebe16f4d892260ae03864905d"
+    },
+    {
+      "file": "assets/character/host/closeups/host_front_thinking_closeup.png",
+      "expression": "thinking",
+      "view": "front",
+      "native_vector": true,
+      "size": [
+        1600,
+        2000
+      ],
+      "sha256": "2634618d1213d61821668bb7a71148dba00b55e2a80a7f9f400ffa7810d4824e"
+    },
+    {
+      "file": "assets/character/host/closeups/host_front_smirk_closeup.png",
+      "expression": "smirk",
+      "view": "front",
+      "native_vector": true,
+      "size": [
+        1600,
+        2000
+      ],
+      "sha256": "1ff6d11b315fcb75277e2dfc826f8795892c21acd06af8b5b4ec1acd0c40cd75"
+    },
+    {
+      "file": "assets/character/host/closeups/host_front_talking_closeup.png",
+      "expression": "talking",
+      "view": "front",
+      "native_vector": true,
+      "size": [
+        1600,
+        2000
+      ],
+      "sha256": "12da47670c62f03a86bdbe3e37a492d799da5972870350c0d2c59e2768cf80a2"
+    },
+    {
+      "file": "assets/character/host/closeups/host_front_determined_closeup.png",
+      "expression": "determined",
+      "view": "front",
+      "native_vector": true,
+      "size": [
+        1600,
+        2000
+      ],
+      "sha256": "52d253dec6a44632958eca6e5c23c2e7089aba27207251c7fa71a92de621db5b"
+    },
+    {
+      "file": "assets/character/host/closeups/host_front_suspicious_closeup.png",
+      "expression": "suspicious",
+      "view": "front",
+      "native_vector": true,
+      "size": [
+        1600,
+        2000
+      ],
+      "sha256": "0d8ecb1ab5feb2d15b80da56c38f32be3cc9de8c98424f3beecac9a9d98c03c7"
+    },
+    {
+      "file": "assets/character/host/closeups/host_three_quarter_neutral_closeup.png",
+      "expression": "neutral",
+      "view": "three_quarter",
+      "native_vector": true,
+      "size": [
+        1600,
+        2000
+      ],
+      "sha256": "94c49c740fc1cc68e3eb06fa4db7c366438add6646de992670b2a43543f95eec"
+    },
+    {
+      "file": "assets/character/host/closeups/host_three_quarter_worried_closeup.png",
+      "expression": "worried",
+      "view": "three_quarter",
+      "native_vector": true,
+      "size": [
+        1600,
+        2000
+      ],
+      "sha256": "bf52e591cc52b7d272545bf0ceeb598f4f6c02fb8ecd2fd42bd48d1be0db9472"
+    },
+    {
+      "file": "assets/character/host/closeups/host_three_quarter_shocked_closeup.png",
+      "expression": "shocked",
+      "view": "three_quarter",
+      "native_vector": true,
+      "size": [
+        1600,
+        2000
+      ],
+      "sha256": "99d987360f28374c9e3b2a4cf43f1159e7988fb8429fcaf686f14b91027bc1e8"
+    },
+    {
+      "file": "assets/character/host/closeups/host_three_quarter_suspicious_closeup.png",
+      "expression": "suspicious",
+      "view": "three_quarter",
+      "native_vector": true,
+      "size": [
+        1600,
+        2000
+      ],
+      "sha256": "296e3cdb8b354b961701627e581569742922ac6ad65abd4469c6e25763b38cc1"
+    }
+  ]
+}

@@ -175,3 +175,34 @@ def draw(who: str, look: dict, action: str, expression: str, view: str, facing: 
     if flip:
         im = ImageOps.mirror(im)
     return im, (im.width / 2, im.height)
+
+
+# ---------------------------------------------------------------- hi-res close-ups (owner's pack, Oct 21)
+
+CLOSE_DIR = DIR / "closeups"
+CLOSE_ALIAS = {"excited": "happy", "curious": "suspicious", "sneaky": "smirk", "neutral": "neutral",
+               "confident": "confident", "shocked": "shocked", "scared": "scared", "worried": "worried",
+               "angry": "angry", "determined": "determined", "sad": "sad", "confused": "confused",
+               "thinking": "thinking", "talking": "talking", "happy": "happy", "serious": "serious",
+               "smirk": "smirk", "suspicious": "suspicious"}
+
+
+def closeup(expression: str, view: str = "front"):
+    """host_<view>_<expression>_closeup.png (1600x2000 vector redraws, head + shoulders) for close shots of the
+    host; three_quarter falls back to front. None when the pack (or config explainer_closeups) is off."""
+    from common import CONFIG
+    if not CONFIG.get("explainer_closeups", True) or not CLOSE_DIR.exists():
+        return None
+    expr = CLOSE_ALIAS.get(expression, "neutral")
+    for v in ([view] if view in ("front", "three_quarter") else []) + ["front"]:
+        for e in (expr, "neutral"):
+            f = CLOSE_DIR / f"host_{v}_{e}_closeup.png"
+            if f.exists():
+                return f
+    return None
+
+
+@lru_cache(maxsize=24)
+def closeup_image(path: str, width: int) -> Image.Image:
+    im = Image.open(path).convert("RGBA")
+    return im.resize((width, round(im.height * width / im.width)), Image.LANCZOS)

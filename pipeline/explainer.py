@@ -1131,6 +1131,16 @@ class Renderer:
             elif sec and sec != "crowd":
                 spots = [(sec, s.get("action2"), "neutral", "three_quarter", "left", 0.5)]
             height, feet = {"wide": (820, 1660), "medium": (1150, 1980), "close": (1500, 2150)}.get(st, (820, 1660))
+            if st == "close" and len(spots) == 1 and spots[0][0] == "you" and spots[0][1] not in self.sm.MOVING:
+                import sprites  # the owner's hi-res head-and-shoulders pack: sharp emotional close-ups
+                cu = sprites.closeup(spots[0][2] or "neutral", spots[0][3] or "front")
+                if cu:
+                    w0 = int(1150 * (1.0 + 0.015 * math.sin(t * 2.4)))
+                    im = sprites.closeup_image(str(cu), w0)
+                    if spots[0][4] == "left":
+                        im = ImageOps.mirror(im)
+                    self._paste(frame, im, int(W / 2 - im.width / 2), int(1880 - im.height + 6 * math.sin(t * 2.4)))
+                    spots = []
             for who, act, expr, view, facing, fx in spots:
                 act = act or "standing"
                 move = self._travel(act, facing, x)
