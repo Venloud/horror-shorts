@@ -292,7 +292,7 @@ def main(from_build: bool = False) -> int:
     except Exception as e:  # noqa: BLE001
         traceback.print_exc()
         result = None  # Never treat failed or unconfirmed delivery as a success.
-        tt_error = f"{type(e).__name__}: {str(e)[:300}"
+        tt_error = f"{type(e).__name__}: {str(e)[:300]}"
 
     import youtube_pending
     yt, yt_error = None, None
