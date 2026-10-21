@@ -2168,5 +2168,71 @@
     "music_file": "unsolved_mystery.mp3",
     "buffered": "2026-10-13_1407",
     "tiktok": null
+  },
+  {
+    "date": "2026-10-21_2336",
+    "story_id": "9e6134d2df0f",
+    "title": "The Disappearance of the First Filmmaker",
+    "premise": "The inventor of an early motion picture camera boarded a train in 1890 and vanished completely with his luggage.",
+    "subgenre": "true story",
+    "mode": "inbox-true",
+    "true_story": true,
+    "case": "Disappearance of Louis Le Prince",
+    "source": "inbox/le_prince_remake.txt",
+    "prompt_file": null,
+    "setting": "Leeds, England, 1888-1890",
+    "threat": "Disappearance without a trace",
+    "twist": "His luggage and trunk vanished alongside him from the locked train car.",
+    "score": null,
+    "seconds": 62.6,
+    "voice_speed": 1.1,
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [],
+    "visual_mode": "analog",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org",
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": "The Disappearance of Louis Le Prince",
+    "remake_angle": "Open on the Roundhay Garden Scene (1888) as the payoff in the first 5 s. Then: the people in it, what happened to them (only as sourced), the September 1890 train from Dijon, the luggage that also vanished, and why he never got credit.",
+    "critic_score": 96,
+    "visuals": {
+      "distinct": 21,
+      "longest_s": 7.5,
+      "longest_share": 0.114,
+      "longest_name": "scene:train_station:you:medium:front"
+    },
+    "yt_title": "The Disappearance of the First Filmmaker #shorts",
+    "hashtags": [
+      "louisleprince",
+      "england",
+      "unsolvedmysteries",
+      "history"
+    ],
+    "yt_tags": [
+      "louis le prince",
+      "first filmmaker",
+      "roundhay garden footage",
+      "unsolved mystery",
+      "true crime story",
+      "england mystery",
+      "missing inventor",
+      "1890 disappearance",
+      "thomas edison cinema",
+      "cold case",
+      "history mystery",
+      "louis le prince story",
+      "true story",
+      "mystery explained",
+      "true crime"
+    ],
+    "opening": "You are holding a film that lasts two seconds.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-10-21_2336",
+    "tiktok": null
   }
 ]
