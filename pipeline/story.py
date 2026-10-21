@@ -1152,6 +1152,12 @@ def fact_check(story: dict, source: str, api_key: str, exact: bool = False) -> d
         if bad:
             log(f"Fact ledger values NOT found in the source (ignored): {', '.join(bad)}")
     items = unsupported_details(text, source)  # the source is the authority; the ledger is extracted from it
+    import spoken_numbers as nums
+    ledger_years = {v for v in nums.values(" ".join(ledger)) if 1000 <= v <= 2100}
+    if ledger_years:  # a year the ledger doesn't have is wrong even if the source mentions it somewhere (Oct 21:
+        for v in sorted(nums.values(text)):  # Le Prince "nineteen ninety" for 1890 got through)
+            if 1000 <= v <= 2100 and v not in ledger_years:
+                items.append(f"the year {int(v)} (the fact_ledger's years are {', '.join(str(int(y)) for y in sorted(ledger_years))})")
     if not items:
         log("Fact check: every number and name in the narration is in the source")
         return story
@@ -1444,6 +1450,20 @@ def _owner_fields(story: dict, item: dict) -> None:
         story["fixed_title"] = item["title"]
     if item.get("cluster"):
         story["cluster"] = item["cluster"]
+    if item.get("ban"):
+        story["ban"] = list(item["ban"])  # checked again by any later rewrite (explainer.adapt)
+
+
+def ban_hits(bans, text: str) -> list[str]:
+    """Banned phrases in the text, also with up to 2 extra words in between ("because of his SUDDEN disappearance"
+    slipped past an exact match in the Le Prince test of Oct 21)."""
+    low = re.sub(r"[^a-z0-9' ]+", " ", (text or "").lower())
+    hits = []
+    for b in bans or []:
+        words = re.sub(r"[^a-z0-9' ]+", " ", str(b).lower()).split()
+        if words and re.search(r"\b" + r"(?:\s+\S+){0,2}?\s+".join(map(re.escape, words)) + r"\b", low):
+            hits.append(b)
+    return hits
 
 
 def topic_story(history: list[dict], item: dict, api_key: str, sfx_list: str) -> dict:
@@ -1478,7 +1498,7 @@ def topic_story(history: list[dict], item: dict, api_key: str, sfx_list: str) ->
             opening = re.split(r"(?<=[.!?])\s+", story["scenes"][0]["narration"].strip())[0]
             reused = [x for x in avoid if _too_close(opening, x) or _too_close(story.get("hook_overlay", ""), x)]
             said = " ".join(sc.get("narration", "") for sc in story.get("scenes") or []).lower()
-            banned = [b for b in item.get("ban", []) if b in said]
+            banned = ban_hits(item.get("ban"), said)
             if not reused and not banned:
                 break
             why = f"used {banned[0]!r}" if banned else f"reused the old video ({reused[0][:80]!r})"
@@ -1527,7 +1547,7 @@ def topic_story(history: list[dict], item: dict, api_key: str, sfx_list: str) ->
                   or _too_close(story.get("title", ""), x, 0.85)]  # a title may share the legend's name
         harm = child_harm(story) if item.get("no_children") else ""
         said = " ".join(sc.get("narration", "") for sc in story.get("scenes") or []).lower()
-        banned = [b for b in item.get("ban", []) if b in said]
+        banned = ban_hits(item.get("ban"), said)
         if banned:
             log(f"Draft {attempt + 1} uses a banned (unsourced) detail ({banned[0]!r}); writing it again")
             extra = (f"\n\nYOUR LAST DRAFT MENTIONED {banned[0]!r}, which is NOT in the source. Leave it out "
