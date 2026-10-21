@@ -24,7 +24,7 @@ COUNTER = ROOT / "data" / "counter.json"
 
 
 def take_video_number() -> int:
-    """Allocate the next channel post number only after at least one platform succeeds."""
+    """Allocate the next public post number only after public publishing succeeds."""
     try:
         n = int(json.loads(COUNTER.read_text())["next_video"])
     except Exception:  # noqa: BLE001
@@ -156,7 +156,7 @@ def _posted_entry(history: list[dict], stamp: str, story_id: str | None = None) 
             or h.get("date") == stamp
             or (story_id and h.get("story_id") == story_id)
         )
-        if same and h.get("posted"):
+        if same and (h.get("posted") or h.get("draft_sent")):
             return h
     return None
 
@@ -164,8 +164,9 @@ def _posted_entry(history: list[dict], stamp: str, story_id: str | None = None) 
 def _drop_posted(buffer, video: dict, h: dict) -> None:
     """Remove a video that is already posted, never post it again."""
     log(
-        f"'{h.get('title')}' ({video['stamp']}) was already posted as "
-        f"#{h.get('video_number')} at {h.get('posted')}: not posting again"
+        f"'{h.get('title')}' ({video['stamp']}) was already delivered "
+        f"(public #{h.get('video_number')}, draft {h.get('draft_sent')}, posted {h.get('posted')}): "
+        "not delivering again"
     )
     try:
         buffer.remove(video)
@@ -275,18 +276,22 @@ def main(from_build: bool = False) -> int:
     # TikTok and YouTube are independent. One failure never prevents the other.
     result, tt_error = None, None
     try:
-        if CONFIG.get("tiktok_mode") == "direct":
+        mode = CONFIG.get("tiktok_mode")
+        if mode == "direct":
             result = tiktok.post_direct(mp4, meta["caption_text"])
             if result.get("status") != "PUBLISH_COMPLETE":
                 raise RuntimeError("TikTok direct post not confirmed: " + str(result))
-        else:
+        elif mode == "draft":
             result = tiktok.send_to_drafts(mp4)
-            # A draft is not a published video; don't consume the queue item.
-            raise RuntimeError("TikTok is configured for drafts, not public autoposting")
+            if result.get("status") != "SEND_TO_USER_INBOX":
+                raise RuntimeError("TikTok inbox draft not confirmed: " + str(result))
+        else:
+            raise RuntimeError(f"Unknown TikTok posting mode: {mode!r}")
 
     except Exception as e:  # noqa: BLE001
         traceback.print_exc()
-        tt_error = f"{type(e).__name__}: {str(e)[:300]}"
+        result = None  # Never treat failed or unconfirmed delivery as a success.
+        tt_error = f"{type(e).__name__}: {str(e)[:300}"
 
     import youtube_pending
     yt, yt_error = None, None
@@ -324,8 +329,14 @@ def main(from_build: bool = False) -> int:
         )
         return 1
 
-    # At least one platform has the video. Remove it from the buffer so it
-    # cannot be posted twice. If removal fails, history records that fact.
+    # A confirmed TikTok inbox delivery is NOT a public post. Consume its buffer
+    # item to avoid duplicate draft notifications, but track it separately.
+    draft_sent = bool(result and result.get("mode") == "draft")
+    publicly_posted = bool(yt or (result and result.get("mode") == "direct"))
+    delivery_time = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M")
+
+    # At least one platform accepted the delivery. Remove the buffer item to
+    # prevent repeated drafts/posts. If removal fails, record that fact.
     removal_pending = False
     try:
         buffer.remove(video)
@@ -336,13 +347,14 @@ def main(from_build: bool = False) -> int:
             "recorded as posted with removal pending"
         )
 
-    number = take_video_number()
-    _gh_output("video_number", number)
+    number = take_video_number() if publicly_posted else None
+    if number is not None:
+        _gh_output("video_number", number)
     if yt_paused and result:  # on TikTok, not on YouTube: keep the mp4 for the upload once YouTube is back
         youtube_pending.record(video["stamp"], mp4, out / "caption.json", number)
     log(
-        f"Video #{number}: '{meta['title']}' "
-        f"(story {meta.get('story_id', '?')}, buffered {video['stamp']})"
+        f"Video {'#' + str(number) if number is not None else '(TikTok inbox draft)'}: "
+        f"'{meta['title']}' (story {meta.get('story_id', '?')}, buffered {video['stamp']})"
     )
 
     history = load_history()
@@ -352,11 +364,15 @@ def main(from_build: bool = False) -> int:
             or h.get("buffered") == video["stamp"]
             or h.get("date") == video["stamp"]
         ):
-            h["video_number"] = number
+            if number is not None:
+                h["video_number"] = number
             h["tiktok"] = result if result else {"error": tt_error}
             h["youtube"] = yt if yt else ({"pending": "youtube_paused"} if yt_paused else
                                           ({"error": yt_error} if yt_error else None))
-            h["posted"] = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M")
+            if publicly_posted:
+                h["posted"] = delivery_time
+            if draft_sent:
+                h["draft_sent"] = delivery_time
             if removal_pending:
                 h["removal_pending"] = True
             if meta.get("yt_title"):
@@ -374,7 +390,8 @@ def main(from_build: bool = False) -> int:
             "video_number": number, "tiktok": result if result else {"error": tt_error},
             "youtube": yt if yt else ({"pending": "youtube_paused"} if yt_paused else
                                       ({"error": yt_error} if yt_error else None)),
-            "posted": datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M"),
+            **({"posted": delivery_time} if publicly_posted else {}),
+            **({"draft_sent": delivery_time} if draft_sent else {}),
             "yt_title": meta.get("yt_title"), "hashtags": meta.get("hashtags"), "yt_tags": meta.get("yt_tags"),
             "history_rebuilt": "from caption.json at post time",
             **({"removal_pending": True} if removal_pending else {}),
@@ -385,7 +402,7 @@ def main(from_build: bool = False) -> int:
                     "caption.json. Check that the build that made it saved history.", warn=True)
     save_history(history)
     (ROOT / ".posted").write_text(json.dumps({"stamp": video["stamp"], "story_id": meta.get("story_id"),
-                                              "video_number": number}))
+                                              "video_number": number, "mode": "draft" if draft_sent else "public"}))
 
     lines = []
     if yt:
@@ -426,7 +443,10 @@ def main(from_build: bool = False) -> int:
     )
 
     left = len(waiting) - 1
-    log(f"Done: video #{number} posted. {left} video(s) left in the buffer.")
+    if draft_sent and not publicly_posted:
+        log(f"Done: TikTok inbox draft delivered, NOT publicly posted. {left} video(s) left in buffer.")
+    else:
+        log(f"Done: video #{number} publicly posted. {left} video(s) left in buffer.")
     try:  # keep artifact-only pending videos safe; upload pending ones once YouTube is back (max 6/day)
         youtube_pending.stash()
         youtube_pending.upload_some()
