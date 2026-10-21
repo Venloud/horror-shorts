@@ -9,6 +9,8 @@ name: Recover finished buffer video
 # 
 on:
   workflow_dispatch:
+
+permissions:
   actions: read
 
 concurrency:

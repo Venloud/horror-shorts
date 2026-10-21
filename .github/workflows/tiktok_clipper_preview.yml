@@ -17,6 +17,8 @@ name: TikTok Clipper Preview
 #         default: '0'
 on:
   workflow_dispatch:
+
+permissions:
   contents: read
 concurrency:
   group: tiktok-clipper-preview
