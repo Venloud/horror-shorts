@@ -591,9 +591,9 @@ so a new session can pick up without starting over.
   no rebase conflicts. Note: GitHub keeps only ONE pending run per concurrency group; a newer queued run
   replaces an older pending one.
 
-## EXPERIMENTAL: explainer render style (`explainer.py`, off; Oct 19)
+## Explainer render style (`explainer.py`, enabled Oct 21; experimental fallback)
 - Owner's spec: a saveo.house-style explainer for ALL modes (the reference video is someone else's: NEVER commit it).
-  Config `render_style` stays "classic" until the owner approves; `explainer_for_modes` [] ; env RENDER_STYLE=explainer.
+  Owner approved the style on 2026-10-21. Config `render_style` is now "explainer" for new builds in all modes; `explainer_for_modes` remains [] as the global selector is used. Existing buffered classic videos are preserved. If an explainer build fails, `pipeline/main.py` falls back to classic and records `_explainer_error`; env RENDER_STYLE=explainer remains strict for tests.
 - Character "you" (`explainer_character.py`, `explainer_character.yml`, once): ORIGINAL stick figure (round white
   bald head, big cartoon face, forest-green cap with orange button, charcoal hoodie with orange drawstrings, stick
   legs, white/orange sneakers). 12 poses, same description word-for-word, Cloudflare FLUX (Workers AI has NO seed:

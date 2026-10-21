@@ -1161,6 +1161,6 @@ once, no suicide angle or wording (BAN lines, now enforced for TRUE files too), 
 - New render_style "explainer" (pipeline/explainer.py): second-person problem-by-problem narration, painted FLUX
   plates with the recurring stick figure "you" (assets/character, drawn once), code-drawn info cards (counting grids,
   bars vs dashed threshold, counters, arrows, stamps, lists) and black title cards, HUD (3 stats + chapter chip),
-  karaoke captions, accent #FF2D87. Max 12 FLUX images per video. Config render_style stays "classic".
+  karaoke captions, accent #FF2D87. Max 12 FLUX images per video. Owner approved enabling on 2026-10-21: config render_style is now "explainer" for new builds; existing buffered videos are unchanged. Main pipeline falls back to classic if the experimental explainer renderer fails.
 - One-time character workflow: explainer_character.yml. Test builds: explainer_test.yml (nothing buffered/posted);
   review sheets in previews/explainer/. Details: CLAUDE.md "EXPERIMENTAL: explainer render style".
