@@ -2,6 +2,18 @@
 
 A free, fully automated, faceless illustrated horror / true-crime / folklore channel: **2 videos a day** to TikTok and YouTube Shorts, built and posted by GitHub Actions.
 
+## TikTok delivery mode
+
+TikTok delivery is set to **draft** in `config.json`. The daily workflow sends each
+buffered video to the connected creator's TikTok inbox for the creator to open,
+finish and publish manually. `SEND_TO_USER_INBOX` confirms delivery, **not**
+public posting. A confirmed inbox delivery is recorded as `draft_sent` and
+removed from the production buffer to avoid sending duplicate drafts. Failed
+or unconfirmed deliveries remain queued. The copy-ready caption is included
+in the run artifact and phone notification, as TikTok inbox uploads do not
+automatically populate the caption. YouTube's API uploader remains paused,
+and its pending media is retained separately.
+
 ## Current production flow
 
 Generation and distribution are separate stages:
