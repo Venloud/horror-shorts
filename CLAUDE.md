@@ -635,6 +635,27 @@ so a new session can pick up without starting over.
   and skips the inbox): never buffered/posted/history; artifact MP4 + frame sheet + report; sheet committed to
   previews/explainer/.
 
+### Explainer renovation (Oct 21, branch claude/admiring-goldberg-l0l8aw until merged)
+- Owner briefs: storyboard beats, suited stick figure, TRUE STORY -> title opener, still backgrounds, no HUD / date
+  chips, DARK EDITORIAL NOIR (midnight #101419, charcoal #25282D, smoked taupe #514B48, magenta #F01767; parchment
+  #A99E90 only inside small evidence / document elements), bold condensed type (Oswald, OFL).
+- Host = the OWNER'S sprites (`assets/character/host/`, 102 cut-outs from his sheets, index.json action/view/
+  expression/prop; `pipeline/sprites.py`): walk/run cycles from his frames, cast = recoloured host + hat, crowd =
+  grey silhouettes. `pipeline/stickman.py` (code rig) is only the fallback. The FLUX hoodie set (assets/character/*.png,
+  explainer_character.py) is no longer used. Sheet figures are ~240 px tall: close-ups soft until hi-res exports.
+- Storyboard (`explainer.plan`): literal beats (who/what/where, view, shot type, background motion none by default,
+  text modes location/name/punch/evidence/quote/stamp), cards, titles and `graphic` shots = local templates in
+  `pipeline/noir.py` (true_story, title, evidence, map_route, fact, filmstrip, quote, impact, connections, compare,
+  missing, closing), fields only from the narration's words / numbers, max ONE date on screen per video; saved in
+  img_dir/explainer_storyboard.json (same narration = same storyboard, no new LLM call).
+- Cloudflare budget (`explainer.Budget`, img_dir/explainer_images.json, counted across retries): config
+  `explainer_new_images` 2 new images per video, hard `explainer_max_images` 4 calls incl. QA redraws. Order: this
+  story's earlier plates (a text-only retry never redraws) -> asset library painted places (CLIP, empty-place QA) ->
+  new Cloudflare -> a fitting plate of this video mirrored/regraded -> local noir ground. New QA-passed plates go
+  into the asset library after buffering (`explainer.record_plates`).
+- PIL gotcha: ImageDraw with translucent fills REPLACES pixels on RGBA images; draw on a transparent layer and
+  alpha_composite (noir templates and overlays do).
+
 ## EXPERIMENTAL: cutout render style (`cutout.py`, off by default)
 - Switch: config `render_style` (classic | cutout), build.yml input `render_style` (env RENDER_STYLE),
   `cutout_for_modes` (e.g. ["coldcase"]). Any cutout failure -> logged, the video renders classic; a FORCED

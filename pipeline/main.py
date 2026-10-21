@@ -385,6 +385,8 @@ def main() -> int:
         if story.get("render_style", "classic") == "classic":  # QA-passed pictures go into the asset library
             import library
             library.record_video(story, img_dir)
+        elif story.get("render_style") == "explainer":  # new Cloudflare plates are reused by later videos
+            explainer.record_plates(story, img_dir)
         # Used as soon as the video is safely in the buffer, so it can never be made twice.
         for sk in story.pop("_skipped", []):
             history.append({"date": stamp, **sk})
