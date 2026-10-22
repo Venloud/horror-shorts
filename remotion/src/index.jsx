@@ -1,6 +1,6 @@
 import React from "react";
 import {NightFilesPolish} from "./polish.jsx";
-import {Composition, AbsoluteFill, Sequence, OffthreadVideo, interpolate, useCurrentFrame, staticFile} from "remotion";
+import {Composition, AbsoluteFill, Sequence, OffthreadVideo, interpolate, useCurrentFrame, staticFile, registerRoot} from "remotion";
 
 const Clip = ({clip}) => {
   const frame = useCurrentFrame();
@@ -59,3 +59,6 @@ export const RemotionRoot = () => (
     />
   </>
 );
+
+// Make both existing Join and new Polish compositions available to the CLI.
+registerRoot(RemotionRoot);
