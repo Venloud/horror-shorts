@@ -87,7 +87,9 @@ def send_to_drafts(path: Path) -> dict:
     data = _check(r, "Draft upload init")
     _upload_file(data["upload_url"], path)
     status = _wait_status(token, data["publish_id"])
-    log(f"TikTok draft: {status} ({data['publish_id']})")
+    if status != "SEND_TO_USER_INBOX":
+        raise RuntimeError(f"TikTok draft delivery not confirmed: {status} ({data['publish_id']})")
+    log(f"TikTok draft sent to creator inbox: {status} ({data['publish_id']})")
     return {"publish_id": data["publish_id"], "status": status, "mode": "draft"}
 
 
@@ -98,9 +100,9 @@ def post_direct(path: Path, caption: str) -> dict:
                   "Creator info")
     wanted = CONFIG.get("direct_privacy", "SELF_ONLY")
     options = info.get("privacy_level_options") or ["SELF_ONLY"]
-    if wanted == "PUBLIC_TO_EVERYONE" and wanted not in options:
-        raise RuntimeError("Public TikTok posting unavailable for this account; refusing to post privately")
-    privacy = wanted if wanted in options else ("SELF_ONLY" if "SELF_ONLY" in options else options[0])
+    if wanted not in options:
+        raise RuntimeError(f"TikTok has not approved {wanted} direct posting; available: {options}")
+    privacy = wanted
     body = {
         "post_info": {
             "title": caption[:2200],
