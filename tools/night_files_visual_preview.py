@@ -87,7 +87,7 @@ def scene_shot(expression: str, frame: str, prop: str = "none", label: str = "")
     return {"type": "scene", "location": "blank studio", "insert": "",
             "primary": "you", "action": "standing", "expression": expression,
             "view": "front", "facing": "right", "secondary": "",
-            "action2": "standing", "shot_type": frame, "motion": "none",
+            "action2": "standing", "shot_type": frame, "motion": "subtle_push" if frame == "medium" else "none",
             "prop": prop, "text_mode": "evidence" if label else "none",
             "text": label, "accent": ""}
 
@@ -97,18 +97,21 @@ def segments_for_voice(narration: dict) -> list[dict]:
     segments: list[dict] = []
     storyboard = (
         [(0.00, {"type": "title", "text": "THE LAST PHOTOGRAPH", "accent": "LAST"}),
-         (0.39, scene_shot("neutral", "medium")),
-         (0.71, {"type": "graphic", "template": "impact", "fields": {
-             "text": "A LOCKED ROOM", "accent": "LOCKED"}})],
+         (0.29, scene_shot("neutral", "medium")),
+         (0.64, {"type": "graphic", "template": "photo_scan", "fields": {
+             "kicker": "PHOTO ANALYSIS", "text": "A PHOTOGRAPH", "count": 1}})],
         [(0.00, scene_shot("suspicious", "close")),
-         (0.46, {"type": "graphic", "template": "evidence", "fields": {
-             "kicker": "THE EVIDENCE", "text": "A SECOND SHADOW", "accent": "SHADOW",
-             "note": "INSIDE THE PHOTOGRAPH"}})],
+         (0.38, {"type": "graphic", "template": "photo_scan", "fields": {
+             "kicker": "THE DETAIL", "text": "THE SHADOW", "count": 1,
+             "accent": "SHADOW"}})],
         [(0.00, scene_shot("worried", "close")),
-         (0.53, {"type": "graphic", "template": "impact", "fields": {
-             "text": "MIDNIGHT", "accent": "MIDNIGHT"}})],
+         (0.39, {"type": "graphic", "template": "clock_stop", "fields": {
+             "kicker": "MIDNIGHT", "text": "CLOCK STOPPED"}})],
         [(0.00, scene_shot("serious", "close")),
-         (0.46, {"type": "graphic", "template": "closing", "fields": {
+         (0.29, {"type": "graphic", "template": "shadow_reveal", "fields": {
+             "kicker": "SECOND LOOK", "text": "TWO SHADOWS",
+             "count": 2, "accent": "SHADOWS"}}),
+         (0.72, {"type": "graphic", "template": "closing", "fields": {
              "kicker": "YOUR CALL", "text": "WHO WAS THE SECOND SHADOW?",
              "accent": "SECOND"}})],
     )
@@ -129,6 +132,8 @@ def main() -> None:
     if not expected <= present:
         raise RuntimeError(f"Missing original approved images: {sorted(expected-present)}")
 
+    # Experimental staging ONLY; the production config remains unchanged.
+    explainer.CONFIG["explainer_cinematic_camera"] = True
     narration, total = synthesize_voice()
     story = {"title": "THE LAST PHOTOGRAPH", "mode": "fiction", "true_story": False,
              "scenes": [{"narration": text} for text in SAMPLE]}
@@ -183,6 +188,7 @@ def main() -> None:
             "original_assets": sorted(expected),
             "voice": "espeak-ng placeholder, NOT production narration quality",
             "cloudflare_calls": 0, "posting": False, "buffer_changes": False,
+            "free_motion_tools": ["photo_scan", "clock_stop", "shadow_reveal", "subtle_push"],
             "shots": segs}
     (OUTPUT / "shot-list.json").write_text(json.dumps(info, indent=2))
     print(f"READY {final} ({final.stat().st_size} bytes) {total:.1f}s")
