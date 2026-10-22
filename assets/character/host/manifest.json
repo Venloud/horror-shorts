@@ -217,7 +217,7 @@
     {
       "id": "F09",
       "name": "curious",
-      "status": "awaiting_upload"
+      "status": "received_not_committed"
     },
     {
       "id": "F10",
@@ -330,6 +330,19 @@
       "height": 1145,
       "format": "RGBA PNG",
       "note": "Do not mark approved until exact original bytes are committed to GitHub."
+    },
+    {
+      "id": "F09",
+      "name": "curious",
+      "received_on": "2026-10-22",
+      "status": "owner_confirmed_png_received_in_chat_NOT_YET_IN_REPO",
+      "upload_filename": "image(20261022-232246).png",
+      "target_path": "expressions/F09_curious.png",
+      "sha256": "349da16a0bbe77f5e6e3a8c9a13f9feb4adbfbd93e980085bed11f65d94f300b",
+      "width": 1374,
+      "height": 1145,
+      "format": "RGBA PNG",
+      "note": "Owner explicitly labelled this original image F09 Curious. Image accessible as chat attachment, but original binary has not been committed; do not mark approved before exact bytes are imported."
     }
   ]
 }
