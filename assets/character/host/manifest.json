@@ -55,7 +55,7 @@
     {
       "id": "F07",
       "name": "thinking",
-      "path": "incoming/2026-10-21/U09_thinking_skeptical.png",
+      "path": "expressions/F07_thinking.png",
       "status": "approved",
       "source_id": "U09",
       "width": 1374,
@@ -65,7 +65,7 @@
     {
       "id": "F08",
       "name": "suspicious",
-      "path": "incoming/2026-10-21/U08_suspicious_crossed_arms.png",
+      "path": "expressions/F08_suspicious.png",
       "status": "approved",
       "source_id": "U08",
       "width": 1374,
@@ -162,13 +162,13 @@
       "id": "F07",
       "name": "thinking",
       "status": "approved",
-      "path": "incoming/2026-10-21/U09_thinking_skeptical.png"
+      "path": "expressions/F07_thinking.png"
     },
     {
       "id": "F08",
       "name": "suspicious",
       "status": "approved",
-      "path": "incoming/2026-10-21/U08_suspicious_crossed_arms.png"
+      "path": "expressions/F08_suspicious.png"
     },
     {
       "id": "F09",
