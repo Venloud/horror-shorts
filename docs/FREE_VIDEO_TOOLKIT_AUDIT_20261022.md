@@ -37,7 +37,8 @@ Date: 2026-10-22. Owner direction: retain approved M/F character originals; impr
 
 ## Still pending, do not claim completed
 
-- **No professional-motion-standard verdict until reviewing the *actual* MP4** on a recent manual run. Inspect frames, music, sound cues, transitions, narration sync and mobile captions.
+- **Verified preview evidence:** [Actions run 39740729079](https://github.com/Venloud/horror-shorts/actions/runs/39740729079) completed both code checks and the manual MP4 job, with downloadable `night-files-manual-cinematic-preview` artifact. The 17.07-second, 1080×1920, 24 fps H.264/AAC MP4 and contact sheet were inspected. The scan/clock/shadow graphics appear; **the video is still an early motion-design prototype, not approved as cinematic or viral-standard**. The voice is still placeholder eSpeak, and the full SFX mix has not received subjective listening approval.
+- **Final feature-branch checks:** [Actions run 39740760122](https://github.com/Venloud/horror-shorts/actions/runs/39740760122) passed CI and the new offline graphics/SFX regression tests. Preview-only job was returned to manual-only after isolated testing.
 - Improve approved bust cropping and inconsistent character scale if preview still exposes them.
 - Remotion integration into actual Night Files production is **not yet verified**. Do not silently switch `remotion_join` or install the full OpenMontage pipeline.
 - Production still uses generic procedural fallbacks for missing P action poses. Preserve approved assets.
