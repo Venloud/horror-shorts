@@ -167,8 +167,32 @@ def main() -> None:
     if encoder.returncode or not video.is_file() or video.stat().st_size < 10000:
         raise RuntimeError(f"FFmpeg preview encode failed, exit {encoder.returncode}")
 
-    # This is a timing guide voice, not the production Kokoro narrator.
-    run(["ffmpeg", "-y", "-v", "error", "-i", str(video), "-i", narration["path"],
+    # Reuse the production SFX mixer and the repo's existing free audio library.
+    # Precise, short cues demonstrate cut rhythm without changing production state.
+    events = []
+    seen_photo = False
+    for seg in segs:
+        shot = seg["shot"]
+        if shot["type"] != "graphic":
+            continue
+        style = shot.get("template")
+        at = seg["start"]
+        if style == "photo_scan":
+            events.append((at + 0.05, "whoosh", 0.18, 0.45))
+            if not seen_photo:
+                events.append((at + 0.14, "camera_shutter", 0.27, 0.45))
+                seen_photo = True
+        elif style == "clock_stop":
+            events.append((at + 0.06, "clock_ticking", 0.14,
+                           min(1.25, seg["end"]-at-0.15)))
+            events.append((min(seg["end"]-0.12, at+1.32), "ui_click", 0.18, 0.24))
+        elif style == "shadow_reveal":
+            events.append((at + 0.13, "heartbeat", 0.30, 0.84))
+        elif style == "closing":
+            events.append((at + 0.06, "whoosh", 0.17, 0.40))
+    mixed = explainer._mix_audio(narration, total, events, OUTPUT / "preview_audio.wav")
+    # This is still a timing-guide voice, not the production Kokoro narrator.
+    run(["ffmpeg", "-y", "-v", "error", "-i", str(video), "-i", str(mixed),
          "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-shortest",
          "-movflags", "+faststart", str(final)])
     video.unlink(missing_ok=True)
@@ -188,7 +212,8 @@ def main() -> None:
             "original_assets": sorted(expected),
             "voice": "espeak-ng placeholder, NOT production narration quality",
             "cloudflare_calls": 0, "posting": False, "buffer_changes": False,
-            "free_motion_tools": ["photo_scan", "clock_stop", "shadow_reveal", "subtle_push"],
+            "free_motion_tools": ["photo_scan", "clock_stop", "shadow_reveal", "subtle_push", "beat_trimmed_sfx"],
+            "sound_effects": [{"at": round(e[0], 2), "name": e[1], "seconds": e[3]} for e in events],
             "shots": segs}
     (OUTPUT / "shot-list.json").write_text(json.dumps(info, indent=2))
     print(f"READY {final} ({final.stat().st_size} bytes) {total:.1f}s")
