@@ -2,7 +2,7 @@
 
 **Canonical PLANNED ID order. Source: Venloud's original 118-item list, resurfaced October 22, 2026.** This is the authoritative checklist for *what each ID means when planning NEW art*. It is not an assertion that the corresponding PNG has already been uploaded, approved, or saved. Never substitute a shorter/reordered list or silently assign another meaning to an F/P/R/O/T/N identifier.
 
-**IMPORTANT: The existing `manifest.json` and `ASSET_LIBRARY.md` currently contain an older, conflicting intake numbering for some F-series files** (e.g. the current registry labels `F01_happy.png` and `F09_angry.png`, but this original plan requires F01 Neutral and F09 Curious). Those files are real historical uploads and must **not be deleted, overwritten, automatically renamed or misrepresented as the new matching planned images**. Reconciliation requires comparing the actual image content and explicit owner approval; keep both planned identity and actual on-disk identity visible until then.
+**IMPORTANT: The existing `manifest.json` and `ASSET_LIBRARY.md` currently contain an older, conflicting intake numbering for some F-series files** (e.g. historical intake once labelled F01 as Happy and F09 as Angry; the original plan requires F01 Neutral and F09 Curious. F01 has since been corrected by owner confirmation). Those files are real historical uploads and must **not be deleted, overwritten, automatically renamed or misrepresented as the new matching planned images**. Reconciliation requires comparing the actual image content and explicit owner approval; keep both planned identity and actual on-disk identity visible until then.
 
 ## 1. Locked character master views, 5
 
@@ -47,7 +47,7 @@ Everyday / explanatory: F01–F11. Mystery / dramatic: F12–F22.
 
 **Current user-reported creation progress:** Images through **F15 Scared** have been shared in conversation, including the recent scared close-up. **Next planned expression: F16 Shocked**, then F17 Sad, F18 Angry, F19 Determined, F20 Frustrated, F21 Relieved, F22 Tired. This is *owner-reported submitted progress*, not proof that every F01–F15 original PNG has been committed.
 
-**Verified repository state at catalog-writing time:** five original M-series masters and nine F-series PNGs are present in `assets/character/host/expressions/`; the older registry maps `F01 Happy, F02 Serious, F03 Confused, F04 Worried, F05 Excited, F07 Thinking, F08 Suspicious, F09 Angry, F10 Smirk`. This conflicts with original planned names. DO NOT treat file presence under those old names as completion of the original corresponding F IDs. Maintain an intake/reconciliation ledger separately, and correct the registry only after source-file inspection and explicit mapping confirmation.
+**Verified repository state at catalog-writing time:** five original M-series masters and nine F-series PNGs are present in `assets/character/host/expressions/`; the older registry previously mapped `F01 Happy, F02 Serious, F03 Confused, F04 Worried, F05 Excited, F07 Thinking, F08 Suspicious, F09 Angry, F10 Smirk`; **F01 Neutral** has now been reconciled and renamed (original PNG unchanged). This conflicts with original planned names. DO NOT treat file presence under those old names as completion of the original corresponding F IDs. Maintain an intake/reconciliation ledger separately, and correct the registry only after source-file inspection and explicit mapping confirmation.
 
 ## 3. Static action poses, 36
 
@@ -191,3 +191,7 @@ Reusable animated layouts, text and evidence graphics driven by narration and ve
 3. The **planned ID** above is stable; if an old uploaded filename uses that ID differently, do not silently change semantics. Use a separate intake ID while resolving.
 4. Preserve the currently approved Night Files / future JJK **cinematic editing style**. Editing improvements are paused until character image creation is complete, per owner's instruction.
 5. The next image to review/generate is **F16 Shocked**. Do not move to P/R/O/T/N or relabel earlier images without owner direction.
+
+## Intake correction: F01 Neutral (October 22, 2026)
+
+Venloud uploaded and explicitly labelled the same original PNG as **F01 Neutral**. Verified original SHA-256 `fa2e59e289eb4537fec790456e6696c0901cdf4a0d9a0240f60ec329b442774f` and 1122×1402 RGBA. The old `F01_happy.png` filename was misclassified, so its existing Git blob was moved without image re-encoding to `expressions/F01_neutral.png`. This corrects just F01. F02 Talking and F03 Smiling were identified by Venloud next; their new uploaded original bytes must be verified before marking them committed. Do not overwrite the historical `F02_serious.png` or `F03_confused.png` in the meantime.

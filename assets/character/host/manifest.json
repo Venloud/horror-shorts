@@ -8,12 +8,13 @@
   "approved": [
     {
       "id": "F01",
-      "name": "happy",
-      "path": "expressions/F01_happy.png",
+      "name": "neutral",
+      "path": "expressions/F01_neutral.png",
       "status": "approved",
       "width": 1122,
       "height": 1402,
-      "sha256": "fa2e59e289eb4537fec790456e6696c0901cdf4a0d9a0240f60ec329b442774f"
+      "sha256": "fa2e59e289eb4537fec790456e6696c0901cdf4a0d9a0240f60ec329b442774f",
+      "note": "Owner explicitly verified original PNG is F01 Neutral. Same byte-for-byte SHA-256 as previously misnamed F01_happy.png, moved without recompression."
     },
     {
       "id": "F02",
@@ -223,5 +224,5 @@
       "relation": "separate expression, not suspicious"
     }
   ],
-  "asset_note": "F04 Worried and F05 Excited original PNGs imported and SHA256 verified 2026-10-22. F09 Angry from U04 and F10 Smirk from U02 are registered. No ID reassignment."
+  "asset_note": "F04 Worried and F05 Excited original PNGs imported and SHA256 verified 2026-10-22. F09 Angry from U04 and F10 Smirk from U02 are registered. No ID reassignment. F01 corrected to Neutral 2026-10-22 (blob unchanged). Other F-series historical names still pending review."
 }

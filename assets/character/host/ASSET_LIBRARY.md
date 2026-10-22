@@ -1,6 +1,6 @@
 # Night Files: Approved Character Asset Library
 
-> **Important, October 22, 2026:** This document and `manifest.json` record **historical uploaded file names**, but some old F-series names/IDs conflict with Venloud's **original 118-item creation order**. The authoritative planned ID mapping is now [MASTER_ASSET_CATALOG.md](MASTER_ASSET_CATALOG.md), especially F01 Neutral through F22 Tired and **F15 Scared → F16 Shocked**. Do not silently use old `F01_happy.png` as planned F01 Neutral, rename original uploads, overwrite content, or treat owner-reported sent images as committed. Reconcile physical assets separately before changing this registry.
+> **Important, October 22, 2026:** F01 has been owner-confirmed as **Neutral** and the original unchanged PNG was renamed from `F01_happy.png` to `F01_neutral.png`. Other historical F-series IDs still conflict with the [original 118-item catalog](MASTER_ASSET_CATALOG.md); review each actual picture before renaming it. Do not overwrite original artwork.
 
 This is the **source of truth** for Venloud's reusable character identity and expression assets. 
 Assets are approved **one at a time or in batches of up to 10**. Preserve the original uploaded PNG bytes; do not upsample, redraw, recolor, regenerate, or silently alter them.
@@ -25,7 +25,7 @@ Assets are approved **one at a time or in batches of up to 10**. Preserve the or
 ## Approved expressions
 | ID | Name | Canonical file |
 |----|------|----------------|
-| F01 | Happy | [expressions/F01_happy.png](expressions/F01_happy.png) |
+| F01 | Neutral (owner-confirmed) | [expressions/F01_neutral.png](expressions/F01_neutral.png) |
 | F02 | Serious | [expressions/F02_serious.png](expressions/F02_serious.png) |
 | F03 | Confused | [expressions/F03_confused.png](expressions/F03_confused.png) |
 | F04 | Worried | [expressions/F04_worried.png](expressions/F04_worried.png) |
