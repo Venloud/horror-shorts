@@ -45,14 +45,14 @@ class RemotionEditorialContract(unittest.TestCase):
                 polish(Path(tmp)/"missing.mp4",Path(tmp)/"out.mp4",
                        self.shots,self.voice,24,52)
 
-    def test_copyable_remotion_entrypoint_and_safe_default(self):
+    def test_single_remotion_editor_and_active_config(self):
         path=ROOT/"remotion"/"src"/"index.jsx"
-        self.assertIn("NightFilesJoin",path.read_text())
+        self.assertNotIn("NightFilesJoin",path.read_text())
         self.assertIn("NightFilesPolish",path.read_text())
         self.assertIn("registerRoot(RemotionRoot)",path.read_text())
         cfg=json.loads((ROOT/"config.json").read_text())
-        self.assertFalse(cfg.get("remotion_polish",False),
-                         "Remotion production post-pass must be opt-in")
+        self.assertTrue(cfg.get("remotion_polish",False),
+                        "Approved Night Files editing standard must use Remotion polish")
         post=(ROOT/"pipeline"/"remotion_post.py").read_text()
         self.assertNotIn("publish(",post)
         self.assertNotIn("cloudflare",post.lower())

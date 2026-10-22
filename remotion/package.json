@@ -3,7 +3,9 @@
   "private": true,
   "version": "1.0.0",
   "description": "Remotion composition layer for Night Files",
-  "scripts": {"render:join": "node render_join.mjs"},
+  "scripts": {
+    "render:polish": "node render_polish.mjs"
+  },
   "dependencies": {
     "@remotion/cli": "4.0.532",
     "remotion": "4.0.532",

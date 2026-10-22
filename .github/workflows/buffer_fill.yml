@@ -45,12 +45,12 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install Remotion composition layer
-        run: |  # only when config remotion_join is on (off since Oct 5: it failed every run with "registerRoot")
-          if python -c "import json,sys;sys.exit(0 if json.load(open('config.json')).get('remotion_join') else 1)"; then
+      - name: Install Night Files Remotion editing layer
+        run: |
+          if python -c "import json,sys;sys.exit(0 if json.load(open('config.json')).get('remotion_polish',False) else 1)"; then
             npm install --prefix remotion --no-audit --no-fund
           else
-            echo "Remotion join is off (config remotion_join): not installed"
+            echo "Remotion polishing disabled; using existing non-explainer compositing"
           fi
 
       - name: Install system tools

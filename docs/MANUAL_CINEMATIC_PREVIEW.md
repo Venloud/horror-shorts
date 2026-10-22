@@ -41,14 +41,16 @@ Night Files now uses **one existing pipeline, two editing stages** when explicit
 1. `pipeline/explainer.py` renders the approved illustrated host at larger mobile-first sizes, static action poses, and original Noir evidence/clock/shadow graphics; FFmpeg creates the source MP4 and voice/SFX audio.
 2. `pipeline/remotion_post.py` gives storyboard shot times and individual narration words to `remotion/render_polish.mjs`. Its new `NightFilesPolish` composition adds **spring-timed word highlights**, safe-area lower captions, animated edit cut swipes, progress rail, and upper-left editorial shot labels. FFmpeg remuxes the original finished soundtrack unchanged.
 
-The existing `NightFilesJoin` composition is preserved and now has its missing Remotion root registration. No OpenMontage AGPL files or paid services are used. Original approved PNGs remain in `assets/character/host` unchanged.
+The obsolete `NightFilesJoin` composition and its standalone join script have been retired. `NightFilesPolish` is the sole Remotion composition. No OpenMontage AGPL files or paid services are used. Original approved PNGs remain in `assets/character/host` unchanged.
 
 **Safe preview:** the manual GitHub Actions job installs Node/Remotion from `remotion/package.json` and runs the shared Remotion editorial pass automatically. The artifact contains the **final post-Remotion** MP4 and contact sheet.
 
-**Production defaults:** `remotion_polish` is **off by default**. To explicitly enable the same post-pass in an authorized non-production build, set `remotion_polish: true` in its configuration. The existing `explainer.render()` uses the shared adapter and fails clearly if Remotion is missing, instead of shipping an uncaptioned MP4. Do not enable scheduled production publishing without approval and a reviewed final MP4.
+**Current Night Files rendering standard:** `remotion_polish` is now **enabled** for the explainer video pipeline on `main`. The daily and buffer-fill builders install the existing Remotion dependencies whenever it is enabled. Normal FFmpeg support remains for other video styles, not as a duplicate cinematic explainer. The new pass fails clearly if Remotion is missing. Do not manually start a publishing workflow just to test visual editing; use CI's safe manual preview.
 
 **Cleanup requirement:** do not maintain a second test renderer. Finish fixes inside the existing `explainer.py`/Noir layer and the one Remotion post-pass, test the final MP4, merge only with owner's approval, and update Vandam's reintegration record.
 
 ## After the October 22 consolidation
 
 The user requested that all general-purpose composition, clock-time and evidence-annotation fixes be committed on **main** instead of left on a test branch. The existing **Continuous Integration** workflow has no custom parameters. Press **Run workflow** and it uses current **main** code, publishes no video, and supplies an MP4 plus a SHA marker. Story-specific narration in the manual preview is ONLY a test fixture; the source rendering and Remotion polish components accept arbitrary storyboards and word timings. A circled target must fall completely inside its hand-drawn ring. At midnight, a stopped clock shows 12:00 AM. The same functions apply to any story.
+
+**Cleanup, 2026-10-22:** Removed the disabled old Remotion clip-join experiment (`render_join.mjs`, `NightFilesJoin`, and `remotion_join`). The new editor is integrated on `main`, requires no preview-ref workflow parameter, and works from arbitrary storyboards rather than this sample's fictional story. CI/manual review still checks final MP4 quality.

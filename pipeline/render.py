@@ -189,90 +189,14 @@ def _transitions(scene_cut: list[bool], mode: str) -> list[tuple[str, float]]:
     return out
 
 
-def _remotion_join(clips: list[Path], scene_cut: list[bool], out: Path,
-                    trans: list[tuple[str, float]]) -> Path:
-    """Join silent shot clips with Remotion. FFmpeg remains the production fallback if Remotion fails."""
-    import shutil
-    import uuid
-
-    project = ROOT / "remotion"
-    if not (project / "package.json").exists():
-        raise RuntimeError("Remotion project is missing")
-    if not clips:
-        raise RuntimeError("no clips to join")
-
-    log(f"REMOTION: starting join render for {len(clips)} shots")
-    log(f"REMOTION: project={project} output={out}")
-
-    frames = [_frame_count(c) for c in clips]
-    timeline = []
-    acc = frames[0]
-    timeline.append({
-        "source": str(clips[0].resolve()),
-        "file": "clip_000.mp4",
-        "startFrame": 0,
-        "durationFrames": frames[0],
-        "fadeInFrames": 0,
-        "fadeOutFrames": 0,
-    })
-    for i in range(1, len(clips)):
-        _kind, seconds = trans[i]
-        fade = max(0, min(int(round(seconds * FPS)), frames[i] - 1, acc - 1))
-        start = acc - fade
-        timeline.append({
-            "source": str(clips[i].resolve()),
-            "file": f"clip_{i:03d}.mp4",
-            "startFrame": start,
-            "durationFrames": frames[i],
-            "fadeInFrames": fade,
-            "fadeOutFrames": fade if i < len(clips) - 1 else 0,
-        })
-        acc += frames[i] - fade
-
-    job_id = f"join_{uuid.uuid4().hex[:12]}"
-    manifest = project / "public" / f"{job_id}.json"
-    manifest.parent.mkdir(parents=True, exist_ok=True)
-    manifest.write_text(json.dumps({
-        "clips": timeline,
-        "totalFrames": acc,
-        "fps": FPS,
-        "output": str(out.resolve()),
-    }), encoding="utf-8")
-    log(f"REMOTION: manifest created ({len(timeline)} clips, {acc} frames, {acc / FPS:.1f}s)")
-    log("REMOTION: invoking npm run render:join")
-
-    try:
-        subprocess.run(
-            ["npm", "run", "render:join", "--", str(manifest)],
-            cwd=project,
-            check=True,
-            timeout=900,
-        )
-        log("REMOTION: render command completed successfully")
-        if not out.exists() or out.stat().st_size < 100_000:
-            raise RuntimeError("Remotion returned without a usable joined video")
-        got = media_duration(out)
-        want = acc / FPS
-        if got < want - 0.5:
-            raise RuntimeError(f"Remotion joined video is {got:.1f}s but expected about {want:.1f}s")
-        log(f"REMOTION: output verified, joined {len(clips)} shots into {got:.1f}s")
-        log("REMOTION: SUCCESS")
-        return out
-    finally:
-        manifest.unlink(missing_ok=True)
-        shutil.rmtree(project / "public" / "night-files-join", ignore_errors=True)
-
-
 def _join(clips: list[Path], seg: list[float], scene_cut: list[bool], out: Path,
           trans: list[tuple[str, float]] | None = None) -> Path:
-    """Join shots with Remotion first, with the mature FFmpeg xfade path as a production fallback."""
+    """Use the proven FFmpeg compositor for other video styles.
+
+    The current explainer pipeline applies its single Remotion editorial polish
+    to the full rendered video, not an obsolete per-shot Remotion joiner.
+    """
     trans = trans or _transitions(scene_cut, "classic")
-    if CONFIG.get("remotion_join", True):
-        try:
-            return _remotion_join(clips, scene_cut, out, trans)
-        except Exception as e:  # noqa: BLE001
-            log(f"REMOTION: FAILED ({type(e).__name__}: {str(e)[:240]})")
-            log("REMOTION: falling back to FFmpeg xfade")
 
     inputs, fc = [], []
     for i, c in enumerate(clips):
@@ -287,14 +211,14 @@ def _join(clips: list[Path], seg: list[float], scene_cut: list[bool], out: Path,
         label = f"[x{i}]"
         fc.append(f"{prev}[n{i}]xfade=transition={kind}:duration={d / FPS:.6f}:offset={offset / FPS:.6f}{label}")
         prev, acc = label, acc + frames[i] - d
-    log("FFMPEG: starting fallback xfade join")
+    log("FFMPEG: starting xfade join")
     run(["ffmpeg", "-y", "-loglevel", "error", *inputs, "-filter_complex", ";".join(fc),
          "-map", prev, "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "14", "-r", str(FPS),
          "-pix_fmt", "yuv420p", str(out)])
     want, got = acc / FPS, media_duration(out)
     if got < want - 0.5:
         raise RuntimeError(f"joined video is {got:.1f}s but the shots add up to {want:.1f}s: xfade chain broke")
-    log(f"FFMPEG: fallback join completed ({got:.1f}s)")
+    log(f"FFMPEG: join completed ({got:.1f}s)")
     return out
 
 

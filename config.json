@@ -65,7 +65,6 @@
   "local_image_max": 6,
   "space_images_max": 12,
   "render_style": "explainer",
-  "remotion_join": false,
   "autoclip": {
     "enabled": false,
     "binary": "autoclip",
@@ -354,5 +353,6 @@
   ],
   "priority_subgenre_probability": 0.15,
   "priority_subgenre_recent_window": 3,
-  "explainer_character_stage": true
+  "explainer_character_stage": true,
+  "remotion_polish": true
 }
