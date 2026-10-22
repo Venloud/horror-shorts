@@ -13,9 +13,13 @@ on:
     branches:
       - main
 
-# CI validates artwork without mutating the repository.
+# Temporary one-time import commit for owner-provided nine original PNGs.
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: expression-image-import-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate:
@@ -35,6 +39,18 @@ jobs:
       - name: Validate Python syntax
         run: |
           python -m compileall -q pipeline
+
+      - name: Import and checksum-verify new owner PNG expression candidates
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          python tools/import_host_expression_batch_20261021.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A assets/character/host/incoming/2026-10-21
+          if ! git diff --cached --quiet; then
+            git commit -m "Save nine original Venloud expression candidates U01-U09 [skip ci]"
+            git push origin HEAD:main
+          fi
 
       - name: Validate original approved character assets and render still-stage preview
         run: |
