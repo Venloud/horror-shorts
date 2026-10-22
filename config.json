@@ -353,5 +353,6 @@
     "Bloody Mary fictional aftermath spin-off"
   ],
   "priority_subgenre_probability": 0.15,
-  "priority_subgenre_recent_window": 3
+  "priority_subgenre_recent_window": 3,
+  "explainer_character_stage": true
 }
