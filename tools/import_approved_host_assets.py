@@ -34,7 +34,7 @@ def validate(content: bytes, expected: str, name: str):
     got = hashlib.sha256(content).hexdigest()
     if got != expected:
         raise ValueError(f"{name}: SHA256 mismatch. Expected {expected}; got {got}")
-    if content[:8] != b"\\x89PNG\\r\\n\\x1a\\n":
+    if content[:8] != b"\x89PNG\r\n\x1a\n":
         raise ValueError(f"{name}: not original PNG bytes")
 
 
