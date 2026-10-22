@@ -53,3 +53,21 @@ Date: 2026-10-22. Owner direction: retain approved M/F character originals; impr
 5. Document what remains unfinished. No unrequested production publishing.
 
 This document records *implementation intent and test requirements*, not proof that a finished viral-quality video was produced.
+
+
+## Remotion editorial layer, October 22 follow-through
+
+The user requested direct implementation of improved shot composition and Remotion motion graphics *within this same Night Files pipeline*. Implemented on this draft PR:
+
+- Existing `pipeline/explainer.py` now frames approved host at larger wide/medium sizes and crops only the **empty alpha padding** from approved close-up canvases before video-scale placement. The underlying user artwork and red aura bytes remain untouched. This last alpha-bounds positioning tweak awaits a fresh manual output review.
+- Reused `remotion/src/index.jsx` and preserved `NightFilesJoin`; registered the root needed by CLI and added `NightFilesPolish` alongside it.
+- Added `remotion/src/polish.jsx`: spring-in 2–3-word spoken captions with active-word underlines, chapter/editorial label, subtle grain, progressive timeline, and synchronized cut sweep.
+- Added `pipeline/remotion_post.py` and `remotion/render_polish.mjs` as a guarded editing bridge from the existing source MP4 to Remotion and back to FFmpeg for **the exact original mixed soundtrack**. This is a *post-pass*, not a new story planner.
+- Enabled Remotion captions in the existing isolated `tools/night_files_visual_preview.py`, and added Node+Remotion dependencies to the **existing** manual GitHub Actions job. The production `remotion_polish` opt-in stays **false**; normal Pillow captions remain untouched until explicit approval.
+- Added `tests/test_remotion_post.py` for shot/frame timing, missing-input rejection, existing `NightFilesJoin`, and default-off safety. Original approved artwork remains unchanged.
+
+**Actual Remotion verification:** [Actions run 39743096909](https://github.com/Venloud/horror-shorts/actions/runs/39743096909) passed CI **and** full 17.07s 1080×1920 H.264/AAC Remotion MP4 generation with intact voice/SFX. The artifact was downloaded, verified using ffprobe and inspected visually at 4.00 and 15.25 seconds. The character still floated high with empty lower space in that first Remotion render, so the next commit corrected close-up transparency positioning. A subsequent MP4 visual check for *that latest correction* is still required; do not imply it passed from the earlier artifact.
+
+**Quality notes:** Compared with the first Python-only preview, motion-synchronized captions/cut treatment and character sizing improved. However, full cinematic/viral quality needs further editing choices, music, atmosphere, creative lighting and transition refinement. The temporary eSpeak narrator is not final. Keep PR draft/unmerged pending owner review and the last framing visual validation.
+
+**Close-the-loop:** no second pipeline or V2; incorporate any subsequent fixes into the same approved renderer/Remotion post-pass. After merge approval, run a manual preview on main and remove any obsolete temporary media from build outputs, not approved source art.
