@@ -199,3 +199,7 @@ Venloud uploaded and explicitly labelled the same original PNG as **F01 Neutral*
 ## F04 Laughing received, October 22
 
 Venloud explicitly labeled the new close-up **F04 Laughing**. Original PNG is 1374×1145 RGBA with SHA-256 `758b94e77e8552c17d1d71e701d80b1b6f43de9a279632f7fc8fbd9d57cec44c`. The owner-supplied upload is present in the chat, but **GitHub binary import remains pending**. Historical F04 Worried was moved byte-for-byte to its correct catalog ID **F14 Worried**. Do not report a nonexistent F04_laughing.png in the repo.
+
+## Repo image audit: saved canonical expression IDs, October 22, 2026
+
+Owner-original confirmed master views: M01–M05. Canonical repository expressions verified after byte-preserving renaming: **F01 Neutral, F05 Excited, F06 Smirk, F07 Confident, F08 Serious, F10 Confused, F11 Skeptical, F12 Suspicious, F13 Thinking, F14 Worried, F18 Angry**. The older intake file-ID pairs described above are historical and superseded by `manifest.json`. Original U-series intake PNGs are kept. F02 Talking, F03 Smiling, F15 Scared have been shown in conversation, but their new originals are not verified imported. The F02 image looks like Laughing and needs owner confirmation before assigning its ID. Only `manifest.json` approved status indicates actually committed original PNGs.

@@ -227,15 +227,10 @@ def approved_bust(expression: str = "neutral") -> Image.Image | None:
     The artwork remains unmodified: users can always recover the exact original PNG.
     Normalization pads transparently for the video compositing step.
     """
-    names = {"neutral": "F01", "happy": "M05", "excited": "F05", "worried": "F14", "angry": "F09", "smirk": "F10",
-             "serious": "F02", "determined": "F02", "confused": "F03", "curious": "F03",
-             "thinking": "F07", "suspicious": "F08"}
+    names = {"neutral": "F01", "happy": "M05", "excited": "F05", "worried": "F14", "angry": "F18", "smirk": "F06",
+             "serious": "F08", "determined": "F08", "confused": "F10", "curious": "M05",
+             "thinking": "F13", "suspicious": "F12", "confident": "F07", "skeptical": "F11"}
     src = _approved_path(names.get(expression, "M05"))
-    if expression == "skeptical":
-        # Explicit owner-approved alternate expression, not a synonym for suspicious.
-        skeptical = DIR / "incoming/2026-10-21/U07_skeptical_sideeye.png"
-        if skeptical.is_file():
-            src = skeptical
     if not src:
         return None
     image = Image.open(src).convert("RGBA")
@@ -264,12 +259,9 @@ def closeup(expression: str, view: str = "front"):
     selected = approved_bust(expression)
     if selected is not None:
         # Path returned is ORIGINAL artwork, never an old vector pack.
-        candidates = {"neutral": "F01", "happy": "M05", "excited": "F05", "worried": "F14", "angry": "F09", "smirk": "F10",
-                      "serious": "F02", "determined": "F02", "confused": "F03", "curious": "F03",
-                      "thinking": "F07", "suspicious": "F08"}
-        if expression == "skeptical":
-            p = DIR / "incoming/2026-10-21/U07_skeptical_sideeye.png"
-            return p if p.is_file() else _approved_path("M05")
+        candidates = {"neutral": "F01", "happy": "M05", "excited": "F05", "worried": "F14", "angry": "F18", "smirk": "F06",
+             "serious": "F08", "determined": "F08", "confused": "F10", "curious": "M05",
+             "thinking": "F13", "suspicious": "F12", "confident": "F07", "skeptical": "F11"}
         return _approved_path(candidates.get(expression, "M05"))
     if not CLOSE_DIR.exists():
         return None

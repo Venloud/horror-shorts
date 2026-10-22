@@ -1,6 +1,6 @@
 # Night Files: Approved Character Asset Library
 
-> **Important, October 22, 2026:** F01 has been owner-confirmed as **Neutral** and the original unchanged PNG was renamed from `F01_happy.png` to `F01_neutral.png`. Other historical F-series IDs still conflict with the [original 118-item catalog](MASTER_ASSET_CATALOG.md); review each actual picture before renaming it. Do not overwrite original artwork.
+> **Reconciled 2026-10-22:** Canonical existing expression files now follow [the original 118-item catalog](MASTER_ASSET_CATALOG.md). Original PNG contents are unchanged. Only listed approved files are verified present; sent-but-unimported pictures remain pending.
 
 This is the **source of truth** for Venloud's reusable character identity and expression assets. 
 Assets are approved **one at a time or in batches of up to 10**. Preserve the original uploaded PNG bytes; do not upsample, redraw, recolor, regenerate, or silently alter them.
@@ -11,7 +11,7 @@ Assets are approved **one at a time or in batches of up to 10**. Preserve the or
 - Preserve the **existing fine red aura exactly as approved**. DO NOT diminish or amplify it.
 - No facial/body redesign between shots. Strong readability, genuinely transparent RGBA, consistent crop and screen position at render time.
 - Characters in a blank editorial stage with purposeful still poses. Movement is not required; use cut timing, props, typography and graphics.
-- Expression-specific punctuation, question marks, and icons should normally be separate reusable overlays (F03 currently includes a question mark in the approved source image; preserve the user's original as-is).
+- Expression-specific punctuation, question marks, and icons should normally be separate reusable overlays (F10 confused alternate includes a question mark in the approved source image; preserve the user's original as-is).
 
 ## Locked master references (original owner-uploaded PNGs)
 | ID | Meaning | Canonical path |
@@ -22,23 +22,25 @@ Assets are approved **one at a time or in batches of up to 10**. Preserve the or
 | M04 | Back full-body neutral | [masters/M04_back_neutral.png](masters/M04_back_neutral.png) |
 | M05 | Front bust neutral / close-up | [masters/M05_front_neutral_closeup.png](masters/M05_front_neutral_closeup.png) |
 
-## Approved expressions
-| ID | Name | Canonical file |
-|----|------|----------------|
-| F01 | Neutral (owner-confirmed) | [expressions/F01_neutral.png](expressions/F01_neutral.png) |
-| F02 | Serious | [expressions/F02_serious.png](expressions/F02_serious.png) |
-| F03 | Confused | [expressions/F03_confused.png](expressions/F03_confused.png) |
-| F14 | Worried (historical F04, identical PNG bytes) | [expressions/F14_worried.png](expressions/F14_worried.png) |
+## Approved expressions (original F01–F22 order)
+| ID | Visually identified expression | Correct unchanged PNG |
+|---|---|---|
+| F01 | Neutral | [expressions/F01_neutral.png](expressions/F01_neutral.png) |
 | F05 | Excited | [expressions/F05_excited.png](expressions/F05_excited.png) |
-| F07 | Thinking | [expressions/F07_thinking.png](expressions/F07_thinking.png) |
-| F08 | Suspicious | [expressions/F08_suspicious.png](expressions/F08_suspicious.png) |
-| F09 | Angry | [expressions/F09_angry.png](expressions/F09_angry.png) |
-| F10 | Smirk | [expressions/F10_smirk.png](expressions/F10_smirk.png) |
+| F06 | Smirk | [expressions/F06_smirk.png](expressions/F06_smirk.png) |
+| F07 | Confident | [expressions/F07_confident.png](expressions/F07_confident.png) |
+| F08 | Serious | [expressions/F08_serious.png](expressions/F08_serious.png) |
+| F10 | Confused | [expressions/F10_confused.png](expressions/F10_confused.png) |
+| F11 | Skeptical | [expressions/F11_skeptical.png](expressions/F11_skeptical.png) |
+| F12 | Suspicious | [expressions/F12_suspicious.png](expressions/F12_suspicious.png) |
+| F13 | Thinking | [expressions/F13_thinking.png](expressions/F13_thinking.png) |
+| F14 | Worried | [expressions/F14_worried.png](expressions/F14_worried.png) |
+| F18 | Angry | [expressions/F18_angry.png](expressions/F18_angry.png) |
 
-## Still needed
-F06 Scared, F11 Talking, F12 Curious, F13 Sad. Additional emotional expressions can be added later under stable new IDs.
+## Pending or missing canonical original
+F02 talking, F03 smiling, F04 laughing, F09 curious, F15 scared, F16 shocked, F17 sad, F19 determined, F20 frustrated, F21 relieved, F22 tired.
 
-Each incoming image will have the same character, outfit, shading, approved red aura, clean transparent background, and a clear emotion. Names/IDs **never** get reused for different expressions.
+F02 Talking image submitted in conversation has closed eyes, open-mouthed laughter and pointing, pending owner confirmation before import. F03 Smiling submitted, exact importable file not yet verified. F15 Scared submitted previously, not yet committed in this canonical folder.
 
 ## Replacement policy
 - The previous `assets/character/host/closeups/` flat-vector pack is **retired**; these owner-approved assets replace it.
@@ -54,10 +56,10 @@ The newest nine uploaded candidate images are [preserved here](incoming/2026-10-
 
 - U06: **Confused**, the one with a yellow question mark (F03 variant).
 - U07: **Skeptical**, distinct from Suspicious.
-- U08: **Suspicious**, canonical **F08**.
-- U09: **Thinking**, canonical **F07**.
+- U08: **Suspicious**, canonical **F12**.
+- U09: **Thinking**, canonical **F13**.
 
-**F14 Worried (formerly misnumbered F04) and F05 Excited are now stored** as original user-supplied PNGs, with verified SHA-256 hashes. F05 is byte-identical to previously saved U01. F09 Angry uses U04 and F10 Smirk uses U02. The files remain unchanged; the registered F-series IDs determine selection.
+**F14 Worried (formerly misnumbered F04) and F05 Excited are now stored** as original user-supplied PNGs, with verified SHA-256 hashes. F05 is byte-identical to previously saved U01. F18 Angry uses U04 and F06 Smirk uses U02. The files remain unchanged; the registered F-series IDs determine selection.
 
 ## F04 Laughing receipt, October 22
 
