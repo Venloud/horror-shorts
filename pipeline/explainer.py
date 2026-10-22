@@ -33,7 +33,7 @@ FONT_DIR = ROOT / "assets" / "fonts" / "explainer"
 SHOT_MIN, SHOT_MAX = 1.3, 3.0
 # Dark Editorial Noir (Oct 21): INK = bone text on dark grounds, MUTED = parchment labels, BLACK = midnight
 PAPER, INK, MUTED, BLACK = (169, 158, 144), (236, 230, 221), (169, 158, 144), (16, 20, 25)
-CAP_Y = 1430  # captions centred in the lower third (TikTok's top bar ends ~140 px)
+CAP_Y = 1565  # captions are in a reserved strip below the character action stage
 BUILD_KINDS = ("grid", "bars", "counter", "arrow", "stamp", "list", "none")
 
 
@@ -159,7 +159,7 @@ def adapt(story: dict) -> dict:
 
 PLAN_PROMPT = """You are the storyboard artist of a vertical explainer video for the Night Files channel. Our host
 "you" is a stick figure in a suit jacket and tie; other people in the story are stick figures too, with their own
-props (hat, beard, dress). Backgrounds are painted places that stay still. Turn the narration into LITERAL story
+props (hat, beard, dress). Backgrounds are mostly blank, not forced scenic photographs. Characters act out narration with a single static pose per beat. Turn narration into LITERAL story
 beats, like a storyboard: every shot shows exactly WHO does WHAT, WHERE, at that moment.
 TRUE STORY: {true}
 
@@ -207,11 +207,11 @@ RULES
 - STORYBOARD, not decoration. Split every sentence with two actions or two people into separate shots. Example:
   "You are standing in the station while he boards the train" = (1) you standing in the station, watching (wide,
   three_quarter); (2) he boards the train (wide, side view, walking toward the train); (3) you react (close).
-- The host ACTS what the words say (walking, pointing, observing, reaching, waiting, holding...), never just stands
+- The host ACTS what the words say in STATIC action poses (pointing, inspecting, holding, reacting), never just stands
   around. Vary view (front, three_quarter, side, back) and shot_type. close only for emotional beats (max 1 in 4
   shots); over_shoulder when you watch someone (you seen from behind, they in front of you).
 - 3-5 shots per scene, a cut every 1.5-3 s. The first shot of scene 1 is a scene shot.
-- background_motion is "none" unless slow motion clearly helps (at most 1 shot in 4).
+- background_motion is ALWAYS "none": the blank character stage does not move.
 - text_mode on at most 1 shot in 3, words taken from the narration: location = the place name the first time it
   appears; name = a person's name the first time they appear; punch = a key phrase; evidence = a clue; quote = words
   someone said; stamp = 1-2 words. NO dates, years or day counters on scene shots; at most ONE card in the whole
@@ -841,6 +841,12 @@ def make_assets(story: dict, p: dict, img_dir: Path) -> dict:
     Inserts (object close-ups) only from what's left of the budget; without one the shot shows the host instead."""
     import images
     img_dir.mkdir(parents=True, exist_ok=True)
+    if CONFIG.get("explainer_character_stage", True):
+        # Character-first stage never pays for or forces AI location paintings.
+        story["explainer_assets"] = {"new": 0, "story_reused": 0, "library": 0, "shared": 0,
+                                      "local": 1, "cloudflare_calls": 0, "new_total": 0}
+        log("Explainer: static character action on blank stage, zero Cloudflare images")
+        return {"plates": {}, "inserts": {}}
     budget = Budget(img_dir)
     style = CONFIG.get("explainer_plate_style") or (
         "moody cinematic digital painting, dark noir palette, deep shadows, muted desaturated colours, soft "
@@ -1075,13 +1081,18 @@ class Renderer:
         return self.p["cast"].get(who) or self.sm.look_for(who)
 
     def figure(self, who, action, expr, view, facing, t, height, alpha=1.0):
-        blink = (t % 3.7) < 0.12
-        tq = round(t * 15) / 15 if action in self.sm.MOVING or action in ("reacting", "scared", "turning") else \
-            round(t * 5) / 5  # idle breathing: 5 drawings a second are enough (cache)
         import sprites
-        got = sprites.draw(who, self.look(who), action, expr, view, facing, t, height) if sprites.available() \
-            else None  # the owner's drawn host (assets/character/host); the code rig only as a fallback
-        im, foot = got or self.sm.draw(self.look(who), action, expr, view, facing, tq, height, blink)
+        if CONFIG.get("explainer_character_stage", True):
+            # Draw crisp at native size; freeze at the chosen action pose, no breathing/blinking/walking loop.
+            im, foot = self.sm.draw(self.look(who), action, expr, view, facing, 0.0, height, False)
+            im = sprites.rim_native(im)
+        else:
+            blink = (t % 3.7) < 0.12
+            tq = round(t * 15) / 15 if action in self.sm.MOVING or action in ("reacting", "scared", "turning") else \
+                round(t * 5) / 5
+            got = sprites.draw(who, self.look(who), action, expr, view, facing, t, height) if sprites.available() \
+                else None
+            im, foot = got or self.sm.draw(self.look(who), action, expr, view, facing, tq, height, blink)
         if alpha < 1:
             im = im.copy()
             im.putalpha(im.getchannel("A").point(lambda a: int(a * alpha)))
@@ -1130,7 +1141,9 @@ class Renderer:
                 spots = [(prim, s.get("action"), s.get("expression"), s.get("view"), s.get("facing", "right"), 0.5)]
             elif sec and sec != "crowd":
                 spots = [(sec, s.get("action2"), "neutral", "three_quarter", "left", 0.5)]
-            height, feet = {"wide": (820, 1660), "medium": (1150, 1980), "close": (1500, 2150)}.get(st, (820, 1660))
+            height, feet = ({"wide": (690, 1300), "medium": (940, 1365), "close": (1190, 1390)}
+                            if CONFIG.get("explainer_character_stage", True)
+                            else {"wide": (820, 1660), "medium": (1150, 1980), "close": (1500, 2150)}).get(st, (690, 1300))
             if st == "close" and len(spots) == 1 and spots[0][0] == "you" and spots[0][1] not in self.sm.MOVING:
                 import sprites  # the owner's hi-res head-and-shoulders pack: sharp emotional close-ups
                 cu = sprites.closeup(spots[0][2] or "neutral", spots[0][3] or "front")
@@ -1178,6 +1191,11 @@ class Renderer:
     def _background(self, seg: dict, x: float) -> Image.Image:
         """The painted place, STILL by default; subtle_push / subtle_pan / parallax_light only when planned."""
         s = seg["shot"]
+        if CONFIG.get("explainer_character_stage", True):
+            key = ("blank-stage",)
+            if key not in self.static:
+                self.static[key] = Image.new("RGBA", (W, H), (43, 48, 55, 255))
+            return self.static[key].copy()
         plate = self.assets["plates"].get(s.get("location")) or next(iter(self.assets["plates"].values()))
         st = s.get("shot_type", "wide")
         zoom = {"wide": 1.0, "medium": 1.18, "close": 1.4, "over_shoulder": 1.1}.get(st, 1.0)
@@ -1350,6 +1368,8 @@ class Renderer:
         return frame
 
     def _opener_bg(self) -> Image.Image:
+        if CONFIG.get("explainer_character_stage", True):
+            return Image.new("RGBA", (W, H), (28, 32, 39, 255))
         if "opener_bg" not in self.layer_cache:
             first = next((s["shot"] for s in self.segs if s["shot"].get("type") == "scene"), {})
             plate = self.assets["plates"].get(first.get("location")) if first else None
@@ -1674,6 +1694,8 @@ class Renderer:
         im = Image.new("RGBA", (W, hgt), (0, 0, 0, 0))
         shadow = Image.new("RGBA", (W, hgt), (0, 0, 0, 0))
         d, ds = ImageDraw.Draw(im), ImageDraw.Draw(shadow)
+        if kind != "card" and CONFIG.get("explainer_character_stage", True):
+            d.rounded_rectangle((58, 0, W - 58, hgt), radius=23, fill=(9, 13, 19, 232))
         k = 0
         for li, line in enumerate(lines):
             widths = [d.textlength(w, font=f) for w in line]
