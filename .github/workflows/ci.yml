@@ -40,6 +40,12 @@ jobs:
           python -m compileall -q pipeline
           python -m py_compile tools/night_files_visual_preview.py
 
+      - name: Workflow step order and unit tests
+        run: |
+          python -m pip install -q pyyaml pytest
+          python pipeline/workflow_order_check.py
+          cd pipeline && python -m pytest -q test_repeat_guard.py test_workflow_order_check.py
+
       - name: Validate original approved character assets and render still-stage preview
         run: |
           python -m pip install -q "Pillow>=10" "numpy>=1.24"
