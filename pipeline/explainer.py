@@ -62,8 +62,8 @@ def forced() -> bool:
 # ================================================================ writing
 
 REWRITE_PROMPT = """You rewrite the narration of a short vertical {kind} video for the Night Files channel into the
-EXPLAINER style. The video cuts every 2-3 seconds between painted scenes with a stick figure called "you", info cards
-with numbers, and title cards.
+EXPLAINER style. The video cuts every 2-3 seconds between static character-first stages, purposeful action poses,
+reusable overlays and motion graphics, information cards, and title cards.
 
 STYLE (Van's mid-conversation method)
 - Second person: the viewer is "you". {who}
@@ -78,8 +78,8 @@ STYLE (Van's mid-conversation method)
 - {words} words in total, {scenes} scenes.
 FACTS: {facts}
 SAFETY: no gore, no occult symbols or rituals, adults only (never a child in danger), respectful toward real people.
-Keep title, characters, locations and fact_ledger. Update every scene's image prompts and image locations so they show
-the new narration's place (an empty place, no people). Keep sfx from the same list.
+Keep title, characters, locations and fact_ledger. Do not invent scenic backgrounds just to display an
+action pose. Keep sfx from the same list.
 Return the whole story in the SAME JSON format.
 
 STORY:
@@ -158,8 +158,8 @@ def adapt(story: dict) -> dict:
 # ================================================================ planning
 
 PLAN_PROMPT = """You are the storyboard artist of a vertical explainer video for the Night Files channel. Our host
-"you" is a stick figure in a suit jacket and tie; other people in the story are stick figures too, with their own
-props (hat, beard, dress). Backgrounds are mostly blank, not forced scenic photographs. Characters act out narration with a single static pose per beat. Turn narration into LITERAL story
+"you" uses the approved round-white-headed, black-suited character with a red tie. People and props
+must be grounded in the story, and the character should not change identity between shots. Backgrounds are mostly blank, not forced scenic photographs. Characters act out narration with a single static pose per beat. Turn narration into LITERAL story
 beats, like a storyboard: every shot shows exactly WHO does WHAT, WHERE, at that moment.
 TRUE STORY: {true}
 
@@ -183,6 +183,7 @@ one "scenes" entry per narration scene, in order. SHOT is one of:
   "shot_type": "wide | medium | close | over_shoulder",
   "background_motion": "none | subtle_push | subtle_pan | parallax_light",
   "insert": "<an inserts name to show that object close-up instead, or empty>",
+  "prop": "none | document | photograph | suitcase | camera | film | map | phone | clock | magnifier | flashlight | key | money | aircraft | vehicle | folder | door",
   "text_mode": "none | location | name | punch | evidence | quote | stamp", "text": "<max 5 words>", "accent": "<one word of text>"}}
 {{"type": "card", "at": "...", "kicker": "<MONO KICKER, max 26 chars>", "text": "<max 7 words>", "accent": "<one word>",
   "build": BUILD}}
@@ -205,13 +206,15 @@ BUILD is one of: {{"kind": "grid", "total": <4-60>, "filled": <n>, "label": "<ma
 {{"kind": "list", "items": ["<max 4 words>", "..."]}} | {{"kind": "none"}}
 RULES
 - STORYBOARD, not decoration. Split every sentence with two actions or two people into separate shots. Example:
-  "You are standing in the station while he boards the train" = (1) you standing in the station, watching (wide,
-  three_quarter); (2) he boards the train (wide, side view, walking toward the train); (3) you react (close).
+  "You notice someone reaching for a folder" = (1) you observing (medium, three_quarter),
+  (2) the named person reaching for a document (medium, side), (3) you reacting (close).
 - The host ACTS what the words say in STATIC action poses (pointing, inspecting, holding, reacting), never just stands
   around. Vary view (front, three_quarter, side, back) and shot_type. close only for emotional beats (max 1 in 4
   shots); over_shoulder when you watch someone (you seen from behind, they in front of you).
 - 3-5 shots per scene, a cut every 1.5-3 s. The first shot of scene 1 is a scene shot.
 - background_motion is ALWAYS "none": the blank character stage does not move.
+- The prop field is optional. Use a prop only when its object is expressly mentioned or confirmed in the
+  narration; use "none" otherwise. Never infer a case-specific object from a vague emotion or setting.
 - text_mode on at most 1 shot in 3, words taken from the narration: location = the place name the first time it
   appears; name = a person's name the first time they appear; punch = a key phrase; evidence = a clue; quote = words
   someone said; stamp = 1-2 words. NO dates, years or day counters on scene shots; at most ONE card in the whole
@@ -380,10 +383,15 @@ def _subject(name, ctx, allow_crowd=False) -> str:
         return "crowd"
     if n in ctx["cast"]:
         return n
-    for k in ctx["cast"]:  # "Le Prince" -> "louis le prince"
+    for k in ctx["cast"]:  # let a shortened surname match an already named person
         if n and (n in k or k.split()[-1] == n.split()[-1]):
             return k
     return ""
+
+
+STAGE_PROPS = frozenset(("none", "document", "photograph", "suitcase", "camera", "film",
+                         "map", "phone", "clock", "magnifier", "flashlight", "key", "money",
+                         "aircraft", "vehicle", "folder", "door"))
 
 
 def _valid_shot(s, s_words, ctx) -> dict | None:
@@ -411,6 +419,7 @@ def _valid_shot(s, s_words, ctx) -> dict | None:
         return {"type": "scene", "at": at,
                 "location": ctx["loc_names"].get(str(s.get("location") or "").lower()) or ctx["locs"][0]["name"],
                 "insert": ctx["ins"].get(str(s.get("insert") or "").lower(), ""),
+                "prop": str(s.get("prop") or "none").lower() if str(s.get("prop") or "none").lower() in STAGE_PROPS else "none",
                 "primary": prim, "action": act,
                 "expression": s.get("expression") if s.get("expression") in _expressions() else "neutral",
                 "view": s.get("view") if s.get("view") in sm.VIEWS else "three_quarter",
@@ -597,10 +606,10 @@ def _valid_build(b: dict, said: set) -> dict:
 
 
 _ACTION_WORDS = [("running", r"\b(run|ran|running|chase|flee|fled|escape)"), ("walking", r"\b(walk|follow|head|went|go)"),
-                 ("boarding", r"\b(board|boarded|boards|train)"), ("pointing", r"\b(look at|there|this|clue|notice)"),
+                 ("boarding", r"\b(board|boarded|boards|embark)"), ("pointing", r"\b(look at|there|this|clue|notice)"),
                  ("observing", r"\b(watch|see|saw|look|stare)"), ("reaching", r"\b(find|found|pick|grab|open)"),
                  ("thinking", r"\b(think|wonder|why|theor|question|what would)"), ("waiting", r"\b(wait|hours|days)"),
-                 ("holding", r"\b(hold|camera|film|letter|luggage)"), ("reacting", r"\b(gone|vanish|disappear|never)"),
+                 ("holding", r"\b(hold|holding|carry|carried|grip|grasp)"), ("reacting", r"\b(gone|vanish|disappear|never)"),
                  ("seated", r"\b(sit|sat|desk|court)")]
 _EXPR_WORDS = [("shocked", r"\b(gone|vanish|disappear|impossible|never|nobody|no one|dead)"),
                ("scared", r"\b(scream|terrif|afraid|fear)"), ("worried", r"\b(missing|search|wait|worr)"),
@@ -620,7 +629,7 @@ def _keyword_shots(narr: str, s_words: list[dict], ctx: dict, i: int) -> list[di
     first = " ".join(re.split(r"[.,!?;:]", narr)[0].split()[:6])
     half = narr[len(narr) // 2:]
     other = next((k for k in ctx["cast"] if k.split()[-1] in narr.lower()), "")
-    base = {"type": "scene", "location": loc, "insert": "", "secondary": "", "action2": "standing", "motion": "none",
+    base = {"type": "scene", "location": loc, "insert": "", "prop": "none", "secondary": "", "action2": "standing", "motion": "none",
             "text_mode": "none", "text": "", "accent": ""}
     shots = [dict(base, at=s_words[0]["start"] if s_words else None, primary="you", action=_action_for(narr),
                   expression=_expr_for(narr), view="three_quarter", facing="right", shot_type="wide")]
