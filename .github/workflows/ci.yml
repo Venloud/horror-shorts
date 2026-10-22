@@ -59,6 +59,25 @@ jobs:
                   board.paste(im, (x + (cell_w - im.width) // 2, y + 5), im)
                   d.text((x + 8, y + cell_h - 29), f.stem[5:35], fill="white")
           board.save("output/host-closeups-contact.jpg", quality=92)
+          # Render one character-first storyboard frame. This catches missing methods,
+          # bad dimensions and layout mistakes that compileall cannot detect.
+          import explainer
+          assert explainer.CONFIG.get("explainer_character_stage") is True
+          shot = {"type": "scene", "location": "train carriage", "insert": "",
+                  "primary": "you", "action": "holding", "expression": "worried",
+                  "view": "three_quarter", "facing": "right", "secondary": "",
+                  "action2": "standing", "shot_type": "medium",
+                  "motion": "none", "text_mode": "none", "text": ""}
+          story = {"title": "Stage preview",
+                   "scenes": [{"narration": "You inspect the luggage inside the train compartment."}]}
+          narration = {"duration": 3.0, "scene_times": [(0.0, 3.0)],
+                       "words": [{"word": "luggage", "start": 0.1, "end": 2.5, "scene": 0}]}
+          plan = {"cast": {}, "locations": [], "inserts": [], "scenes": [{"shots": [shot]}]}
+          seg = {"shot": shot, "scene": 0, "start": 0.0, "end": 3.0}
+          renderer = explainer.Renderer(story, narration, plan, {"plates": {}, "inserts": {}}, [seg])
+          screenshot = renderer.frame_at(0.8, 3.0)
+          assert screenshot.size == (1080, 1920)
+          screenshot.save("output/host-stage-preview.png")
           with zipfile.ZipFile("output/Night_Files_Matched_Closeups_19.zip", "w", zipfile.ZIP_DEFLATED) as z:
               for f in images:
                   z.write(f, f.name)
@@ -73,6 +92,7 @@ jobs:
           path: |
             output/Night_Files_Matched_Closeups_19.zip
             output/host-closeups-contact.jpg
+            output/host-stage-preview.png
           if-no-files-found: error
 
       - name: Validate JSON configuration
