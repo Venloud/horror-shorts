@@ -178,12 +178,12 @@
     {
       "id": "F02",
       "name": "talking",
-      "status": "awaiting_upload"
+      "status": "received_not_committed"
     },
     {
       "id": "F03",
       "name": "smiling",
-      "status": "awaiting_upload"
+      "status": "received_not_committed"
     },
     {
       "id": "F04",
@@ -343,6 +343,32 @@
       "height": 1145,
       "format": "RGBA PNG",
       "note": "Owner explicitly labelled this original image F09 Curious. Image accessible as chat attachment, but original binary has not been committed; do not mark approved before exact bytes are imported."
+    },
+    {
+      "id": "F02",
+      "name": "talking",
+      "received_on": "2026-10-22",
+      "status": "owner_confirmed_png_received_in_chat_NOT_YET_IN_REPO",
+      "upload_filename": "image(20261022-234202).png",
+      "target_path": "expressions/F02_talking.png",
+      "sha256": "81a2d0dd7dbfd1fd5e56e24403264aa31ef20f68e69cf913f57594a1c8f24ba7",
+      "width": 1374,
+      "height": 1145,
+      "format": "RGBA PNG",
+      "note": "Original PNG locally verified and owner identified. GitHub binary import pending; do not mark approved."
+    },
+    {
+      "id": "F03",
+      "name": "smiling",
+      "received_on": "2026-10-22",
+      "status": "owner_confirmed_png_received_in_chat_NOT_YET_IN_REPO",
+      "upload_filename": "image(20261022-234229).png",
+      "target_path": "expressions/F03_smiling.png",
+      "sha256": "88b1dd0fb121efe5d31fa076f87c522aaec7c96687c3fc45f35dc9dbe7cc6479",
+      "width": 1374,
+      "height": 1145,
+      "format": "RGBA PNG",
+      "note": "Original PNG locally verified and owner identified. GitHub binary import pending; do not mark approved."
     }
   ]
 }
