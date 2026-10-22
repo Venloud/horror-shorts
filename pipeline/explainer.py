@@ -1259,15 +1259,19 @@ class Renderer:
             # Character holds a real foreground clue between the hands, instead of
             # gesturing at a floating AI background. Static, high-contrast line art.
             d = ImageDraw.Draw(frame)
-            x0, x1, y0, y1 = (360, 630, 696, 819) if shot.get("shot_type") == "medium" \
-                             else (397, 599, 743, 836)
+            x0, x1, y0, y1 = (337, 603, 745, 894) if shot.get("shot_type") == "medium" \
+                             else (390, 690, 865, 1000)
             if any(w in words for w in ("luggage", "trunk", "baggage")):
                 d.rounded_rectangle((x0, y0, x1, y1), radius=14,
                                     fill=(116, 88, 69), outline=(240, 236, 227), width=6)
-                d.arc((x0 + 83, y0 - 52, x1 - 83, y0 + 48), 182, 358,
-                      fill=(235, 228, 217), width=8)
-                d.line((x0 + 16, y0 + 35, x1 - 16, y0 + 35),
+                d.arc((x0 + 85, y0 - 35, x1 - 85, y0 + 30), 182, 358,
+                      fill=(235, 228, 217), width=7)
+                d.line((x0 + 16, y0 + 38, x1 - 16, y0 + 38),
                        fill=(225, 212, 192), width=5)
+                # Hands are in front of the held case, never obscured by the prop.
+                for hx in (x0 - 14, x1 + 14):
+                    d.ellipse((hx - 21, y0 - 20, hx + 21, y0 + 20),
+                              fill=(251, 250, 248), outline=(20, 20, 24), width=6)
             else:
                 d.rounded_rectangle((x0, y0, x1, y1), radius=8,
                                     fill=(206, 196, 179), outline=(21, 24, 30), width=7)
