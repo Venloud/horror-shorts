@@ -51,7 +51,8 @@ def actions() -> list[str]:
 
 
 def expressions() -> list[str]:
-    return sorted({s["expression"] for s in library()})
+    approved = {a["name"] for a in approved_registry().get("approved", []) if a["id"].startswith("F")}
+    return sorted({sp["expression"] for sp in library()} | approved | {"skeptical"})
 
 
 def _score(s: dict, action: str, view: str, expr: str) -> float:
