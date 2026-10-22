@@ -732,6 +732,25 @@ def _focus_ring_points(target: tuple, seed: int = 0, padding: float = 22.0) -> l
     return points
 
 
+def _resolve_clock_time(fields: dict) -> str:
+    """Resolve a clock value from arbitrary storyboard fields, never from a named story.
+
+    Explicit `time` wins. Otherwise infer well-defined labels (MIDNIGHT / NOON)
+    or a literal spoken HH:MM; an unspecified event is deliberately unlabelled.
+    """
+    import re
+    explicit = str(fields.get("time") or "").strip()
+    if explicit:
+        return explicit[:16]
+    words = " ".join(str(fields.get(k) or "") for k in ("text", "kicker", "label")).upper()
+    if re.search(r"\bMIDNIGHT\b", words):
+        return "12:00 AM"
+    if re.search(r"\bNOON\b", words):
+        return "12:00 PM"
+    match = re.search(r"\b(?:[01]?\d|2[0-3]):[0-5]\d(?:\s*[AP]M)?\b", words)
+    return match.group(0).strip() if match else ""
+
+
 def _clock_angles(time_label: str) -> tuple[float, float]:
     """Hands (radians) for an explicitly specified clock time; default is illustrative 10:10."""
     value = str(time_label or "").strip().upper()
@@ -823,7 +842,7 @@ def _t_clock_stop(fields, t, dur, ctx):
         d.line((*a,*b),fill=(229, 228, 221, 230 if long else 100),width=6 if long else 2)
     # The hour and minute hands show the precise narration-grounded time
     # throughout. At MIDNIGHT they BOTH point straight up at 12, not 10:10.
-    time_label = str(fields.get("time") or "")
+    time_label = _resolve_clock_time(fields)
     hour_angle, minute_angle = _clock_angles(time_label)
     d.line((cx,cy,cx+148*math.cos(hour_angle),cy+148*math.sin(hour_angle)),
            fill=BONE+(255,),width=16)
@@ -843,8 +862,8 @@ def _t_clock_stop(fields, t, dur, ctx):
         label = str(fields.get("text") or "CLOCK STOPPED").upper()[:27]
         f,_ = fit(label,"cond",575,1,74,42)
         d.text((540,1193),label,font=f,fill=BONE+(int(255*a2),),anchor="mt")
-    if fields.get("time"):
-        d.text((540,1325),str(fields["time"])[:10],font=font("mono",42),
+    if time_label:
+        d.text((540,1325),time_label[:12],font=font("mono",42),
                fill=acc+(255,),anchor="mm")
     return frame
 
