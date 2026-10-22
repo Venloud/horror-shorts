@@ -100,7 +100,7 @@ const ContextMark=({shots=[]})=>{
   const shot=shots.find(s=>frame>=s.startFrame&&frame<s.endFrame);
   if(!shot) return null;
   const local=frame-shot.startFrame;
-  const title=shot.kind==="scene"?"SCENE" : shot.kind==="graphic" ?
+  const title=shot.kind==="scene"?"NIGHT FILES" : shot.kind==="graphic" ?
     cap(shot.template,20).replace(/_/g," ") : "CASE FILE";
   const rise=spring({fps,frame:local,config:{damping:180,stiffness:190}});
   const hide=interpolate(frame,[shot.endFrame-7,shot.endFrame-1],[1,0],clamp);
