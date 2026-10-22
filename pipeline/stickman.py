@@ -15,12 +15,12 @@ from PIL import Image, ImageDraw
 SS = 2  # supersampling
 INK = (20, 20, 24, 255)
 WHITE = (250, 250, 248, 255)
-HOST = {"name": "you", "jacket": (34, 44, 74), "tie": (214, 40, 110), "shirt": (246, 246, 244), "hat": "",
+HOST = {"name": "you", "jacket": (29, 30, 35), "tie": (227, 25, 48), "shirt": (251, 250, 248), "hat": "",
         "beard": False, "dress": False, "hair": ""}
 
 ACTIONS = ("standing", "walking", "running", "pointing", "reacting", "turning", "looking", "observing", "reaching",
            "presenting", "waiting", "boarding", "seated", "thinking", "holding", "scared", "sneaking", "leaving")
-EXPRESSIONS = ("neutral", "worried", "shocked", "scared", "angry", "determined", "curious", "sad", "sneaky")
+EXPRESSIONS = ("neutral", "worried", "shocked", "scared", "angry", "determined", "curious", "sad", "sneaky", "happy", "confident", "serious", "thinking", "talking", "suspicious", "confused", "smirk")
 VIEWS = ("front", "three_quarter", "side", "back")
 MOVING = {"walking", "running", "boarding", "sneaking", "leaving"}  # these move across the frame
 SIDE_ONLY = {"walking", "running", "boarding", "sneaking", "seated"}  # drawn in profile whatever was asked
@@ -173,8 +173,15 @@ def _face(d, cx, cy, r, expr, view, blink):
         d.arc((mx - mw, my - 0.02 * r, mx + mw, my + 0.28 * r), 200, 340, fill=INK, width=w)
     elif expr == "angry":
         d.rectangle((mx - mw * 0.8, my - 0.04 * r, mx + mw * 0.8, my + 0.08 * r), fill=WHITE, outline=INK, width=w)
-    elif expr in ("determined", "sneaky"):
+    elif expr in ("determined", "sneaky", "confident", "smirk", "suspicious"):
         d.arc((mx - mw, my - 0.3 * r, mx + mw * 1.1, my + 0.1 * r), 30, 130, fill=INK, width=w)
+    elif expr == "happy":
+        d.arc((mx - mw * 1.1, my - 0.25 * r, mx + mw * 1.1, my + 0.26 * r), 10, 170, fill=INK, width=max(4, int(0.09 * r)))
+    elif expr == "talking":
+        d.ellipse((mx - 0.18 * r, my - 0.07 * r, mx + 0.18 * r, my + 0.21 * r),
+                  fill=(54, 18, 25, 255), outline=INK, width=w)
+    elif expr in ("thinking", "confused"):
+        d.arc((mx - mw, my - 0.16 * r, mx + mw, my + 0.12 * r), 160, 345, fill=INK, width=w)
     elif expr == "curious":
         d.ellipse((mx - 0.06 * r, my - 0.03 * r, mx + 0.06 * r, my + 0.09 * r), outline=INK, width=w)
     else:
