@@ -199,7 +199,7 @@ one "scenes" entry per narration scene, in order. SHOT is one of:
   compare     {{"kicker": "TWO THEORIES", "left": {{"title": "<max 3 words>", "items": ["<max 5 words>", "..."]}}, "right": {{...}}}}
   missing     {{"subject": "<cast name or you>", "word": "<MISSING | VANISHED | GONE: only a word the narration uses>", "last_seen": "<a place said, or empty>"}}
   photo_scan  {{"kicker": "IMAGE INSPECTION", "text": "<a short phrase said in narration>", "count": <number of depicted figures explicitly said, or 1>}}
-  clock_stop  {{"kicker": "TIME", "text": "<short clock-related phrase said in narration>", "time": "<a time actually said, or empty>"}}
+  clock_stop  {{"kicker": "TIME", "text": "<short clock-related phrase said in narration>", "time": "<a time actually said; for explicit midnight use 12:00 AM; else empty>"}}
   shadow_reveal {{"kicker": "VISUAL BREAKDOWN", "text": "<short shadow-related phrase said in narration>", "count": <number of shadows explicitly said>}}
   closing     {{"kicker": "YOUR CALL", "text": "<the closing question, exactly as in the narration>", "accent": "<one word>"}}
 BUILD is one of: {{"kind": "grid", "total": <4-60>, "filled": <n>, "label": "<max 4 words>"}} |
@@ -540,11 +540,18 @@ def _valid_graphic(s: dict, at, ctx: dict) -> dict | None:
                 return None
             out["count"] = count
         if tpl == "clock_stop":
-            if not re.search(r"\b(stop|stopped|froze|freeze|halt|midnight)\b", low):
+            # The visual must correspond to a stopped clock, not merely the
+            # word midnight. Midnight implies 12:00 AM by definition.
+            if not re.search(r"\b(stop|stops|stopped|froze|frozen|freeze|halt|halted|ceased)\b", low):
                 return None
-            # Do not fabricate a digital date/time if the source did not state it.
-            shown_time = str(f.get("time") or "")[:8].strip()
-            out["time"] = shown_time if shown_time and shown_time.lower() in low else ""
+            shown_time = str(f.get("time") or "").strip()[:14]
+            if re.search(r"\bmidnight\b", low):
+                out["time"] = "12:00 AM"
+            elif shown_time and shown_time.lower() in low:
+                out["time"] = shown_time
+            else:
+                spoken = re.search(r"\b([0-2]?\d:[0-5]\d)(?:\s*(am|pm))?\b", low)
+                out["time"] = spoken.group(0).upper() if spoken else ""
     elif tpl == "missing":
         word = str(f.get("word") or "").upper()
         if not re.search(r"\b(vanish|disappear|missing|gone|never seen|never arrived)", low):
