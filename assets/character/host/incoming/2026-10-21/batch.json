@@ -2,8 +2,8 @@
   "schema_version": 1,
   "project": "Night Files",
   "batch_id": "2026-10-21-expression-intake-01",
-  "status": "stored_unclassified",
-  "notes": "Nine user-provided original PNGs; descriptive labels are provisional. Do not automatically assign F04-F13 in upload order because several are variants and some requested emotions are missing.",
+  "status": "partially_classified",
+  "notes": "Original owner PNGs untouched. Owner confirmed U06 Confused (question mark), U07 Skeptical, U08 Suspicious, U09 Thinking in this order. Other provisional U candidates remain unchanged.",
   "assets": [
     {
       "id": "U01",
@@ -74,8 +74,11 @@
       "height": 1145,
       "mode": "RGBA",
       "sha256": "ce4d3d1163902186b4793ffa2da25e929709cec15545de5aa78e69140b96a2e2",
-      "classification": "provisional",
-      "approval": "awaiting_id_confirmation"
+      "classification": "owner_confirmed",
+      "approval": "awaiting_id_confirmation",
+      "label": "confused",
+      "status": "approved_variant",
+      "canonical_relation": "F03 alternate; yellow question mark baked into source"
     },
     {
       "id": "U07",
@@ -86,8 +89,11 @@
       "height": 1145,
       "mode": "RGBA",
       "sha256": "3364688d58818e8bd94295deaad24c46f58b3e895098498d6b135a47028bcd6d",
-      "classification": "provisional",
-      "approval": "awaiting_id_confirmation"
+      "classification": "owner_confirmed",
+      "approval": "awaiting_id_confirmation",
+      "label": "skeptical",
+      "status": "approved_variant",
+      "canonical_relation": "skeptical; separate from suspicious"
     },
     {
       "id": "U08",
@@ -98,8 +104,11 @@
       "height": 1145,
       "mode": "RGBA",
       "sha256": "41923a851d25f72d9a91cb4b805d168dd41cfcdbd29a2f3c9b2edd835a2c8653",
-      "classification": "provisional",
-      "approval": "awaiting_id_confirmation"
+      "classification": "owner_confirmed",
+      "approval": "awaiting_id_confirmation",
+      "label": "suspicious",
+      "status": "approved",
+      "canonical_relation": "F08 suspicious"
     },
     {
       "id": "U09",
@@ -110,8 +119,11 @@
       "height": 1145,
       "mode": "RGBA",
       "sha256": "15bf82a839503f5ffaefc9e71eaf48a73ad9e7ca39a0a29fa4f832476bb76189",
-      "classification": "provisional",
-      "approval": "awaiting_id_confirmation"
+      "classification": "owner_confirmed",
+      "approval": "awaiting_id_confirmation",
+      "label": "thinking",
+      "status": "approved",
+      "canonical_relation": "F07 thinking"
     }
   ]
 }
