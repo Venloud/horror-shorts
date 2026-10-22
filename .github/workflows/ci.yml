@@ -13,6 +13,13 @@ on:
     branches:
       - main
   workflow_dispatch: # Manual preview, never runs on pushes or schedules.
+    inputs:
+      preview_ref:
+        description: "Git ref containing the video editor to test (branch, tag, or SHA)"
+        required: true
+        type: string
+        default: "feature/free-motion-toolkit-20261022"
+
 
 
 # CI verifies approved assets and scripts without writing to the repository.
@@ -174,18 +181,46 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Check out repository
+      - name: Check out selected editor revision
         uses: actions/checkout@v4
-      - name: Install offline preview dependencies
+        with:
+          ref: ${{ inputs.preview_ref }}
+          persist-credentials: false
+      - name: Confirm exact editor revision and prevent stale renders
+        run: |
+          echo "Selected code reference: ${{ inputs.preview_ref }}"
+          echo "Actual editor commit: $(git rev-parse HEAD)"
+          test -f remotion/src/polish.jsx
+          test -f remotion/render_polish.mjs
+          test -f pipeline/remotion_post.py
+          grep -q 'NightFilesPolish' remotion/src/index.jsx
+          grep -q 'def _focus_ring_points' pipeline/noir.py
+          grep -q 'def _resolve_clock_time' pipeline/noir.py
+          echo "### Night Files editor used for this render" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Requested ref: \`${{ inputs.preview_ref }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Exact code commit: \`$(git rev-parse HEAD)\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Remotion post-production: enabled for this preview" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Publishing: disabled" >> "$GITHUB_STEP_SUMMARY"
+      - name: Install offline editing dependencies
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg espeak-ng fonts-dejavu-core > /dev/null
-          python -m pip install -q "Pillow>=10" "numpy>=1.24"
-      - name: Render cinematic preview with approved characters and Noir graphics
+          python -m pip install -q "Pillow>=10" "numpy>=1.24" soundfile
+      - name: Set up Node for the existing Remotion package
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install local Remotion renderer
+        run: npm --prefix remotion install --no-audit --no-fund
+      - name: Render video with the selected revision and Remotion editing
         run: |
           python tools/night_files_visual_preview.py
           ffprobe -v error -select_streams v:0 -show_entries stream=width,height,avg_frame_rate -of default=nw=1 output/manual-cinematic-preview/night-files-cinematic-preview.mp4
-      - name: Save preview MP4, contact sheet and shot list for review
+          git rev-parse HEAD > output/manual-cinematic-preview/source-revision.txt
+          printf 'Selected ref: %s\nEditor: NightFilesPolish/Remotion\n' "${{ inputs.preview_ref }}" >> output/manual-cinematic-preview/source-revision.txt
+          echo "### Preview files" >> "$GITHUB_STEP_SUMMARY"
+          echo "Download artifact \`night-files-manual-cinematic-preview\` for the reviewed MP4 and source revision." >> "$GITHUB_STEP_SUMMARY"
+      - name: Save exact-revision MP4, contact sheet and storyboard
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -194,5 +229,6 @@ jobs:
             output/manual-cinematic-preview/night-files-cinematic-preview.mp4
             output/manual-cinematic-preview/contact-sheet.jpg
             output/manual-cinematic-preview/shot-list.json
+            output/manual-cinematic-preview/source-revision.txt
           retention-days: 14
           if-no-files-found: error
