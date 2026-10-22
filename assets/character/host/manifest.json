@@ -7,6 +7,92 @@
   "asset_format": "original transparent PNG bytes, no modification",
   "approved": [
     {
+      "id": "F01",
+      "name": "happy",
+      "path": "expressions/F01_happy.png",
+      "status": "approved",
+      "width": 1122,
+      "height": 1402,
+      "sha256": "fa2e59e289eb4537fec790456e6696c0901cdf4a0d9a0240f60ec329b442774f"
+    },
+    {
+      "id": "F02",
+      "name": "serious",
+      "path": "expressions/F02_serious.png",
+      "status": "approved",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "5d85e1c79bf25378c185a755a512f3f96f830c95d6ffc22481422efd9d772bd0"
+    },
+    {
+      "id": "F03",
+      "name": "confused",
+      "path": "expressions/F03_confused.png",
+      "status": "approved",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "aa891339c4927fb731b7485484e487348f87daa8cdb9fd3ca0301f06597cb9eb"
+    },
+    {
+      "id": "F04",
+      "name": "worried",
+      "path": "expressions/F04_worried.png",
+      "status": "approved",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "6182e060da26c60968ffc312bff5247dc1616d46fe70ee2110940a9e86fb11c6"
+    },
+    {
+      "id": "F05",
+      "name": "excited",
+      "path": "expressions/F05_excited.png",
+      "status": "approved",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "dc5fe61147b62724ec39fcaf644c240fc0b34bcca2420769a18b51f7e10420d6",
+      "source_id": "U01"
+    },
+    {
+      "id": "F07",
+      "name": "thinking",
+      "path": "incoming/2026-10-21/U09_thinking_skeptical.png",
+      "status": "approved",
+      "source_id": "U09",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "15bf82a839503f5ffaefc9e71eaf48a73ad9e7ca39a0a29fa4f832476bb76189"
+    },
+    {
+      "id": "F08",
+      "name": "suspicious",
+      "path": "incoming/2026-10-21/U08_suspicious_crossed_arms.png",
+      "status": "approved",
+      "source_id": "U08",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "41923a851d25f72d9a91cb4b805d168dd41cfcdbd29a2f3c9b2edd835a2c8653"
+    },
+    {
+      "id": "F09",
+      "name": "angry",
+      "path": "expressions/F09_angry.png",
+      "status": "approved",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "3f8e5137f254b96a1cbe6aa9946e277cde71a4d1c26637399d6483649114136e",
+      "source_id": "U04"
+    },
+    {
+      "id": "F10",
+      "name": "smirk",
+      "path": "expressions/F10_smirk.png",
+      "status": "approved",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "2c6b5010266d8a76c2bc6004978a1a46a9128ad3c7803ff627e7f44afe1cef8c",
+      "source_id": "U02"
+    },
+    {
       "id": "M01",
       "name": "front_full_body_neutral",
       "path": "masters/M01_front_neutral.png",
@@ -50,67 +136,22 @@
       "width": 1374,
       "height": 1145,
       "sha256": "70454399c941f0eda31bd9f2160676790331f6ef33d38d6cbebd0bdd9a14d23b"
-    },
-    {
-      "id": "F01",
-      "name": "happy",
-      "path": "expressions/F01_happy.png",
-      "status": "approved",
-      "width": 1122,
-      "height": 1402,
-      "sha256": "fa2e59e289eb4537fec790456e6696c0901cdf4a0d9a0240f60ec329b442774f"
-    },
-    {
-      "id": "F02",
-      "name": "serious",
-      "path": "expressions/F02_serious.png",
-      "status": "approved",
-      "width": 1374,
-      "height": 1145,
-      "sha256": "5d85e1c79bf25378c185a755a512f3f96f830c95d6ffc22481422efd9d772bd0"
-    },
-    {
-      "id": "F03",
-      "name": "confused",
-      "path": "expressions/F03_confused.png",
-      "status": "approved",
-      "width": 1374,
-      "height": 1145,
-      "sha256": "aa891339c4927fb731b7485484e487348f87daa8cdb9fd3ca0301f06597cb9eb"
-    },
-    {
-      "id": "F07",
-      "name": "thinking",
-      "path": "incoming/2026-10-21/U09_thinking_skeptical.png",
-      "status": "approved",
-      "source_id": "U09",
-      "width": 1374,
-      "height": 1145,
-      "sha256": "15bf82a839503f5ffaefc9e71eaf48a73ad9e7ca39a0a29fa4f832476bb76189"
-    },
-    {
-      "id": "F08",
-      "name": "suspicious",
-      "path": "incoming/2026-10-21/U08_suspicious_crossed_arms.png",
-      "status": "approved",
-      "source_id": "U08",
-      "width": 1374,
-      "height": 1145,
-      "sha256": "41923a851d25f72d9a91cb4b805d168dd41cfcdbd29a2f3c9b2edd835a2c8653"
     }
   ],
   "next_batch": [
     {
       "id": "F04",
       "name": "worried",
-      "status": "awaiting_original_bytes",
-      "preview_received": true
+      "status": "approved",
+      "preview_received": true,
+      "path": "expressions/F04_worried.png"
     },
     {
       "id": "F05",
       "name": "excited",
-      "status": "awaiting_original_bytes",
-      "preview_received": true
+      "status": "approved",
+      "preview_received": true,
+      "path": "expressions/F05_excited.png"
     },
     {
       "id": "F06",
@@ -132,12 +173,14 @@
     {
       "id": "F09",
       "name": "angry",
-      "status": "awaiting_upload"
+      "status": "approved",
+      "path": "expressions/F09_angry.png"
     },
     {
       "id": "F10",
       "name": "smirk",
-      "status": "awaiting_upload"
+      "status": "approved",
+      "path": "expressions/F10_smirk.png"
     },
     {
       "id": "F11",
@@ -157,7 +200,7 @@
   ],
   "legacy_closeups": "retired after original image import",
   "legacy_full_body_cutouts": "replacement pending; remove only when corresponding P-series is approved",
-  "updated": "2026-10-21",
+  "updated": "2026-10-22",
   "incoming_batches": [
     {
       "id": "2026-10-21-expression-intake-01",
@@ -179,5 +222,6 @@
       "name": "skeptical",
       "relation": "separate expression, not suspicious"
     }
-  ]
+  ],
+  "asset_note": "F04 Worried and F05 Excited original PNGs imported and SHA256 verified 2026-10-22. F09 Angry from U04 and F10 Smirk from U02 are registered. No ID reassignment."
 }
