@@ -28,7 +28,7 @@ Assets are approved **one at a time or in batches of up to 10**. Preserve the or
 | F03 | Confused | [expressions/F03_confused.png](expressions/F03_confused.png) |
 
 ## Next upload batch, 10 expression IDs
-F04 worried, F05 shocked, F06 scared, F07 thinking, F08 suspicious, F09 angry,
+F04 worried, **F05 excited**, F06 scared, F07 thinking, F08 suspicious, F09 angry,
 F10 smirk, F11 talking, F12 curious, F13 sad.
 
 Each incoming image will have the same character, outfit, shading, approved red aura, clean transparent background, and a clear emotion. Names/IDs **never** get reused for different expressions.
@@ -40,3 +40,14 @@ Each incoming image will have the same character, outfit, shading, approved red 
 - Prefer original PNG sources; normalized crop/padding/caption placement are render-time transforms, never destructive changes to the originals.
 - Remotion/FFmpeg motion graphics, overlays, lower-thirds and filler are *separate reusable libraries*, not background pictures baked into character PNGs.
 - No story-specific backgrounds or images should be required just to show an action.
+
+## Owner-confirmed intake labels, October 21
+
+The newest nine uploaded candidate images are [preserved here](incoming/2026-10-21/). Venloud specifically confirmed this order:
+
+- U06: **Confused**, the one with a yellow question mark (F03 variant).
+- U07: **Skeptical**, distinct from Suspicious.
+- U08: **Suspicious**, canonical **F08**.
+- U09: **Thinking**, canonical **F07**.
+
+Additional owner labels: **F04 = Worried**, **F05 = Excited** (not Shocked). The user supplied image previews for those two, but the original PNG bytes are not yet available for verified transfer; never claim those files are stored until checked into the repository with hashes. All U-series originals remain preserved.
