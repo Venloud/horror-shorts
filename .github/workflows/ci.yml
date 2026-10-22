@@ -46,7 +46,8 @@ jobs:
           sys.path.insert(0,"pipeline")
           import explainer
           registry = json.loads(Path("assets/character/host/manifest.json").read_text())
-          assert len(registry["approved"]) == 8
+          assert len(registry["approved"]) >= 8
+          assert len({record["id"] for record in registry["approved"]}) == len(registry["approved"])
           root = Path("assets/character/host")
           for item in registry["approved"]:
               path = root / item["path"]
