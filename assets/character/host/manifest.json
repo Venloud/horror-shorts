@@ -257,7 +257,7 @@
     {
       "id": "F16",
       "name": "shocked",
-      "status": "awaiting_upload"
+      "status": "submitted_binary_pending"
     },
     {
       "id": "F17",
@@ -382,6 +382,14 @@
       "height": 1145,
       "format": "RGBA PNG",
       "note": "Owner confirmed F15 Scared. Local original checksum verified; binary import pending."
+    },
+    {
+      "id": "F16",
+      "name": "shocked",
+      "received_on": "2026-10-22",
+      "status": "owner_labeled_image_visible_in_chat_BINARY_NOT_ACCESSIBLE",
+      "target_path": "expressions/F16_shocked.png",
+      "note": "Owner labeled the newly shown image F16 Shocked. Original binary not mounted in this session; checksum and dimensions not verified. Do not mark approved or imported."
     }
   ]
 }
