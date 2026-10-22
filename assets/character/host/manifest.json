@@ -77,18 +77,40 @@
       "width": 1374,
       "height": 1145,
       "sha256": "aa891339c4927fb731b7485484e487348f87daa8cdb9fd3ca0301f06597cb9eb"
+    },
+    {
+      "id": "F07",
+      "name": "thinking",
+      "path": "incoming/2026-10-21/U09_thinking_skeptical.png",
+      "status": "approved",
+      "source_id": "U09",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "15bf82a839503f5ffaefc9e71eaf48a73ad9e7ca39a0a29fa4f832476bb76189"
+    },
+    {
+      "id": "F08",
+      "name": "suspicious",
+      "path": "incoming/2026-10-21/U08_suspicious_crossed_arms.png",
+      "status": "approved",
+      "source_id": "U08",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "41923a851d25f72d9a91cb4b805d168dd41cfcdbd29a2f3c9b2edd835a2c8653"
     }
   ],
   "next_batch": [
     {
       "id": "F04",
       "name": "worried",
-      "status": "awaiting_upload"
+      "status": "awaiting_original_bytes",
+      "preview_received": true
     },
     {
       "id": "F05",
-      "name": "shocked",
-      "status": "awaiting_upload"
+      "name": "excited",
+      "status": "awaiting_original_bytes",
+      "preview_received": true
     },
     {
       "id": "F06",
@@ -98,12 +120,14 @@
     {
       "id": "F07",
       "name": "thinking",
-      "status": "awaiting_upload"
+      "status": "approved",
+      "path": "incoming/2026-10-21/U09_thinking_skeptical.png"
     },
     {
       "id": "F08",
       "name": "suspicious",
-      "status": "awaiting_upload"
+      "status": "approved",
+      "path": "incoming/2026-10-21/U08_suspicious_crossed_arms.png"
     },
     {
       "id": "F09",
@@ -140,8 +164,20 @@
       "path": "incoming/2026-10-21/batch.json",
       "readme": "incoming/2026-10-21/README.md",
       "count": 9,
-      "status": "stored_unclassified",
-      "next_step": "approve exact F-series mapping before renderer use"
+      "status": "partially_classified",
+      "next_step": "U06 confused, U07 skeptical, U08 suspicious=F08, U09 thinking=F07 confirmed by owner; remaining U labels pending."
+    }
+  ],
+  "confirmed_variants": [
+    {
+      "intake_id": "U06",
+      "name": "confused",
+      "relation": "F03 alternate with baked yellow question mark"
+    },
+    {
+      "intake_id": "U07",
+      "name": "skeptical",
+      "relation": "separate expression, not suspicious"
     }
   ]
 }
