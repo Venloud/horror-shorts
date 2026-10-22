@@ -1212,86 +1212,109 @@ class Renderer:
         self.overlay(frame, s, t, target)
         return frame
 
+    @staticmethod
+    def _draw_stage_prop(d: ImageDraw.ImageDraw, prop: str, box: tuple, ink: tuple, accent: tuple) -> None:
+        """Reusable minimal vector prop icons, selected by verified storyboard metadata.
+
+        Zero story/person/location names. Any story can request these generic symbols.
+        """
+        x0, y0, x1, y1 = box
+        cx, cy = (x0 + x1) // 2, (y0 + y1) // 2
+        outline = {"outline": ink, "width": 7}
+        if prop in ("document", "folder", "photograph", "map"):
+            d.rounded_rectangle(box, radius=10, **outline)
+            if prop == "photograph":
+                d.ellipse((x0 + 18, y0 + 19, x0 + 55, y0 + 56), outline=accent, width=5)
+                d.line([(x0 + 14, y1 - 20), (cx, cy), (cx + 25, cy + 23), (x1 - 13, y0 + 42)], fill=ink, width=5)
+            elif prop == "map":
+                for k in range(1, 3):
+                    d.line((x0 + k * (x1 - x0) // 3, y0 + 9, x0 + k * (x1 - x0) // 3, y1 - 9), fill=ink, width=4)
+                d.ellipse((cx - 15, cy - 15, cx + 15, cy + 15), outline=accent, width=5)
+            elif prop == "folder":
+                d.line((x0 + 24, y0 + 28, x0 + 83, y0 + 28), fill=accent, width=7)
+            else:
+                for n in range(3):
+                    d.line((x0 + 24, y0 + 28 + 38*n, x1 - 22, y0 + 28 + 38*n),
+                           fill=accent if n == 1 else ink, width=5)
+        elif prop == "suitcase":
+            d.rounded_rectangle((x0, y0 + 38, x1, y1), radius=15, **outline)
+            d.arc((cx - 37, y0, cx + 37, y0 + 82), 180, 360, fill=accent, width=8)
+            d.line((x0 + 16, cy, x1 - 16, cy), fill=ink, width=5)
+        elif prop in ("camera", "phone", "film"):
+            if prop == "phone":
+                d.rounded_rectangle((cx - 58, y0, cx + 58, y1), radius=14, **outline)
+                d.line((cx - 24, y1 - 18, cx + 24, y1 - 18), fill=accent, width=5)
+            else:
+                d.rounded_rectangle(box, radius=14, **outline)
+                if prop == "camera":
+                    d.ellipse((cx - 52, cy - 52, cx + 52, cy + 52), outline=accent, width=9)
+                else:
+                    for yy in (y0 + 25, cy, y1 - 30):
+                        d.rectangle((x0 + 12, yy, x0 + 30, yy + 13), outline=ink, width=3)
+                        d.rectangle((x1 - 30, yy, x1 - 12, yy + 13), outline=ink, width=3)
+        elif prop in ("clock", "magnifier"):
+            d.ellipse((x0 + 15, y0 + 8, x1 - 15, y1 - 26), **outline)
+            if prop == "clock":
+                d.line((cx, cy - 24, cx, cy + 24), fill=accent, width=7)
+                d.line((cx, cy + 24, cx + 35, cy + 5), fill=accent, width=7)
+            else:
+                d.line((cx + 59, cy + 46, x1, y1), fill=accent, width=13)
+        elif prop == "key":
+            d.ellipse((x0 + 16, y0 + 26, x0 + 99, y0 + 109), **outline)
+            d.line((x0 + 93, y0 + 100, x1 - 17, y1 - 16), fill=accent, width=11)
+            d.line((x1 - 38, y1 - 53, x1 - 15, y1 - 75), fill=accent, width=8)
+        elif prop == "flashlight":
+            d.polygon([(x0 + 19, cy - 34), (cx + 25, cy - 34), (x1 - 12, y0 + 8),
+                       (x1 - 12, y1 - 8), (cx + 25, cy + 34), (x0 + 19, cy + 34)], outline=ink)
+            d.line((x0 + 23, cy - 24, cx + 11, cy - 24), fill=accent, width=9)
+        elif prop == "money":
+            d.rounded_rectangle((x0, y0 + 28, x1, y1 - 20), radius=10, **outline)
+            d.ellipse((cx - 33, cy - 35, cx + 33, cy + 34), outline=accent, width=6)
+        elif prop == "aircraft":
+            d.line((cx, y0 + 10, cx, y1 - 17), fill=ink, width=12)
+            d.line((x0 + 12, cy, x1 - 12, cy), fill=accent, width=13)
+            d.line((cx - 56, y1 - 36, cx + 56, y1 - 36), fill=ink, width=9)
+        elif prop == "vehicle":
+            d.rounded_rectangle((x0 + 12, y0 + 35, x1 - 12, y1 - 34), radius=14, **outline)
+            for wx in (x0 + 56, x1 - 56):
+                d.ellipse((wx - 24, y1 - 51, wx + 24, y1 - 3), outline=accent, width=7)
+        elif prop == "door":
+            d.rectangle((x0 + 35, y0, x1 - 35, y1), **outline)
+            d.ellipse((x1 - 65, cy, x1 - 51, cy + 14), fill=accent)
+
     def _stage_context(self, frame: Image.Image, shot: dict, seg: dict) -> None:
-        """Minimal contextual cue plus single schematic prop. The actor does the storytelling."""
-        scs = self.story.get("scenes") or []
-        words = scs[min(seg["scene"], len(scs) - 1)].get("narration", "").lower() if scs else ""
-        if any(k in words for k in ("compartment", "carriage", "passenger")):
-            cue, prop = "TRAIN COMPARTMENT", "train"
-        elif any(k in words for k in ("luggage", "baggage", "trunk", "belongings")):
-            cue, prop = "MISSING LUGGAGE", "case"
-        elif any(k in words for k in ("roundhay", "garden", "footage", "film that lasts")):
-            cue, prop = "ROUNDHAY FOOTAGE", "film"
-        elif any(k in words for k in ("train", "paris", "station", "railway")):
-            cue, prop = "THE TRAIN", "train"
-        elif any(k in words for k in ("camera", "inventor", "lens", "workshop", "negative")):
-            cue, prop = "THE INVENTOR", "camera"
-        else:
-            cue, prop = "THE EVIDENCE", "file"
+        """Render *only* user/storyboard-grounded details, never guess from story keywords."""
+        prop = str(shot.get("prop") or "none").lower()
+        if prop not in STAGE_PROPS:
+            prop = "none"
+        label = str(shot.get("text") or "").strip()[:40] if shot.get("text_mode") in (
+            "location", "name", "evidence", "punch", "quote", "stamp") else ""
         close = shot.get("shot_type") == "close"
-        key = ("stage-cue", cue, close)
+        if not label and (not prop or prop == "none" or close):
+            return
+        key = ("generic-stage", label, prop, close)
         layer = self.layer_cache.get(key)
         if layer is None:
             layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
             d = ImageDraw.Draw(layer)
-            col, hot = (210, 221, 235, 200), self.acc + (255,)
-            # Deliberate editorial margins: actor centre, evidence prop at upper right,
-            # captions in their own bottom strip. No painted scenery.
-            d.rounded_rectangle((66, 215, 552, 281), radius=14, fill=(16, 21, 28, 230))
-            d.rectangle((75, 229, 84, 266), fill=hot)
-            d.text((102, 231), cue, font=font("mono", 26), fill=(243, 244, 245, 255))
-            if close:
-                pass  # the face fills the frame, so hide the contextual prop
-            elif prop == "film":
-                d.rounded_rectangle((794, 468, 997, 608), radius=12, outline=col, width=7)
-                for yy in (486, 539, 584):
-                    for xx in (804, 971):
-                        d.rectangle((xx, yy, xx + 16, yy + 14), outline=col, width=3)
-                d.line((845, 491, 949, 581), fill=hot, width=8)
-            elif prop == "train":
-                d.rounded_rectangle((791, 468, 995, 670), radius=22, outline=col, width=8)
-                for xx in (816, 909):
-                    d.rectangle((xx, 503, xx + 61, 558), outline=col, width=5)
-                d.line((807, 606, 971, 606), fill=hot, width=8)
-                for xx in (827, 952):
-                    d.ellipse((xx - 22, 648, xx + 22, 692), outline=col, width=7)
-            elif prop == "case":
-                d.rounded_rectangle((803, 527, 991, 680), radius=15, outline=col, width=8)
-                d.arc((856, 476, 942, 548), 183, 358, fill=hot, width=9)
-                d.line((808, 592, 985, 592), fill=col, width=5)
-            elif prop == "camera":
-                d.rounded_rectangle((795, 520, 991, 659), radius=14, outline=col, width=8)
-                d.ellipse((847, 536, 934, 623), outline=hot, width=8)
-                d.line((844, 659, 794, 754), fill=col, width=8)
-                d.line((937, 659, 983, 754), fill=col, width=8)
-            else:
-                d.rounded_rectangle((821, 504, 981, 696), radius=8, outline=col, width=7)
-                for yy in (554, 601, 649):
-                    d.line((845, yy, 959, yy), fill=hot if yy == 601 else col, width=5)
+            pale, hot = (210, 221, 235, 216), self.acc + (255,)
+            if label:
+                f = font("mono", 26)
+                label_w = min(W - 140, int(d.textlength(label.upper(), font=f) + 60))
+                d.rounded_rectangle((66, 210, 66 + label_w, 278), radius=13, fill=(16, 21, 28, 230))
+                d.rectangle((76, 230, 85, 263), fill=hot)
+                d.text((100, 232), label.upper(), font=f, fill=(243, 244, 245, 255))
+            if not close and prop != "none":
+                self._draw_stage_prop(d, prop, (790, 460, 1010, 680), pale, hot)
             self.layer_cache[key] = layer
         frame.alpha_composite(layer)
-        if shot.get("primary") == "you" and shot.get("action") == "holding" and \
-                shot.get("shot_type") == "medium":
-            # Character holds a real foreground clue between the hands, instead of
-            # gesturing at a floating AI background. Static, high-contrast line art.
+        # The renderer positions a prop as a foreground object ONLY on a held-object pose.
+        # No special case for luggage, film reels, airports, or any specific story.
+        if prop != "none" and shot.get("primary") == "you" and shot.get("action") == "holding" and (
+                shot.get("shot_type") == "medium"):
             d = ImageDraw.Draw(frame)
-            # The actor's real hand centres sit to either side at this medium framing.
-            x0, x1, y0, y1 = 421, 736, 891, 1045
-            if any(w in words for w in ("luggage", "trunk", "baggage")):
-                d.rounded_rectangle((x0, y0, x1, y1), radius=14,
-                                    fill=(116, 88, 69), outline=(240, 236, 227), width=6)
-                d.arc((x0 + 85, y0 - 35, x1 - 85, y0 + 30), 182, 358,
-                      fill=(235, 228, 217), width=7)
-                d.line((x0 + 16, y0 + 38, x1 - 16, y0 + 38),
-                       fill=(225, 212, 192), width=5)
-                # Do not draw replacement hands: the original rig hands remain on either side.
-            else:
-                d.rounded_rectangle((x0, y0, x1, y1), radius=8,
-                                    fill=(206, 196, 179), outline=(21, 24, 30), width=7)
-                for k in range(3):
-                    y = y0 + 24 + k * 24
-                    d.line((x0 + 29, y, x1 - 26, y), fill=(64, 57, 55), width=5)
-                d.rectangle((x1 - 45, y1 - 35, x1 - 18, y1 - 12), fill=self.acc + (255,))
+            self._draw_stage_prop(d, prop, (421, 891, 736, 1045),
+                                  (243, 236, 223, 255), self.acc + (255,))
 
     @staticmethod
     def _travel(action, facing, x) -> float:
