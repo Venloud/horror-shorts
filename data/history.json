@@ -2242,5 +2242,70 @@
     "music_file": "bk_grnde.mp3",
     "buffered": "2026-10-21_2336",
     "tiktok": null
+  },
+  {
+    "date": "2026-10-22_1213",
+    "story_id": "749e664e2e31",
+    "title": "The Witch Who Kept a Hotel",
+    "premise": "Two travelers spend the night at a country hotel where a witch's protective nightcaps become deadly.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "The Hair-Raising Tale of &#8220;The Witch Who Kept a Hotel&#8221;",
+    "source": "https://blogs.loc.gov/folklife/2017/10/the-hair-raising-tale-of-the-witch-who-kept-a-hotel/",
+    "prompt_file": null,
+    "setting": "Rural South Carolina / Ozark folklore tradition",
+    "threat": "A murderous hotel‑keeping witch with a forty‑mile jumper",
+    "twist": "The witch mistakenly slaughters her own daughters because the travelers swapped their nightcaps.",
+    "score": null,
+    "seconds": 62.2,
+    "voice_speed": 1.1,
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [],
+    "visual_mode": "classic",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "https://blogs.loc.gov/folklife/2017/10/the-hair-raising-tale-of-the-witch-who-kept-a-hotel/"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 79,
+    "visuals": {
+      "distinct": 23,
+      "longest_s": 6.5,
+      "longest_share": 0.099,
+      "longest_name": "scene:the country hotel:you:wide:front"
+    },
+    "yt_title": "Stealing Your Own Death... The Witch Who Kept a Hotel #shorts",
+    "hashtags": [
+      "witch",
+      "southcarolina",
+      "folklore",
+      "scarystories"
+    ],
+    "yt_tags": [
+      "witch hotel legend",
+      "south carolina folklore",
+      "ozark legend",
+      "cursed hotel story",
+      "nightcap curse",
+      "witch daughters",
+      "mechanical jumper chase",
+      "hounds tear witch",
+      "hotel doors sealed",
+      "legendary hotel curse",
+      "stealing your own death",
+      "witch who kept a hotel",
+      "scary legend",
+      "folklore",
+      "creepy legend"
+    ],
+    "opening": "Stealing your own death starts the moment you accept a room at the isolated country hotel where nobody ever walks back out.",
+    "music_file": "background_music.mp3",
+    "buffered": "2026-10-22_1213",
+    "tiktok": null
   }
 ]
