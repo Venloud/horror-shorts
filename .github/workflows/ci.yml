@@ -179,7 +179,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg espeak-ng fonts-dejavu-core > /dev/null
-          python -m pip install -q "Pillow>=10" "numpy>=1.24"
+          python -m pip install -q "Pillow>=10" "numpy>=1.24" soundfile
       - name: Render cinematic preview with approved characters and Noir graphics
         run: |
           python tools/night_files_visual_preview.py
