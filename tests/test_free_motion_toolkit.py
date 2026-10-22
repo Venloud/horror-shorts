@@ -60,6 +60,25 @@ class CinematicToolTests(unittest.TestCase):
             0, ctx("two shadows appeared", {2}))
         self.assertEqual(good["fields"]["count"], 2)
 
+    def test_existing_mixer_supports_short_effect_cues(self):
+        import tempfile
+        import numpy as np
+        import soundfile as sf
+        from unittest.mock import patch
+
+        with tempfile.TemporaryDirectory() as temp:
+            voice = Path(temp) / "voice.wav"
+            output = Path(temp) / "mixed.wav"
+            rate = 16000
+            sf.write(voice, np.zeros(rate // 2, dtype=np.float32), rate)
+            tone = np.ones(rate, dtype=np.float32) * 0.1
+            with patch.object(explainer, "_load_sfx", return_value=tone):
+                explainer._mix_audio({"path": str(voice)}, 0.5,
+                                     [(0.0, "clock_ticking", 1.0, 0.10)], output)
+            sound, _ = sf.read(output)
+            self.assertGreater(abs(sound[:100]).sum(), 0)
+            self.assertLess(abs(sound[int(.12*rate):]).max(), 0.0001)
+
     def test_no_generation_or_external_services_in_toolkit(self):
         src = (ROOT / "pipeline" / "noir.py").read_text().lower()
         for disallowed in ("from openmontage", "import openmontage",
