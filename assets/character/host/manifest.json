@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "project": "Night Files",
+  "character": "host",
+  "identity_locked": true,
+  "red_aura": "preserve original user-approved red rim exactly",
+  "asset_format": "original transparent PNG bytes, no modification",
+  "approved": [
+    {
+      "id": "M01",
+      "name": "front_full_body_neutral",
+      "path": "masters/M01_front_neutral.png",
+      "status": "approved",
+      "width": 1024,
+      "height": 1536,
+      "sha256": "73b20c204d75462fd9c56d8cc8d6cd90d2b47f03ca6dbe37e795be62db0bd57c"
+    },
+    {
+      "id": "M02",
+      "name": "three_quarter_full_body_neutral",
+      "path": "masters/M02_three_quarter_neutral.png",
+      "status": "approved",
+      "width": 1024,
+      "height": 1536,
+      "sha256": "cb1abd8b62a41ab5a209e24e46ac9fd15124d10914120e2ec57dda06d3e875bc"
+    },
+    {
+      "id": "M03",
+      "name": "side_full_body_neutral",
+      "path": "masters/M03_side_neutral.png",
+      "status": "approved",
+      "width": 1024,
+      "height": 1536,
+      "sha256": "85013234e79cda4dde49e5722152ca015965b173ec613458c402f92521a7d461"
+    },
+    {
+      "id": "M04",
+      "name": "back_full_body_neutral",
+      "path": "masters/M04_back_neutral.png",
+      "status": "approved",
+      "width": 1024,
+      "height": 1536,
+      "sha256": "271355455057782a6b22040ae2e00ddbc477c9618585927579e5d981a1887eaa"
+    },
+    {
+      "id": "M05",
+      "name": "front_closeup_neutral",
+      "path": "masters/M05_front_neutral_closeup.png",
+      "status": "approved",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "70454399c941f0eda31bd9f2160676790331f6ef33d38d6cbebd0bdd9a14d23b"
+    },
+    {
+      "id": "F01",
+      "name": "happy",
+      "path": "expressions/F01_happy.png",
+      "status": "approved",
+      "width": 1122,
+      "height": 1402,
+      "sha256": "fa2e59e289eb4537fec790456e6696c0901cdf4a0d9a0240f60ec329b442774f"
+    },
+    {
+      "id": "F02",
+      "name": "serious",
+      "path": "expressions/F02_serious.png",
+      "status": "approved",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "5d85e1c79bf25378c185a755a512f3f96f830c95d6ffc22481422efd9d772bd0"
+    },
+    {
+      "id": "F03",
+      "name": "confused",
+      "path": "expressions/F03_confused.png",
+      "status": "approved",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "aa891339c4927fb731b7485484e487348f87daa8cdb9fd3ca0301f06597cb9eb"
+    }
+  ],
+  "next_batch": [
+    {
+      "id": "F04",
+      "name": "worried",
+      "status": "awaiting_upload"
+    },
+    {
+      "id": "F05",
+      "name": "shocked",
+      "status": "awaiting_upload"
+    },
+    {
+      "id": "F06",
+      "name": "scared",
+      "status": "awaiting_upload"
+    },
+    {
+      "id": "F07",
+      "name": "thinking",
+      "status": "awaiting_upload"
+    },
+    {
+      "id": "F08",
+      "name": "suspicious",
+      "status": "awaiting_upload"
+    },
+    {
+      "id": "F09",
+      "name": "angry",
+      "status": "awaiting_upload"
+    },
+    {
+      "id": "F10",
+      "name": "smirk",
+      "status": "awaiting_upload"
+    },
+    {
+      "id": "F11",
+      "name": "talking",
+      "status": "awaiting_upload"
+    },
+    {
+      "id": "F12",
+      "name": "curious",
+      "status": "awaiting_upload"
+    },
+    {
+      "id": "F13",
+      "name": "sad",
+      "status": "awaiting_upload"
+    }
+  ],
+  "legacy_closeups": "retired after original image import",
+  "legacy_full_body_cutouts": "replacement pending; remove only when corresponding P-series is approved",
+  "updated": "2026-10-21"
+}
