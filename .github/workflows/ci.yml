@@ -13,6 +13,14 @@ on:
     branches:
       - main
 
+# Temporary write permission only to commit the owner's eight approved original PNGs.
+permissions:
+  contents: write
+
+concurrency:
+  group: approved-art-import-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate:
 
@@ -32,66 +40,69 @@ jobs:
         run: |
           python -m compileall -q pipeline
 
-      - name: Export and validate matching host close-ups
+      - name: Import approved original host PNGs, retire the mismatched old close-ups
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          python tools/import_approved_host_assets.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A assets/character/host
+          if ! git diff --cached --quiet; then
+            git commit -m "Import 8 Venloud-approved original PNGs; remove obsolete vector closeups [skip ci]"
+            git push origin HEAD:main
+          fi
+
+      - name: Validate original approved character assets and render still-stage preview
         run: |
           python -m pip install -q "Pillow>=10" "numpy>=1.24"
           python - <<'PY'
-          import sys, zipfile
+          import json, sys, hashlib
           from pathlib import Path
           from PIL import Image, ImageDraw
-          sys.path.insert(0, "pipeline")
-          import sprites
-          out = Path("output/host-closeups")
-          count = sprites.export_stage_closeups(out)
-          images = sorted(out.glob("*.png"))
-          assert count == len(images) == 19
-          for f in images:
-              with Image.open(f) as im:
-                  assert im.size == (1600, 2000), (f.name, im.size)
-                  assert im.mode == "RGBA" and im.getpixel((0, 0))[3] == 0, f.name
-          cell_w, cell_h = 240, 330
-          board = Image.new("RGB", (5 * cell_w, 4 * cell_h), "#31353b")
-          d = ImageDraw.Draw(board)
-          for k, f in enumerate(images):
-              with Image.open(f) as im:
-                  im.thumbnail((cell_w - 12, cell_h - 44))
-                  x, y = k % 5 * cell_w, k // 5 * cell_h
-                  board.paste(im, (x + (cell_w - im.width) // 2, y + 5), im)
-                  d.text((x + 8, y + cell_h - 29), f.stem[5:35], fill="white")
-          board.save("output/host-closeups-contact.jpg", quality=92)
-          # Render one character-first storyboard frame. This catches missing methods,
-          # bad dimensions and layout mistakes that compileall cannot detect.
+          sys.path.insert(0,"pipeline")
           import explainer
-          assert explainer.CONFIG.get("explainer_character_stage") is True
-          shot = {"type": "scene", "location": "train carriage", "insert": "",
-                  "primary": "you", "action": "holding", "expression": "worried",
-                  "view": "three_quarter", "facing": "right", "secondary": "",
-                  "action2": "standing", "shot_type": "medium",
-                  "motion": "none", "text_mode": "none", "text": ""}
-          story = {"title": "Stage preview",
-                   "scenes": [{"narration": "You inspect the luggage inside the train compartment."}]}
-          narration = {"duration": 3.0, "scene_times": [(0.0, 3.0)],
-                       "words": [{"word": "luggage", "start": 0.1, "end": 2.5, "scene": 0}]}
-          plan = {"cast": {}, "locations": [], "inserts": [], "scenes": [{"shots": [shot]}]}
-          seg = {"shot": shot, "scene": 0, "start": 0.0, "end": 3.0}
-          renderer = explainer.Renderer(story, narration, plan, {"plates": {}, "inserts": {}}, [seg])
-          screenshot = renderer.frame_at(0.8, 3.0)
-          assert screenshot.size == (1080, 1920)
-          screenshot.save("output/host-stage-preview.png")
-          with zipfile.ZipFile("output/Night_Files_Matched_Closeups_19.zip", "w", zipfile.ZIP_DEFLATED) as z:
-              for f in images:
-                  z.write(f, f.name)
-              z.write("output/host-closeups-contact.jpg", "PREVIEW_contact.jpg")
-          print(f"Exported {len(images)} native-resolution, transparent, matching close-ups")
+          registry = json.loads(Path("assets/character/host/manifest.json").read_text())
+          assert len(registry["approved"]) == 8
+          root = Path("assets/character/host")
+          for item in registry["approved"]:
+              path = root / item["path"]
+              assert path.is_file(), f"Missing approved source: {path}"
+              assert hashlib.sha256(path.read_bytes()).hexdigest() == item["sha256"], item["id"]
+              with Image.open(path) as im:
+                  assert im.mode == "RGBA" and im.size == (item["width"],item["height"]), item["id"]
+                  assert im.getchannel("A").getextrema()[0] == 0, item["id"]
+          out = Path("output"); out.mkdir(exist_ok=True)
+          tiles = Image.new("RGB",(4*290,2*440),"#353941")
+          pen=ImageDraw.Draw(tiles)
+          for i,item in enumerate(registry["approved"]):
+              with Image.open(root/item["path"]) as im:
+                  im.thumbnail((272,399))
+                  xx=(i%4)*290+int((290-im.width)/2)
+                  yy=(i//4)*440+4
+                  tiles.paste(im,(xx,yy),im)
+                  pen.text(((i%4)*290+12,(i//4)*440+410),item["id"]+" "+item["name"],fill="white")
+          tiles.save(out/"approved-host-contact.png")
+          shot={"type":"scene","location":"an empty stage","primary":"you","action":"standing",
+                "expression":"neutral","view":"front","facing":"right","secondary":"","action2":"standing",
+                "shot_type":"medium","motion":"none","text_mode":"none","text":""}
+          story={"title":"Approved host preview","scenes":[{"narration":"You examine a curious photograph."}]}
+          narration={"duration":3.0,"scene_times":[(0.0,3.0)],
+                     "words":[{"word":"photograph","start":0.1,"end":2.5,"scene":0}]}
+          plan={"cast":{},"locations":[],"inserts":[],"scenes":[{"shots":[shot]}]}
+          seg={"shot":shot,"scene":0,"start":0.0,"end":3.0}
+          ren=explainer.Renderer(story,narration,plan,{"plates":{},"inserts":{}},[seg])
+          preview=ren.frame_at(1.0,3.0)
+          assert preview.size == (1080,1920)
+          preview.save(out/"host-stage-preview.png")
+          print("Validated 8 original owner-approved reference images")
           PY
 
-      - name: Upload matching close-up pack and contact sheet
+      - name: Upload approved character contact sheet and staging preview
         uses: actions/upload-artifact@v4
         with:
-          name: night-files-matched-closeups
+          name: night-files-approved-character-preview
           path: |
-            output/Night_Files_Matched_Closeups_19.zip
-            output/host-closeups-contact.jpg
+            output/approved-host-contact.png
             output/host-stage-preview.png
           if-no-files-found: error
 
