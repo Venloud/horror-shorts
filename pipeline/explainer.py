@@ -1128,9 +1128,11 @@ class Renderer:
                 self._paste(frame, self._shadow(int(im.width * 0.5)), int(gx - im.width * 0.25), 1590 - 30)
                 self._paste(frame, im, int(gx - fxp), int(1600 - fyp))
                 target = (gx, 1600 - 600)
+            actor_h = 900 if CONFIG.get("explainer_character_stage", True) else 1500
             im, (fxp, fyp) = self.figure(prim, s.get("action", "standing"), s.get("expression", "neutral"), "back",
-                                         "right", t, 1500)
-            self._paste(frame, im, int(W * 0.2 - fxp), int(2250 - fyp))
+                                         "right", t, actor_h)
+            feet_y = 1380 if CONFIG.get("explainer_character_stage", True) else 2250
+            self._paste(frame, im, int(W * 0.2 - fxp), int(feet_y - fyp))
         else:
             spots = []
             if prim and sec and sec != "crowd" and st == "wide":
@@ -1208,7 +1210,8 @@ class Renderer:
             cue, prop = "THE INVENTOR", "camera"
         else:
             cue, prop = "THE EVIDENCE", "file"
-        key = ("stage-cue", cue)
+        close = shot.get("shot_type") == "close"
+        key = ("stage-cue", cue, close)
         layer = self.layer_cache.get(key)
         if layer is None:
             layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
@@ -1219,7 +1222,9 @@ class Renderer:
             d.rounded_rectangle((66, 215, 552, 281), radius=14, fill=(16, 21, 28, 230))
             d.rectangle((75, 229, 84, 266), fill=hot)
             d.text((102, 231), cue, font=font("mono", 26), fill=(243, 244, 245, 255))
-            if prop == "film":
+            if close:
+                pass  # the face fills the frame, so hide the contextual prop
+            elif prop == "film":
                 d.rounded_rectangle((794, 468, 997, 608), radius=12, outline=col, width=7)
                 for yy in (486, 539, 584):
                     for xx in (804, 971):
@@ -1287,6 +1292,8 @@ class Renderer:
 
     # ---------------------------------------------------------------- text on scene shots
     def overlay(self, frame: Image.Image, s: dict, t: float, target) -> None:
+        if CONFIG.get("explainer_character_stage", True):
+            return  # no extra lower-third text over the actor; context label + safe karaoke only
         mode, text = s.get("text_mode", "none"), s.get("text") or ""
         if mode == "none" or not text or t < 0.12:
             return
