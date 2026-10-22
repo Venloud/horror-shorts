@@ -226,7 +226,7 @@ def approved_bust(expression: str = "neutral") -> Image.Image | None:
     The artwork remains unmodified: users can always recover the exact original PNG.
     Normalization pads transparently for the video compositing step.
     """
-    names = {"neutral": "M05", "happy": "F01", "excited": "F01",
+    names = {"neutral": "M05", "happy": "F01", "excited": "F05", "worried": "F04", "angry": "F09", "smirk": "F10",
              "serious": "F02", "determined": "F02", "confused": "F03", "curious": "F03",
              "thinking": "F07", "suspicious": "F08"}
     src = _approved_path(names.get(expression, "M05"))
@@ -263,7 +263,7 @@ def closeup(expression: str, view: str = "front"):
     selected = approved_bust(expression)
     if selected is not None:
         # Path returned is ORIGINAL artwork, never an old vector pack.
-        candidates = {"neutral": "M05", "happy": "F01", "excited": "F01",
+        candidates = {"neutral": "M05", "happy": "F01", "excited": "F05", "worried": "F04", "angry": "F09", "smirk": "F10",
                       "serious": "F02", "determined": "F02", "confused": "F03", "curious": "F03",
                       "thinking": "F07", "suspicious": "F08"}
         if expression == "skeptical":
