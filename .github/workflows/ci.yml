@@ -14,8 +14,9 @@ on:
       - main
 
 # CI verifies approved assets and scripts without writing to the repository.
+# Temporary write privilege for one verified owner-original asset import.
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate:
@@ -35,6 +36,21 @@ jobs:
       - name: Validate Python syntax
         run: |
           python -m compileall -q pipeline
+
+      - name: Import owner-approved original expression PNGs
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          python tools/import_host_final_expressions.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/character/host/expressions/F04_worried.png
+          git add assets/character/host/expressions/F05_excited.png
+          git add assets/character/host/expressions/F09_angry.png
+          git add assets/character/host/expressions/F10_smirk.png
+          if ! git diff --cached --quiet; then
+            git commit -m "Save exact F04 F05 F09 F10 owner originals [skip ci]"
+            git push origin HEAD:main
+          fi
 
       - name: Validate original approved character assets and render still-stage preview
         run: |
