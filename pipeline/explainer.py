@@ -527,7 +527,7 @@ def _valid_graphic(s: dict, at, ctx: dict) -> dict | None:
         triggers = {
             "photo_scan": r"\b(photo|photograph|picture|image)\b",
             "clock_stop": r"\b(clock|midnight|timepiece)\b",
-            "shadow_reveal": r"\b(shadow|silhouette)\b",
+            "shadow_reveal": r"\b(shadows?|silhouettes?)\b",
         }
         if not re.search(triggers[tpl], low):
             return None
