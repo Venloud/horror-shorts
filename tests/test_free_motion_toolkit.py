@@ -32,6 +32,50 @@ class CinematicToolTests(unittest.TestCase):
                 self.assertIsNotNone(ImageChops.difference(start, end).getbbox(),
                                      f"{name} rendered identical static frames")
 
+    def test_any_clock_time_is_accurate(self):
+        import math
+
+        examples = (
+            ({"kicker": "MIDNIGHT", "text": "CLOCK STOPPED"}, "12:00 AM", -90, -90),
+            ({"kicker": "NOON", "text": "STOPPED AT NOON"}, "12:00 PM", -90, -90),
+            ({"time": "3:15 PM"}, "3:15 PM", 7.5, 0),
+            ({"time": "6:30 AM"}, "6:30 AM", 105, 90),
+            ({"kicker": "CLOCK", "text": "TIME UNKNOWN"}, "", 215, -30),
+        )
+        for fields, resolved, hour_degrees, minute_degrees in examples:
+            with self.subTest(fields=fields):
+                self.assertEqual(noir._resolve_clock_time(fields), resolved)
+                hr, minute = noir._clock_angles(resolved)
+                self.assertAlmostEqual(math.degrees(hr), hour_degrees, places=4)
+                self.assertAlmostEqual(math.degrees(minute), minute_degrees, places=4)
+        # When a narration label explicitly states midnight, both fixed
+        # hour and minute hands must aim at the 12 marker, regardless of story.
+        final = noir.render("clock_stop", {"kicker": "MIDNIGHT", "text": "CLOCK STOPPED"},
+                            1.6, 2.0, self.ctx)
+        self.assertEqual(final.size, (1080, 1920))
+
+    def test_freehand_ring_contains_every_target_corner(self):
+        # This check is about targeting accuracy, not roundness.
+        def inside(point, polygon):
+            x, y = point
+            count = 0
+            for a, b in zip(polygon, polygon[1:] + polygon[:1]):
+                if ((a[1] > y) != (b[1] > y)):
+                    edge = a[0] + (y - a[1]) * (b[0] - a[0]) / (b[1] - a[1])
+                    if edge > x:
+                        count += 1
+            return count % 2 == 1
+
+        for bounds in ((320, 550, 480, 970), (421, 877, 610, 1203),
+                       (120, 160, 340, 340), (570, 900, 610, 940)):
+            for seed in (0, 7, 11):
+                with self.subTest(bounds=bounds,seed=seed):
+                    vertices = noir._focus_ring_points(bounds, seed=seed)
+                    x0, y0, x1, y1 = bounds
+                    for corner in ((x0,y0),(x1,y0),(x1,y1),(x0,y1)):
+                        self.assertTrue(inside(corner, vertices),
+                            f"Ring misses {corner} for target {bounds}")
+
     def test_camera_push_is_opt_in(self):
         image = Image.new("RGBA", (1080, 1920), (25, 25, 30, 255))
         d = ImageDraw.Draw(image)
