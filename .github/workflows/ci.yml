@@ -55,6 +55,19 @@ jobs:
               with Image.open(path) as im:
                   assert im.mode == "RGBA" and im.size == (item["width"],item["height"]), item["id"]
                   assert im.getchannel("A").getextrema()[0] == 0, item["id"]
+          # Every received batch is immutable until explicitly reassigned to an F/P ID.
+          for batch_ref in registry.get("incoming_batches", []):
+              batch_file = root / batch_ref["path"]
+              assert batch_file.is_file(), batch_file
+              batch = json.loads(batch_file.read_text())
+              assert len(batch["assets"]) == batch_ref["count"]
+              for record in batch["assets"]:
+                  img_path = batch_file.parent / record["file"]
+                  assert img_path.is_file(), img_path
+                  assert hashlib.sha256(img_path.read_bytes()).hexdigest() == record["sha256"], record["id"]
+                  with Image.open(img_path) as img:
+                      assert img.size == (record["width"], record["height"]), record["id"]
+                      assert img.mode == record["mode"] and img.getchannel("A").getextrema()[0] == 0, record["id"]
           out = Path("output"); out.mkdir(exist_ok=True)
           tiles = Image.new("RGB",(4*290,2*440),"#353941")
           pen=ImageDraw.Draw(tiles)
