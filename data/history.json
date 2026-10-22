@@ -2167,7 +2167,15 @@
     "opening": "Radioactive cobalt fell from the sky, and hundreds of tons of earth were hauled away.",
     "music_file": "unsolved_mystery.mp3",
     "buffered": "2026-10-13_1407",
-    "tiktok": null
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7699358366795466783",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "pending": "youtube_paused"
+    },
+    "draft_sent": "2026-10-22_0524"
   },
   {
     "date": "2026-10-21_2336",

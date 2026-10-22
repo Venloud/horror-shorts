@@ -154,8 +154,17 @@
       "posted": "2026-10-13_2051",
       "status": "pending",
       "file": true
+    },
+    {
+      "stamp": "2026-10-13_1407",
+      "story_id": "cd1ae8e40a28",
+      "title": "The Mapimí Silent Zone",
+      "video_number": null,
+      "posted": "2026-10-22_0524",
+      "status": "pending",
+      "file": true
     }
   ],
   "uploads": {},
-  "last_alert": "2026-10-13"
+  "last_alert": "2026-10-22"
 }
