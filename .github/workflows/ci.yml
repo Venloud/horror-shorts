@@ -12,6 +12,8 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch: # Manual preview, never runs on pushes or schedules.
+
 
 # CI verifies approved assets and scripts without writing to the repository.
 # CI verifies approved character art without mutating the repository.
@@ -36,6 +38,7 @@ jobs:
       - name: Validate Python syntax
         run: |
           python -m compileall -q pipeline
+          python -m py_compile tools/night_files_visual_preview.py
 
       - name: Validate original approved character assets and render still-stage preview
         run: |
@@ -156,3 +159,34 @@ jobs:
           test -f .github/workflows/buffer_fill.yml
           test -f .github/workflows/connect-tiktok.yml
           echo "Critical Night Files structure: OK"
+
+  cinematic_preview:
+    name: Manual Cinematic Video Preview, No Publishing
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install offline preview dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg espeak-ng fonts-dejavu-core > /dev/null
+          python -m pip install -q "Pillow>=10" "numpy>=1.24"
+      - name: Render cinematic preview with approved characters and Noir graphics
+        run: |
+          python tools/night_files_visual_preview.py
+          ffprobe -v error -select_streams v:0 -show_entries stream=width,height,avg_frame_rate -of default=nw=1 output/manual-cinematic-preview/night-files-cinematic-preview.mp4
+      - name: Save preview MP4, contact sheet and shot list for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: night-files-manual-cinematic-preview
+          path: |
+            output/manual-cinematic-preview/night-files-cinematic-preview.mp4
+            output/manual-cinematic-preview/contact-sheet.jpg
+            output/manual-cinematic-preview/shot-list.json
+          retention-days: 14
+          if-no-files-found: error
