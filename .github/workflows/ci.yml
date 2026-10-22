@@ -32,6 +32,49 @@ jobs:
         run: |
           python -m compileall -q pipeline
 
+      - name: Export and validate matching host close-ups
+        run: |
+          python -m pip install -q "Pillow>=10" "numpy>=1.24"
+          python - <<'PY'
+          import sys, zipfile
+          from pathlib import Path
+          from PIL import Image, ImageDraw
+          sys.path.insert(0, "pipeline")
+          import sprites
+          out = Path("output/host-closeups")
+          count = sprites.export_stage_closeups(out)
+          images = sorted(out.glob("*.png"))
+          assert count == len(images) == 19
+          for f in images:
+              with Image.open(f) as im:
+                  assert im.size == (1600, 2000), (f.name, im.size)
+                  assert im.mode == "RGBA" and im.getpixel((0, 0))[3] == 0, f.name
+          cell_w, cell_h = 240, 330
+          board = Image.new("RGB", (5 * cell_w, 4 * cell_h), "#31353b")
+          d = ImageDraw.Draw(board)
+          for k, f in enumerate(images):
+              with Image.open(f) as im:
+                  im.thumbnail((cell_w - 12, cell_h - 44))
+                  x, y = k % 5 * cell_w, k // 5 * cell_h
+                  board.paste(im, (x + (cell_w - im.width) // 2, y + 5), im)
+                  d.text((x + 8, y + cell_h - 29), f.stem[5:35], fill="white")
+          board.save("output/host-closeups-contact.jpg", quality=92)
+          with zipfile.ZipFile("output/Night_Files_Matched_Closeups_19.zip", "w", zipfile.ZIP_DEFLATED) as z:
+              for f in images:
+                  z.write(f, f.name)
+              z.write("output/host-closeups-contact.jpg", "PREVIEW_contact.jpg")
+          print(f"Exported {len(images)} native-resolution, transparent, matching close-ups")
+          PY
+
+      - name: Upload matching close-up pack and contact sheet
+        uses: actions/upload-artifact@v4
+        with:
+          name: night-files-matched-closeups
+          path: |
+            output/Night_Files_Matched_Closeups_19.zip
+            output/host-closeups-contact.jpg
+          if-no-files-found: error
+
       - name: Validate JSON configuration
         run: |
           python - <<'PY'
