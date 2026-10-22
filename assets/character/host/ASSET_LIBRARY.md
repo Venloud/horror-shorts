@@ -28,8 +28,8 @@ Assets are approved **one at a time or in batches of up to 10**. Preserve the or
 | F03 | Confused | [expressions/F03_confused.png](expressions/F03_confused.png) |
 | F04 | Worried | [expressions/F04_worried.png](expressions/F04_worried.png) |
 | F05 | Excited | [expressions/F05_excited.png](expressions/F05_excited.png) |
-| F07 | Thinking | [incoming/2026-10-21/U09_thinking_skeptical.png](incoming/2026-10-21/U09_thinking_skeptical.png) |
-| F08 | Suspicious | [incoming/2026-10-21/U08_suspicious_crossed_arms.png](incoming/2026-10-21/U08_suspicious_crossed_arms.png) |
+| F07 | Thinking | [expressions/F07_thinking.png](expressions/F07_thinking.png) |
+| F08 | Suspicious | [expressions/F08_suspicious.png](expressions/F08_suspicious.png) |
 | F09 | Angry | [expressions/F09_angry.png](expressions/F09_angry.png) |
 | F10 | Smirk | [expressions/F10_smirk.png](expressions/F10_smirk.png) |
 
