@@ -1,0 +1,91 @@
+name: TikTok Clipper Preview
+# Restored 2026-10-21 at the owner's request. Preview-only: no publishing.
+on:
+  workflow_dispatch:
+    inputs:
+      duration_seconds:
+        description: Preview duration (1-59 seconds)
+        required: true
+        default: '45'
+        type: string
+      start_seconds:
+        description: Source start; -1 selects automatically
+        required: true
+        default: '-1'
+        type: string
+      background_offset:
+        description: Rotating background offset (0-9)
+        required: true
+        default: '0'
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: tiktok-clipper-preview
+  cancel-in-progress: false
+jobs:
+  preview:
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout isolated clipper branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/mrbeast-split-tiktok
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install media dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          python -m pip install -q requests faster-whisper
+      - name: Download release footage
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from clipper.background import ASSETS, RELEASE
+          from clipper.direct_download import download
+          root = Path('clipper/assets')
+          root.mkdir(parents=True, exist_ok=True)
+          for name in ['MrBeast_compressed.mp4'] + ASSETS:
+              download(RELEASE + name, root / name, max_mb=900)
+          PY
+      - name: Build rotating background
+        env:
+          DURATION: ${{ inputs.duration_seconds }}
+          OFFSET: ${{ inputs.background_offset }}
+        run: |
+          python clipper/background.py --assets-dir clipper/assets --output /tmp/clipper_background.mp4 --duration "$DURATION" --offset "$OFFSET"
+      - name: Generate word-by-word captions
+        env:
+          START: ${{ inputs.start_seconds }}
+          DURATION: ${{ inputs.duration_seconds }}
+        run: |
+          python clipper/highlights.py --source clipper/assets/MrBeast_compressed.mp4 --start "$START" --duration "$DURATION"
+      - name: Render preview, do not post
+        run: |
+          python - <<'PY'
+          import json
+          import subprocess
+          selection = json.load(open('clipper/output/selection.json'))
+          subprocess.run([
+              'python', 'clipper/render.py',
+              '--source', 'clipper/assets/MrBeast_compressed.mp4',
+              '--background', '/tmp/clipper_background.mp4',
+              '--start', str(selection['start']),
+              '--duration', str(selection['duration']),
+              '--subtitles', 'clipper/output/captions.ass'
+          ], check=True)
+          PY
+      - name: Upload preview artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: split-screen-preview
+          path: |
+            clipper/output/tiktok.mp4
+            clipper/output/selection.json
+            clipper/output/captions.ass
+          retention-days: 7
