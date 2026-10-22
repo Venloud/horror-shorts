@@ -206,3 +206,55 @@ def closeup(expression: str, view: str = "front"):
 def closeup_image(path: str, width: int) -> Image.Image:
     im = Image.open(path).convert("RGBA")
     return im.resize((width, round(im.height * width / im.width)), Image.LANCZOS)
+
+
+# ---------------------------------------------------------------- crisp, matching close-ups for blank-stage explainers
+# Cut directly from the SAME native, supersized stickman rig used for action poses.
+# No low-resolution sheet enlargement, no separate flat-vector identity, no Cloudflare.
+
+@lru_cache(maxsize=12)
+def stage_closeup(expression: str = "neutral", view: str = "front") -> Image.Image:
+    """True 1600x2000 transparent head-and-shoulders export, drawn from the action rig.
+
+    This avoids the old flat-vector-versus-illustrated-sprite discontinuity. The source rig
+    is drawn at 2700px body height, then its head and suit are framed as a bust. It is held
+    STILL for the whole shot, in keeping with the owner's static action-pose direction.
+    """
+    import stickman
+    expr = expression if expression in stickman.EXPRESSIONS else CLOSE_ALIAS.get(expression, "neutral")
+    if expr not in stickman.EXPRESSIONS:
+        expr = "neutral"
+    view = view if view in ("front", "three_quarter", "side") else "front"
+    im, (foot_x, _) = stickman.draw(stickman.HOST, "standing", expr, view,
+                                   "right", 0.0, 2700, False)
+    # The rig has a round white head centred near x=half-width and a slim suit below.
+    left = round(foot_x - 750)
+    top = 134
+    crop = im.crop((left, top, left + 1500, top + 1875))
+    crop = crop.resize((1600, 2000), Image.Resampling.LANCZOS)
+    return rim_native(crop)
+
+
+def rim_native(im: Image.Image) -> Image.Image:
+    """A restrained cool-grey silhouette stroke: separates the black suit from noir, not a neon glow."""
+    a = im.getchannel("A")
+    outer = a.filter(ImageFilter.MaxFilter(9))
+    rim = Image.new("RGBA", im.size, (180, 193, 205, 0))
+    rim.putalpha(outer.point(lambda v: int(v * .62)))
+    rim.alpha_composite(im)
+    return rim
+
+
+def export_stage_closeups(destination: Path) -> int:
+    """Export the new matched busts as independently usable transparent 1600x2000 PNGs."""
+    import stickman
+    destination = Path(destination)
+    destination.mkdir(parents=True, exist_ok=True)
+    exprs = ("neutral", "happy", "confident", "serious", "angry", "sad", "worried",
+             "shocked", "scared", "confused", "thinking", "smirk", "talking",
+             "determined", "suspicious")
+    pairs = [("front", e) for e in exprs] + [("three_quarter", e)
+                                              for e in ("neutral", "worried", "shocked", "suspicious")]
+    for view, expr in pairs:
+        stage_closeup(expr, view).save(destination / f"host_{view}_{expr}_closeup.png")
+    return len(pairs)
