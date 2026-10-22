@@ -13,13 +13,9 @@ on:
     branches:
       - main
 
-# Temporary write permission only to commit the owner's eight approved original PNGs.
+# CI validates artwork without mutating the repository.
 permissions:
-  contents: write
-
-concurrency:
-  group: approved-art-import-${{ github.ref }}
-  cancel-in-progress: true
+  contents: read
 
 jobs:
   validate:
@@ -39,18 +35,6 @@ jobs:
       - name: Validate Python syntax
         run: |
           python -m compileall -q pipeline
-
-      - name: Import approved original host PNGs, retire the mismatched old close-ups
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          python tools/import_approved_host_assets.py
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A assets/character/host
-          if ! git diff --cached --quiet; then
-            git commit -m "Import 8 Venloud-approved original PNGs; remove obsolete vector closeups [skip ci]"
-            git push origin HEAD:main
-          fi
 
       - name: Validate original approved character assets and render still-stage preview
         run: |
