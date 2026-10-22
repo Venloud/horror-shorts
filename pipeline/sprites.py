@@ -178,6 +178,66 @@ def draw(who: str, look: dict, action: str, expression: str, view: str, facing: 
     return im, (im.width / 2, im.height)
 
 
+# ---------------------------------------------------------------- approved original identity references
+# The owner's user-uploaded M01-M05, F01+ artwork now lives in masters/ and expressions/.
+# Never regenerate, recolor, add an outline, or alter the approved red aura.
+
+@lru_cache(maxsize=1)
+def approved_registry() -> dict:
+    p = DIR / "manifest.json"
+    if not p.is_file():
+        return {"approved": []}
+    return json.loads(p.read_text(encoding="utf-8"))
+
+
+def _approved_path(asset_id: str):
+    for record in approved_registry().get("approved", []):
+        if record.get("id") == asset_id and record.get("status") == "approved":
+            p = DIR / record["path"]
+            if p.is_file():
+                return p
+    return None
+
+
+@lru_cache(maxsize=30)
+def approved_full_body(view: str = "front", height: int = 900, facing: str = "right"):
+    """Original owner-approved master view, resized for placement only, with foot anchor.
+
+    No extra halo: the red aura in the PNG is explicitly approved as-is.
+    None for missing variants or when not yet approved.
+    """
+    mapping = {"front": "M01", "three_quarter": "M02", "side": "M03", "back": "M04"}
+    source = _approved_path(mapping.get(view, "M01"))
+    if not source:
+        return None
+    image = Image.open(source).convert("RGBA")
+    height = max(200, int(height))
+    width = max(1, round(image.width * (height / image.height)))
+    image = image.resize((width, height), Image.Resampling.LANCZOS)
+    if facing == "left" and view in ("three_quarter", "side"):
+        image = ImageOps.mirror(image)
+    return image, (image.width / 2.0, float(image.height))
+
+
+@lru_cache(maxsize=24)
+def approved_bust(expression: str = "neutral") -> Image.Image | None:
+    """Original owner-approved close-up, with nearest approved neutral fallback.
+
+    The artwork remains unmodified: users can always recover the exact original PNG.
+    Normalization pads transparently for the video compositing step.
+    """
+    names = {"neutral": "M05", "happy": "F01", "excited": "F01",
+             "serious": "F02", "determined": "F02", "confused": "F03", "curious": "F03"}
+    src = _approved_path(names.get(expression, "M05"))
+    if not src:
+        return None
+    image = Image.open(src).convert("RGBA")
+    image.thumbnail((1600, 1750), Image.Resampling.LANCZOS)
+    canvas = Image.new("RGBA", (1600, 2000), (0, 0, 0, 0))
+    canvas.alpha_composite(image, ((1600-image.width)//2, 36))
+    return canvas
+
+
 # ---------------------------------------------------------------- hi-res close-ups (owner's pack, Oct 21)
 
 CLOSE_DIR = DIR / "closeups"
@@ -192,7 +252,15 @@ def closeup(expression: str, view: str = "front"):
     """host_<view>_<expression>_closeup.png (1600x2000 vector redraws, head + shoulders) for close shots of the
     host; three_quarter falls back to front. None when the pack (or config explainer_closeups) is off."""
     from common import CONFIG
-    if not CONFIG.get("explainer_closeups", True) or not CLOSE_DIR.exists():
+    if not CONFIG.get("explainer_closeups", True):
+        return None
+    selected = approved_bust(expression)
+    if selected is not None:
+        # Path returned is ORIGINAL artwork, never an old vector pack.
+        candidates = {"neutral": "M05", "happy": "F01", "excited": "F01",
+                      "serious": "F02", "determined": "F02", "confused": "F03", "curious": "F03"}
+        return _approved_path(candidates.get(expression, "M05"))
+    if not CLOSE_DIR.exists():
         return None
     expr = CLOSE_ALIAS.get(expression, "neutral")
     for v in ([view] if view in ("front", "three_quarter") else []) + ["front"]:
@@ -215,12 +283,15 @@ def closeup_image(path: str, width: int) -> Image.Image:
 
 @lru_cache(maxsize=12)
 def stage_closeup(expression: str = "neutral", view: str = "front") -> Image.Image:
-    """True 1600x2000 transparent head-and-shoulders export, drawn from the action rig.
+    """Use the approved owner-uploaded close-up first, never the obsolete vector redraws.
 
-    This avoids the old flat-vector-versus-illustrated-sprite discontinuity. The source rig
-    is drawn at 2700px body height, then its head and suit are framed as a bust. It is held
-    STILL for the whole shot, in keeping with the owner's static action-pose direction.
+    A front-facing approved portrait is preferred even when the planner requests another
+    view with no approved close-up. This keeps identity consistent while F/P assets arrive.
     """
+    approved = approved_bust(expression)
+    if approved is not None:
+        return approved.copy()
+    # Before source images are added, use the native fallback rig (not old closeup pack).
     import stickman
     expr = expression if expression in stickman.EXPRESSIONS else CLOSE_ALIAS.get(expression, "neutral")
     if expr not in stickman.EXPRESSIONS:
@@ -228,13 +299,9 @@ def stage_closeup(expression: str = "neutral", view: str = "front") -> Image.Ima
     view = view if view in ("front", "three_quarter", "side") else "front"
     im, (foot_x, _) = stickman.draw(stickman.HOST, "standing", expr, view,
                                    "right", 0.0, 2700, False)
-    # The rig has a round white head centred near x=half-width and a slim suit below.
     left = round(foot_x - 750)
-    top = 134
-    crop = im.crop((left, top, left + 1500, top + 1875))
-    crop = crop.resize((1600, 2000), Image.Resampling.LANCZOS)
-    return rim_native(crop)
-
+    crop = im.crop((left, 134, left + 1500, 2009))
+    return rim_native(crop.resize((1600, 2000), Image.Resampling.LANCZOS))
 
 def rim_native(im: Image.Image) -> Image.Image:
     """A restrained cool-grey silhouette stroke: separates the black suit from noir, not a neon glow."""
