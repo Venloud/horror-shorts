@@ -252,7 +252,7 @@
     {
       "id": "F15",
       "name": "scared",
-      "status": "awaiting_upload"
+      "status": "received_not_committed"
     },
     {
       "id": "F16",
@@ -369,6 +369,19 @@
       "height": 1145,
       "format": "RGBA PNG",
       "note": "Original PNG locally verified and owner identified. GitHub binary import pending; do not mark approved."
+    },
+    {
+      "id": "F15",
+      "name": "scared",
+      "received_on": "2026-10-22",
+      "status": "owner_confirmed_png_received_in_chat_NOT_YET_IN_REPO",
+      "upload_filename": "image(20261022-234844).png",
+      "target_path": "expressions/F15_scared.png",
+      "sha256": "33ded19c75ce8f430acd3ef7de55f2c9f6b305dc976e4d0093cf3d5de72db8fe",
+      "width": 1374,
+      "height": 1145,
+      "format": "RGBA PNG",
+      "note": "Owner confirmed F15 Scared. Local original checksum verified; binary import pending."
     }
   ]
 }
