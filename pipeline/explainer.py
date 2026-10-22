@@ -198,6 +198,9 @@ one "scenes" entry per narration scene, in order. SHOT is one of:
   connections {{"kicker": "CONNECTIONS", "nodes": ["<2-4 people / places / clues said in the narration>"]}}
   compare     {{"kicker": "TWO THEORIES", "left": {{"title": "<max 3 words>", "items": ["<max 5 words>", "..."]}}, "right": {{...}}}}
   missing     {{"subject": "<cast name or you>", "word": "<MISSING | VANISHED | GONE: only a word the narration uses>", "last_seen": "<a place said, or empty>"}}
+  photo_scan  {{"kicker": "IMAGE INSPECTION", "text": "<a short phrase said in narration>", "count": <number of depicted figures explicitly said, or 1>}}
+  clock_stop  {{"kicker": "TIME", "text": "<short clock-related phrase said in narration>", "time": "<a time actually said, or empty>"}}
+  shadow_reveal {{"kicker": "VISUAL BREAKDOWN", "text": "<short shadow-related phrase said in narration>", "count": <number of shadows explicitly said>}}
   closing     {{"kicker": "YOUR CALL", "text": "<the closing question, exactly as in the narration>", "accent": "<one word>"}}
 BUILD is one of: {{"kind": "grid", "total": <4-60>, "filled": <n>, "label": "<max 4 words>"}} |
 {{"kind": "bars", "bars": [{{"label": "<max 2 words>", "value": <number>}}, ...2-4], "threshold": <number>, "threshold_label": "<max 3 words>"}} |
@@ -212,13 +215,17 @@ RULES
   around. Vary view (front, three_quarter, side, back) and shot_type. close only for emotional beats (max 1 in 4
   shots); over_shoulder when you watch someone (you seen from behind, they in front of you).
 - 3-5 shots per scene, a cut every 1.5-3 s. The first shot of scene 1 is a scene shot.
-- background_motion is ALWAYS "none": the blank character stage does not move.
+- Static character artwork never animates its limbs. For rare emotional shots you MAY use subtle_push or
+  subtle_pan, applied to the camera only; default background_motion to "none". Avoid parallax_light except
+  when a gentle editorial light sweep communicates the beat.
 - The prop field is optional. Use a prop only when its object is expressly mentioned or confirmed in the
   narration; use "none" otherwise. Never infer a case-specific object from a vague emotion or setting.
 - text_mode on at most 1 shot in 3, words taken from the narration: location = the place name the first time it
   appears; name = a person's name the first time they appear; punch = a key phrase; evidence = a clue; quote = words
   someone said; stamp = 1-2 words. NO dates, years or day counters on scene shots; at most ONE card in the whole
   video may show a date.
+- Use photo_scan only when narration mentions a photograph/picture, clock_stop only when a clock stops,
+  and shadow_reveal only when shadow count is explicitly stated. All are marked illustrative, not real evidence.
 - Motion graphics (graphic / card / title) for key numbers, clues, routes, theories and turns: about one shot in three,
   never two in a row. Prefer graphic templates; map_route when people travel between named places; evidence for a
   clue or object; compare when the narration weighs two explanations; missing only when someone vanishes; closing
@@ -461,7 +468,8 @@ def _expressions() -> list[str]:
 
 
 GRAPHIC_TEXT = {"evidence": ("text", "note"), "fact": ("label",), "filmstrip": ("text",), "quote": ("text", "by"),
-                "impact": ("text",), "closing": ("text",)}
+                "impact": ("text",), "closing": ("text",), "photo_scan": ("text",),
+                "clock_stop": ("text",), "shadow_reveal": ("text",)}
 
 
 def _valid_graphic(s: dict, at, ctx: dict) -> dict | None:
@@ -514,6 +522,29 @@ def _valid_graphic(s: dict, at, ctx: dict) -> dict | None:
         if not (v <= 3 or v in said) or 1000 <= v <= 2100:
             return None
         out.update(value=v, prefix=str(f.get("prefix") or "")[:2], suffix=str(f.get("suffix") or "")[:8])
+    elif tpl in ("photo_scan", "clock_stop", "shadow_reveal"):
+        # A named graphic is available only when the scene actually mentions the object.
+        triggers = {
+            "photo_scan": r"\b(photo|photograph|picture|image)\b",
+            "clock_stop": r"\b(clock|midnight|timepiece)\b",
+            "shadow_reveal": r"\b(shadow|silhouette)\b",
+        }
+        if not re.search(triggers[tpl], low):
+            return None
+        if tpl in ("photo_scan", "shadow_reveal"):
+            try:
+                count = int(f.get("count") or (1 if tpl == "photo_scan" else 0))
+            except (ValueError, TypeError):
+                return None
+            if not (1 <= count <= 4 and (count <= 3 or count in said)):
+                return None
+            out["count"] = count
+        if tpl == "clock_stop":
+            if not re.search(r"\b(stop|stopped|froze|freeze|halt|midnight)\b", low):
+                return None
+            # Do not fabricate a digital date/time if the source did not state it.
+            shown_time = str(f.get("time") or "")[:8].strip()
+            out["time"] = shown_time if shown_time and shown_time.lower() in low else ""
     elif tpl == "missing":
         word = str(f.get("word") or "").upper()
         if not re.search(r"\b(vanish|disappear|missing|gone|never seen|never arrived)", low):
@@ -1547,6 +1578,8 @@ class Renderer:
                                    local)
         else:
             frame = self.scene_frame(seg, local)
+            if CONFIG.get("explainer_cinematic_camera", False):
+                frame = noir.cinematic_camera(frame, sh.get("motion", "none"), local, dur)
         self.captions(frame, t, "scene")
         return frame
 
