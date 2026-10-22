@@ -1,4 +1,5 @@
 import React from "react";
+import {NightFilesPolish} from "./polish.jsx";
 import {Composition, AbsoluteFill, Sequence, OffthreadVideo, interpolate, useCurrentFrame, staticFile} from "remotion";
 
 const Clip = ({clip}) => {
@@ -29,17 +30,32 @@ export const NightFilesJoin = ({clips = []}) => (
 );
 
 export const RemotionRoot = () => (
-  <Composition
-    id="NightFilesJoin"
-    component={NightFilesJoin}
-    width={1080}
-    height={1920}
-    fps={30}
-    durationInFrames={1}
-    defaultProps={{clips: [], totalFrames: 1}}
-    calculateMetadata={({props}) => ({
-      durationInFrames: Math.max(1, props.totalFrames || 1),
-      fps: props.fps || 30,
-    })}
-  />
+  <>
+    <Composition
+      id="NightFilesJoin"
+      component={NightFilesJoin}
+      width={1080}
+      height={1920}
+      fps={30}
+      durationInFrames={1}
+      defaultProps={{clips: [], totalFrames: 1}}
+      calculateMetadata={({props}) => ({
+        durationInFrames: Math.max(1, props.totalFrames || 1),
+        fps: props.fps || 30,
+      })}
+    />
+    <Composition
+      id="NightFilesPolish"
+      component={NightFilesPolish}
+      width={1080}
+      height={1920}
+      fps={24}
+      durationInFrames={1}
+      defaultProps={{video: "", words: [], shots: [], totalFrames: 1, fps: 24}}
+      calculateMetadata={({props}) => ({
+        durationInFrames: Math.max(1, props.totalFrames || 1),
+        fps: props.fps || 24,
+      })}
+    />
+  </>
 );
