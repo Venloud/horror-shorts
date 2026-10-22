@@ -198,6 +198,9 @@ one "scenes" entry per narration scene, in order. SHOT is one of:
   connections {{"kicker": "CONNECTIONS", "nodes": ["<2-4 people / places / clues said in the narration>"]}}
   compare     {{"kicker": "TWO THEORIES", "left": {{"title": "<max 3 words>", "items": ["<max 5 words>", "..."]}}, "right": {{...}}}}
   missing     {{"subject": "<cast name or you>", "word": "<MISSING | VANISHED | GONE: only a word the narration uses>", "last_seen": "<a place said, or empty>"}}
+  photo_scan  {{"kicker": "IMAGE INSPECTION", "text": "<a short phrase said in narration>", "count": <number of depicted figures explicitly said, or 1>}}
+  clock_stop  {{"kicker": "TIME", "text": "<short clock-related phrase said in narration>", "time": "<a time actually said; for explicit midnight use 12:00 AM; else empty>"}}
+  shadow_reveal {{"kicker": "VISUAL BREAKDOWN", "text": "<short shadow-related phrase said in narration>", "count": <number of shadows explicitly said>}}
   closing     {{"kicker": "YOUR CALL", "text": "<the closing question, exactly as in the narration>", "accent": "<one word>"}}
 BUILD is one of: {{"kind": "grid", "total": <4-60>, "filled": <n>, "label": "<max 4 words>"}} |
 {{"kind": "bars", "bars": [{{"label": "<max 2 words>", "value": <number>}}, ...2-4], "threshold": <number>, "threshold_label": "<max 3 words>"}} |
@@ -212,13 +215,17 @@ RULES
   around. Vary view (front, three_quarter, side, back) and shot_type. close only for emotional beats (max 1 in 4
   shots); over_shoulder when you watch someone (you seen from behind, they in front of you).
 - 3-5 shots per scene, a cut every 1.5-3 s. The first shot of scene 1 is a scene shot.
-- background_motion is ALWAYS "none": the blank character stage does not move.
+- Static character artwork never animates its limbs. For rare emotional shots you MAY use subtle_push or
+  subtle_pan, applied to the camera only; default background_motion to "none". Avoid parallax_light except
+  when a gentle editorial light sweep communicates the beat.
 - The prop field is optional. Use a prop only when its object is expressly mentioned or confirmed in the
   narration; use "none" otherwise. Never infer a case-specific object from a vague emotion or setting.
 - text_mode on at most 1 shot in 3, words taken from the narration: location = the place name the first time it
   appears; name = a person's name the first time they appear; punch = a key phrase; evidence = a clue; quote = words
   someone said; stamp = 1-2 words. NO dates, years or day counters on scene shots; at most ONE card in the whole
   video may show a date.
+- Use photo_scan only when narration mentions a photograph/picture, clock_stop only when a clock stops,
+  and shadow_reveal only when shadow count is explicitly stated. All are marked illustrative, not real evidence.
 - Motion graphics (graphic / card / title) for key numbers, clues, routes, theories and turns: about one shot in three,
   never two in a row. Prefer graphic templates; map_route when people travel between named places; evidence for a
   clue or object; compare when the narration weighs two explanations; missing only when someone vanishes; closing
@@ -461,7 +468,8 @@ def _expressions() -> list[str]:
 
 
 GRAPHIC_TEXT = {"evidence": ("text", "note"), "fact": ("label",), "filmstrip": ("text",), "quote": ("text", "by"),
-                "impact": ("text",), "closing": ("text",)}
+                "impact": ("text",), "closing": ("text",), "photo_scan": ("text",),
+                "clock_stop": ("text",), "shadow_reveal": ("text",)}
 
 
 def _valid_graphic(s: dict, at, ctx: dict) -> dict | None:
@@ -514,6 +522,36 @@ def _valid_graphic(s: dict, at, ctx: dict) -> dict | None:
         if not (v <= 3 or v in said) or 1000 <= v <= 2100:
             return None
         out.update(value=v, prefix=str(f.get("prefix") or "")[:2], suffix=str(f.get("suffix") or "")[:8])
+    elif tpl in ("photo_scan", "clock_stop", "shadow_reveal"):
+        # A named graphic is available only when the scene actually mentions the object.
+        triggers = {
+            "photo_scan": r"\b(photo|photograph|picture|image)\b",
+            "clock_stop": r"\b(clock|midnight|timepiece)\b",
+            "shadow_reveal": r"\b(shadows?|silhouettes?)\b",
+        }
+        if not re.search(triggers[tpl], low):
+            return None
+        if tpl in ("photo_scan", "shadow_reveal"):
+            try:
+                count = int(f.get("count") or (1 if tpl == "photo_scan" else 0))
+            except (ValueError, TypeError):
+                return None
+            if not (1 <= count <= 4 and (tpl == "photo_scan" and count == 1 or count in said)):
+                return None
+            out["count"] = count
+        if tpl == "clock_stop":
+            # The visual must correspond to a stopped clock, not merely the
+            # word midnight. Midnight implies 12:00 AM by definition.
+            if not re.search(r"\b(stop|stops|stopped|froze|frozen|freeze|halt|halted|ceased)\b", low):
+                return None
+            shown_time = str(f.get("time") or "").strip()[:14]
+            if re.search(r"\bmidnight\b", low):
+                out["time"] = "12:00 AM"
+            elif shown_time and shown_time.lower() in low:
+                out["time"] = shown_time
+            else:
+                spoken = re.search(r"\b([0-2]?\d:[0-5]\d)(?:\s*(am|pm))?\b", low)
+                out["time"] = spoken.group(0).upper() if spoken else ""
     elif tpl == "missing":
         word = str(f.get("word") or "").upper()
         if not re.search(r"\b(vanish|disappear|missing|gone|never seen|never arrived)", low):
@@ -1161,7 +1199,10 @@ class Renderer:
                 spots = [(prim, s.get("action"), s.get("expression"), s.get("view"), s.get("facing", "right"), 0.5)]
             elif sec and sec != "crowd":
                 spots = [(sec, s.get("action2"), "neutral", "three_quarter", "left", 0.5)]
-            height, feet = ({"wide": (690, 1300), "medium": (940, 1365), "close": (1190, 1390)}
+            # Editorial composition: the approved host should dominate mobile frames
+            # without placing eyes or important details under the bottom captions.
+            height, feet = ({"wide": (1000 if len(spots) == 1 else 835, 1480),
+                             "medium": (1300, 1500), "close": (1190, 1460)}
                             if CONFIG.get("explainer_character_stage", True)
                             else {"wide": (820, 1660), "medium": (1150, 1980), "close": (1500, 2150)}).get(st, (690, 1300))
             if st == "close" and len(spots) == 1 and spots[0][0] == "you" and spots[0][1] not in self.sm.MOVING:
@@ -1169,11 +1210,29 @@ class Renderer:
                 if CONFIG.get("explainer_character_stage", True):
                     # Cropped straight from the SAME rig used for all full-body action poses.
                     im = sprites.stage_closeup(spots[0][2] or "neutral", spots[0][3] or "front")
-                    im = im.resize((1030, 1288), Image.Resampling.LANCZOS)
-                    if spots[0][4] == "left":
-                        im = ImageOps.mirror(im)
-                    self._paste(frame, im, int(W / 2 - im.width / 2), 38)
-                    spots = []
+                    if im is not None:
+                        # The approved bust originals are padded transparent RGBA.
+                        # Crop TRANSPARENCY ONLY (not image pixels, aura or shading)
+                        # before sizing; otherwise the head floats near the top
+                        # and hundreds of pixels of invisible padding waste the frame.
+                        alpha_box = im.getchannel("A").getbbox()
+                        if alpha_box:
+                            pad = 8
+                            x0, y0, x1, y1 = alpha_box
+                            im = im.crop((max(0,x0-pad),max(0,y0-pad),
+                                          min(im.width,x1+pad),min(im.height,y1+pad)))
+                        scale = min(1090 / im.width, 1130 / im.height)
+                        im = im.resize((max(1,int(im.width*scale)),
+                                        max(1,int(im.height*scale))),
+                                       Image.Resampling.LANCZOS)
+                        if spots[0][4] == "left":
+                            im = ImageOps.mirror(im)
+                        # Anchor torso just ABOVE caption safe zone (at ~1370px).
+                        # Every F-series close-up uses the same framing rules.
+                        x = int((W-im.width)/2)
+                        y = max(170, 1310-im.height)
+                        self._paste(frame, im, x, y)
+                        spots = []
                 else:
                     cu = sprites.closeup(spots[0][2] or "neutral", spots[0][3] or "front")
                     if cu:
@@ -1547,7 +1606,13 @@ class Renderer:
                                    local)
         else:
             frame = self.scene_frame(seg, local)
-        self.captions(frame, t, "scene")
+            if CONFIG.get("explainer_cinematic_camera", False):
+                frame = noir.cinematic_camera(frame, sh.get("motion", "none"), local, dur)
+        # Remotion owns kinetic captions only when explicitly enabled. Normal
+        # Night Files builds continue using Pillow captions unchanged.
+        if not (CONFIG.get("remotion_polish", False) or
+                CONFIG.get("explainer_caption_engine") == "remotion"):
+            self.captions(frame, t, "scene")
         return frame
 
     def _index(self, seg: dict) -> int:
@@ -1928,15 +1993,26 @@ def _mix_audio(narration: dict, total: float, events: list, out: Path) -> Path:
     mix = np.zeros(int(total * sr) + sr, dtype=np.float32)
     mix[:len(voice)] += voice[:len(mix)]
     cache = {}
-    for t, name, vol in events:
+    for event in events:
+        # Optional fourth item limits SFX duration to the visual beat.
+        # The existing (time, name, volume) production events remain unchanged.
+        t, name, vol = event[:3]
+        clip_seconds = event[3] if len(event) >= 4 else None
         if name not in cache:
             cache[name] = _load_sfx(name, sr)
-        s = cache[name]
-        if s is None:
+        sound = cache[name]
+        if sound is None:
             continue
-        a = int(t * sr)
-        s = s[: max(0, len(mix) - a)]
-        mix[a:a + len(s)] += s * vol
+        at = max(0, int(t * sr))
+        room = max(0, len(mix) - at)
+        if clip_seconds is not None:
+            room = min(room, max(0, int(float(clip_seconds) * sr)))
+        sound = sound[:room].copy()
+        if clip_seconds is not None and len(sound):
+            # Smooth last 45 ms to avoid an audible click on a truncated effect.
+            fade = min(len(sound), int(sr * 0.045))
+            sound[-fade:] *= np.linspace(1.0, 0.0, fade)
+        mix[at:at + len(sound)] += sound * vol
     peak = float(np.max(np.abs(mix))) or 1.0
     if peak > 0.98:
         mix *= 0.98 / peak
@@ -2005,6 +2081,13 @@ def render(story: dict, narration: dict, p: dict, assets: dict, workdir: Path) -
         f"{sum(lens) / len(lens):.1f}s), {n} frames in {time.time() - t0:.0f}s")
     (workdir / "explainer_plan.json").write_text(json.dumps(
         {"plan": p, "segments": [{**s, "shot": s["shot"]} for s in segs]}, indent=1, ensure_ascii=False, default=str))
+    if CONFIG.get("remotion_polish", False):
+        # Opt in only. One existing Night Files render, then its frame-aware
+        # editorial post-pass. Failure is explicit, never drop missing captions.
+        from remotion_post import polish
+        finished = workdir / "explainer_polished.mp4"
+        out = polish(out, finished, segs, narration, FPS, n)
+        story["explainer_render"]["remotion_polish"] = True
     return out
 
 

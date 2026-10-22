@@ -7,7 +7,8 @@ Every template is drawn locally (0 Cloudflare neurons), takes the story's own wo
 (`ctx["words"]`: [{"word", "start"}] relative to the segment). Nothing is specific to one story.
 
 render(template, fields, t, dur, ctx) -> RGBA 1080x1920 frame. Templates (TEMPLATES): true_story, title, evidence,
-map_route, fact, filmstrip, quote, impact, connections, compare, missing, closing.
+map_route, fact, filmstrip, quote, impact, connections, compare, missing, closing, photo_scan,
+clock_stop, shadow_reveal.
 Safe area: x 70-960 (TikTok's right-hand buttons), y 200-1300 (captions sit at ~1430, the top bar ends ~140).
 """
 import math
@@ -26,7 +27,7 @@ BONE = (236, 230, 221)  # off-white type
 FONT_DIR = ROOT / "assets" / "fonts" / "explainer"
 SAFE_X0, SAFE_X1, SAFE_Y0, SAFE_Y1 = 70, 960, 200, 1300
 TEMPLATES = ("true_story", "title", "evidence", "map_route", "fact", "filmstrip", "quote", "impact", "connections",
-             "compare", "missing", "closing")
+             "compare", "missing", "closing", "photo_scan", "clock_stop", "shadow_reveal")
 
 
 def accent() -> tuple:
@@ -656,4 +657,254 @@ def _t_closing(fields, t, dur, ctx):
     headline(frame, str(fields.get("text") or ""), 110, 500, 860, t - 0.1, acc, fields.get("accent", ""), size=124,
              max_lines=5, ctx=ctx)
     frame.alpha_composite(ov)
+    return frame
+
+
+# ------------------------------------------------------------- reusable cinematic tools
+# These effects were created specifically for Night Files. Conceptual references:
+# Bouriko's free Remotion graphics; OpenMontage's visual QA and cinematic camera direction.
+# No third-party AGPL source code, paid models, assets, or new dependencies are used.
+
+def cinematic_camera(frame: Image.Image, motion: str, t: float, dur: float) -> Image.Image:
+    """Opt-in editorial camera motion, applied BEFORE captions, never distorts original PNGs.
+
+    Motion operates on a composed frame. It intentionally moves only 2-7% so that
+    the approved character's eyes and crimson rim stay crisp and inside frame.
+    """
+    if motion not in ("subtle_push", "subtle_pan", "parallax_light"):
+        return frame
+    progress = ease(t / max(0.2, dur))
+    factor = 1.0 + (0.065 if motion == "subtle_push" else 0.035) * progress
+    crop_w, crop_h = W / factor, H / factor
+    center_x = W / 2 + ((progress - 0.5) * 0.045 * W if motion == "subtle_pan" else 0)
+    center_y = H * 0.48 - (progress * 0.015 * H if motion == "subtle_push" else 0)
+    left = max(0.0, min(W - crop_w, center_x - crop_w / 2))
+    top = max(0.0, min(H - crop_h, center_y - crop_h / 2))
+    result = frame.transform((W, H), Image.Transform.EXTENT,
+                             (left, top, left + crop_w, top + crop_h),
+                             resample=Image.Resampling.BICUBIC)
+    if motion == "parallax_light":
+        # Very faint, mobile-safe light sweep, not a replacement background.
+        light = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        ld = ImageDraw.Draw(light)
+        travel = int((0.15 + progress * 0.7) * W)
+        ld.polygon([(travel - 180, 0), (travel + 35, 0),
+                    (travel + 340, H), (travel + 120, H)],
+                   fill=(220, 229, 238, 12))
+        result.alpha_composite(light)
+    return result
+
+
+def _draw_shadow_person(draw: ImageDraw.ImageDraw, cx: int, baseline: int,
+                        size: float, fill: tuple) -> None:
+    """Abstract SHADOW symbol only. This is never represented as archival evidence."""
+    r = int(56 * size)
+    head = int(baseline - 270 * size)
+    # Light rim is required for legibility on the dark editorial stage.
+    rim = (180, 188, 196, int(fill[3] * 0.75))
+    draw.ellipse((cx-r, head-r, cx+r, head+r),
+                 fill=fill, outline=rim, width=max(3,int(5*size)))
+    draw.rounded_rectangle((cx-int(80*size), head+int(64*size),
+                            cx+int(80*size), baseline),
+                           radius=int(35*size), fill=fill, outline=rim,
+                           width=max(3,int(5*size)))
+
+
+def _focus_ring_points(target: tuple, seed: int = 0, padding: float = 22.0) -> list[tuple[int, int]]:
+    """Loose, hand-drawn circle that STILL contains the target's full bounding box.
+
+    The target coordinates come from the actual object geometry, never a fixed
+    screen location. The sqrt(2) factor contains even a rectangular target's
+    corners; the generous padding safely absorbs the small hand-drawn wobble.
+    """
+    x0, y0, x1, y1 = target
+    if not (x1 > x0 and y1 > y0):
+        raise ValueError("Attention ring requires a non-empty target bounds")
+    cx, cy = (x0+x1)/2.0, (y0+y1)/2.0
+    rx = math.sqrt(2) * ((x1-x0)/2.0 + padding)
+    ry = math.sqrt(2) * ((y1-y0)/2.0 + padding)
+    points = []
+    for i in range(96):
+        angle = i * 2 * math.pi / 96
+        wobble = 1 + 0.014 * math.sin(3*angle + seed) + 0.007 * math.cos(5*angle + 2*seed)
+        points.append((round(cx + rx*wobble*math.cos(angle)),
+                       round(cy + ry*wobble*math.sin(angle))))
+    return points
+
+
+def draw_attention_ring(draw: ImageDraw.ImageDraw, bounds: tuple, color: tuple,
+                        *, seed: int = 0, padding: float = 18, width: int = 5) -> None:
+    """Generic focus annotation for ANY evidence/prop/figure with known screen bounds.
+
+    Imperfect outline is intentional. Geometric containment of the target is not
+    optional. Supply actual rendered object bounds, never a guessed label position.
+    """
+    points = _focus_ring_points(bounds, seed=seed, padding=padding)
+    draw.line(points + [points[0]], fill=color, width=width, joint="curve")
+
+
+def _resolve_clock_time(fields: dict) -> str:
+    """Resolve a clock value from arbitrary storyboard fields, never from a named story.
+
+    Explicit `time` wins. Otherwise infer well-defined labels (MIDNIGHT / NOON)
+    or a literal spoken HH:MM; an unspecified event is deliberately unlabelled.
+    """
+    import re
+    explicit = str(fields.get("time") or "").strip()
+    if explicit:
+        return explicit[:16]
+    words = " ".join(str(fields.get(k) or "") for k in ("text", "kicker", "label")).upper()
+    if re.search(r"\bMIDNIGHT\b", words):
+        return "12:00 AM"
+    if re.search(r"\bNOON\b", words):
+        return "12:00 PM"
+    match = re.search(r"\b(?:[01]?\d|2[0-3]):[0-5]\d(?:\s*[AP]M)?\b", words)
+    return match.group(0).strip() if match else ""
+
+
+def _clock_angles(time_label: str) -> tuple[float, float]:
+    """Hands (radians) for an explicitly specified clock time; default is illustrative 10:10."""
+    value = str(time_label or "").strip().upper()
+    if value in ("MIDNIGHT", "00:00", "12:00 AM", "12:00AM"):
+        hours, minutes = 0, 0
+    else:
+        import re
+        match = re.fullmatch(r"(\d{1,2}):(\d{2})(?:\s*(AM|PM))?", value)
+        if not match:
+            hours, minutes = 10, 10  # visually illustrative when narration did not specify a time
+        else:
+            hours, minutes = int(match.group(1)), int(match.group(2))
+            if not (0 <= hours <= 23 and 0 <= minutes < 60):
+                hours, minutes = 10, 10
+            elif match.group(3) == "PM":
+                hours = (hours % 12) + 12
+            elif match.group(3) == "AM":
+                hours = hours % 12
+    return (math.radians(-90 + 30*(hours%12) + 0.5*minutes),
+            math.radians(-90 + 6*minutes))
+
+
+def _t_photo_scan(fields, t, dur, ctx):
+    """Reusable illustrated photo inspection: reveal, scan beam, evidence focus."""
+    acc = ctx["accent"]
+    frame = _base(ctx)
+    d = ImageDraw.Draw(frame, "RGBA")
+    kicker(d, str(fields.get("kicker") or "IMAGE INSPECTION"), 108, 218, t, acc)
+    # 2D editorial specimen, NOT a faked 'historical photo'. Optional silhouettes.
+    x0, y0, x1, y1 = 126, 346, 948, 1225
+    slide = int(55 * (1 - back(t/0.42)))
+    x0, x1, y0, y1 = x0 + slide, x1 + slide, y0 + slide, y1 + slide
+    d.rounded_rectangle((x0, y0, x1, y1), radius=18,
+                        fill=(31, 34, 40, 255), outline=BONE+(215,), width=5)
+    d.rectangle((x0+35, y0+45, x1-35, y1-182),
+                fill=(16, 20, 25, 255), outline=(119, 120, 120, 255), width=2)
+    # Pinpointing in an abstract 2D image, rather than claiming an archival photo.
+    for i in range(8):
+        yy = y0 + 82 + i * 65
+        d.line((x0+40, yy, x1-39, yy), fill=(154, 160, 158, 20), width=2)
+    count = max(1, min(3, int(fields.get("count") or 1)))
+    for k in range(count):
+        appear = 0.15 + 0.46*k/max(1, count-1)
+        a = ease((t/max(0.1,dur)-appear)/0.22)
+        if a < 0.01:
+            continue
+        cx = round((x0+x1)/2 + (k-(count-1)/2)*211)
+        baseline = y1-275
+        size = 0.85
+        _draw_shadow_person(d, cx, baseline, size,
+                            (10, 11, 15, int(160*a)))
+        # Calculate from that precise figure's silhouette bounds. The imperfect
+        # oval encloses the ENTIRE subject, not empty space near the subject.
+        target = (cx-80*size, baseline-(270+56)*size,
+                  cx+80*size, baseline)
+        draw_attention_ring(d, target, acc+(int(120*a),),
+                            seed=k+1, padding=15)
+    # Light passes over subject, held evidence remains in focus after it passes.
+    g = ease((t-0.35)/max(0.3, dur-0.9))
+    beam = int(x0 + 45 + (x1-x0-90)*g)
+    d.line((beam, y0+50, beam, y1-184), fill=acc+(205,), width=7)
+    d.rectangle((x0+47, y1-146, x1-47, y1-141), fill=acc+(120,))
+    d.text((x0+47,y1-127), "ILLUSTRATIVE RECONSTRUCTION",
+           font=font("mono", 25), fill=PARCHMENT+(255,))
+    txt = str(fields.get("text") or "").upper()[:58]
+    headline(frame, txt, 116, 1290, 830, t-0.18, acc,
+             fields.get("accent",""), size=89, max_lines=2)
+    return frame
+
+
+def _t_clock_stop(fields, t, dur, ctx):
+    """Animated illustrated clock hand physically slows then freezes."""
+    acc = ctx["accent"]
+    frame = _base(ctx)
+    d = ImageDraw.Draw(frame, "RGBA")
+    kicker(d, str(fields.get("kicker") or "TIME"), 110, 240, t, acc)
+    cx, cy, radius = 540, 822, 280
+    d.ellipse((cx-radius-22, cy-radius-22, cx+radius+22, cy+radius+22),
+              outline=acc+(100,), width=5)
+    d.ellipse((cx-radius, cy-radius, cx+radius, cy+radius),
+              fill=(23, 28, 34, 255), outline=BONE+(230,), width=12)
+    for n in range(60):
+        rad = math.radians(n*6-90)
+        long = n % 5 == 0
+        inner = radius-(42 if long else 24)
+        outer = radius-11
+        a = (cx+inner*math.cos(rad), cy+inner*math.sin(rad))
+        b = (cx+outer*math.cos(rad), cy+outer*math.sin(rad))
+        d.line((*a,*b),fill=(229, 228, 221, 230 if long else 100),width=6 if long else 2)
+    # The hour and minute hands show the precise narration-grounded time
+    # throughout. At MIDNIGHT they BOTH point straight up at 12, not 10:10.
+    time_label = _resolve_clock_time(fields)
+    hour_angle, minute_angle = _clock_angles(time_label)
+    d.line((cx,cy,cx+148*math.cos(hour_angle),cy+148*math.sin(hour_angle)),
+           fill=BONE+(255,),width=16)
+    d.line((cx,cy,cx+207*math.cos(minute_angle),cy+207*math.sin(minute_angle)),
+           fill=PARCHMENT+(255,),width=9)
+    # Only the second hand moves, decelerating and FREEZING exactly at 12.
+    freeze = min(1.0, max(0.0, t/max(0.25, min(1.3, dur*.55))))
+    angle = math.radians(-90 - 305*(1.0-ease(freeze)))
+    d.line((cx-35*math.cos(angle),cy-35*math.sin(angle),
+            cx+235*math.cos(angle),cy+235*math.sin(angle)),
+           fill=acc+(255,),width=7)
+    d.ellipse((cx-19,cy-19,cx+19,cy+19),fill=acc+(255,))
+    a2 = ease((t-min(1.3,dur*.55))/0.25)
+    if a2:
+        d.rounded_rectangle((232,1175,848,1275),radius=20,fill=(18, 22, 27, int(220*a2)),
+                            outline=acc+(int(180*a2),),width=3)
+        label = str(fields.get("text") or "CLOCK STOPPED").upper()[:27]
+        f,_ = fit(label,"cond",575,1,74,42)
+        d.text((540,1193),label,font=f,fill=BONE+(int(255*a2),),anchor="mt")
+    if time_label:
+        d.text((540,1325),time_label[:12],font=font("mono",42),
+               fill=acc+(255,),anchor="mm")
+    return frame
+
+
+def _t_shadow_reveal(fields, t, dur, ctx):
+    """Reveal N shadow silhouettes individually; diagram, never a fabricated historical shot."""
+    acc = ctx["accent"]
+    frame = _base(ctx)
+    d = ImageDraw.Draw(frame, "RGBA")
+    count = max(1,min(4,int(fields.get("count") or 1)))
+    kicker(d,str(fields.get("kicker") or "VISUAL BREAKDOWN"),110,290,t,acc)
+    d.line((180,1160,900,1160),fill=PARCHMENT+(110,),width=5)
+    spacing = 700/(count+1)
+    for k in range(count):
+        a = ease((t-0.22-(dur-0.85)*k/max(1,count))/.3)
+        if a<=.01:
+            continue
+        cx=int(180+(k+1)*spacing)
+        size = 0.95 if count<=2 else 0.72
+        baseline = 1153
+        _draw_shadow_person(d,cx,baseline,size,(10,11,16,int(240*a)))
+        target = (cx-80*size, baseline-(270+56)*size,
+                  cx+80*size, baseline)
+        draw_attention_ring(d, target, acc+(int(128*a),),
+                            seed=k+11, padding=17)
+        d.text((cx,1235),f"{k+1:02d}",font=font("mono",44),
+               fill=acc+(int(255*a),),anchor="mm")
+    d.text((110,1320),"SCHEMATIC, NOT ARCHIVAL FOOTAGE",font=font("mono",25),
+           fill=PARCHMENT+(220,))
+    headline(frame,str(fields.get("text") or "").upper()[:75],
+             110,390,860,t-.12,acc,fields.get("accent",""),
+             size=108,max_lines=3)
     return frame

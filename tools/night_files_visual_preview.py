@@ -87,7 +87,7 @@ def scene_shot(expression: str, frame: str, prop: str = "none", label: str = "")
     return {"type": "scene", "location": "blank studio", "insert": "",
             "primary": "you", "action": "standing", "expression": expression,
             "view": "front", "facing": "right", "secondary": "",
-            "action2": "standing", "shot_type": frame, "motion": "none",
+            "action2": "standing", "shot_type": frame, "motion": "subtle_push" if frame == "medium" else "none",
             "prop": prop, "text_mode": "evidence" if label else "none",
             "text": label, "accent": ""}
 
@@ -97,18 +97,21 @@ def segments_for_voice(narration: dict) -> list[dict]:
     segments: list[dict] = []
     storyboard = (
         [(0.00, {"type": "title", "text": "THE LAST PHOTOGRAPH", "accent": "LAST"}),
-         (0.39, scene_shot("neutral", "medium")),
-         (0.71, {"type": "graphic", "template": "impact", "fields": {
-             "text": "A LOCKED ROOM", "accent": "LOCKED"}})],
+         (0.29, scene_shot("neutral", "medium")),
+         (0.64, {"type": "graphic", "template": "photo_scan", "fields": {
+             "kicker": "PHOTO ANALYSIS", "text": "A PHOTOGRAPH", "count": 1}})],
         [(0.00, scene_shot("suspicious", "close")),
-         (0.46, {"type": "graphic", "template": "evidence", "fields": {
-             "kicker": "THE EVIDENCE", "text": "A SECOND SHADOW", "accent": "SHADOW",
-             "note": "INSIDE THE PHOTOGRAPH"}})],
+         (0.38, {"type": "graphic", "template": "photo_scan", "fields": {
+             "kicker": "THE DETAIL", "text": "THE SHADOW", "count": 1,
+             "accent": "SHADOW"}})],
         [(0.00, scene_shot("worried", "close")),
-         (0.53, {"type": "graphic", "template": "impact", "fields": {
-             "text": "MIDNIGHT", "accent": "MIDNIGHT"}})],
+         (0.39, {"type": "graphic", "template": "clock_stop", "fields": {
+             "kicker": "MIDNIGHT", "text": "CLOCK STOPPED"}})],
         [(0.00, scene_shot("serious", "close")),
-         (0.46, {"type": "graphic", "template": "closing", "fields": {
+         (0.29, {"type": "graphic", "template": "shadow_reveal", "fields": {
+             "kicker": "SECOND LOOK", "text": "TWO SHADOWS",
+             "count": 2, "accent": "SHADOWS"}}),
+         (0.72, {"type": "graphic", "template": "closing", "fields": {
              "kicker": "YOUR CALL", "text": "WHO WAS THE SECOND SHADOW?",
              "accent": "SECOND"}})],
     )
@@ -129,6 +132,9 @@ def main() -> None:
     if not expected <= present:
         raise RuntimeError(f"Missing original approved images: {sorted(expected-present)}")
 
+    # Experimental staging ONLY; the production config remains unchanged.
+    explainer.CONFIG["explainer_cinematic_camera"] = True
+    explainer.CONFIG["explainer_caption_engine"] = "remotion"
     narration, total = synthesize_voice()
     story = {"title": "THE LAST PHOTOGRAPH", "mode": "fiction", "true_story": False,
              "scenes": [{"narration": text} for text in SAMPLE]}
@@ -142,6 +148,7 @@ def main() -> None:
     fps = 24
     final = OUTPUT / "night-files-cinematic-preview.mp4"
     video = OUTPUT / "temporary-video-only.mp4"
+    source_with_audio = OUTPUT / "temporary-source-with-audio.mp4"
     encoder = subprocess.Popen([
         "ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",
         "-s", "1080x1920", "-r", str(fps), "-i", "-",
@@ -162,11 +169,54 @@ def main() -> None:
     if encoder.returncode or not video.is_file() or video.stat().st_size < 10000:
         raise RuntimeError(f"FFmpeg preview encode failed, exit {encoder.returncode}")
 
-    # This is a timing guide voice, not the production Kokoro narrator.
-    run(["ffmpeg", "-y", "-v", "error", "-i", str(video), "-i", narration["path"],
+    # Reuse the production SFX mixer and the repo's existing free audio library.
+    # Precise, short cues demonstrate cut rhythm without changing production state.
+    events = []
+    seen_photo = False
+    for seg in segs:
+        shot = seg["shot"]
+        if shot["type"] != "graphic":
+            continue
+        style = shot.get("template")
+        at = seg["start"]
+        if style == "photo_scan":
+            events.append((at + 0.05, "whoosh", 0.18, 0.45))
+            if not seen_photo:
+                events.append((at + 0.14, "camera_shutter", 0.27, 0.45))
+                seen_photo = True
+        elif style == "clock_stop":
+            events.append((at + 0.06, "clock_ticking", 0.14,
+                           min(1.25, seg["end"]-at-0.15)))
+            events.append((min(seg["end"]-0.12, at+1.32), "ui_click", 0.18, 0.24))
+        elif style == "shadow_reveal":
+            events.append((at + 0.13, "heartbeat", 0.30, 0.84))
+        elif style == "closing":
+            events.append((at + 0.06, "whoosh", 0.17, 0.40))
+    mixed = explainer._mix_audio(narration, total, events, OUTPUT / "preview_audio.wav")
+    # This is still a timing-guide voice, not the production Kokoro narrator.
+    run(["ffmpeg", "-y", "-v", "error", "-i", str(video), "-i", str(mixed),
          "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-shortest",
-         "-movflags", "+faststart", str(final)])
+         "-movflags", "+faststart", str(source_with_audio)])
     video.unlink(missing_ok=True)
+
+    # The EXISTING editorial renderer supplies shots/frames. The same optional
+    # Remotion postprocessor used by the production opt-in performs final cuts,
+    # spring-loaded chapter marks and word-synced captions.
+    from remotion_post import polish
+    polish(source_with_audio, final, segs, narration, fps, math.ceil(total * fps))
+    source_with_audio.unlink(missing_ok=True)
+    # Real contact sheet must come from the final Remotion video, not old PIL frames.
+    samples = []
+    for k in range(10):
+        seek = k * 2.0
+        if seek >= total:
+            break
+        temp = OUTPUT / f"frame_{k:02d}.png"
+        run(["ffmpeg", "-y", "-v", "error", "-ss", f"{seek:.2f}", "-i", str(final),
+             "-frames:v", "1", str(temp)])
+        with Image.open(temp) as image:
+            samples.append(image.convert("RGB").copy())
+        temp.unlink(missing_ok=True)
 
     tile_w, tile_h, columns = 216, 384, 5
     board = Image.new("RGB", (columns * tile_w, 2 * tile_h+60), "#23252b")
@@ -183,6 +233,9 @@ def main() -> None:
             "original_assets": sorted(expected),
             "voice": "espeak-ng placeholder, NOT production narration quality",
             "cloudflare_calls": 0, "posting": False, "buffer_changes": False,
+            "free_motion_tools": ["photo_scan", "clock_stop", "shadow_reveal", "subtle_push", "beat_trimmed_sfx",
+                                   "remotion_word_sync_captions", "remotion_editorial_cuts", "remotion_chapter_graphics"],
+            "sound_effects": [{"at": round(e[0], 2), "name": e[1], "seconds": e[3]} for e in events],
             "shots": segs}
     (OUTPUT / "shot-list.json").write_text(json.dumps(info, indent=2))
     print(f"READY {final} ({final.stat().st_size} bytes) {total:.1f}s")
