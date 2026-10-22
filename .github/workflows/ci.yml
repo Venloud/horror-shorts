@@ -14,9 +14,9 @@ on:
       - main
 
 # CI verifies approved assets and scripts without writing to the repository.
-# Temporary write privilege for one verified owner-original asset import.
+# CI verifies approved character art without mutating the repository.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   validate:
@@ -36,21 +36,6 @@ jobs:
       - name: Validate Python syntax
         run: |
           python -m compileall -q pipeline
-
-      - name: Import owner-approved original expression PNGs
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          python tools/import_host_final_expressions.py
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/character/host/expressions/F04_worried.png
-          git add assets/character/host/expressions/F05_excited.png
-          git add assets/character/host/expressions/F09_angry.png
-          git add assets/character/host/expressions/F10_smirk.png
-          if ! git diff --cached --quiet; then
-            git commit -m "Save exact F04 F05 F09 F10 owner originals [skip ci]"
-            git push origin HEAD:main
-          fi
 
       - name: Validate original approved character assets and render still-stage preview
         run: |
@@ -105,10 +90,24 @@ jobs:
           plan={"cast":{},"locations":[],"inserts":[],"scenes":[{"shots":[shot]}]}
           seg={"shot":shot,"scene":0,"start":0.0,"end":3.0}
           ren=explainer.Renderer(story,narration,plan,{"plates":{},"inserts":{}},[seg])
+          # No specific story should trigger an unrelated label or background prop.
+          base = Image.new("RGBA",(1080,1920),(43,48,55,255))
+          before = base.tobytes()
+          for sample in ("An aircraft crossed the ocean.", "The scientist found an old document."):
+              example = {"title":"Generic", "scenes":[{"narration":sample}]}
+              test_renderer = explainer.Renderer(example,narration,plan,{"plates":{},"inserts":{}},[seg])
+              test_renderer._stage_context(base,shot,seg)
+              assert base.tobytes() == before, "Unexpected auto-generated setting or label"
+          selected = dict(shot,prop="document",text="a document",text_mode="evidence")
+          layer = Image.new("RGBA",(1080,1920),(43,48,55,255))
+          ren._stage_context(layer,selected,seg)
+          assert layer.tobytes() != before, "Missing explicit storyboard prop"
+          source = Path("pipeline/explainer.py").read_text().lower()
+          assert "roundhay" not in source and "le prince" not in source
           preview=ren.frame_at(1.0,3.0)
           assert preview.size == (1080,1920)
           preview.save(out/"host-stage-preview.png")
-          print("Validated 8 original owner-approved reference images")
+          print("Validated all approved character originals and universal stage behavior")
           PY
 
       - name: Upload approved character contact sheet and staging preview
