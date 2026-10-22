@@ -1203,13 +1203,29 @@ class Renderer:
                 if CONFIG.get("explainer_character_stage", True):
                     # Cropped straight from the SAME rig used for all full-body action poses.
                     im = sprites.stage_closeup(spots[0][2] or "neutral", spots[0][3] or "front")
-                    im = im.resize((1100, 1375), Image.Resampling.LANCZOS)
-                    if spots[0][4] == "left":
-                        im = ImageOps.mirror(im)
-                    # Face/eyes occupy the hero area, torso finishes above the lower
-                    # mobile caption band; avoid tiny, high floating portraits.
-                    self._paste(frame, im, int(W / 2 - im.width / 2), 150)
-                    spots = []
+                    if im is not None:
+                        # The approved bust originals are padded transparent RGBA.
+                        # Crop TRANSPARENCY ONLY (not image pixels, aura or shading)
+                        # before sizing; otherwise the head floats near the top
+                        # and hundreds of pixels of invisible padding waste the frame.
+                        alpha_box = im.getchannel("A").getbbox()
+                        if alpha_box:
+                            pad = 8
+                            x0, y0, x1, y1 = alpha_box
+                            im = im.crop((max(0,x0-pad),max(0,y0-pad),
+                                          min(im.width,x1+pad),min(im.height,y1+pad)))
+                        scale = min(1090 / im.width, 1130 / im.height)
+                        im = im.resize((max(1,int(im.width*scale)),
+                                        max(1,int(im.height*scale))),
+                                       Image.Resampling.LANCZOS)
+                        if spots[0][4] == "left":
+                            im = ImageOps.mirror(im)
+                        # Anchor torso just ABOVE caption safe zone (at ~1370px).
+                        # Every F-series close-up uses the same framing rules.
+                        x = int((W-im.width)/2)
+                        y = max(170, 1310-im.height)
+                        self._paste(frame, im, x, y)
+                        spots = []
                 else:
                     cu = sprites.closeup(spots[0][2] or "neutral", spots[0][3] or "front")
                     if cu:
