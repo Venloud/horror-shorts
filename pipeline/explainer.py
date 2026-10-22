@@ -1255,12 +1255,12 @@ class Renderer:
             self.layer_cache[key] = layer
         frame.alpha_composite(layer)
         if shot.get("primary") == "you" and shot.get("action") == "holding" and \
-                shot.get("shot_type") in ("wide", "medium"):
+                shot.get("shot_type") == "medium":
             # Character holds a real foreground clue between the hands, instead of
             # gesturing at a floating AI background. Static, high-contrast line art.
             d = ImageDraw.Draw(frame)
-            x0, x1, y0, y1 = (337, 603, 745, 894) if shot.get("shot_type") == "medium" \
-                             else (390, 690, 865, 1000)
+            # The actor's real hand centres sit to either side at this medium framing.
+            x0, x1, y0, y1 = 421, 736, 891, 1045
             if any(w in words for w in ("luggage", "trunk", "baggage")):
                 d.rounded_rectangle((x0, y0, x1, y1), radius=14,
                                     fill=(116, 88, 69), outline=(240, 236, 227), width=6)
@@ -1268,10 +1268,7 @@ class Renderer:
                       fill=(235, 228, 217), width=7)
                 d.line((x0 + 16, y0 + 38, x1 - 16, y0 + 38),
                        fill=(225, 212, 192), width=5)
-                # Hands are in front of the held case, never obscured by the prop.
-                for hx in (x0 - 14, x1 + 14):
-                    d.ellipse((hx - 21, y0 - 20, hx + 21, y0 + 20),
-                              fill=(251, 250, 248), outline=(20, 20, 24), width=6)
+                # Do not draw replacement hands: the original rig hands remain on either side.
             else:
                 d.rounded_rectangle((x0, y0, x1, y1), radius=8,
                                     fill=(206, 196, 179), outline=(21, 24, 30), width=7)
