@@ -710,6 +710,50 @@ def _draw_shadow_person(draw: ImageDraw.ImageDraw, cx: int, baseline: int,
                            width=max(3,int(5*size)))
 
 
+def _focus_ring_points(target: tuple, seed: int = 0, padding: float = 22.0) -> list[tuple[int, int]]:
+    """Loose, hand-drawn circle that STILL contains the target's full bounding box.
+
+    The target coordinates come from the actual object geometry, never a fixed
+    screen location. The sqrt(2) factor contains even a rectangular target's
+    corners; the generous padding safely absorbs the small hand-drawn wobble.
+    """
+    x0, y0, x1, y1 = target
+    if not (x1 > x0 and y1 > y0):
+        raise ValueError("Attention ring requires a non-empty target bounds")
+    cx, cy = (x0+x1)/2.0, (y0+y1)/2.0
+    rx = math.sqrt(2) * ((x1-x0)/2.0 + padding)
+    ry = math.sqrt(2) * ((y1-y0)/2.0 + padding)
+    points = []
+    for i in range(96):
+        angle = i * 2 * math.pi / 96
+        wobble = 1 + 0.014 * math.sin(3*angle + seed) + 0.007 * math.cos(5*angle + 2*seed)
+        points.append((round(cx + rx*wobble*math.cos(angle)),
+                       round(cy + ry*wobble*math.sin(angle))))
+    return points
+
+
+def _clock_angles(time_label: str) -> tuple[float, float]:
+    """Hands (radians) for an explicitly specified clock time; default is illustrative 10:10."""
+    value = str(time_label or "").strip().upper()
+    if value in ("MIDNIGHT", "00:00", "12:00 AM", "12:00AM"):
+        hours, minutes = 0, 0
+    else:
+        import re
+        match = re.fullmatch(r"(\d{1,2}):(\d{2})(?:\s*(AM|PM))?", value)
+        if not match:
+            hours, minutes = 10, 10  # visually illustrative when narration did not specify a time
+        else:
+            hours, minutes = int(match.group(1)), int(match.group(2))
+            if not (0 <= hours <= 23 and 0 <= minutes < 60):
+                hours, minutes = 10, 10
+            elif match.group(3) == "PM":
+                hours = (hours % 12) + 12
+            elif match.group(3) == "AM":
+                hours = hours % 12
+    return (math.radians(-90 + 30*(hours%12) + 0.5*minutes),
+            math.radians(-90 + 6*minutes))
+
+
 def _t_photo_scan(fields, t, dur, ctx):
     """Reusable illustrated photo inspection: reveal, scan beam, evidence focus."""
     acc = ctx["accent"]
@@ -729,18 +773,22 @@ def _t_photo_scan(fields, t, dur, ctx):
         yy = y0 + 82 + i * 65
         d.line((x0+40, yy, x1-39, yy), fill=(154, 160, 158, 20), width=2)
     count = max(1, min(3, int(fields.get("count") or 1)))
-    shown = 0
     for k in range(count):
         appear = 0.15 + 0.46*k/max(1, count-1)
         a = ease((t/max(0.1,dur)-appear)/0.22)
         if a < 0.01:
             continue
-        shown += 1
-        cx = int(x0+270+k*210-(count-1)*90)
-        _draw_shadow_person(d, cx, y1-210, 0.85,
+        cx = round((x0+x1)/2 + (k-(count-1)/2)*211)
+        baseline = y1-275
+        size = 0.85
+        _draw_shadow_person(d, cx, baseline, size,
                             (10, 11, 15, int(160*a)))
-        d.ellipse((cx-115, y1-400, cx+115, y1-168),
-                  outline=acc+(int(100*a),), width=5)
+        # Calculate from that precise figure's silhouette bounds. The imperfect
+        # oval encloses the ENTIRE subject, not empty space near the subject.
+        target = (cx-80*size, baseline-(270+56)*size,
+                  cx+80*size, baseline)
+        ring = _focus_ring_points(target, seed=k+1, padding=15)
+        d.line(ring+[ring[0]], fill=acc+(int(120*a),), width=5, joint="curve")
     # Light passes over subject, held evidence remains in focus after it passes.
     g = ease((t-0.35)/max(0.3, dur-0.9))
     beam = int(x0 + 45 + (x1-x0-90)*g)
@@ -773,13 +821,17 @@ def _t_clock_stop(fields, t, dur, ctx):
         a = (cx+inner*math.cos(rad), cy+inner*math.sin(rad))
         b = (cx+outer*math.cos(rad), cy+outer*math.sin(rad))
         d.line((*a,*b),fill=(229, 228, 221, 230 if long else 100),width=6 if long else 2)
-    # Move the second hand through just under one revolution; freeze halfway through.
-    freeze = min(1.0, max(0.0,t/max(0.25,min(1.3,dur*.55))))
-    angle = math.radians(-90 + 315*ease(freeze))
-    a = math.radians(-90 + 36)
-    d.line((cx,cy,cx+150*math.cos(a),cy+150*math.sin(a)),fill=BONE+(255,),width=14)
-    b = math.radians(50)
-    d.line((cx,cy,cx+210*math.cos(b),cy+210*math.sin(b)),fill=PARCHMENT+(255,),width=10)
+    # The hour and minute hands show the precise narration-grounded time
+    # throughout. At MIDNIGHT they BOTH point straight up at 12, not 10:10.
+    time_label = str(fields.get("time") or "")
+    hour_angle, minute_angle = _clock_angles(time_label)
+    d.line((cx,cy,cx+148*math.cos(hour_angle),cy+148*math.sin(hour_angle)),
+           fill=BONE+(255,),width=16)
+    d.line((cx,cy,cx+207*math.cos(minute_angle),cy+207*math.sin(minute_angle)),
+           fill=PARCHMENT+(255,),width=9)
+    # Only the second hand moves, decelerating and FREEZING exactly at 12.
+    freeze = min(1.0, max(0.0, t/max(0.25, min(1.3, dur*.55))))
+    angle = math.radians(-90 - 305*(1.0-ease(freeze)))
     d.line((cx-35*math.cos(angle),cy-35*math.sin(angle),
             cx+235*math.cos(angle),cy+235*math.sin(angle)),
            fill=acc+(255,),width=7)
@@ -792,7 +844,7 @@ def _t_clock_stop(fields, t, dur, ctx):
         f,_ = fit(label,"cond",575,1,74,42)
         d.text((540,1193),label,font=f,fill=BONE+(int(255*a2),),anchor="mt")
     if fields.get("time"):
-        d.text((540,1360),str(fields["time"])[:8],font=font("mono",66),
+        d.text((540,1325),str(fields["time"])[:10],font=font("mono",42),
                fill=acc+(255,),anchor="mm")
     return frame
 
@@ -811,9 +863,13 @@ def _t_shadow_reveal(fields, t, dur, ctx):
         if a<=.01:
             continue
         cx=int(180+(k+1)*spacing)
-        _draw_shadow_person(d,cx,1153,0.95 if count<=2 else 0.72,
-                            (10,11,16,int(240*a)))
-        d.ellipse((cx-100,670,cx+100,870),outline=acc+(int(110*a),),width=5)
+        size = 0.95 if count<=2 else 0.72
+        baseline = 1153
+        _draw_shadow_person(d,cx,baseline,size,(10,11,16,int(240*a)))
+        target = (cx-80*size, baseline-(270+56)*size,
+                  cx+80*size, baseline)
+        ring = _focus_ring_points(target, seed=k+11, padding=17)
+        d.line(ring+[ring[0]],fill=acc+(int(128*a),),width=5,joint="curve")
         d.text((cx,1235),f"{k+1:02d}",font=font("mono",44),
                fill=acc+(int(255*a),),anchor="mm")
     d.text((110,1320),"SCHEMATIC, NOT ARCHIVAL FOOTAGE",font=font("mono",25),
