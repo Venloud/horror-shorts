@@ -26,10 +26,15 @@ Assets are approved **one at a time or in batches of up to 10**. Preserve the or
 | F01 | Happy | [expressions/F01_happy.png](expressions/F01_happy.png) |
 | F02 | Serious | [expressions/F02_serious.png](expressions/F02_serious.png) |
 | F03 | Confused | [expressions/F03_confused.png](expressions/F03_confused.png) |
+| F04 | Worried | [expressions/F04_worried.png](expressions/F04_worried.png) |
+| F05 | Excited | [expressions/F05_excited.png](expressions/F05_excited.png) |
+| F07 | Thinking | [incoming/2026-10-21/U09_thinking_skeptical.png](incoming/2026-10-21/U09_thinking_skeptical.png) |
+| F08 | Suspicious | [incoming/2026-10-21/U08_suspicious_crossed_arms.png](incoming/2026-10-21/U08_suspicious_crossed_arms.png) |
+| F09 | Angry | [expressions/F09_angry.png](expressions/F09_angry.png) |
+| F10 | Smirk | [expressions/F10_smirk.png](expressions/F10_smirk.png) |
 
-## Next upload batch, 10 expression IDs
-F04 worried, **F05 excited**, F06 scared, F07 thinking, F08 suspicious, F09 angry,
-F10 smirk, F11 talking, F12 curious, F13 sad.
+## Still needed
+F06 Scared, F11 Talking, F12 Curious, F13 Sad. Additional emotional expressions can be added later under stable new IDs.
 
 Each incoming image will have the same character, outfit, shading, approved red aura, clean transparent background, and a clear emotion. Names/IDs **never** get reused for different expressions.
 
@@ -50,4 +55,4 @@ The newest nine uploaded candidate images are [preserved here](incoming/2026-10-
 - U08: **Suspicious**, canonical **F08**.
 - U09: **Thinking**, canonical **F07**.
 
-Additional owner labels: **F04 = Worried**, **F05 = Excited** (not Shocked). The user supplied image previews for those two, but the original PNG bytes are not yet available for verified transfer; never claim those files are stored until checked into the repository with hashes. All U-series originals remain preserved.
+**F04 Worried and F05 Excited are now stored** as original user-supplied PNGs, with verified SHA-256 hashes. F05 is byte-identical to previously saved U01. F09 Angry uses U04 and F10 Smirk uses U02. The files remain unchanged; the registered F-series IDs determine selection.
