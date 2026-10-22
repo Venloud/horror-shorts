@@ -167,7 +167,7 @@ jobs:
 
   cinematic_preview:
     name: Manual Cinematic Video Preview, No Publishing
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.head_ref == 'feature/free-motion-toolkit-20261022')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -180,7 +180,13 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg espeak-ng fonts-dejavu-core > /dev/null
           python -m pip install -q "Pillow>=10" "numpy>=1.24" soundfile
-      - name: Render cinematic preview with approved characters and Noir graphics
+      - name: Set up Node for the existing Remotion package
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install existing local Remotion renderer
+        run: npm --prefix remotion install --no-audit --no-fund
+      - name: Render cinematic preview with approved characters and Remotion overlays
         run: |
           python tools/night_files_visual_preview.py
           ffprobe -v error -select_streams v:0 -show_entries stream=width,height,avg_frame_rate -of default=nw=1 output/manual-cinematic-preview/night-files-cinematic-preview.mp4
