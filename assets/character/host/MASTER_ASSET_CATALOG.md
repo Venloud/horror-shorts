@@ -195,3 +195,7 @@ Reusable animated layouts, text and evidence graphics driven by narration and ve
 ## Intake correction: F01 Neutral (October 22, 2026)
 
 Venloud uploaded and explicitly labelled the same original PNG as **F01 Neutral**. Verified original SHA-256 `fa2e59e289eb4537fec790456e6696c0901cdf4a0d9a0240f60ec329b442774f` and 1122×1402 RGBA. The old `F01_happy.png` filename was misclassified, so its existing Git blob was moved without image re-encoding to `expressions/F01_neutral.png`. This corrects just F01. F02 Talking and F03 Smiling were identified by Venloud next; their new uploaded original bytes must be verified before marking them committed. Do not overwrite the historical `F02_serious.png` or `F03_confused.png` in the meantime.
+
+## F04 Laughing received, October 22
+
+Venloud explicitly labeled the new close-up **F04 Laughing**. Original PNG is 1374×1145 RGBA with SHA-256 `758b94e77e8552c17d1d71e701d80b1b6f43de9a279632f7fc8fbd9d57cec44c`. The owner-supplied upload is present in the chat, but **GitHub binary import remains pending**. Historical F04 Worried was moved byte-for-byte to its correct catalog ID **F14 Worried**. Do not report a nonexistent F04_laughing.png in the repo.

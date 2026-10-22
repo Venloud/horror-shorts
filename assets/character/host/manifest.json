@@ -35,15 +35,6 @@
       "sha256": "aa891339c4927fb731b7485484e487348f87daa8cdb9fd3ca0301f06597cb9eb"
     },
     {
-      "id": "F04",
-      "name": "worried",
-      "path": "expressions/F04_worried.png",
-      "status": "approved",
-      "width": 1374,
-      "height": 1145,
-      "sha256": "6182e060da26c60968ffc312bff5247dc1616d46fe70ee2110940a9e86fb11c6"
-    },
-    {
       "id": "F05",
       "name": "excited",
       "path": "expressions/F05_excited.png",
@@ -94,6 +85,16 @@
       "source_id": "U02"
     },
     {
+      "id": "F14",
+      "name": "worried",
+      "path": "expressions/F14_worried.png",
+      "status": "approved",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "6182e060da26c60968ffc312bff5247dc1616d46fe70ee2110940a9e86fb11c6",
+      "note": "Owner-confirmed Worried; moved unchanged from historically misnumbered F04."
+    },
+    {
       "id": "M01",
       "name": "front_full_body_neutral",
       "path": "masters/M01_front_neutral.png",
@@ -141,11 +142,11 @@
   ],
   "next_batch": [
     {
-      "id": "F04",
+      "id": "F14",
       "name": "worried",
       "status": "approved",
       "preview_received": true,
-      "path": "expressions/F04_worried.png"
+      "path": "expressions/F14_worried.png"
     },
     {
       "id": "F05",
@@ -224,5 +225,20 @@
       "relation": "separate expression, not suspicious"
     }
   ],
-  "asset_note": "F04 Worried and F05 Excited original PNGs imported and SHA256 verified 2026-10-22. F09 Angry from U04 and F10 Smirk from U02 are registered. No ID reassignment. F01 corrected to Neutral 2026-10-22 (blob unchanged). Other F-series historical names still pending review."
+  "asset_note": "Original Worried now canonical F14 (blob unchanged). F04 Laughing confirmed owner upload, hash verified, awaiting GitHub original PNG binary. Other historical F IDs pending review.",
+  "owner_upload_receipts": [
+    {
+      "id": "F04",
+      "name": "laughing",
+      "received_on": "2026-10-22",
+      "status": "owner_confirmed_png_received_in_chat_NOT_YET_IN_REPO",
+      "upload_filename": "image(20261022-230917).png",
+      "target_path": "expressions/F04_laughing.png",
+      "sha256": "758b94e77e8552c17d1d71e701d80b1b6f43de9a279632f7fc8fbd9d57cec44c",
+      "width": 1374,
+      "height": 1145,
+      "format": "RGBA PNG",
+      "note": "Do not mark approved until exact original bytes are committed to GitHub."
+    }
+  ]
 }

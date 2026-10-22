@@ -28,7 +28,7 @@ Assets are approved **one at a time or in batches of up to 10**. Preserve the or
 | F01 | Neutral (owner-confirmed) | [expressions/F01_neutral.png](expressions/F01_neutral.png) |
 | F02 | Serious | [expressions/F02_serious.png](expressions/F02_serious.png) |
 | F03 | Confused | [expressions/F03_confused.png](expressions/F03_confused.png) |
-| F04 | Worried | [expressions/F04_worried.png](expressions/F04_worried.png) |
+| F14 | Worried (historical F04, identical PNG bytes) | [expressions/F14_worried.png](expressions/F14_worried.png) |
 | F05 | Excited | [expressions/F05_excited.png](expressions/F05_excited.png) |
 | F07 | Thinking | [expressions/F07_thinking.png](expressions/F07_thinking.png) |
 | F08 | Suspicious | [expressions/F08_suspicious.png](expressions/F08_suspicious.png) |
@@ -57,4 +57,8 @@ The newest nine uploaded candidate images are [preserved here](incoming/2026-10-
 - U08: **Suspicious**, canonical **F08**.
 - U09: **Thinking**, canonical **F07**.
 
-**F04 Worried and F05 Excited are now stored** as original user-supplied PNGs, with verified SHA-256 hashes. F05 is byte-identical to previously saved U01. F09 Angry uses U04 and F10 Smirk uses U02. The files remain unchanged; the registered F-series IDs determine selection.
+**F14 Worried (formerly misnumbered F04) and F05 Excited are now stored** as original user-supplied PNGs, with verified SHA-256 hashes. F05 is byte-identical to previously saved U01. F09 Angry uses U04 and F10 Smirk uses U02. The files remain unchanged; the registered F-series IDs determine selection.
+
+## F04 Laughing receipt, October 22
+
+The owner supplied **F04 Laughing**, a 1374×1145 transparent RGBA PNG with the approved host, pointing gesture and laughter accents, SHA-256 `758b94e77e8552c17d1d71e701d80b1b6f43de9a279632f7fc8fbd9d57cec44c`. **The original image bytes are not yet in GitHub**, although the upload is preserved in the conversation. Correct destination: `expressions/F04_laughing.png`. Never use F14 Worried as F04 Laughing.
