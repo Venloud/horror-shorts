@@ -1290,7 +1290,8 @@ class Renderer:
         label = str(shot.get("text") or "").strip()[:40] if shot.get("text_mode") in (
             "location", "name", "evidence", "punch", "quote", "stamp") else ""
         close = shot.get("shot_type") == "close"
-        if not label and (not prop or prop == "none" or close):
+        # A close-up is face-led. Keep all evidence labels/props off the face.
+        if close or (not label and prop == "none"):
             return
         key = ("generic-stage", label, prop, close)
         layer = self.layer_cache.get(key)
