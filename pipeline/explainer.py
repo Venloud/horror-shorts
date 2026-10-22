@@ -1192,7 +1192,10 @@ class Renderer:
                 spots = [(prim, s.get("action"), s.get("expression"), s.get("view"), s.get("facing", "right"), 0.5)]
             elif sec and sec != "crowd":
                 spots = [(sec, s.get("action2"), "neutral", "three_quarter", "left", 0.5)]
-            height, feet = ({"wide": (690, 1300), "medium": (940, 1365), "close": (1190, 1390)}
+            # Editorial composition: the approved host should dominate mobile frames
+            # without placing eyes or important details under the bottom captions.
+            height, feet = ({"wide": (1000 if len(spots) == 1 else 835, 1480),
+                             "medium": (1300, 1500), "close": (1190, 1460)}
                             if CONFIG.get("explainer_character_stage", True)
                             else {"wide": (820, 1660), "medium": (1150, 1980), "close": (1500, 2150)}).get(st, (690, 1300))
             if st == "close" and len(spots) == 1 and spots[0][0] == "you" and spots[0][1] not in self.sm.MOVING:
@@ -1200,10 +1203,12 @@ class Renderer:
                 if CONFIG.get("explainer_character_stage", True):
                     # Cropped straight from the SAME rig used for all full-body action poses.
                     im = sprites.stage_closeup(spots[0][2] or "neutral", spots[0][3] or "front")
-                    im = im.resize((1030, 1288), Image.Resampling.LANCZOS)
+                    im = im.resize((1100, 1375), Image.Resampling.LANCZOS)
                     if spots[0][4] == "left":
                         im = ImageOps.mirror(im)
-                    self._paste(frame, im, int(W / 2 - im.width / 2), 38)
+                    # Face/eyes occupy the hero area, torso finishes above the lower
+                    # mobile caption band; avoid tiny, high floating portraits.
+                    self._paste(frame, im, int(W / 2 - im.width / 2), 150)
                     spots = []
                 else:
                     cu = sprites.closeup(spots[0][2] or "neutral", spots[0][3] or "front")
@@ -1580,7 +1585,11 @@ class Renderer:
             frame = self.scene_frame(seg, local)
             if CONFIG.get("explainer_cinematic_camera", False):
                 frame = noir.cinematic_camera(frame, sh.get("motion", "none"), local, dur)
-        self.captions(frame, t, "scene")
+        # Remotion owns kinetic captions only when explicitly enabled. Normal
+        # Night Files builds continue using Pillow captions unchanged.
+        if not (CONFIG.get("remotion_polish", False) or
+                CONFIG.get("explainer_caption_engine") == "remotion"):
+            self.captions(frame, t, "scene")
         return frame
 
     def _index(self, seg: dict) -> int:
@@ -2049,6 +2058,13 @@ def render(story: dict, narration: dict, p: dict, assets: dict, workdir: Path) -
         f"{sum(lens) / len(lens):.1f}s), {n} frames in {time.time() - t0:.0f}s")
     (workdir / "explainer_plan.json").write_text(json.dumps(
         {"plan": p, "segments": [{**s, "shot": s["shot"]} for s in segs]}, indent=1, ensure_ascii=False, default=str))
+    if CONFIG.get("remotion_polish", False):
+        # Opt in only. One existing Night Files render, then its frame-aware
+        # editorial post-pass. Failure is explicit, never drop missing captions.
+        from remotion_post import polish
+        finished = workdir / "explainer_polished.mp4"
+        out = polish(out, finished, segs, narration, FPS, n)
+        story["explainer_render"]["remotion_polish"] = True
     return out
 
 
