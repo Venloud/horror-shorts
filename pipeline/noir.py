@@ -700,9 +700,14 @@ def _draw_shadow_person(draw: ImageDraw.ImageDraw, cx: int, baseline: int,
     """Abstract SHADOW symbol only. This is never represented as archival evidence."""
     r = int(56 * size)
     head = int(baseline - 270 * size)
-    draw.ellipse((cx-r, head-r, cx+r, head+r), fill=fill)
+    # Light rim is required for legibility on the dark editorial stage.
+    rim = (180, 188, 196, int(fill[3] * 0.75))
+    draw.ellipse((cx-r, head-r, cx+r, head+r),
+                 fill=fill, outline=rim, width=max(3,int(5*size)))
     draw.rounded_rectangle((cx-int(80*size), head+int(64*size),
-                            cx+int(80*size), baseline), radius=int(35*size), fill=fill)
+                            cx+int(80*size), baseline),
+                           radius=int(35*size), fill=fill, outline=rim,
+                           width=max(3,int(5*size)))
 
 
 def _t_photo_scan(fields, t, dur, ctx):
