@@ -1,0 +1,52 @@
+# Night Files, free motion-design tools sourced from Venloud's other repositories
+
+Date: 2026-10-22. Owner direction: retain approved M/F character originals; improve editorial motion, typography, scene-grounded explanation graphics and evidence reveals. **Renovate existing `pipeline/explainer.py` and `pipeline/noir.py`. No alternate renderer or publishing workflow.**
+
+## Sources inspected and licensing implications
+
+| Repository | Relevant free capability | Decision |
+| --- | --- | --- |
+| [Venloud/bouriko-shorts](https://github.com/Venloud/bouriko-shorts) | Remotion React compositions, precise frame/voice timing, motion graphics; `remotion/render.mts` | **Reusable architecture**. Night Files already has Remotion 4; do not blindly copy or re-enable its failed `remotion_join`. The current compatible Pillow/FFmpeg branch can be reviewed first. |
+| [Venloud/OpenMontage](https://github.com/Venloud/OpenMontage) | Production QA, dynamic visualization, parallax/camera ideas, reference-led composition | **Concept inspiration only.** Source license **AGPL-3.0**, not MIT. No OpenMontage source copied into this repo. OpenMontage demos often use *paid* image/video/voice APIs, so installing everything would violate a zero-cost test. |
+| [Venloud/MoneyPrinterTurbo](https://github.com/Venloud/MoneyPrinterTurbo) | Subtitle styling, SFX/footage timing, audio normalization, asset caching, video assembly | **Future portable techniques**. Upstream code is MIT, but its AI services are not automatically free. Preserve attribution if any code is later copied. Existing Night Files FFmpeg and captions already cover basic assembly. |
+| [Venloud/youtools](https://github.com/Venloud/youtools) | YouTube video downloader | **Not appropriate** for cinematic scene rendering or licensing-sensitive footage ingestion. Do not add it. |
+| [Venloud/claudevandam](https://github.com/Venloud/claudevandam) | Skills, QA/handoff principles, mandatory prototype clean-up | **Process guidance**: test preview, document evidence, review actual MP4, merge through PR, then close integration debt. |
+
+### Licensing
+- Remotion is free for eligible individuals/small teams, with eligibility and use restrictions; verify at https://www.remotion.dev/docs/license if business status changes.
+- FFmpeg, Python, Pillow and NumPy are free tools, but comply with each actual binary's codec distribution/license obligations.
+- OpenMontage is AGPLv3; this implementation **does not include its source**.
+- Commercial royalty-free asset/music terms are asset-specific; none added here.
+
+## Implemented on the proposed feature branch
+
+**New original reusable motion templates (all 0 API calls):**
+- `photo_scan`: photo-shaped investigative graphic with sweeping scan line, focus circles, illustrative shadow symbols, and prominent **ILLUSTRATIVE RECONSTRUCTION** marking. Not a fake original photograph.
+- `clock_stop`: animated clock hand visibly decelerates to a stop; optional time label is accepted only when grounded in the narration.
+- `shadow_reveal`: animated sequence of count-grounded schematic silhouettes with **NOT ARCHIVAL FOOTAGE** label. Requires actual spoken count for the `shadow_reveal` template.
+
+**Camera staging:** `cinematic_camera` supports subtle_push / subtle_pan / parallax_light on a composed scene before rendering captions. Default **OFF** for production (`explainer_cinematic_camera` config not enabled); the isolated manual preview enables it in memory only.
+
+**Planning and rendering:** Storyboard supports the three templates through `GRAPHIC_TEXT` and `_valid_graphic`, which enforce scene/narration grounding, and no new cloud asset generation. Existing approved original PNGs and red aura untouched.
+
+**Preview:** The existing `tools/night_files_visual_preview.py` fixture now exercises these effects, instead of showing mostly generic text cards. It stays offline, private to Actions artifacts, with eSpeak placeholder voice. No production posting, buffer changes, paid services, or duplicate workflows.
+
+**Tests:** `tests/test_free_motion_toolkit.py` validates time-varying frames, camera opt-in, no fabrication of extra silhouettes, and correct denial of unsupported subjects. CI validation and manual MP4 visual review are separate gates.
+
+## Still pending, do not claim completed
+
+- **No professional-motion-standard verdict until reviewing the *actual* MP4** on a recent manual run. Inspect frames, music, sound cues, transitions, narration sync and mobile captions.
+- Improve approved bust cropping and inconsistent character scale if preview still exposes them.
+- Remotion integration into actual Night Files production is **not yet verified**. Do not silently switch `remotion_join` or install the full OpenMontage pipeline.
+- Production still uses generic procedural fallbacks for missing P action poses. Preserve approved assets.
+- After PR review and owner approval, integrate to main; remove/retire any temporary tests only after equivalent coverage lives in CI, per Vandam reintegration policy.
+
+## Safe test sequence
+
+1. Run CI on this **draft PR**. Resolve failures without merging.
+2. Review graphics using the new manual preview helper locally or in an isolated branch-associated Actions run.
+3. Compare actual output with previous 17-second baseline; capture specific visual shortcomings.
+4. Merge only with owner approval. Then run the manual preview from main (and inspect actual MP4).
+5. Document what remains unfinished. No unrequested production publishing.
+
+This document records *implementation intent and test requirements*, not proof that a finished viral-quality video was produced.
