@@ -1,0 +1,143 @@
+name: TikTok Clipper Scheduled Posts
+# Restored 2026-10-21 at the owner's request. TikTok INBOX DRAFTS ONLY.
+# Never uploads MrBeast footage to YouTube or publishes TikTok directly.
+on:
+  schedule:
+    - cron: '10 7,19 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tiktok-clipper-posts
+  cancel-in-progress: false
+jobs:
+  tiktok:
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout clipper feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/mrbeast-split-tiktok
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install media tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          python -m pip install -q requests faster-whisper
+      - name: Choose rotating clip and background
+        id: rotation
+        run: |
+          python - <<'PY'
+          import os
+          from datetime import datetime,timezone
+          slot=int(datetime.now(timezone.utc).timestamp()//43200)
+          with open(os.environ["GITHUB_OUTPUT"],"a") as f:
+              f.write(f"slot={slot}\n")
+              f.write(f"background={slot}\n")
+          PY
+      - name: Download source assets
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from clipper.background import ASSETS,RELEASE
+          from clipper.direct_download import download
+          root=Path('clipper/assets')
+          root.mkdir(parents=True,exist_ok=True)
+          for name in ['MrBeast_compressed.mp4']+ASSETS:
+              download(RELEASE+name,root/name,max_mb=900)
+          PY
+      - name: Select original video part
+        id: part
+        env:
+          SLOT: ${{ steps.rotation.outputs.slot }}
+        run: |
+          python - <<'PY'
+          import os,subprocess,math
+          source='clipper/assets/MrBeast_compressed.mp4'
+          seconds=float(subprocess.check_output(['ffprobe','-v','error','-show_entries','format=duration','-of','default=noprint_wrappers=1:nokey=1',source],text=True).strip())
+          count=int(seconds//60)
+          if count<1:raise RuntimeError('Source video is shorter than one minute')
+          slot=int(os.environ['SLOT'])
+          # Reverse part order, still uniquely covers all full parts before repeating.
+          part=1+((-slot)%count)
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              f.write(f'number={part}\n')
+              f.write(f'count={count}\n')
+          print(f'Original duration: {seconds:.1f}s; Part {part} of {count}; source offset {(part-1)*60}s')
+          PY
+      - name: Prepare 60-second background
+        env:
+          OFFSET: ${{ steps.rotation.outputs.background }}
+        run: |
+          python clipper/background.py --assets-dir clipper/assets --duration 60 --offset "$OFFSET" --output /tmp/clipper_background.mp4
+      - name: Generate captions for selected original part
+        env:
+          PART: ${{ steps.part.outputs.number }}
+        run: |
+          python clipper/highlights.py --source clipper/assets/MrBeast_compressed.mp4 --duration 60 --part-number "$PART"
+      - name: Render 60-second TikTok
+        run: |
+          python - <<'PY'
+          import json,subprocess
+          s=json.load(open('clipper/output/selection.json'))
+          subprocess.run(['python','clipper/render.py',
+            '--source','clipper/assets/MrBeast_compressed.mp4',
+            '--background','/tmp/clipper_background.mp4',
+            '--start',str(s['start']),'--duration','60',
+            '--subtitles','clipper/output/captions.ass'],check=True)
+          PY
+      - name: Prepare copy-ready TikTok caption
+        env:
+          PART: ${{ steps.part.outputs.number }}
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          part=int(os.environ["PART"])
+          caption=(f"Would you last in MrBeast's grocery store challenge? 🛒😳 | Part {part}\n\n"
+                   "#MrBeast #TeamJuan #GroceryStoreChallenge #MrBeastChallenge #MrBeastClips")
+          Path("clipper/output/caption.txt").write_text(caption+"\n",encoding="utf-8")
+          with open(os.environ["GITHUB_STEP_SUMMARY"],"a",encoding="utf-8") as summary:
+              summary.write("## Copy-ready TikTok caption\n\n")
+              summary.write(f"**Part {part}**\n\n```\n{caption}\n```\n\n")
+              summary.write("TikTok inbox video uploads don't prefill captions. Paste this in the TikTok editor.\n")
+          print(f"Caption and five hashtags saved for Part {part}")
+          PY
+      - name: Ensure TikTok upload is under 64 MB
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          p=Path('clipper/output/tiktok.mp4')
+          if p.stat().st_size>63*1024*1024:
+              out=p.with_name('compressed.mp4')
+              subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-y',
+                '-i',str(p),'-c:v','libx264','-preset','fast','-b:v','3400k',
+                '-maxrate','3800k','-bufsize','7600k','-c:a','aac','-b:a','128k',
+                '-movflags','+faststart',str(out)],check=True)
+              out.replace(p)
+          if p.stat().st_size>64*1024*1024:
+              raise RuntimeError('Clip too large for TikTok API')
+          print(f'Ready: {p.stat().st_size} bytes')
+          PY
+      - name: Upload preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tiktok-scheduled-render
+          path: |
+            clipper/output/tiktok.mp4
+            clipper/output/selection.json
+            clipper/output/captions.ass
+            clipper/output/caption.txt
+          retention-days: 7
+      - name: Send to TikTok inbox notification
+        env:
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+          TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
+        run: |
+          python clipper/post.py --video clipper/output/tiktok.mp4 --mode draft
