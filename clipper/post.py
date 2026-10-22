@@ -1,21 +1,26 @@
-"""Send a rendered clip to the existing Night Files TikTok integration."""
+"""Send a rendered clip to the Night Files TikTok inbox as a draft only.
+
+Direct/public publishing is intentionally not available to this clipper.
+"""
 import argparse
 import sys
 from pathlib import Path
-sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"pipeline"))
-from tiktok import send_to_drafts, post_direct
-from common import CONFIG
 
-p=argparse.ArgumentParser()
-p.add_argument("--video",required=True)
-p.add_argument("--mode",choices=["draft","direct"],default="draft")
-p.add_argument("--caption",default="MrBeast moments #MrBeast #clips")
-a=p.parse_args()
-video=Path(a.video)
-if not video.is_file():p.error("Video not found")
-if a.mode=="direct":
-    # Never silently publish as private when public posting was requested.
-    CONFIG["direct_privacy"]="PUBLIC_TO_EVERYONE"
-    print(post_direct(video,a.caption))
-else:
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pipeline"))
+from tiktok import send_to_drafts
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--video", required=True)
+    parser.add_argument("--mode", choices=["draft"], default="draft")
+    args = parser.parse_args()
+
+    video = Path(args.video)
+    if not video.is_file():
+        parser.error("Video not found")
     print(send_to_drafts(video))
+
+
+if __name__ == "__main__":
+    main()
