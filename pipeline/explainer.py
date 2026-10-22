@@ -536,7 +536,7 @@ def _valid_graphic(s: dict, at, ctx: dict) -> dict | None:
                 count = int(f.get("count") or (1 if tpl == "photo_scan" else 0))
             except (ValueError, TypeError):
                 return None
-            if not (1 <= count <= 4 and (count <= 3 or count in said)):
+            if not (1 <= count <= 4 and (tpl == "photo_scan" and count == 1 or count in said)):
                 return None
             out["count"] = count
         if tpl == "clock_stop":
