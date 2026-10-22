@@ -1192,6 +1192,62 @@ class Renderer:
         self.overlay(frame, s, t, target)
         return frame
 
+    def _stage_context(self, frame: Image.Image, shot: dict, seg: dict) -> None:
+        """Minimal contextual cue plus single schematic prop. The actor does the storytelling."""
+        scs = self.story.get("scenes") or []
+        words = scs[min(seg["scene"], len(scs) - 1)].get("narration", "").lower() if scs else ""
+        if any(k in words for k in ("compartment", "carriage", "passenger")):
+            cue, prop = "TRAIN COMPARTMENT", "train"
+        elif any(k in words for k in ("luggage", "baggage", "trunk", "belongings")):
+            cue, prop = "MISSING LUGGAGE", "case"
+        elif any(k in words for k in ("roundhay", "garden", "footage", "film that lasts")):
+            cue, prop = "ROUNDHAY FOOTAGE", "film"
+        elif any(k in words for k in ("train", "paris", "station", "railway")):
+            cue, prop = "THE TRAIN", "train"
+        elif any(k in words for k in ("camera", "inventor", "lens", "workshop", "negative")):
+            cue, prop = "THE INVENTOR", "camera"
+        else:
+            cue, prop = "THE EVIDENCE", "file"
+        key = ("stage-cue", cue)
+        layer = self.layer_cache.get(key)
+        if layer is None:
+            layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+            d = ImageDraw.Draw(layer)
+            col, hot = (210, 221, 235, 200), self.acc + (255,)
+            # Deliberate editorial margins: actor centre, evidence prop at upper right,
+            # captions in their own bottom strip. No painted scenery.
+            d.rounded_rectangle((66, 215, 552, 281), radius=14, fill=(16, 21, 28, 230))
+            d.rectangle((75, 229, 84, 266), fill=hot)
+            d.text((102, 231), cue, font=font("mono", 26), fill=(243, 244, 245, 255))
+            if prop == "film":
+                d.rounded_rectangle((794, 468, 997, 608), radius=12, outline=col, width=7)
+                for yy in (486, 539, 584):
+                    for xx in (804, 971):
+                        d.rectangle((xx, yy, xx + 16, yy + 14), outline=col, width=3)
+                d.line((845, 491, 949, 581), fill=hot, width=8)
+            elif prop == "train":
+                d.rounded_rectangle((791, 468, 995, 670), radius=22, outline=col, width=8)
+                for xx in (816, 909):
+                    d.rectangle((xx, 503, xx + 61, 558), outline=col, width=5)
+                d.line((807, 606, 971, 606), fill=hot, width=8)
+                for xx in (827, 952):
+                    d.ellipse((xx - 22, 648, xx + 22, 692), outline=col, width=7)
+            elif prop == "case":
+                d.rounded_rectangle((803, 527, 991, 680), radius=15, outline=col, width=8)
+                d.arc((856, 476, 942, 548), 183, 358, fill=hot, width=9)
+                d.line((808, 592, 985, 592), fill=col, width=5)
+            elif prop == "camera":
+                d.rounded_rectangle((795, 520, 991, 659), radius=14, outline=col, width=8)
+                d.ellipse((847, 536, 934, 623), outline=hot, width=8)
+                d.line((844, 659, 794, 754), fill=col, width=8)
+                d.line((937, 659, 983, 754), fill=col, width=8)
+            else:
+                d.rounded_rectangle((821, 504, 981, 696), radius=8, outline=col, width=7)
+                for yy in (554, 601, 649):
+                    d.line((845, yy, 959, yy), fill=hot if yy == 601 else col, width=5)
+            self.layer_cache[key] = layer
+        frame.alpha_composite(layer)
+
     @staticmethod
     def _travel(action, facing, x) -> float:
         speed = {"walking": 260, "boarding": 300, "sneaking": 160, "running": 520}.get(action or "", 0)
