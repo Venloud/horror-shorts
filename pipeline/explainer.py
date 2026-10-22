@@ -1502,7 +1502,18 @@ class Renderer:
                        if seg["start"] - 0.05 <= w["start"] < seg["end"]], "bg": bg}
         if sh.get("template") == "filmstrip":
             if "stills" not in self.layer_cache:
-                self.layer_cache["stills"] = [Image.open(p) for p in list(self.assets["plates"].values())[:4]]
+                if CONFIG.get("explainer_character_stage", True):
+                    # Reusable storyboard panels of the ACTOR, not four blank placeholders or AI scenes.
+                    result = []
+                    for act, expr in (("holding", "curious"), ("pointing", "determined"),
+                                      ("thinking", "worried"), ("reacting", "shocked")):
+                        bg_im = Image.new("RGB", (600, 760), (49, 54, 60))
+                        fig, (fx, fy) = self.figure("you", act, expr, "front", "right", 0.0, 600)
+                        bg_im.paste(fig, (round(300 - fx), round(705 - fy)), fig)
+                        result.append(bg_im)
+                    self.layer_cache["stills"] = result
+                else:
+                    self.layer_cache["stills"] = [Image.open(p) for p in list(self.assets["plates"].values())[:4]]
             c["stills"] = self.layer_cache["stills"]
         if sh.get("template") == "missing":
             who = (sh.get("fields") or {}).get("subject") or "you"
