@@ -1,11 +1,23 @@
-# Split-screen TikTok clipper
+# MrBeast TikTok clipper
 
-Independent from the scheduled horror pipeline. Launch **Split-screen TikTok clipper** in GitHub Actions using **Run workflow**.
+The reusable `clipper/` source is separate from Night Files' horror rendering pipeline. **Only inbox drafts are allowed.** Direct/public publishing is intentionally unavailable from `clipper/post.py`.
 
-The default source is the supplied MrBeast video. Leave the background URL blank to rotate between **Orbital** and **Spicy Sauce** Minecraft parkour videos, or supply a custom HTTPS YouTube/video URL that you have permission to reuse. Credit the background creator in the TikTok description according to their published terms. Set the start time to **-1** for automatic highlight selection (default), or enter a manual start time. Set a duration of **1 to 59 seconds**. Output is 1080x1920, top source and bottom background, with original source audio.
+## Canonical workflows
 
-**Preview** is the default. The MP4 is stored as a GitHub Actions artifact for seven days. **Draft** uses the existing TikTok credentials to send it to your TikTok inbox. **Direct** uses the existing TikTok direct-post integration, with the privacy setting already configured by the project. Only select it when you are ready to publish.
+The *existing* `main` workflows are:
+- `.github/workflows/tiktok_clipper_preview.yml`, manual preview, never posts.
+- `.github/workflows/tiktok_clipper_scheduled.yml`, scheduled **TikTok inbox drafts only**, never direct posting or YouTube.
 
-For local usage: `python clipper/render.py --source source.mp4 --background gameplay.mp4 --start 30 --duration 45`. The GitHub workflow uses faster-whisper to transcribe the source, score speech-rich passages, choose a highlight, and burn synchronized caption groups. It also saves the selected timestamp and SRT in the preview artifact. The heuristic is not a guarantee of a compelling clip, so review previews before publishing. Local renders can use optional `--subtitles captions.srt`.
+These currently checkout `feature/mrbeast-split-tiktok` to load the clipper code. **Do not switch their checkout ref to `main` before that code is fully integrated, tested and approved.** The old `split_clipper.yml` and `split_clipper_test.yml` were removed from this PR because they would create duplicate/unsafe workflows.
 
-The workflow downloads one of the two selected background sources when no custom URL is provided. Recheck reuse terms before posting, and note that YouTube downloads can fail due to access restrictions. This does not establish permission to repost the top-half source. Source access and TikTok posting remain subject to applicable permissions and platform rules.
+The scheduled flow loads source/background video assets, makes subtitles and a vertical render, checks size, then uses `clipper/post.py --mode draft`. TikTok inbox uploads do not prefill captions: copy the saved caption from the workflow artifacts. Video sources must be reused only with appropriate rights and platform permission.
+
+## Local preview
+
+`python clipper/render.py --source source.mp4 --background gameplay.mp4 --start 30 --duration 45`
+
+The offline synthetic render test is `python clipper/test_smoke.py`. It requires `ffmpeg` and `ffprobe`, and tests a small synthetic render, **not** asset downloading, TikTok authentication, successful inbox receipt, copyright permission, or an approved finished video.
+
+## Integration gate
+
+Review code and source rights, run the offline smoke test and inspect the real MP4, then validate an authorized test TikTok inbox draft. Only after acceptance may the source join `main` and existing workflows have their checkout refs updated. Do not create another scheduled/preview workflow or publish directly.
