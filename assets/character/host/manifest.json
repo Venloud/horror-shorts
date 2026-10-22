@@ -133,5 +133,15 @@
   ],
   "legacy_closeups": "retired after original image import",
   "legacy_full_body_cutouts": "replacement pending; remove only when corresponding P-series is approved",
-  "updated": "2026-10-21"
+  "updated": "2026-10-21",
+  "incoming_batches": [
+    {
+      "id": "2026-10-21-expression-intake-01",
+      "path": "incoming/2026-10-21/batch.json",
+      "readme": "incoming/2026-10-21/README.md",
+      "count": 9,
+      "status": "stored_unclassified",
+      "next_step": "approve exact F-series mapping before renderer use"
+    }
+  ]
 }
