@@ -732,6 +732,17 @@ def _focus_ring_points(target: tuple, seed: int = 0, padding: float = 22.0) -> l
     return points
 
 
+def draw_attention_ring(draw: ImageDraw.ImageDraw, bounds: tuple, color: tuple,
+                        *, seed: int = 0, padding: float = 18, width: int = 5) -> None:
+    """Generic focus annotation for ANY evidence/prop/figure with known screen bounds.
+
+    Imperfect outline is intentional. Geometric containment of the target is not
+    optional. Supply actual rendered object bounds, never a guessed label position.
+    """
+    points = _focus_ring_points(bounds, seed=seed, padding=padding)
+    draw.line(points + [points[0]], fill=color, width=width, joint="curve")
+
+
 def _resolve_clock_time(fields: dict) -> str:
     """Resolve a clock value from arbitrary storyboard fields, never from a named story.
 
@@ -806,8 +817,8 @@ def _t_photo_scan(fields, t, dur, ctx):
         # oval encloses the ENTIRE subject, not empty space near the subject.
         target = (cx-80*size, baseline-(270+56)*size,
                   cx+80*size, baseline)
-        ring = _focus_ring_points(target, seed=k+1, padding=15)
-        d.line(ring+[ring[0]], fill=acc+(int(120*a),), width=5, joint="curve")
+        draw_attention_ring(d, target, acc+(int(120*a),),
+                            seed=k+1, padding=15)
     # Light passes over subject, held evidence remains in focus after it passes.
     g = ease((t-0.35)/max(0.3, dur-0.9))
     beam = int(x0 + 45 + (x1-x0-90)*g)
@@ -887,8 +898,8 @@ def _t_shadow_reveal(fields, t, dur, ctx):
         _draw_shadow_person(d,cx,baseline,size,(10,11,16,int(240*a)))
         target = (cx-80*size, baseline-(270+56)*size,
                   cx+80*size, baseline)
-        ring = _focus_ring_points(target, seed=k+11, padding=17)
-        d.line(ring+[ring[0]],fill=acc+(int(128*a),),width=5,joint="curve")
+        draw_attention_ring(d, target, acc+(int(128*a),),
+                            seed=k+11, padding=17)
         d.text((cx,1235),f"{k+1:02d}",font=font("mono",44),
                fill=acc+(int(255*a),),anchor="mm")
     d.text((110,1320),"SCHEMATIC, NOT ARCHIVAL FOOTAGE",font=font("mono",25),
