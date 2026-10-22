@@ -31,7 +31,9 @@ Date: 2026-10-22. Owner direction: retain approved M/F character originals; impr
 
 **Preview:** The existing `tools/night_files_visual_preview.py` fixture now exercises these effects, instead of showing mostly generic text cards. It stays offline, private to Actions artifacts, with eSpeak placeholder voice. No production posting, buffer changes, paid services, or duplicate workflows.
 
-**Tests:** `tests/test_free_motion_toolkit.py` validates time-varying frames, camera opt-in, no fabrication of extra silhouettes, and correct denial of unsupported subjects. CI validation and manual MP4 visual review are separate gates.
+**Audio/SFX:** The existing Night Files FFmpeg/soundfile mixer now accepts an optional fourth `clip_seconds` field on an effect cue, with a short fade to avoid clicks. The offline preview selects camera shutter, whoosh, clock tick, and heartbeat from the repository's already-licensed SFX assets. Regular production triple-item events are unchanged. No new external audio packs added.
+
+**Tests:** `tests/test_free_motion_toolkit.py` validates time-varying frames, camera opt-in, grounded shadow counts, missing/unsupported subjects, and length-limited existing SFX cues. CI validation and manual MP4 visual review are separate gates.
 
 ## Still pending, do not claim completed
 
