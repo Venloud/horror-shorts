@@ -1083,11 +1083,18 @@ class Renderer:
     def figure(self, who, action, expr, view, facing, t, height, alpha=1.0):
         import sprites
         if CONFIG.get("explainer_character_stage", True):
-            # Draw crisp at native size; freeze at the chosen action pose, no breathing/blinking/walking loop.
-            # Hold one expressive stride frame. A zero-phase run has both legs stacked together.
-            pose_t = 0.15 if action in self.sm.MOVING else 0.0
-            im, foot = self.sm.draw(self.look(who), action, expr, view, facing, pose_t, height, False)
-            im = sprites.rim_native(im)
+            # Approved M01-M04 images are the source of truth for neutral/idle whole-body views.
+            # No added halo or recolor: the original red aura has already been approved.
+            original = (sprites.approved_full_body(view, height, facing)
+                        if who == "you" and action in ("standing", "waiting") else None)
+            if original is not None:
+                im, foot = original
+            else:
+                # Unapproved action poses use the temporary procedural stage rig until
+                # their individual P-series PNG replacements arrive.
+                pose_t = 0.15 if action in self.sm.MOVING else 0.0
+                im, foot = self.sm.draw(self.look(who), action, expr, view, facing, pose_t, height, False)
+                im = sprites.rim_native(im)
         else:
             blink = (t % 3.7) < 0.12
             tq = round(t * 15) / 15 if action in self.sm.MOVING or action in ("reacting", "scared", "turning") else \
