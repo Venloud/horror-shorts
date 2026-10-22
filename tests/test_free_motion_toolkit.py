@@ -39,7 +39,7 @@ class CinematicToolTests(unittest.TestCase):
         self.assertIs(noir.cinematic_camera(image, "none", 1.2, 2.0), image)
         self.assertIsNotNone(ImageChops.difference(
             noir.cinematic_camera(image, "subtle_push", 0.0, 2.0),
-            noir.cinematic_camera(image, "subtle_push", 1.8, 2.0)).getbbox())
+            noir.cinematic_camera(image, "subtle_push", 1.8, 2.0)).convert("RGB").getbbox())
 
     def test_storyboard_rejects_fabricated_counts_or_subjects(self):
         def ctx(low, said):
