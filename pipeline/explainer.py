@@ -1146,23 +1146,33 @@ class Renderer:
                             else {"wide": (820, 1660), "medium": (1150, 1980), "close": (1500, 2150)}).get(st, (690, 1300))
             if st == "close" and len(spots) == 1 and spots[0][0] == "you" and spots[0][1] not in self.sm.MOVING:
                 import sprites  # the owner's hi-res head-and-shoulders pack: sharp emotional close-ups
-                cu = sprites.closeup(spots[0][2] or "neutral", spots[0][3] or "front")
-                if cu:
-                    w0 = int(1150 * (1.0 + 0.015 * math.sin(t * 2.4)))
-                    im = sprites.closeup_image(str(cu), w0)
+                if CONFIG.get("explainer_character_stage", True):
+                    # Cropped straight from the SAME rig used for all full-body action poses.
+                    im = sprites.stage_closeup(spots[0][2] or "neutral", spots[0][3] or "front")
+                    im = im.resize((1030, 1288), Image.Resampling.LANCZOS)
                     if spots[0][4] == "left":
                         im = ImageOps.mirror(im)
-                    self._paste(frame, im, int(W / 2 - im.width / 2), int(1880 - im.height + 6 * math.sin(t * 2.4)))
+                    self._paste(frame, im, int(W / 2 - im.width / 2), 38)
                     spots = []
+                else:
+                    cu = sprites.closeup(spots[0][2] or "neutral", spots[0][3] or "front")
+                    if cu:
+                        w0 = int(1150 * (1.0 + 0.015 * math.sin(t * 2.4)))
+                        im = sprites.closeup_image(str(cu), w0)
+                        if spots[0][4] == "left":
+                            im = ImageOps.mirror(im)
+                        self._paste(frame, im, int(W / 2 - im.width / 2),
+                                    int(1880 - im.height + 6 * math.sin(t * 2.4)))
+                        spots = []
             for who, act, expr, view, facing, fx in spots:
                 act = act or "standing"
-                move = self._travel(act, facing, x)
-                if len(spots) == 1 and act in self.sm.MOVING:
+                move = 0.0 if CONFIG.get('explainer_character_stage', True) else self._travel(act, facing, x)
+                if len(spots) == 1 and act in self.sm.MOVING and not CONFIG.get('explainer_character_stage', True):
                     fx = 0.5 - (0.22 if facing == "right" else -0.22) * (1 if st == "wide" else 0.4)
                 im, (fxp, fyp) = self.figure(who, act, expr or "neutral", view or "front", facing, t, height,
-                                             alpha=self._exit_alpha(act, x))
+                                             alpha=1.0 if CONFIG.get('explainer_character_stage', True) else self._exit_alpha(act, x))
                 px = W * fx + move * (1 if st == "wide" else 0.5)
-                if act == "leaving":  # walks away from the camera: smaller and higher
+                if act == "leaving" and not CONFIG.get("explainer_character_stage", True):  # legacy animated exit
                     k = 1 - 0.25 * _ease(x)
                     im = im.resize((max(1, int(im.width * k)), max(1, int(im.height * k))), Image.BILINEAR)
                     fxp, fyp = fxp * k, fyp * k
@@ -1175,7 +1185,10 @@ class Renderer:
                 self._paste(frame, im, int(px - fxp), int(feet_y - fyp))
                 if who != "you" and target is None:
                     target = (px, feet_y - height * 0.95)
-        frame.alpha_composite(self._vignette())
+        if CONFIG.get("explainer_character_stage", True):
+            self._stage_context(frame, s, seg)
+        else:
+            frame.alpha_composite(self._vignette())
         self.overlay(frame, s, t, target)
         return frame
 
