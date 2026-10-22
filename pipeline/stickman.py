@@ -65,10 +65,10 @@ def _ik(root, target, l1, l2, bend):
 def _pose(action: str, view: str, t: float) -> dict:
     """Targets in body units (feet centre at 0,0; facing +x in profile). hands = [near/right, far/left]."""
     side = view in ("side",)
-    p = {"hands": [(1.25, -4.2), (-1.25, -4.2)], "feet": [(0.45, 0.0), (-0.45, 0.0)], "lean": 0.0, "bob": 0.0,
+    p = {"hands": [(2.15, -4.25), (-2.15, -4.25)], "feet": [(0.45, 0.0), (-0.45, 0.0)], "lean": 0.0, "bob": 0.0,
          "drop": 0.0, "dx": 0.0, "head_back": False, "fists": False}
     if side:
-        p["hands"], p["feet"] = [(0.25, -4.2), (-0.15, -4.2)], [(0.15, 0.0), (-0.15, 0.0)]
+        p["hands"], p["feet"] = [(1.35, -4.5), (-1.15, -4.35)], [(0.15, 0.0), (-0.15, 0.0)]
     breath = 0.05 * math.sin(t * 2.4)
     p["bob"] = breath
     if action in ("walking", "boarding", "leaving", "sneaking", "running"):
@@ -113,11 +113,11 @@ def _pose(action: str, view: str, t: float) -> dict:
     elif action == "thinking":
         p["hands"] = [(0.25, -7.45), (-0.35, -5.3)] if not side else [(0.9, -7.6), (0.4, -5.4)]
     elif action == "holding":
-        p["hands"] = [(0.4, -5.4), (-0.4, -5.4)] if not side else [(1.2, -5.4), (0.9, -5.3)]
+        p["hands"] = [(2.20, -5.4), (-2.20, -5.4)] if not side else [(2.1, -5.4), (1.1, -5.0)]
     elif action == "reacting":
         k = min(1.0, t / 0.18)
-        p["hands"] = [(1.25 - 0.2 * k, -4.2 - 3.9 * k), (-1.25 + 0.2 * k, -4.2 - 3.9 * k)] if not side else \
-            [(1.0, -8.0 * k - 4.2 * (1 - k)), (0.6, -7.8 * k - 4.2 * (1 - k))]
+        p["hands"] = [(2.2, -8.1), (-2.2, -8.1)] if not side else \
+            [(1.9, -7.9), (1.0, -7.8)]
         p["lean"] = -4.0 * k
     elif action == "scared":
         jit = 0.06 * math.sin(t * 40)
@@ -289,19 +289,30 @@ def _draw(look_items, action, expression, view, facing, t, height, blink):
     if side:
         poly = [(-0.55, -6.95), (0.6, -6.95), (0.72, -3.7), (-0.6, -3.7)]
     else:
-        poly = [(-1.15, -6.95), (1.15, -6.95), (1.02, -4.4), (1.1, -3.6), (-1.1, -3.6), (-1.02, -4.4)]
+        poly = [(-1.16, -6.98), (1.16, -6.98), (1.05, -5.6), (0.81, -3.82),
+                (0.55, -3.64), (-0.55, -3.64), (-0.81, -3.82), (-1.05, -5.6)]
     pts = [P(x, y) for x, y in poly]
     d.polygon(pts, fill=jacket)
     d.line(pts + [pts[0]], fill=INK, width=max(3, int(0.08 * u)), joint="curve")
     if not side and not back and not look.get("dress"):
-        sh_ = [P(-0.42, -6.95), P(0.42, -6.95), P(0.0, -5.5)]
+        sh_ = [P(-0.49, -6.94), P(0.49, -6.94), P(0.0, -4.73)]
         d.polygon(sh_, fill=tuple(look.get("shirt") or HOST["shirt"]) + (255,), outline=INK)
         if look.get("tie"):
-            tie = [P(-0.1, -6.9), P(0.1, -6.9), P(0.17, -5.4), P(0.0, -5.15), P(-0.17, -5.4)]
+            tie = [P(-0.12, -6.82), P(0.12, -6.82), P(0.19, -5.05),
+                   P(0.0, -4.79), P(-0.19, -5.05)]
             d.polygon(tie, fill=tuple(look["tie"]) + (255,), outline=INK)
         for by in (-5.0, -4.5):
             b = P(0.0, by)
             d.ellipse((b[0] - 0.07 * u, b[1] - 0.07 * u, b[0] + 0.07 * u, b[1] + 0.07 * u), fill=INK)
+        # Defined angular lapels make the jacket read as a fitted suit rather than a black box.
+        # Drawn over the shoulders, outside the expanded white-shirt wedge.
+        lapel = tuple(min(255, int(c * 1.55)) for c in jacket[:3]) + (255,)
+        d.line([P(-1.12, -6.91), P(-0.83, -5.76), P(-0.46, -5.55)],
+               fill=lapel, width=max(4, int(0.065 * u)), joint="curve")
+        d.line([P(1.12, -6.91), P(0.83, -5.76), P(0.46, -5.55)],
+               fill=lapel, width=max(4, int(0.065 * u)), joint="curve")
+        d.line([P(-0.85, -5.77), P(-0.55, -4.80)], fill=INK, width=max(3, int(0.06 * u)))
+        d.line([P(0.85, -5.77), P(0.55, -4.80)], fill=INK, width=max(3, int(0.06 * u)))
     elif back:
         a, b = P(0, -6.9), P(0, -3.65)
         d.line([a, b], fill=INK, width=max(2, int(0.05 * u)))
