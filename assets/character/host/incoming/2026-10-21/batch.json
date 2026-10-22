@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "project": "Night Files",
+  "batch_id": "2026-10-21-expression-intake-01",
+  "status": "stored_unclassified",
+  "notes": "Nine user-provided original PNGs; descriptive labels are provisional. Do not automatically assign F04-F13 in upload order because several are variants and some requested emotions are missing.",
+  "assets": [
+    {
+      "id": "U01",
+      "description": "excited_fists",
+      "file": "U01_excited_fists.png",
+      "original_filename": "image(10).png",
+      "width": 1374,
+      "height": 1145,
+      "mode": "RGBA",
+      "sha256": "dc5fe61147b62724ec39fcaf644c240fc0b34bcca2420769a18b51f7e10420d6",
+      "classification": "provisional",
+      "approval": "awaiting_id_confirmation"
+    },
+    {
+      "id": "U02",
+      "description": "smirk_sideeye",
+      "file": "U02_smirk_sideeye.png",
+      "original_filename": "image(20261022-013505).png",
+      "width": 1374,
+      "height": 1145,
+      "mode": "RGBA",
+      "sha256": "2c6b5010266d8a76c2bc6004978a1a46a9128ad3c7803ff627e7f44afe1cef8c",
+      "classification": "provisional",
+      "approval": "awaiting_id_confirmation"
+    },
+    {
+      "id": "U03",
+      "description": "confident_crossed_arms",
+      "file": "U03_confident_crossed_arms.png",
+      "original_filename": "image(20261022-013616).png",
+      "width": 1374,
+      "height": 1145,
+      "mode": "RGBA",
+      "sha256": "f6d438adf300eb05a40cf0ec70bb5f0f4c8bead261badc45666d8f9bf4197379",
+      "classification": "provisional",
+      "approval": "awaiting_id_confirmation"
+    },
+    {
+      "id": "U04",
+      "description": "angry_stern",
+      "file": "U04_angry_stern.png",
+      "original_filename": "image(20261022-013717).png",
+      "width": 1374,
+      "height": 1145,
+      "mode": "RGBA",
+      "sha256": "3f8e5137f254b96a1cbe6aa9946e277cde71a4d1c26637399d6483649114136e",
+      "classification": "provisional",
+      "approval": "awaiting_id_confirmation"
+    },
+    {
+      "id": "U05",
+      "description": "thinking_chin",
+      "file": "U05_thinking_chin.png",
+      "original_filename": "image(20261022-013848).png",
+      "width": 1374,
+      "height": 1145,
+      "mode": "RGBA",
+      "sha256": "d81a7f588d0a2e87d38c61588061da31552c2847e66a643ffe4c997633410114",
+      "classification": "provisional",
+      "approval": "awaiting_id_confirmation"
+    },
+    {
+      "id": "U06",
+      "description": "confused_question_scratch",
+      "file": "U06_confused_question_scratch.png",
+      "original_filename": "image(20261022-014051).png",
+      "width": 1374,
+      "height": 1145,
+      "mode": "RGBA",
+      "sha256": "ce4d3d1163902186b4793ffa2da25e929709cec15545de5aa78e69140b96a2e2",
+      "classification": "provisional",
+      "approval": "awaiting_id_confirmation"
+    },
+    {
+      "id": "U07",
+      "description": "skeptical_sideeye",
+      "file": "U07_skeptical_sideeye.png",
+      "original_filename": "image(20261022-014225).png",
+      "width": 1374,
+      "height": 1145,
+      "mode": "RGBA",
+      "sha256": "3364688d58818e8bd94295deaad24c46f58b3e895098498d6b135a47028bcd6d",
+      "classification": "provisional",
+      "approval": "awaiting_id_confirmation"
+    },
+    {
+      "id": "U08",
+      "description": "suspicious_crossed_arms",
+      "file": "U08_suspicious_crossed_arms.png",
+      "original_filename": "image(20261022-014344).png",
+      "width": 1374,
+      "height": 1145,
+      "mode": "RGBA",
+      "sha256": "41923a851d25f72d9a91cb4b805d168dd41cfcdbd29a2f3c9b2edd835a2c8653",
+      "classification": "provisional",
+      "approval": "awaiting_id_confirmation"
+    },
+    {
+      "id": "U09",
+      "description": "thinking_skeptical",
+      "file": "U09_thinking_skeptical.png",
+      "original_filename": "image(20261022-014515).png",
+      "width": 1374,
+      "height": 1145,
+      "mode": "RGBA",
+      "sha256": "15bf82a839503f5ffaefc9e71eaf48a73ad9e7ca39a0a29fa4f832476bb76189",
+      "classification": "provisional",
+      "approval": "awaiting_id_confirmation"
+    }
+  ]
+}
