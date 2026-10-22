@@ -1084,7 +1084,9 @@ class Renderer:
         import sprites
         if CONFIG.get("explainer_character_stage", True):
             # Draw crisp at native size; freeze at the chosen action pose, no breathing/blinking/walking loop.
-            im, foot = self.sm.draw(self.look(who), action, expr, view, facing, 0.0, height, False)
+            # Hold one expressive stride frame. A zero-phase run has both legs stacked together.
+            pose_t = 0.15 if action in self.sm.MOVING else 0.0
+            im, foot = self.sm.draw(self.look(who), action, expr, view, facing, pose_t, height, False)
             im = sprites.rim_native(im)
         else:
             blink = (t % 3.7) < 0.12
@@ -1252,6 +1254,27 @@ class Renderer:
                     d.line((845, yy, 959, yy), fill=hot if yy == 601 else col, width=5)
             self.layer_cache[key] = layer
         frame.alpha_composite(layer)
+        if shot.get("primary") == "you" and shot.get("action") == "holding" and \
+                shot.get("shot_type") in ("wide", "medium"):
+            # Character holds a real foreground clue between the hands, instead of
+            # gesturing at a floating AI background. Static, high-contrast line art.
+            d = ImageDraw.Draw(frame)
+            x0, x1, y0, y1 = (360, 630, 696, 819) if shot.get("shot_type") == "medium" \
+                             else (397, 599, 743, 836)
+            if any(w in words for w in ("luggage", "trunk", "baggage")):
+                d.rounded_rectangle((x0, y0, x1, y1), radius=14,
+                                    fill=(116, 88, 69), outline=(240, 236, 227), width=6)
+                d.arc((x0 + 83, y0 - 52, x1 - 83, y0 + 48), 182, 358,
+                      fill=(235, 228, 217), width=8)
+                d.line((x0 + 16, y0 + 35, x1 - 16, y0 + 35),
+                       fill=(225, 212, 192), width=5)
+            else:
+                d.rounded_rectangle((x0, y0, x1, y1), radius=8,
+                                    fill=(206, 196, 179), outline=(21, 24, 30), width=7)
+                for k in range(3):
+                    y = y0 + 24 + k * 24
+                    d.line((x0 + 29, y, x1 - 26, y), fill=(64, 57, 55), width=5)
+                d.rectangle((x1 - 45, y1 - 35, x1 - 18, y1 - 12), fill=self.acc + (255,))
 
     @staticmethod
     def _travel(action, facing, x) -> float:
