@@ -1961,15 +1961,26 @@ def _mix_audio(narration: dict, total: float, events: list, out: Path) -> Path:
     mix = np.zeros(int(total * sr) + sr, dtype=np.float32)
     mix[:len(voice)] += voice[:len(mix)]
     cache = {}
-    for t, name, vol in events:
+    for event in events:
+        # Optional fourth item limits SFX duration to the visual beat.
+        # The existing (time, name, volume) production events remain unchanged.
+        t, name, vol = event[:3]
+        clip_seconds = event[3] if len(event) >= 4 else None
         if name not in cache:
             cache[name] = _load_sfx(name, sr)
-        s = cache[name]
-        if s is None:
+        sound = cache[name]
+        if sound is None:
             continue
-        a = int(t * sr)
-        s = s[: max(0, len(mix) - a)]
-        mix[a:a + len(s)] += s * vol
+        at = max(0, int(t * sr))
+        room = max(0, len(mix) - at)
+        if clip_seconds is not None:
+            room = min(room, max(0, int(float(clip_seconds) * sr)))
+        sound = sound[:room].copy()
+        if clip_seconds is not None and len(sound):
+            # Smooth last 45 ms to avoid an audible click on a truncated effect.
+            fade = min(len(sound), int(sr * 0.045))
+            sound[-fade:] *= np.linspace(1.0, 0.0, fade)
+        mix[at:at + len(sound)] += sound * vol
     peak = float(np.max(np.abs(mix))) or 1.0
     if peak > 0.98:
         mix *= 0.98 / peak
