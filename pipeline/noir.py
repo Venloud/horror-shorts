@@ -600,9 +600,17 @@ def _t_missing(fields, t, dur, ctx):
     fade = ease((t - 0.5) / max(0.6, dur - 1.0))
     if fig is not None:
         x, y = W // 2 - fig.width // 2, 1300 - fig.height
-        outline = fig.getchannel("A").filter(ImageFilter.FIND_EDGES).point(lambda v: 255 if v > 40 else 0)
+        # Thick readable rim at phone scale; the old 1-pixel FIND_EDGES disappeared on dark grounds.
+        alpha = fig.getchannel("A")
+        from PIL import ImageChops
+        outline = ImageChops.subtract(alpha.filter(ImageFilter.MaxFilter(19)),
+                                       alpha.filter(ImageFilter.MinFilter(9)))
+        outline = outline.point(lambda v: 255 if v > 24 else 0)
         dash = Image.new("RGBA", fig.size, acc + (0,))
-        dash.putalpha(outline.point(lambda v: int(v * 0.8 * fade)))
+        dash.putalpha(outline.point(lambda v: int(v * (0.78 + 0.22 * fade))))
+        halo = dash.filter(ImageFilter.GaussianBlur(12))
+        halo.putalpha(halo.getchannel("A").point(lambda v: int(v * 0.52)))
+        paste(frame, halo, x, y)
         body = fig.copy()
         arr = np.asarray(body).copy()
         rows = np.arange(arr.shape[0])
