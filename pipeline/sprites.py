@@ -227,9 +227,16 @@ def approved_bust(expression: str = "neutral") -> Image.Image | None:
     The artwork remains unmodified: users can always recover the exact original PNG.
     Normalization pads transparently for the video compositing step.
     """
-    names = {"neutral": "F01", "happy": "M05", "excited": "F05", "worried": "F14", "angry": "F18", "smirk": "F06",
-             "serious": "F08", "determined": "F08", "confused": "F10", "curious": "M05",
-             "thinking": "F13", "suspicious": "F12", "confident": "F07", "skeptical": "F11"}
+    names = {
+        "neutral": "F01", "talking": "F02", "smiling": "F03", "happy": "F03",
+        "laughing": "F04", "excited": "F05", "smirk": "F06",
+        "confident": "F07", "serious": "F08", "curious": "F09",
+        "confused": "F10", "skeptical": "F11", "suspicious": "F12",
+        "thinking": "F13", "worried": "F14", "scared": "F15",
+        "shocked": "F16", "sad": "F17", "angry": "F18",
+        "determined": "F19", "frustrated": "F20", "relieved": "F21",
+        "tired": "F22",
+    }
     src = _approved_path(names.get(expression, "M05"))
     if not src:
         return None
@@ -259,9 +266,16 @@ def closeup(expression: str, view: str = "front"):
     selected = approved_bust(expression)
     if selected is not None:
         # Path returned is ORIGINAL artwork, never an old vector pack.
-        candidates = {"neutral": "F01", "happy": "M05", "excited": "F05", "worried": "F14", "angry": "F18", "smirk": "F06",
-             "serious": "F08", "determined": "F08", "confused": "F10", "curious": "M05",
-             "thinking": "F13", "suspicious": "F12", "confident": "F07", "skeptical": "F11"}
+        candidates = {
+            "neutral": "F01", "talking": "F02", "smiling": "F03",
+            "happy": "F03", "laughing": "F04", "excited": "F05",
+            "smirk": "F06", "confident": "F07", "serious": "F08",
+            "curious": "F09", "confused": "F10", "skeptical": "F11",
+            "suspicious": "F12", "thinking": "F13", "worried": "F14",
+            "scared": "F15", "shocked": "F16", "sad": "F17",
+            "angry": "F18", "determined": "F19", "frustrated": "F20",
+            "relieved": "F21", "tired": "F22",
+        }
         return _approved_path(candidates.get(expression, "M05"))
     if not CLOSE_DIR.exists():
         return None
