@@ -130,6 +130,8 @@ jobs:
 
       - name: Production readiness preflight
         if: steps.decide.outputs.generate == 'true'
+        env:
+          RENDER_STYLE: "explainer"
         run: cd pipeline && python production_readiness.py
 
       - name: Make and queue one video
