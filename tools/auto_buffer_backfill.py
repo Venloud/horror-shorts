@@ -1,4 +1,4 @@
-"""Queue at most one eligible historical video through Buffer per run.
+"""Queue one new production video or eligible historical video through Buffer per run.
 
 Runs unattended through GitHub Actions. Distinguishes queueing from published.
 Maintains data/buffer_backfill_queue.json with Buffer IDs and never deletes MP4s.
@@ -80,9 +80,83 @@ def public_asset(url, expected_type):
         r.close()
 
 
+def production_videos(queued):
+    """Read finished production assets; never replay older 2026-10-18 publications."""
+    out = []
+    for tag in ("buffer", "youtube-pending"):
+        try:
+            release = gh("/releases/tags/" + tag)
+        except requests.HTTPError as exc:
+            if exc.response is not None and exc.response.status_code == 404:
+                continue
+            raise
+        assets = {a["name"]: a for a in release.get("assets", [])}
+        for name in sorted(assets):
+            if not name.endswith(".mp4"):
+                continue
+            stamp = name[:-4]
+            if stamp[:10] < "2026-10-19" or stamp in queued:
+                continue
+            if stamp + ".json" not in assets:
+                continue
+            out.append((stamp, assets[name], assets[stamp + ".json"]))
+    # Oldest first; prefer the live production buffer over archived pending assets.
+    return sorted(out, key=lambda v: (v[0], 0 if "/buffer/" in v[1].get("browser_download_url", "") else 1))
+
+
+def queue_one(stamp, mp4, json_asset, queued, remote_texts, record, fallback_title=""):
+    """Use the working Buffer GraphQL mutation and durable queue receipts."""
+    media = mp4["browser_download_url"]
+    public_asset(media, "video")
+    meta_url = json_asset["browser_download_url"]
+    public_asset(meta_url, "json")
+    response = requests.get(meta_url, timeout=45)
+    response.raise_for_status()
+    metadata = response.json()
+    title = (metadata.get("yt_title") or metadata.get("title") or fallback_title).strip()
+    desc = (metadata.get("yt_description") or metadata.get("caption_text") or
+            metadata.get("caption") or "").strip()
+    if not title or not desc:
+        raise RuntimeError("Missing required YouTube title or description for " + stamp)
+    if any(title.lower() in text or (fallback_title and fallback_title.lower() in text)
+           for text in remote_texts):
+        print("Already in Buffer, skipping:", stamp, title)
+        return False
+    mutation = ("mutation { createPost(input: { text: " + json.dumps(desc[:4500])
+                + " channelId: " + json.dumps(CHANNEL)
+                + " schedulingType: automatic mode: addToQueue"
+                + " metadata: { youtube: { title: " + json.dumps(title[:100])
+                + ' categoryId: "24" madeForKids: false isAiGenerated: true } }'
+                + " assets: [{ video: { url: " + json.dumps(media)
+                + " } }] }) { ... on PostActionSuccess { post { id dueAt } }"
+                + " ... on MutationError { message } } }")
+    # If the API times out after accepting a post, never blindly resubmit it.
+    queued[stamp] = {"status": "attempt_started", "title": title}
+    STATE.parent.mkdir(parents=True, exist_ok=True)
+    STATE.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n")
+    result = graph(mutation)["createPost"]
+    post = result.get("post")
+    if not post or not post.get("id"):
+        raise RuntimeError("Queueing result uncertain; review Buffer before retrying: " + repr(result))
+    queued[stamp] = {"buffer_post_id": post["id"], "due_at": post.get("dueAt"), "title": title}
+    STATE.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\\n")
+    print("Queued exactly one video:", stamp, "Buffer ID:", post["id"])
+    return True
+
+
 def main():
     record = json.loads(STATE.read_text()) if STATE.exists() else {"queued": {}}
     queued = record.setdefault("queued", {})
+    # New Night Files production uploads take priority over historical backfill.
+    fresh = production_videos(queued)
+    if fresh:
+        remote = existing_posts()
+        remote_texts = [p.get("text", "").lower() for p in remote if p.get("channelId") == CHANNEL]
+        for stamp, mp4, meta in fresh:
+            if queue_one(stamp, mp4, meta, queued, remote_texts, record):
+                return
+        print("No new production videos to queue")
+        return
     videos = json.loads(BACKFILL.read_text())["videos"]
     selected = [v for v in videos if v.get("status") == "queued"
                 and v.get("tiktok_published") is True
