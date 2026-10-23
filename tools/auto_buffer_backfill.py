@@ -83,7 +83,8 @@ def public_asset(url, expected_type):
 def production_videos(queued):
     """Read finished production assets; never replay older 2026-10-18 publications."""
     out = []
-    for tag in ("buffer", "youtube-pending"):
+    # Use the retained YouTube archive; live buffer assets disappear after TikTok delivery.
+    for tag in ("youtube-pending",):
         try:
             release = gh("/releases/tags/" + tag)
         except requests.HTTPError as exc:
@@ -100,8 +101,8 @@ def production_videos(queued):
             if stamp + ".json" not in assets:
                 continue
             out.append((stamp, assets[name], assets[stamp + ".json"]))
-    # Oldest first; prefer the live production buffer over archived pending assets.
-    return sorted(out, key=lambda v: (v[0], 0 if "/buffer/" in v[1].get("browser_download_url", "") else 1))
+    # Oldest first. Archive URLs survive the TikTok buffer removal.
+    return sorted(out, key=lambda v: v[0])
 
 
 def queue_one(stamp, mp4, json_asset, queued, remote_texts, record, fallback_title=""):
