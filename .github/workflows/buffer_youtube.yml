@@ -1,7 +1,10 @@
 name: Queue Night Files to Buffer YouTube
 
-# Manual delivery only. Does not touch the restricted Google API uploader.
+# Check pending videos every 15 minutes and allow manual runs.
+# Does not use the restricted Google YouTube API uploader.
 on:
+  schedule:
+    - cron: "*/15 * * * *"
   workflow_dispatch:
 
 permissions:
