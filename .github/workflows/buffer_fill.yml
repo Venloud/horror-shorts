@@ -1,22 +1,10 @@
 name: Night Files buffer fill
 
-# Generates finished videos into the FIFO buffer. Posts only to make up a missed slot
-# (data/missed_slot.json, publish.post_missed_slot rules: buffer 2+, no post within 3 h).
+# Generates exactly one finished video per manual run, without publishing.
 
 # Manual only: owner starts an isolated build, no scheduled generation.
 on:
   workflow_dispatch:
-    inputs:
-      target_buffer:
-        description: "Generate only when fewer than this many complete videos are waiting"
-        type: number
-        default: 2
-        required: false
-      fresh_images:
-        description: "Generate fresh images"
-        type: boolean
-        default: true
-        required: false
 # The builder saves history/checkpoints to this repository; GitHub's default token is read-only.
 permissions:
   contents: write
@@ -113,19 +101,10 @@ jobs:
         id: decide
         env:
           COUNT: ${{ steps.buffer.outputs.count }}
-          TARGET: ${{ inputs.target_buffer || '2' }}
           CHECKPOINT: ${{ steps.checkpoint.outputs.pending }}
         run: |
-          if [ "$CHECKPOINT" = "true" ]; then
-            echo "generate=true" >> "$GITHUB_OUTPUT"
-            echo "Unfinished checkpoint takes priority: resuming the previous story."
-          elif [ "$COUNT" -lt "$TARGET" ]; then
-            echo "generate=true" >> "$GITHUB_OUTPUT"
-            echo "Buffer below target ($COUNT < $TARGET): generating one video."
-          else
-            echo "generate=false" >> "$GITHUB_OUTPUT"
-            echo "Buffer already at target ($COUNT >= $TARGET) and no checkpoint is pending."
-          fi
+          echo "generate=true" >> "$GITHUB_OUTPUT"
+          echo "Manual run: make and buffer exactly one video, resuming a checkpoint if present."
 
 
       - name: Production readiness preflight
