@@ -193,6 +193,7 @@ jobs:
           name: buffer-fill-${{ github.run_id }}
           path: |
             output/**/final.mp4
+            output/**/explainer_polished.mp4
             output/**/caption.txt
             output/**/caption.json
             output/**/story.json
