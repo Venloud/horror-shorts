@@ -172,8 +172,17 @@
       "posted": "2026-10-22_1927",
       "status": "pending",
       "file": true
+    },
+    {
+      "stamp": "2026-10-22_1213",
+      "story_id": "749e664e2e31",
+      "title": "The Witch Who Kept a Hotel",
+      "video_number": null,
+      "posted": "2026-10-23_0525",
+      "status": "pending",
+      "file": true
     }
   ],
   "uploads": {},
-  "last_alert": "2026-10-22"
+  "last_alert": "2026-10-23"
 }
