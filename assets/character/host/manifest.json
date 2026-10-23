@@ -17,6 +17,33 @@
       "note": "Owner explicitly verified original PNG is F01 Neutral. Same byte-for-byte SHA-256 as previously misnamed F01_happy.png, moved without recompression."
     },
     {
+      "id": "F02",
+      "name": "talking",
+      "path": "expressions/F02_talking.png",
+      "status": "approved",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "81a2d0dd7dbfd1fd5e56e24403264aa31ef20f68e69cf913f57594a1c8f24ba7"
+    },
+    {
+      "id": "F03",
+      "name": "smiling",
+      "path": "expressions/F03_smiling.png",
+      "status": "approved",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "88b1dd0fb121efe5d31fa076f87c522aaec7c96687c3fc45f35dc9dbe7cc6479"
+    },
+    {
+      "id": "F04",
+      "name": "laughing",
+      "path": "expressions/F04_laughing.png",
+      "status": "approved",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "758b94e77e8552c17d1d71e701d80b1b6f43de9a279632f7fc8fbd9d57cec44c"
+    },
+    {
       "id": "F05",
       "name": "excited",
       "path": "expressions/F05_excited.png",
@@ -57,6 +84,15 @@
       "height": 1145,
       "sha256": "5d85e1c79bf25378c185a755a512f3f96f830c95d6ffc22481422efd9d772bd0",
       "note": " Reclassified from old ID F02 into original catalog F08 without altering PNG."
+    },
+    {
+      "id": "F09",
+      "name": "curious",
+      "path": "expressions/F09_curious.png",
+      "status": "approved",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "349da16a0bbe77f5e6e3a8c9a13f9feb4adbfbd93e980085bed11f65d94f300b"
     },
     {
       "id": "F10",
@@ -112,6 +148,33 @@
       "note": "Owner-confirmed Worried; moved unchanged from historically misnumbered F04."
     },
     {
+      "id": "F15",
+      "name": "scared",
+      "path": "expressions/F15_scared.png",
+      "status": "approved",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "33ded19c75ce8f430acd3ef7de55f2c9f6b305dc976e4d0093cf3d5de72db8fe"
+    },
+    {
+      "id": "F16",
+      "name": "shocked",
+      "path": "expressions/F16_shocked.png",
+      "status": "approved",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "3666371e4dacd2712d69d7b853740338917d219e01e04e4910f6fba4b0cdde17"
+    },
+    {
+      "id": "F17",
+      "name": "sad",
+      "path": "expressions/F17_sad.png",
+      "status": "approved",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "ed649652a46dd92b4bf4dd8e55c2780f32316b7ae8c630ed99b7ff9e9fac1a3a"
+    },
+    {
       "id": "F18",
       "name": "angry",
       "path": "expressions/F18_angry.png",
@@ -121,6 +184,42 @@
       "sha256": "3f8e5137f254b96a1cbe6aa9946e277cde71a4d1c26637399d6483649114136e",
       "source_id": "U04",
       "note": " Reclassified from old ID F09 into original catalog F18 without altering PNG."
+    },
+    {
+      "id": "F19",
+      "name": "determined",
+      "path": "expressions/F19_determined.png",
+      "status": "approved",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "0e38af16b4c01e2a5c292e4f9edc407fb4a816f915707f0540fa587645b66dd5"
+    },
+    {
+      "id": "F20",
+      "name": "frustrated",
+      "path": "expressions/F20_frustrated.png",
+      "status": "approved",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "e82db997780b07422fdf2d0834ea3393529b6105a988c66dc5eaaf2e2eeb4818"
+    },
+    {
+      "id": "F21",
+      "name": "relieved",
+      "path": "expressions/F21_relieved.png",
+      "status": "approved",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "e67d69e9522f9e3c9a1ce494a10b4d0334efed51af03248550a85a5c0464ce8a"
+    },
+    {
+      "id": "F22",
+      "name": "tired",
+      "path": "expressions/F22_tired.png",
+      "status": "approved",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "a20745c422960356303b12a3ff71e2be2319122b87b401bb7e1dfe59d4f3db4c"
     },
     {
       "id": "M01",
@@ -178,17 +277,20 @@
     {
       "id": "F02",
       "name": "talking",
-      "status": "received_not_committed"
+      "status": "approved",
+      "path": "expressions/F02_talking.png"
     },
     {
       "id": "F03",
       "name": "smiling",
-      "status": "received_not_committed"
+      "status": "approved",
+      "path": "expressions/F03_smiling.png"
     },
     {
       "id": "F04",
       "name": "laughing",
-      "status": "awaiting_upload"
+      "status": "approved",
+      "path": "expressions/F04_laughing.png"
     },
     {
       "id": "F05",
@@ -217,7 +319,8 @@
     {
       "id": "F09",
       "name": "curious",
-      "status": "received_not_committed"
+      "status": "approved",
+      "path": "expressions/F09_curious.png"
     },
     {
       "id": "F10",
@@ -252,17 +355,20 @@
     {
       "id": "F15",
       "name": "scared",
-      "status": "received_not_committed"
+      "status": "approved",
+      "path": "expressions/F15_scared.png"
     },
     {
       "id": "F16",
       "name": "shocked",
-      "status": "submitted_binary_pending"
+      "status": "approved",
+      "path": "expressions/F16_shocked.png"
     },
     {
       "id": "F17",
       "name": "sad",
-      "status": "awaiting_upload"
+      "status": "approved",
+      "path": "expressions/F17_sad.png"
     },
     {
       "id": "F18",
@@ -273,22 +379,26 @@
     {
       "id": "F19",
       "name": "determined",
-      "status": "awaiting_upload"
+      "status": "approved",
+      "path": "expressions/F19_determined.png"
     },
     {
       "id": "F20",
       "name": "frustrated",
-      "status": "awaiting_upload"
+      "status": "approved",
+      "path": "expressions/F20_frustrated.png"
     },
     {
       "id": "F21",
       "name": "relieved",
-      "status": "awaiting_upload"
+      "status": "approved",
+      "path": "expressions/F21_relieved.png"
     },
     {
       "id": "F22",
       "name": "tired",
-      "status": "awaiting_upload"
+      "status": "approved",
+      "path": "expressions/F22_tired.png"
     }
   ],
   "legacy_closeups": "retired after original image import",
@@ -316,13 +426,13 @@
       "relation": "separate expression, not suspicious"
     }
   ],
-  "asset_note": "Reconciled old historical expression IDs to original 118-item owner-defined meanings without re-encoding art, October 22, 2026. F02 Talking, F03 Smiling and F15 Scared images were shown in chat but are not verified committed. The F02 picture appears Laughing; owner confirmation required. F04 Laughing has a separate contemporaneous intake note.",
+  "asset_note": "Original owner supplied PNGs imported with SHA256 verification; see approved assets for current paths.",
   "owner_upload_receipts": [
     {
       "id": "F04",
       "name": "laughing",
       "received_on": "2026-10-22",
-      "status": "owner_confirmed_png_received_in_chat_NOT_YET_IN_REPO",
+      "status": "imported_original_png_verified",
       "upload_filename": "image(20261022-230917).png",
       "target_path": "expressions/F04_laughing.png",
       "sha256": "758b94e77e8552c17d1d71e701d80b1b6f43de9a279632f7fc8fbd9d57cec44c",
@@ -335,7 +445,7 @@
       "id": "F09",
       "name": "curious",
       "received_on": "2026-10-22",
-      "status": "owner_confirmed_png_received_in_chat_NOT_YET_IN_REPO",
+      "status": "imported_original_png_verified",
       "upload_filename": "image(20261022-232246).png",
       "target_path": "expressions/F09_curious.png",
       "sha256": "349da16a0bbe77f5e6e3a8c9a13f9feb4adbfbd93e980085bed11f65d94f300b",
@@ -348,7 +458,7 @@
       "id": "F02",
       "name": "talking",
       "received_on": "2026-10-22",
-      "status": "owner_confirmed_png_received_in_chat_NOT_YET_IN_REPO",
+      "status": "imported_original_png_verified",
       "upload_filename": "image(20261022-234202).png",
       "target_path": "expressions/F02_talking.png",
       "sha256": "81a2d0dd7dbfd1fd5e56e24403264aa31ef20f68e69cf913f57594a1c8f24ba7",
@@ -361,7 +471,7 @@
       "id": "F03",
       "name": "smiling",
       "received_on": "2026-10-22",
-      "status": "owner_confirmed_png_received_in_chat_NOT_YET_IN_REPO",
+      "status": "imported_original_png_verified",
       "upload_filename": "image(20261022-234229).png",
       "target_path": "expressions/F03_smiling.png",
       "sha256": "88b1dd0fb121efe5d31fa076f87c522aaec7c96687c3fc45f35dc9dbe7cc6479",
@@ -374,7 +484,7 @@
       "id": "F15",
       "name": "scared",
       "received_on": "2026-10-22",
-      "status": "owner_confirmed_png_received_in_chat_NOT_YET_IN_REPO",
+      "status": "imported_original_png_verified",
       "upload_filename": "image(20261022-234844).png",
       "target_path": "expressions/F15_scared.png",
       "sha256": "33ded19c75ce8f430acd3ef7de55f2c9f6b305dc976e4d0093cf3d5de72db8fe",
@@ -387,9 +497,10 @@
       "id": "F16",
       "name": "shocked",
       "received_on": "2026-10-22",
-      "status": "owner_labeled_image_visible_in_chat_BINARY_NOT_ACCESSIBLE",
+      "status": "imported_original_png_verified",
       "target_path": "expressions/F16_shocked.png",
-      "note": "Owner labeled the newly shown image F16 Shocked. Original binary not mounted in this session; checksum and dimensions not verified. Do not mark approved or imported."
+      "note": "Owner labeled the newly shown image F16 Shocked. Original binary not mounted in this session; checksum and dimensions not verified. Do not mark approved or imported.",
+      "sha256": "3666371e4dacd2712d69d7b853740338917d219e01e04e4910f6fba4b0cdde17"
     }
   ]
 }
