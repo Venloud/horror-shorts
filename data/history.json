@@ -2377,5 +2377,69 @@
     "music_file": "unsolved_mystery.mp3",
     "buffered": "2026-10-22_2206",
     "tiktok": null
+  },
+  {
+    "date": "2026-10-23_0413",
+    "story_id": "e123cf5c7e71",
+    "title": "The Legend of Baba Yaga",
+    "premise": "A traveler seeks the thrice-tenth kingdom and encounters the terrifying witch of Slavic folklore.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Baba Yaga",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Slavic folklore forests",
+    "threat": "Baba Yaga",
+    "twist": "The hero escapes on a firebird's back leaving her with feathers",
+    "score": null,
+    "seconds": 63.3,
+    "voice_speed": 1.0,
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [],
+    "visual_mode": "analog",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 88,
+    "visuals": {
+      "distinct": 19,
+      "longest_s": 6.9,
+      "longest_share": 0.104,
+      "longest_name": "scene:the deep forest:you:medium:front"
+    },
+    "yt_title": "Iron Teeth Grind Together... Baba Yaga #shorts",
+    "hashtags": [
+      "babayaga",
+      "folklore",
+      "legends"
+    ],
+    "yt_tags": [
+      "baba yaga",
+      "baba yaga legend",
+      "slavic folklore",
+      "baba yaga witch",
+      "slavic legends",
+      "scary legend",
+      "folklore story",
+      "baba yaga story",
+      "slavic mythology",
+      "witch legend",
+      "forest folklore",
+      "russian folklore",
+      "folklore",
+      "creepy legend",
+      "folklore creatures"
+    ],
+    "opening": "Iron teeth grind together when she sniffs you out inside her spinning forest hut.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-10-23_0413",
+    "tiktok": null
   }
 ]
