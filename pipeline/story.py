@@ -387,12 +387,12 @@ def pick_mode(history: list[dict]) -> str:
     return modes[count % len(modes)]
 
 
-BACKOFF_503 = (10, 30, 60)  # overloaded model: retry the SAME model after 10 s, 30 s, 60 s, then the next model
+BACKOFF_503 = (5,)  # one brief retry, then mark model unavailable for the rest of this run
 
 
 def _with_models(call, what: str = "story", light: bool = False):
     """Run call(model) down model_chain() (every Gemini model first, Groq last):
-    - 500/503 "high demand": same model again after 10 s, 30 s, 60 s, then the next model;
+    - 500/503 "high demand": retry once after 5 s, then skip this model for the remainder of this run;
     - per-minute 429: wait the time the API asks for (max 65 s) and retry the same model (max 3 times);
     - per-DAY quota: next model at once; 404 / other errors: up to 3 tries; BLOCKED twice: next model.
     If every model failed only on rate limits / overload, raise ApiBusy (not a topic problem)."""
