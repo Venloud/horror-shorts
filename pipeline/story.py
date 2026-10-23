@@ -220,7 +220,7 @@ def _call_gemini(model: str, prompt: str, api_key: str, temperature: float = 1.0
                                                   else "its daily quota is used up"))
     body["contents"][0]["parts"][0]["text"] = strip_marks(prompt)
     _gemini_pace()
-    r = requests.post(GEMINI_URL.format(model=model), json=body, timeout=120,
+    r = requests.post(GEMINI_URL.format(model=model), json=body, timeout=60,
                       headers={"x-goog-api-key": api_key})
     if is_gemini_auth_error(r.status_code, r.text):  # suspended project / bad key: Gemini is done for the run
         note_gemini_auth(r.status_code, r.text, f"story writer ({model})")
@@ -407,7 +407,7 @@ def _with_models(call, what: str = "story", light: bool = False):
                 msg = str(e)
                 errors.append(f"{model}#{attempt}: {msg[:300]}")
                 log(f"{what.capitalize()} attempt failed: {msg[:200]}")
-                if isinstance(e, Overloaded) or ("503" in msg and "high demand" in msg.lower()):
+                if isinstance(e, (Overloaded, requests.exceptions.Timeout)) or ("503" in msg and "high demand" in msg.lower()):
                     if overloads < len(BACKOFF_503):
                         wait = BACKOFF_503[overloads]
                         overloads += 1
