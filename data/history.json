@@ -2519,5 +2519,70 @@
     "music_file": "background_music.mp3",
     "buffered": "2026-10-23_2037",
     "tiktok": null
+  },
+  {
+    "date": "2026-10-23_2133",
+    "story_id": "1d25f7996e0f",
+    "title": "The Mad Gasser of Mattoon",
+    "premise": "A series of mysterious gas attacks and alleged mass hysteria terrified a town during the mid-1940s.",
+    "subgenre": "real unsolved mystery",
+    "mode": "mystery",
+    "true_story": true,
+    "case": "Mad Gasser of Mattoon",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Mattoon, Illinois, during the mid-1940s",
+    "threat": "A suspected gas attacker or mass hysteria",
+    "twist": "Authorities analyzed the physical evidence and found no chemicals, leading police to conclude the entire incident was likely mass hysteria.",
+    "score": null,
+    "seconds": 68.8,
+    "voice_speed": 1.171,
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [],
+    "visual_mode": "fast",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 83,
+    "visuals": {
+      "distinct": 22,
+      "longest_s": 9.9,
+      "longest_share": 0.138,
+      "longest_name": "scene:Police Station:you:wide:front"
+    },
+    "yt_title": "Paralyzed In Bed By Gas... The Mad Gasser of Mattoon #shorts",
+    "hashtags": [
+      "madgasserofmattoon",
+      "mattoon",
+      "truecrime",
+      "unsolvedmysteries"
+    ],
+    "yt_tags": [
+      "the mad gasser of mattoon",
+      "mad gasser of mattoon",
+      "mattoon gas attacks",
+      "true crime story",
+      "mid 1940s mystery",
+      "urban raef",
+      "aline kearney",
+      "beulah cordes",
+      "mattoon illinois gassings",
+      "mass hysteria case",
+      "unsolved mystery",
+      "strange history",
+      "mad gasser of mattoon story",
+      "mattoon, illinois mystery",
+      "true story"
+    ],
+    "opening": "Victims found themselves completely paralyzed in bed while a strange, sweet odor filled the air.",
+    "music_file": "unsolved_mystery.mp3",
+    "buffered": "2026-10-23_2133",
+    "tiktok": null
   }
 ]
