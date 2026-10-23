@@ -159,7 +159,7 @@ def adapt(story: dict) -> dict:
 
 PLAN_PROMPT = """You are the storyboard artist of a vertical explainer video for the Night Files channel. Our host
 "you" uses the approved round-white-headed, black-suited character with a red tie. People and props
-must be grounded in the story, and the character should not change identity between shots. Backgrounds are mostly blank, not forced scenic photographs. Characters act out narration with a single static pose per beat. Turn narration into LITERAL story
+must be grounded in the story, and the character should not change identity between shots. Select from the COMPLETE approved expression library when emotionally relevant: neutral, talking, smiling, laughing, excited, smirk, confident, serious, curious, confused, skeptical, suspicious, thinking, worried, scared, shocked, sad, angry, determined, frustrated, relieved, tired. Never force every expression into one story. Approved M01-M04 body views and M05/F01-F22 closeups must be preferred over legacy drawings. Backgrounds are mostly blank, not forced scenic photographs. Characters act out narration with a single static pose per beat. Turn narration into LITERAL story
 beats, like a storyboard: every shot shows exactly WHO does WHAT, WHERE, at that moment.
 TRUE STORY: {true}
 
