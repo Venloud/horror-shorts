@@ -1129,7 +1129,15 @@ class Renderer:
 
     def figure(self, who, action, expr, view, facing, t, height, alpha=1.0):
         import sprites
-        if CONFIG.get("explainer_character_stage", True):
+        # The approved owner's M-series identity is mandatory in every editing layout.
+        # Until P-series action art is approved, preserve the original silhouette rather
+        # than silently inventing a different-looking procedural host.
+        if who == "you":
+            original = sprites.approved_full_body(view, height, facing)
+            if original is None:
+                raise ExplainerUnavailable("Approved host master missing for view " + str(view))
+            im, foot = original
+        elif CONFIG.get("explainer_character_stage", True):
             # Approved M01-M04 images are the source of truth for neutral/idle whole-body views.
             # No added halo or recolor: the original red aura has already been approved.
             original = (sprites.approved_full_body(view, height, facing)
