@@ -3,10 +3,8 @@ name: Night Files buffer fill
 # Generates finished videos into the FIFO buffer. Posts only to make up a missed slot
 # (data/missed_slot.json, publish.post_missed_slot rules: buffer 2+, no post within 3 h).
 
-# PAUSED BY USER 2026-10-13: all automation disabled, preserve original trigger config below.
+# Manual only: owner starts an isolated build, no scheduled generation.
 on:
-  schedule:
-    - cron: "10 */6 * * *"
   workflow_dispatch:
     inputs:
       target_buffer:
@@ -156,7 +154,8 @@ jobs:
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
-          MAKEUP_POSTS: "1"  # publish.post_missed_slot() after the video is buffered
+          MAKEUP_POSTS: "0"  # generate and buffer only, never publish during manual fill
+          RENDER_STYLE: "explainer"  # fail instead of silently using classic style
         run: cd pipeline && python main.py
 
       - name: Save today's Cloudflare usage (also when the build failed)
