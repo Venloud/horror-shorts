@@ -83,6 +83,9 @@ def main():
             if not name.endswith(".mp4") or name[:-4] + ".json" not in assets:
                 continue
             stamp = name[:-4]
+            # Buffer already shows deliveries through October 18. Never bulk replay older inventory.
+            if stamp[:10] < "2026-10-19":
+                continue
             if stamp in entries:  # queued, sent, or uncertain. Never duplicate automatically.
                 continue
             releases.append((stamp, a, assets[stamp + ".json"]))
