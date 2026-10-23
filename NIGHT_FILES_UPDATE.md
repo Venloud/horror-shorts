@@ -1164,3 +1164,13 @@ once, no suicide angle or wording (BAN lines, now enforced for TRUE files too), 
   karaoke captions, accent #FF2D87. Max 12 FLUX images per video. Owner approved enabling on 2026-10-21: config render_style is now "explainer" for new builds; existing buffered videos are unchanged. Main pipeline falls back to classic if the experimental explainer renderer fails.
 - One-time character workflow: explainer_character.yml. Test builds: explainer_test.yml (nothing buffered/posted);
   review sheets in previews/explainer/. Details: CLAUDE.md "EXPERIMENTAL: explainer render style".
+
+
+## Approved host on story plates + resumable checkpoints, 2026-10-23
+- Character: only the approved M01-M04 / F01-F22 files (sha256-checked, fail by asset ID); composited into new
+  Cloudflare plates of each story's locations (no people). No blank studio in production.
+- fresh_images checkbox fixed (it was declared in buffer_fill.yml but never passed to the pipeline).
+- Checkpoints: atomic sha256 manifest, resume first, per-story cache key, done only after buffer; 3 fails = parked in
+  data/failed_stories/<id>/ + ntfy; buffer_fill.yml `retry_story_id`.
+- Removed: pipeline/stickman.py, explainer_test.py, explainer_character.py, tools/night_files_visual_preview.py,
+  the archived explainer_test.yml / explainer_character.yml, ci.yml's blank-stage preview job.

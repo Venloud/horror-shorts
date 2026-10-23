@@ -82,7 +82,7 @@
   "explainer_new_images": 4,
   "explainer_closeups": true,
   "explainer_max_images": 8,
-  "explainer_max_plates": 5,
+  "explainer_max_plates": 4,
   "explainer_max_inserts": 3,
   "visual_ab": true,
   "visual_modes": [
@@ -353,6 +353,5 @@
   ],
   "priority_subgenre_probability": 0.15,
   "priority_subgenre_recent_window": 3,
-  "explainer_character_stage": false,
   "remotion_polish": true
 }

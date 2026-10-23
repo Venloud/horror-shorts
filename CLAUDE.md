@@ -639,10 +639,27 @@ so a new session can pick up without starting over.
 - Owner briefs: storyboard beats, suited stick figure, TRUE STORY -> title opener, still backgrounds, no HUD / date
   chips, DARK EDITORIAL NOIR (midnight #101419, charcoal #25282D, smoked taupe #514B48, magenta #F01767; parchment
   #A99E90 only inside small evidence / document elements), bold condensed type (Oswald, OFL).
-- Host = the OWNER'S sprites (`assets/character/host/`, 102 cut-outs from his sheets, index.json action/view/
-  expression/prop; `pipeline/sprites.py`): walk/run cycles from his frames, cast = recoloured host + hat, crowd =
-  grey silhouettes. `pipeline/stickman.py` (code rig) is only the fallback. The FLUX hoodie set (assets/character/*.png,
-  explainer_character.py) is no longer used. Sheet figures are ~240 px tall: close-ups soft until hi-res exports.
+- Host (Oct 23) = ONLY the approved assets in assets/character/host/manifest.json: M01-M04 full body (view), F01-F22
+  faces (mood; close-ups), `pipeline/sprites.py`. Never generated / redrawn / recoloured / substituted, no procedural
+  fallback (stickman.py, the s1/s2 sprite cycles, the vector close-up pack and the FLUX hoodie set are retired);
+  every file is sha256-checked before a render: missing/changed = MissingAsset naming the ID. F16 shocked is an opaque
+  black square until re-exported transparent: shocked uses F15. No other people on screen until N01-N04 exist.
+- Scenes = the host composited INTO a Cloudflare FLUX plate of the story's own location (no people, cinematic horror
+  lighting): placement on the floor, contact shadow, faint red aura spill on the plate (never on the figure);
+  close-up = F-face over a blurred crop of the same plate. "blank studio" / empty stage is rejected
+  (`explainer.validate_shot_list`); no plate at all = ImageQuotaWait (Cloudflare out) or a failed attempt, never a
+  blank video. Plates are cached per story by prompt hash (`x_plate_<sha12>.png` in the checkpoint), max
+  `explainer_max_plates` 4 locations per video (others fold into the closest one, each reused 2-4x).
+- `fresh_images` (buffer_fill.yml checkbox -> env FRESH_IMAGES; before Oct 23 it was never passed on, so it did
+  nothing): ON = new plates for a new story, a resume redraws only missing/corrupt/rejected plates; OFF = this
+  story's plates, then a matching asset-library plate, then new images for what is still missing.
+- Checkpoints (Oct 23, `pipeline/checkpoint.py`): resume BEFORE a new story is picked; atomic writes + sha256
+  manifest per stage (story / narration / shot_list / images); a corrupt stage is redone, a stale one (other story)
+  cleared; Actions cache key `ckpt-<story id>-<run>-<attempt>` saved with if: always(); done.json ONLY after the
+  production gate + buffer.add (the "mark complete after artifact upload" steps were removed); a story already in
+  history or the buffer never gets a second video. 3 failed attempts (not quota waits / ApiBusy) = parked in
+  data/failed_stories/<id>/ + ntfy "Night Files: story X parked after 3 fails at stage Y"; buffer_fill.yml input
+  `retry_story_id` brings it back. Tests: tests/test_night_files_pipeline.py (mocks, run by ci.yml).
 - Storyboard (`explainer.plan`): literal beats (who/what/where, view, shot type, background motion none by default,
   text modes location/name/punch/evidence/quote/stamp), cards, titles and `graphic` shots = local templates in
   `pipeline/noir.py` (true_story, title, evidence, map_route, fact, filmstrip, quote, impact, connections, compare,
@@ -902,7 +919,7 @@ The production renderer intentionally separates soundtrack work from the core vi
 
 The production gate runs after the separate music stage.
 
-Checkpoint rule: keep the checkpoint for failures before a complete final MP4 is preserved. If the workflow successfully uploads a complete `final.mp4` artifact, it may mark the checkpoint complete with `done.json`, per the owner's requested completion boundary. Buffer admission also completes the checkpoint normally.
+Checkpoint rule (Oct 23, owner): the checkpoint is marked complete ONLY after the final video passed validation AND entered the buffer (main.py). The old "complete after artifact upload" boundary was removed.
 
 ## Analytics-driven Bloody Mary content cluster
 

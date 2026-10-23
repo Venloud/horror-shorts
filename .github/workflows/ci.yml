@@ -38,7 +38,6 @@ jobs:
       - name: Validate Python syntax
         run: |
           python -m compileall -q pipeline
-          python -m py_compile tools/night_files_visual_preview.py
 
       - name: Workflow step order and unit tests
         run: |
@@ -53,87 +52,10 @@ jobs:
           python -m unittest discover -s tests -p test_remotion_post.py -v
           node --check remotion/render_polish.mjs
 
-      - name: Validate original approved character assets and render still-stage preview
+      - name: Validate approved character assets, checkpoints and the production shot list (mocks, 0 API calls)
         run: |
-          python -m pip install -q "Pillow>=10" "numpy>=1.24"
-          python - <<'PY'
-          import json, sys, hashlib
-          from pathlib import Path
-          from PIL import Image, ImageDraw
-          sys.path.insert(0,"pipeline")
-          import explainer
-          registry = json.loads(Path("assets/character/host/manifest.json").read_text())
-          assert len(registry["approved"]) >= 8
-          assert len({record["id"] for record in registry["approved"]}) == len(registry["approved"])
-          root = Path("assets/character/host")
-          for item in registry["approved"]:
-              path = root / item["path"]
-              assert path.is_file(), f"Missing approved source: {path}"
-              assert hashlib.sha256(path.read_bytes()).hexdigest() == item["sha256"], item["id"]
-              with Image.open(path) as im:
-                  assert im.mode == "RGBA" and im.size == (item["width"],item["height"]), item["id"]
-                  assert im.getchannel("A").getextrema()[0] == 0, item["id"]
-          # Every received batch is immutable until explicitly reassigned to an F/P ID.
-          for batch_ref in registry.get("incoming_batches", []):
-              batch_file = root / batch_ref["path"]
-              assert batch_file.is_file(), batch_file
-              batch = json.loads(batch_file.read_text())
-              assert len(batch["assets"]) == batch_ref["count"]
-              for record in batch["assets"]:
-                  img_path = batch_file.parent / record["file"]
-                  assert img_path.is_file(), img_path
-                  assert hashlib.sha256(img_path.read_bytes()).hexdigest() == record["sha256"], record["id"]
-                  with Image.open(img_path) as img:
-                      assert img.size == (record["width"], record["height"]), record["id"]
-                      assert img.mode == record["mode"] and img.getchannel("A").getextrema()[0] == 0, record["id"]
-          out = Path("output"); out.mkdir(exist_ok=True)
-          tiles = Image.new("RGB",(4*290,2*440),"#353941")
-          pen=ImageDraw.Draw(tiles)
-          for i,item in enumerate(registry["approved"]):
-              with Image.open(root/item["path"]) as im:
-                  im.thumbnail((272,399))
-                  xx=(i%4)*290+int((290-im.width)/2)
-                  yy=(i//4)*440+4
-                  tiles.paste(im,(xx,yy),im)
-                  pen.text(((i%4)*290+12,(i//4)*440+410),item["id"]+" "+item["name"],fill="white")
-          tiles.save(out/"approved-host-contact.png")
-          shot={"type":"scene","location":"an empty stage","primary":"you","action":"standing",
-                "expression":"neutral","view":"front","facing":"right","secondary":"","action2":"standing",
-                "shot_type":"medium","motion":"none","text_mode":"none","text":""}
-          story={"title":"Approved host preview","scenes":[{"narration":"You examine a curious photograph."}]}
-          narration={"duration":3.0,"scene_times":[(0.0,3.0)],
-                     "words":[{"word":"photograph","start":0.1,"end":2.5,"scene":0}]}
-          plan={"cast":{},"locations":[],"inserts":[],"scenes":[{"shots":[shot]}]}
-          seg={"shot":shot,"scene":0,"start":0.0,"end":3.0}
-          ren=explainer.Renderer(story,narration,plan,{"plates":{},"inserts":{}},[seg])
-          # No specific story should trigger an unrelated label or background prop.
-          base = Image.new("RGBA",(1080,1920),(43,48,55,255))
-          before = base.tobytes()
-          for sample in ("An aircraft crossed the ocean.", "The scientist found an old document."):
-              example = {"title":"Generic", "scenes":[{"narration":sample}]}
-              test_renderer = explainer.Renderer(example,narration,plan,{"plates":{},"inserts":{}},[seg])
-              test_renderer._stage_context(base,shot,seg)
-              assert base.tobytes() == before, "Unexpected auto-generated setting or label"
-          selected = dict(shot,prop="document",text="a document",text_mode="evidence")
-          layer = Image.new("RGBA",(1080,1920),(43,48,55,255))
-          ren._stage_context(layer,selected,seg)
-          assert layer.tobytes() != before, "Missing explicit storyboard prop"
-          source = Path("pipeline/explainer.py").read_text().lower()
-          assert "roundhay" not in source and "le prince" not in source
-          preview=ren.frame_at(1.0,3.0)
-          assert preview.size == (1080,1920)
-          preview.save(out/"host-stage-preview.png")
-          print("Validated all approved character originals and universal stage behavior")
-          PY
-
-      - name: Upload approved character contact sheet and staging preview
-        uses: actions/upload-artifact@v4
-        with:
-          name: night-files-approved-character-preview
-          path: |
-            output/approved-host-contact.png
-            output/host-stage-preview.png
-          if-no-files-found: error
+          python -m pip install -q "Pillow>=10" "numpy>=1.24" requests pyyaml
+          python -m unittest discover -s tests -p test_night_files_pipeline.py -v
 
       - name: Validate JSON configuration
         run: |
@@ -172,57 +94,3 @@ jobs:
           test -f .github/workflows/buffer_fill.yml
           test -f .github/workflows/connect-tiktok.yml
           echo "Critical Night Files structure: OK"
-
-  cinematic_preview:
-    name: Manual Cinematic Video Preview, No Publishing
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    permissions:
-      contents: read
-    steps:
-      - name: Check out main
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Verify current Night Files editor
-        run: |
-          git rev-parse HEAD
-          test -f remotion/src/polish.jsx
-          test -f remotion/render_polish.mjs
-          test -f pipeline/remotion_post.py
-          grep -q 'NightFilesPolish' remotion/src/index.jsx
-          grep -q 'def draw_attention_ring' pipeline/noir.py
-          grep -q 'def _resolve_clock_time' pipeline/noir.py
-          echo "### Night Files video preview" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Branch: main" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Editor commit: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
-          echo "- No publishing, no buffer changes" >> "$GITHUB_STEP_SUMMARY"
-      - name: Install offline preview dependencies
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg espeak-ng fonts-dejavu-core > /dev/null
-          python -m pip install -q "Pillow>=10" "numpy>=1.24" soundfile
-      - name: Set up Node for Remotion
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-      - name: Install Remotion
-        run: npm --prefix remotion install --no-audit --no-fund
-      - name: Render cinematic MP4 with current main editor
-        run: |
-          python tools/night_files_visual_preview.py
-          ffprobe -v error -select_streams v:0 -show_entries stream=width,height,avg_frame_rate -of default=nw=1 output/manual-cinematic-preview/night-files-cinematic-preview.mp4
-          git rev-parse HEAD > output/manual-cinematic-preview/source-revision.txt
-      - name: Upload preview MP4, contact sheet and source revision
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: night-files-manual-cinematic-preview
-          path: |
-            output/manual-cinematic-preview/night-files-cinematic-preview.mp4
-            output/manual-cinematic-preview/contact-sheet.jpg
-            output/manual-cinematic-preview/shot-list.json
-            output/manual-cinematic-preview/source-revision.txt
-          retention-days: 14
-          if-no-files-found: error

@@ -7,9 +7,14 @@ on:
   workflow_dispatch:
     inputs:
       fresh_images:
-        description: "Generate fresh images"
+        description: "Generate fresh images (ON: new plates for a new story, a resume redraws only missing/corrupt ones; OFF: reuse this story's + matching library plates first)"
         type: boolean
         default: true
+        required: false
+      retry_story_id:
+        description: "Resume a parked story by id (data/failed_stories/<id>); empty = normal run"
+        type: string
+        default: ""
         required: false
 # The builder saves history/checkpoints to this repository; GitHub's default token is read-only.
 permissions:
@@ -84,12 +89,15 @@ jobs:
           key: cf-usage-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: cf-usage-
 
+      # Checkpoints are saved per story ("ckpt-<story id>-<run id>"): a retry restores that story's newest entry,
+      # a normal run the newest entry of any story (main.py resumes an unfinished one before picking a new story).
       - name: Restore checkpoint cache
         uses: actions/cache/restore@v4
         with:
           path: cache/checkpoint
-          key: ckpt-${{ github.run_id }}
+          key: ckpt-restore-${{ github.run_id }}
           restore-keys: |
+            ckpt-${{ inputs.retry_story_id || 'none' }}-
             ckpt-
 
       - name: Check for unfinished checkpoint
@@ -143,6 +151,8 @@ jobs:
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
           MAKEUP_POSTS: "0"  # generate and buffer only, never publish during manual fill
           RENDER_STYLE: "explainer"  # fail instead of silently using classic style
+          FRESH_IMAGES: ${{ inputs.fresh_images }}  # the checkbox (was never passed on, so it did nothing)
+          RETRY_STORY_ID: ${{ inputs.retry_story_id }}
         run: cd pipeline && python main.py
 
       - name: Save today's Cloudflare usage (also when the build failed)
@@ -194,17 +204,21 @@ jobs:
           retention-days: 7
           if-no-files-found: error
 
-      - name: Mark checkpoint complete after verified artifact upload
-        if: steps.artifact.outcome == 'success' && hashFiles('output/**/final.mp4') != ''
+      # The checkpoint is marked complete by main.py only after the video passed validation AND entered the buffer.
+      - name: Name the checkpoint by its story
+        id: ckpt_key
+        if: always()
         run: |
-          python -c "import json,glob,sys; from pathlib import Path; files=glob.glob('output/**/story.json', recursive=True); story=json.loads(Path(files[0]).read_text()) if files else {}; sys.path.insert(0,'pipeline'); import checkpoint; checkpoint.finish_from_artifact(story.get('story_id','unknown'))"
+          sid=$(python -c "import json,pathlib;d=pathlib.Path('cache/checkpoint');f=d/'story.json' if (d/'story.json').exists() else d/'done.json';print(json.loads(f.read_text()).get('story_id') or 'none' if f.exists() else 'none')" 2>/dev/null || echo none)
+          echo "key=ckpt-${sid}-${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_OUTPUT"
+          echo "Checkpoint cache key: ckpt-${sid}-${{ github.run_id }}-${{ github.run_attempt }}"
 
       - name: Save checkpoint for the next run
         if: always() && hashFiles('cache/checkpoint/**') != ''
         uses: actions/cache/save@v4
         with:
           path: cache/checkpoint
-          key: ckpt-${{ github.run_id }}
+          key: ${{ steps.ckpt_key.outputs.key }}
 
       - name: Report final buffer state
         if: always()

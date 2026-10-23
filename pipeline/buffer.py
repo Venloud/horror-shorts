@@ -61,6 +61,24 @@ def videos() -> list[dict]:
     return [v for _, v in sorted(by_stamp.items()) if "mp4" in v and "json" in v]
 
 
+def story_ids() -> set:
+    """story_id of every waiting video (from its caption .json), so a resumed checkpoint never makes a second video
+    of a story that is already buffered. Empty set when the buffer can't be read (history is checked too)."""
+    import json
+    import tempfile
+    out = set()
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            for v in videos():
+                f = download(v["json"], Path(tmp) / v["json"]["name"])
+                sid = json.loads(f.read_text()).get("story_id")
+                if sid:
+                    out.add(sid)
+    except Exception as e:  # noqa: BLE001
+        log(f"Buffer story ids not read ({type(e).__name__}: {str(e)[:120]})")
+    return out
+
+
 def count() -> int:
     return len(videos())
 

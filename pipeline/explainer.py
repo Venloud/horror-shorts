@@ -1,12 +1,12 @@
 """EXPERIMENTAL render style "explainer": second-person, problem-by-problem videos with quick cuts between
-(a) painted scenes: a moody FLUX background plate (one per location, reused with push-in / pan / close-up crops)
-    with the recurring stick-figure "you" cut out on top (assets/character, drawn once: explainer_character.py),
+(a) scenes: a cinematic FLUX plate of the story's own location (no people; reused 2-4x with push / crop) with the
+    owner-APPROVED host composited into it (M01-M04 full body, F01-F22 close-up faces; sprites.py, never redrawn),
 (b) info cards: beige paper, mono kicker, big bold text with ONE accent word and one build-up (counting grid, bars
     against a dashed threshold, counter, arrow, stamp, list), drawn by code (0 neurons),
 (c) title cards: black, big white text with one accent word (code).
 A HUD (3 stat boxes + an accent chapter chip) sits on painted shots; karaoke captions (1-3 words) in the lower third.
 
-Flow (main.py when render_style is explainer, or explainer_test.py):
+Flow (main.py when render_style is explainer):
   adapt(story)   second-person rewrite of the finished story (true stories: only facts the verified story already
                  has, re-checked with story.fact_check; hook rule; TRUE STORY line)
   fit_duration   (main.py, unchanged)
@@ -30,7 +30,7 @@ from common import CONFIG, ROOT, env, log
 
 W, H, FPS = 1080, 1920, 30
 FONT_DIR = ROOT / "assets" / "fonts" / "explainer"
-SHOT_MIN, SHOT_MAX = 1.3, 3.0
+SHOT_MIN, SHOT_MAX = 1.5, 3.0
 # Dark Editorial Noir (Oct 21): INK = bone text on dark grounds, MUTED = parchment labels, BLACK = midnight
 PAPER, INK, MUTED, BLACK = (169, 158, 144), (236, 230, 221), (169, 158, 144), (16, 20, 25)
 CAP_Y = 1565  # captions are in a reserved strip below the character action stage
@@ -210,7 +210,7 @@ BUILD is one of: {{"kind": "grid", "total": <4-60>, "filled": <n>, "label": "<ma
 RULES
 - STORYBOARD, not decoration. Split every sentence with two actions or two people into separate shots. Example:
   "You notice someone reaching for a folder" = (1) you observing (medium, three_quarter),
-  (2) the named person reaching for a document (medium, side), (3) you reacting (close).
+  (2) an evidence graphic or insert of the folder, (3) you reacting (close).
 - The host ACTS what the words say in STATIC action poses (pointing, inspecting, holding, reacting), never just stands
   around. Vary view (front, three_quarter, side, back) and shot_type. close only for emotional beats (max 1 in 4
   shots); over_shoulder when you watch someone (you seen from behind, they in front of you).
@@ -231,7 +231,9 @@ RULES
   clue or object; compare when the narration weighs two explanations; missing only when someone vanishes; closing
   only for the final question. Every number and name on a graphic, card or title must be said in the
   narration{true_rule}.
-- People: only adults the narration names (or "crowd"); never a real victim's death, body or remains.
+- People: ONLY the host "you" is on screen (primary_subject "you", secondary_subject "none"); other people are
+  told through graphics, inserts and titles. Never a real victim's death, body or remains.
+- Every scene shot happens in one of the story's real locations (never a blank studio or empty stage).
 - At most {max_locs} locations and {max_inserts} inserts in total; no people, no text, nothing occult, no gore.
 """
 
@@ -258,7 +260,6 @@ def _plan_call(prompt: str) -> dict | None:
 def plan(story: dict, narration: dict) -> dict:
     """Storyboard on the FINAL narration: literal beats per scene (who does what, where, view, framing), cast with
     props, locations, inserts, text overlays. Invalid pieces are repaired; nothing usable = keyword storyboard."""
-    import stickman as sm
     words = narration["words"]
     spans = _scene_spans(story, narration)
     max_locs = int(CONFIG.get("explainer_max_plates", 6))
@@ -287,7 +288,8 @@ def plan(story: dict, narration: dict) -> dict:
             continue
         if first not in low_all:  # only people the narration actually names
             continue
-        cast[key] = sm.look_for(name, f"{c.get('look', '')} {sheet.get(key, '')}")
+        # named for graphics / text only: no approved artwork for anyone but the host, so nobody else is drawn
+        cast[key] = {"name": name, "look": f"{c.get('look', '')} {sheet.get(key, '')}".strip()}
     locs = []
     for l in data.get("locations") or []:
         if isinstance(l, dict) and l.get("name") and l.get("look") and len(locs) < max_locs:
@@ -295,8 +297,11 @@ def plan(story: dict, narration: dict) -> dict:
     if not locs:
         locs = [{"name": l["name"], "look": _clean_visual(l.get("look") or l["name"])}
                 for l in (story.get("locations") or [])[:max_locs] if l.get("name")]
+    locs = [l for l in locs if not BLANK.search(f"{l['name']} {l['look']}")]
     if not locs:
-        locs = [{"name": "the place", "look": _clean_visual(story.get("setting") or "a dark empty room at night")}]
+        setting = story.get("setting") or ""
+        locs = [{"name": "the place", "look": _clean_visual(setting if setting and not BLANK.search(setting)
+                                                            else "a dark empty room at night")}]
     loc_names = {l["name"].lower(): l["name"] for l in locs}
     inserts = []
     for x in data.get("inserts") or []:
@@ -311,10 +316,11 @@ def plan(story: dict, narration: dict) -> dict:
         rs = raw_scenes[i] if i < len(raw_scenes) and isinstance(raw_scenes[i], dict) else {}
         s_words = [w for w in words if w.get("scene") == i]
         shots = [v for v in (_valid_shot(s, s_words, ctx) for s in (rs.get("shots") or [])[:6]) if v]
+        loc = _scene_location(sc, ctx, i)
         if not shots:
-            shots = _keyword_shots(sc.get("narration", ""), s_words, ctx, i)
+            shots = _keyword_shots(sc.get("narration", ""), s_words, ctx, i, loc)
         if i == 0 and shots[0]["type"] != "scene":
-            shots.insert(0, _keyword_shots(sc.get("narration", ""), s_words, ctx, i)[0])
+            shots.insert(0, _keyword_shots(sc.get("narration", ""), s_words, ctx, i, loc)[0])
         out_scenes.append({"shots": shots})
     _balance(out_scenes)
     _closing(story, narration, out_scenes, ctx)
@@ -323,6 +329,7 @@ def plan(story: dict, narration: dict) -> dict:
     used_ins = {s.get("insert") for sc in out_scenes for s in sc["shots"] if s.get("insert")}
     p["locations"] = [l for l in locs if l["name"] in used_locs] or locs[:1]
     p["inserts"] = [x for x in inserts if x["name"] in used_ins]
+    finalize(p, max_locs)
     counts = {"scene": 0, "card": 0, "title": 0, "graphic": 0}
     for sc in out_scenes:
         for s in sc["shots"]:
@@ -331,6 +338,66 @@ def plan(story: dict, narration: dict) -> dict:
         f"{[c['name'] for c in cast.values()] or 'host only'}, {len(p['locations'])} location(s), "
         f"{len(p['inserts'])} insert(s)")
     return p
+
+
+BLANK = re.compile(r"\b(blank|empty|plain|neutral|bare|white|grey|gray)\s+(studio|stage|backdrop|background|void)\b"
+                   r"|\bblank[_ -]?stage\b|\bphoto studio backdrop\b|^\s*(studio|stage|void|nowhere)\s*$", re.IGNORECASE)
+
+
+def shot_assets(shot: dict) -> dict:
+    """The approved asset IDs a scene shot shows: M-view for the body, F-face for a close-up (sprites.py)."""
+    import sprites
+    view = sprites.view_for(shot.get("action") or "standing", shot.get("view") or "front")
+    out = {"pose_id": sprites.body_id(view), "view": view}
+    if shot.get("shot_type") == "close":
+        out["face_id"] = sprites.face_id(shot.get("expression") or "neutral")
+    return out
+
+
+def finalize(p: dict, max_plates: int) -> None:
+    """Production shot list: at most max_plates locations (the least used ones fold into the most similar place, so
+    each plate is reused 2-4x), every scene shot gets its approved asset IDs, then validate_shot_list()."""
+    use = {}
+    for sc in p["scenes"]:
+        for s in sc["shots"]:
+            if s["type"] == "scene":
+                use[s["location"]] = use.get(s["location"], 0) + 1
+    keep = sorted(p["locations"], key=lambda l: -use.get(l["name"], 0))[:max(1, max_plates)]
+    names = {l["name"] for l in keep}
+    fold = {}
+    for l in p["locations"]:
+        if l["name"] not in names:
+            fold[l["name"]] = max(keep, key=lambda k: _overlap(l["look"], k["look"]))["name"]
+    p["locations"] = keep
+    for sc in p["scenes"]:
+        for s in sc["shots"]:
+            if s["type"] == "scene":
+                s["location"] = fold.get(s["location"], s["location"])
+                s["primary"], s["secondary"] = "you", ""
+                s.update(shot_assets(s))
+    validate_shot_list(p)
+
+
+def validate_shot_list(p: dict) -> None:
+    """Raises ExplainerUnavailable for a production shot list that would show a blank studio, a location nobody
+    planned, or a character that isn't approved artwork."""
+    import sprites
+    looks = {l["name"]: l.get("look", "") for l in p.get("locations") or []}
+    if not looks:
+        raise ExplainerUnavailable("shot list has no story location")
+    for name, look in looks.items():
+        if BLANK.search(f"{name} {look}"):
+            raise ExplainerUnavailable(f"blank studio location in the shot list: '{name}: {look[:60]}'")
+    approved = {r["id"] for r in sprites.approved_registry().get("approved", [])}
+    for k, sc in enumerate(p["scenes"]):
+        for s in sc["shots"]:
+            if s["type"] != "scene":
+                continue
+            if s.get("location") not in looks:
+                raise ExplainerUnavailable(f"scene {k + 1} shot has no planned location ({s.get('location')!r})")
+            for key in ("pose_id", "face_id"):
+                if key in s and s[key] not in approved:
+                    raise ExplainerUnavailable(f"scene {k + 1} shot uses unapproved asset {s[key]}")
 
 
 _CHILD = re.compile(r"\b(child|children|kid|kids|boy|girl|baby|toddler|teen\w*|\d{1,2}-year-old)\b", re.IGNORECASE)
@@ -402,18 +469,14 @@ STAGE_PROPS = frozenset(("none", "document", "photograph", "suitcase", "camera",
 
 
 def _valid_shot(s, s_words, ctx) -> dict | None:
-    import stickman as sm
+    import sprites
     if not isinstance(s, dict):
         return None
     kind = str(s.get("type") or "").lower()
     at = _anchor(str(s.get("at") or ""), s_words)
     said, low = ctx["said"], ctx["low"]
     if kind == "scene":
-        prim = _subject(s.get("primary_subject"), ctx) if str(s.get("primary_subject") or "").lower() != "none" \
-            else ""
-        sec = _subject(s.get("secondary_subject"), ctx, allow_crowd=True)
-        if sec == prim:
-            sec = ""
+        prim, sec = "you", ""  # only the approved host is ever drawn
         acts = set(_actions())
         act = s.get("primary_action") if s.get("primary_action") in acts else "standing"
         act2 = s.get("secondary_action") if s.get("secondary_action") in acts else "standing"
@@ -429,7 +492,7 @@ def _valid_shot(s, s_words, ctx) -> dict | None:
                 "prop": str(s.get("prop") or "none").lower() if str(s.get("prop") or "none").lower() in STAGE_PROPS else "none",
                 "primary": prim, "action": act,
                 "expression": s.get("expression") if s.get("expression") in _expressions() else "neutral",
-                "view": s.get("view") if s.get("view") in sm.VIEWS else "three_quarter",
+                "view": s.get("view") if s.get("view") in sprites.VIEWS else "three_quarter",
                 "facing": "left" if s.get("facing") == "left" else "right",
                 "secondary": sec, "action2": act2,
                 "shot_type": s.get("shot_type") if s.get("shot_type") in ("wide", "medium", "close",
@@ -457,14 +520,12 @@ def _valid_shot(s, s_words, ctx) -> dict | None:
 
 def _actions() -> list[str]:
     import sprites
-    import stickman as sm
-    return sorted(set(sm.ACTIONS) | set(sprites.actions()))
+    return sorted(sprites.ACTIONS)
 
 
 def _expressions() -> list[str]:
     import sprites
-    import stickman as sm
-    return sorted(set(sm.EXPRESSIONS) | set(sprites.expressions()))
+    return sorted(sprites.EXPRESSIONS)
 
 
 GRAPHIC_TEXT = {"evidence": ("text", "note"), "fact": ("label",), "filmstrip": ("text",), "quote": ("text", "by"),
@@ -662,19 +723,24 @@ def _expr_for(text: str) -> str:
     return next((e for e, rx in _EXPR_WORDS if re.search(rx, text, re.IGNORECASE)), "neutral")
 
 
-def _keyword_shots(narr: str, s_words: list[dict], ctx: dict, i: int) -> list[dict]:
-    loc = ctx["locs"][i % len(ctx["locs"])]["name"]
+def _scene_location(sc: dict, ctx: dict, i: int) -> str:
+    """The location the story JSON gives this scene (image_location / location), else the planned places in turn."""
+    for key in ("image_location", "location", "image_location_2"):
+        name = ctx["loc_names"].get(str(sc.get(key) or "").strip().lower())
+        if name:
+            return name
+    return ctx["locs"][i % len(ctx["locs"])]["name"]
+
+
+def _keyword_shots(narr: str, s_words: list[dict], ctx: dict, i: int, loc: str | None = None) -> list[dict]:
+    loc = loc or ctx["locs"][i % len(ctx["locs"])]["name"]
     first = " ".join(re.split(r"[.,!?;:]", narr)[0].split()[:6])
     half = narr[len(narr) // 2:]
-    other = next((k for k in ctx["cast"] if k.split()[-1] in narr.lower()), "")
     base = {"type": "scene", "location": loc, "insert": "", "prop": "none", "secondary": "", "action2": "standing", "motion": "none",
             "text_mode": "none", "text": "", "accent": ""}
     shots = [dict(base, at=s_words[0]["start"] if s_words else None, primary="you", action=_action_for(narr),
                   expression=_expr_for(narr), view="three_quarter", facing="right", shot_type="wide")]
-    if other:
-        shots.append(dict(base, at=None, primary=other, action=_action_for(half), expression="neutral", view="side",
-                          facing="left", shot_type="wide"))
-    elif _number_ok(first, ctx["said"]) and _date_ok(first, ctx):
+    if _number_ok(first, ctx["said"]) and _date_ok(first, ctx):
         shots.append({"type": "title", "at": None, "text": first, "accent": ""})
     shots.append(dict(base, at=None, primary="you", action=_action_for(half), expression=_expr_for(half),
                       view="front", facing="left", shot_type="medium"))
@@ -763,10 +829,6 @@ def _variant(shot: dict, k: int, scene: int, p: dict) -> dict:
     """The next beat of a long moment: the other person's side of it, or the host from another angle; after a card
     or title, the scene's host shot again."""
     if shot["type"] == "scene" and not shot.get("insert"):
-        if shot.get("secondary") and shot["secondary"] != "crowd" and k % 2:
-            return dict(shot, primary=shot["secondary"], action=shot.get("action2", "standing"), secondary="",
-                        view="side" if shot["view"] != "side" else "three_quarter", shot_type="wide",
-                        text_mode="none", variant=k)
         nxt = {"wide": "medium", "medium": "close" if k % 3 == 2 else "wide", "close": "medium",
                "over_shoulder": "medium"}[shot["shot_type"]]
         view = {"front": "three_quarter", "three_quarter": "front", "side": "three_quarter",
@@ -786,7 +848,8 @@ def _variant(shot: dict, k: int, scene: int, p: dict) -> dict:
 class Budget:
     """Cloudflare images for ONE video, counted across retries (img_dir/explainer_images.json): `soft` new images
     by default (config explainer_new_images, 2), never more than `hard` calls incl. QA redraws (explainer_max_images,
-    4). Everything else comes from the asset library, this story's earlier plates or local noir grounds."""
+    4). Everything else comes from this story's earlier plates, the asset library (fresh_images off) or another
+    plate of this story."""
 
     def __init__(self, img_dir: Path):
         self.path = img_dir / "explainer_images.json"
@@ -881,60 +944,102 @@ def _from_library(story: dict, look: str, dest: Path, taken: set) -> str:
     return ""
 
 
+def fresh_images() -> bool:
+    """buffer_fill.yml checkbox fresh_images (env FRESH_IMAGES, default ON like the checkbox).
+    ON: a new story gets new Cloudflare plates; a resumed story redraws ONLY its missing / corrupt / rejected plates.
+    OFF: this story's cached plates, then a matching asset-library plate, then a new image for what is still missing.
+    The approved character art is never touched by either setting."""
+    return (os.environ.get("FRESH_IMAGES") or "true").strip().lower() not in ("0", "false", "no", "off")
+
+
+def plate_prompt(story: dict, look: str) -> str:
+    style = CONFIG.get("explainer_plate_style") or (
+        "moody cinematic horror digital painting, dark noir palette, deep shadows, low-key cinematic lighting, "
+        "muted desaturated colours, painterly brushwork, atmospheric haze, empty scene, no people, no figures, "
+        "no text, no signs, no letters")
+    era = (story.get("setting") or "")[:80]
+    return f"{style}, {look}" + (f", {era}" if era else "") + ", wide establishing view, vertical composition"
+
+
+def plate_file(img_dir: Path, prompt: str) -> Path:
+    """Plates are cached per story (img_dir = the story's checkpoint) by a hash of their prompt: a re-render or a
+    resume finds the same file and never pays for it twice."""
+    import hashlib
+    return img_dir / f"x_plate_{hashlib.sha256(prompt.encode('utf-8')).hexdigest()[:12]}.png"
+
+
+def valid_image(path: Path) -> bool:
+    """A readable image of at least 256 px whose sidecar (if any) doesn't record a QA rejection."""
+    try:
+        with Image.open(path) as im:
+            im.verify()
+        with Image.open(path) as im:
+            im.load()
+            if min(im.size) < 256:
+                return False
+    except Exception:  # noqa: BLE001
+        return False
+    side = path.with_suffix(".json")
+    if side.exists():
+        try:
+            return json.loads(side.read_text()).get("qa") != "FAIL"
+        except ValueError:
+            return False
+    return True
+
+
+def _keep(path: Path, meta: dict) -> None:
+    """Sidecar + checkpoint manifest entry (sha256) for a plate / insert that passed."""
+    import checkpoint
+    path.with_suffix(".json").write_text(json.dumps(meta))
+    checkpoint.register_image(path)
+
+
 def make_assets(story: dict, p: dict, img_dir: Path) -> dict:
-    """Backgrounds for the storyboard's places, cheapest first: (1) this story's own plates from an earlier try
-    (a text-only or animation-only retry never redraws), (2) the asset library, (3) a NEW Cloudflare image while the
-    per-video budget allows (Budget), (4) another plate of this video, flipped and regraded, (5) a local noir ground.
-    Inserts (object close-ups) only from what's left of the budget; without one the shot shows the host instead."""
+    """Backgrounds for the storyboard's places: generated per story with Cloudflare FLUX (the story's real
+    locations, cinematic horror lighting, no people), cheapest first:
+      (1) this story's plate from an earlier try (same prompt hash; a corrupt or rejected file is redrawn),
+      (2) fresh_images OFF only: a matching asset-library plate,
+      (3) a NEW Cloudflare image while the per-video budget allows (Budget; QA: no people, no letters),
+      (4) another plate of THIS story, mirrored and regraded (a location reused 2-4x).
+    No plate at all = no video: ImageQuotaWait when Cloudflare is out (the story waits, not counted as a failure),
+    else ExplainerUnavailable. Never a blank studio."""
     import images
     img_dir.mkdir(parents=True, exist_ok=True)
-    if CONFIG.get("explainer_character_stage", True):
-        # Character-first stage never pays for or forces AI location paintings.
-        story["explainer_assets"] = {"new": 0, "story_reused": 0, "library": 0, "shared": 0,
-                                      "local": 1, "cloudflare_calls": 0, "new_total": 0}
-        log("Explainer: static character action on blank stage, zero Cloudflare images")
-        return {"plates": {}, "inserts": {}}
+    fresh = fresh_images()
     budget = Budget(img_dir)
-    style = CONFIG.get("explainer_plate_style") or (
-        "moody cinematic digital painting, dark noir palette, deep shadows, muted desaturated colours, soft "
-        "painterly brushwork, atmospheric haze, empty scene, no people, no text, no signs, no letters")
-    era = (story.get("setting") or "")[:80]
-    plates, inserts = {}, {}
-    stats = {"new": 0, "story_reused": 0, "library": 0, "shared": 0, "local": 0}
+    plates, inserts, pending = {}, {}, []
+    stats = {"new": 0, "story_reused": 0, "library": 0, "shared": 0, "redrawn": 0, "fresh_images": fresh}
     usage = {}
     for sc in p["scenes"]:
         for s in sc["shots"]:
             if s.get("type") == "scene":
                 usage[s.get("location")] = usage.get(s.get("location"), 0) + 1
     locs = sorted(p["locations"], key=lambda l: -usage.get(l["name"], 0))
-    mine = {f: json.loads(f.with_suffix(".json").read_text()).get("look", "")
-            for f in img_dir.glob("x_plate_*.png") if f.with_suffix(".json").exists()}
     taken: set = set()
     for l in locs:
         name, look = l["name"], l["look"]
-        dest = img_dir / f"x_plate_{_slug(name)}.png"
+        prompt = plate_prompt(story, look)
+        dest = plate_file(img_dir, prompt)
         if dest.exists():
-            plates[name] = dest
-            stats["story_reused"] += 1
-            continue
-        best = max(mine, key=lambda f: _overlap(look, mine[f]), default=None)
-        if best is not None and best not in plates.values() and _overlap(look, mine[best]) >= 0.34:
-            plates[name] = best  # same story, the storyboard renamed the place: never redraw it
-            stats["story_reused"] += 1
-            continue
-        if _from_library(story, look, dest, taken):
+            if valid_image(dest):
+                plates[name] = dest
+                stats["story_reused"] += 1
+                continue
+            log(f"Explainer plate '{name}': cached file {dest.name} is corrupt or rejected, redrawing it")
+            dest.unlink(missing_ok=True)
+            stats["redrawn"] += 1
+        if not fresh and _from_library(story, look, dest, taken):
             plates[name] = dest
             stats["library"] += 1
-            dest.with_suffix(".json").write_text(json.dumps({"look": look, "source": "library"}))
+            _keep(dest, {"look": look, "prompt": prompt, "source": "library"})
             continue
-        prompt = f"{style}, {look}" + (f", {era}" if era else "") + ", wide establishing view, vertical composition"
-        got = None
-        attempt = 0
+        got, v, attempt = None, None, 0
         while (budget.can_start() if attempt == 0 else budget.can_retry()) and attempt < 2:
             if not _draw(prompt, dest, budget):
                 break
-            v, why = images.check_image(dest, f"{name}: {look[:200]}; NO if any people, letters, words or writing "
-                                              "are visible")
+            v, why = images.check_image(dest, f"{name}: {look[:200]}; NO if any people, figures, letters, words or "
+                                              "writing are visible")
             log(f"Explainer plate '{name}' (draw {attempt + 1}): QA {'YES' if v else 'NO' if v is False else 'skipped'}"
                 + (f" ({why})" if why else ""))
             attempt += 1
@@ -946,30 +1051,34 @@ def make_assets(story: dict, p: dict, img_dir: Path) -> dict:
             budget.drawn()
             plates[name] = got
             stats["new"] += 1
-            dest.with_suffix(".json").write_text(json.dumps({"look": look, "source": "cloudflare",
-                                                             "qa": "PASS" if v else "SKIPPED"}))
-            continue
-        looks = {**mine, **{f: x["look"] for f, x in ((plates[n], l) for l in locs for n in [l["name"]]
-                                                          if n in plates)}}
-        other = max((f for f in plates.values() if "_local" not in f.name), key=lambda f: _overlap(look, looks.get(f, "")),
-                    default=None)
-        if other is not None and _overlap(look, looks.get(other, "")) >= 0.25:  # only a place that fits  # another place of this video, mirrored + regraded so it reads as a new angle
-            var = img_dir / f"x_plate_{_slug(name)}_shared.png"
+            _keep(got, {"look": look, "prompt": prompt, "source": "cloudflare", "qa": "PASS" if v else "SKIPPED"})
+        else:
+            pending.append(l)
+    if not plates:
+        where = ", ".join(l["name"] for l in pending) or "every location"
+        if images._STATE.get("cf_out") or not env("CLOUDFLARE_API_TOKEN", required=False):
+            raise images.ImageQuotaWait(f"no story plate could be drawn ({where}): Cloudflare is out; the story is "
+                                        "kept and the next run continues it")
+        raise ExplainerUnavailable(f"no story plate could be made for {where}")
+    looks = {plates[l["name"]]: l["look"] for l in locs if l["name"] in plates}
+    for l in pending:  # another place of this story, mirrored + regraded so it reads as a new angle
+        other = max(looks, key=lambda f: _overlap(l["look"], looks[f]))
+        var = other.with_name(other.stem + "_shared.png")
+        if not var.exists() or not valid_image(var):
             im = ImageOps.mirror(Image.open(other).convert("RGB"))
             ImageEnhance.Brightness(ImageEnhance.Color(im).enhance(0.7)).enhance(0.85).save(var)
-            plates[name] = var
-            stats["shared"] += 1
-        else:
-            plates[name] = _local_plate(img_dir / f"x_plate_{_slug(name)}_local.png", len(plates))
-            stats["local"] += 1
+        plates[l["name"]] = var
+        stats["shared"] += 1
+    style = plate_prompt(story, "").split(", wide establishing")[0]
     for x in p["inserts"]:
-        dest = img_dir / f"x_insert_{_slug(x['name'])}.png"
-        if dest.exists():
+        prompt = f"{style}, close-up of {x['prompt']}, shallow depth of field, no hands, no people"
+        dest = img_dir / f"x_insert_{plate_file(img_dir, prompt).stem[8:]}.png"
+        if dest.exists() and valid_image(dest):
             inserts[x["name"]] = dest
             continue
+        dest.unlink(missing_ok=True)
         if not budget.can_start():
             continue
-        prompt = f"{style}, close-up of {x['prompt']}, shallow depth of field, no hands, no people"
         if _draw(prompt, dest, budget):
             v, why = images.check_image(dest, f"{x['prompt']}; NO if any people, letters or writing are visible")
             if v is False:
@@ -978,25 +1087,15 @@ def make_assets(story: dict, p: dict, img_dir: Path) -> dict:
             budget.drawn()
             inserts[x["name"]] = dest
             stats["new"] += 1
+            _keep(dest, {"prompt": prompt, "source": "cloudflare", "qa": "PASS" if v else "SKIPPED"})
     stats["cloudflare_calls"] = budget.state["calls"]
     stats["new_total"] = budget.state["new"]
     story["explainer_assets"] = stats
-    log(f"Explainer images: {budget.state['new']} new (cap {budget.soft}, {budget.state['calls']}/{budget.hard} "
-        f"Cloudflare calls), {stats['library']} from the asset library, {stats['story_reused']} kept from an earlier "
-        f"try, {stats['shared']} shared, {stats['local']} local noir")
+    log(f"Explainer images (fresh_images {'ON' if fresh else 'OFF'}): {budget.state['new']} new (cap {budget.soft}, "
+        f"{budget.state['calls']}/{budget.hard} Cloudflare calls), {stats['library']} from the asset library, "
+        f"{stats['story_reused']} kept from an earlier try, {stats['redrawn']} redrawn (corrupt/rejected), "
+        f"{stats['shared']} shared")
     return {"plates": plates, "inserts": inserts}
-
-
-def _local_plate(dest: Path, k: int) -> Path:
-    """No image budget left: a local noir ground (dark paper, soft light, a faint horizon of fog)."""
-    import noir
-    im = noir.ground(noir.tone_for(k), 11 + k).convert("RGB")
-    d = ImageDraw.Draw(im, "RGBA")
-    for j in range(6):  # low fog bands
-        y = 1250 + j * 70
-        d.rectangle((0, y, W, y + 60), fill=(200, 200, 210, 6 + 3 * j))
-    im.filter(ImageFilter.GaussianBlur(2)).save(dest)
-    return dest
 
 
 def record_plates(story: dict, img_dir: Path) -> None:
@@ -1038,14 +1137,6 @@ def record_plates(story: dict, img_dir: Path) -> None:
             log(f"Asset library: +{added} explainer plate(s) for later videos")
     except Exception as e:  # noqa: BLE001
         log(f"Asset library not updated with explainer plates ({type(e).__name__}: {str(e)[:160]})")
-
-
-def _gradient_plate(dest: Path) -> Path:
-    y = np.linspace(0, 1, 1024)[:, None]
-    top, bot = np.array([18, 30, 40]), np.array([6, 8, 12])
-    arr = (top * (1 - y) + bot * y)[:, None, :].repeat(1024, axis=1)
-    Image.fromarray(arr.astype("uint8").reshape(1024, 1024, 3)).save(dest)
-    return dest
 
 
 # ================================================================ drawing helpers
@@ -1110,8 +1201,6 @@ def _fmt(v: float) -> str:
 
 class Renderer:
     def __init__(self, story: dict, narration: dict, p: dict, assets: dict, segs: list[dict]):
-        import stickman
-        self.sm = stickman
         self.story, self.narr, self.p, self.assets, self.segs = story, narration, p, assets, segs
         self.acc = accent()
         self.plate_cache: dict = {}
@@ -1121,49 +1210,21 @@ class Renderer:
         self.spans = _scene_spans(story, narration)
         self.static: dict = {}  # still backgrounds, one per segment
         self.t_true, self.t_title = opener_length(story)
+        self.used_assets: set = set()
 
-    def look(self, who: str) -> dict:
-        if who == "you":
-            return self.sm.HOST
-        return self.p["cast"].get(who) or self.sm.look_for(who)
-
-    def figure(self, who, action, expr, view, facing, t, height, alpha=1.0):
+    def figure(self, view, facing, height):
+        """The approved host (M01-M04) at `height`: placement only. Raises sprites.MissingAsset by asset ID."""
         import sprites
-        # The approved owner's M-series identity is mandatory in every editing layout.
-        # Until P-series action art is approved, preserve the original silhouette rather
-        # than silently inventing a different-looking procedural host.
-        if who == "you":
-            original = sprites.approved_full_body(view, height, facing)
-            if original is None:
-                raise ExplainerUnavailable("Approved host master missing for view " + str(view))
-            im, foot = original
-        elif CONFIG.get("explainer_character_stage", True):
-            # Approved M01-M04 images are the source of truth for neutral/idle whole-body views.
-            # No added halo or recolor: the original red aura has already been approved.
-            original = (sprites.approved_full_body(view, height, facing)
-                        if who == "you" and action in ("standing", "waiting") else None)
-            if original is not None:
-                im, foot = original
-            else:
-                # Unapproved action poses use the temporary procedural stage rig until
-                # their individual P-series PNG replacements arrive.
-                pose_t = 0.15 if action in self.sm.MOVING else 0.0
-                im, foot = self.sm.draw(self.look(who), action, expr, view, facing, pose_t, height, False)
-                im = sprites.rim_native(im)
-        else:
-            blink = (t % 3.7) < 0.12
-            tq = round(t * 15) / 15 if action in self.sm.MOVING or action in ("reacting", "scared", "turning") else \
-                round(t * 5) / 5
-            got = sprites.draw(who, self.look(who), action, expr, view, facing, t, height) if sprites.available() \
-                else None
-            im, foot = got or self.sm.draw(self.look(who), action, expr, view, facing, tq, height, blink)
-        if alpha < 1:
-            im = im.copy()
-            im.putalpha(im.getchannel("A").point(lambda a: int(a * alpha)))
+        im, foot = sprites.full_body(view, int(height), facing)
+        self.used_assets.add(sprites.body_id(view))
         return im, foot
 
     # ---------------------------------------------------------------- scene shots
     def scene_frame(self, seg: dict, t: float) -> Image.Image:
+        """The approved host composited INTO this story's plate: scaled + placed on the plate's floor, a soft contact
+        shadow, the plate graded down around the figure and a faint red light spill from the aura behind it (the
+        cut-out itself is never altered). close = the F-series face over a blurred crop of the same plate."""
+        import sprites
         s = seg["shot"]
         dur = seg["end"] - seg["start"]
         x = t / max(dur, 0.01)
@@ -1175,233 +1236,59 @@ class Renderer:
             return frame
         frame = self._background(seg, x)
         st = s.get("shot_type", "wide")
-        prim, sec = s.get("primary") or "", s.get("secondary") or ""
-        move = 0.0
-        target = None
-        if sec == "crowd":  # passengers / villagers: small grey figures behind
-            for k, fx in enumerate((0.16, 0.36, 0.62, 0.84)):
-                im, (fxp, fyp) = self.figure("crowd", "standing" if k % 2 else "walking", "neutral",
-                                             "side" if k % 2 else "three_quarter", "left" if k % 2 else "right",
-                                             t + k, 470, alpha=0.55)
-                self._paste(frame, im, int(W * fx - fxp), int(1520 - fyp))
-        if st == "over_shoulder" and prim:  # the watched person small in front, "you" big from behind
-            if sec and sec != "crowd":
-                im, (fxp, fyp) = self.figure(sec, s.get("action2", "standing"), "neutral", "three_quarter", "left",
-                                             t, 640)
-                gx = W * 0.66 + self._travel(s.get("action2"), "left", x) * 0.6
-                self._paste(frame, self._shadow(int(im.width * 0.5)), int(gx - im.width * 0.25), 1590 - 30)
-                self._paste(frame, im, int(gx - fxp), int(1600 - fyp))
-                target = (gx, 1600 - 600)
-            actor_h = 900 if CONFIG.get("explainer_character_stage", True) else 1500
-            im, (fxp, fyp) = self.figure(prim, s.get("action", "standing"), s.get("expression", "neutral"), "back",
-                                         "right", t, actor_h)
-            feet_y = 1380 if CONFIG.get("explainer_character_stage", True) else 2250
-            self._paste(frame, im, int(W * 0.2 - fxp), int(feet_y - fyp))
+        view = sprites.view_for(s.get("action") or "standing", s.get("view") or "front")
+        facing = s.get("facing", "right")
+        if st == "close":
+            im, aid = sprites.bust(s.get("expression") or "neutral")
+            self.used_assets.add(aid)
+            scale = min(1400 / im.width, 1250 / im.height)  # the bust's cut edge sits below the frame
+            im = im.resize((max(1, int(im.width * scale)), max(1, int(im.height * scale))), Image.Resampling.LANCZOS)
+            if facing == "left":
+                im = ImageOps.mirror(im)
+            ox, oy = int((W - im.width) / 2), H - im.height + 40
+            self._spill(frame, im, ox, oy)
+            self._paste(frame, im, ox, oy)
         else:
-            spots = []
-            if prim and sec and sec != "crowd" and st == "wide":
-                spots = [(prim, s.get("action"), s.get("expression"), s.get("view"), s.get("facing", "right"), 0.31),
-                         (sec, s.get("action2"), "neutral", "three_quarter",
-                          "left" if s.get("facing", "right") == "right" else "right", 0.71)]
-            elif prim:
-                spots = [(prim, s.get("action"), s.get("expression"), s.get("view"), s.get("facing", "right"), 0.5)]
-            elif sec and sec != "crowd":
-                spots = [(sec, s.get("action2"), "neutral", "three_quarter", "left", 0.5)]
-            # Editorial composition: the approved host should dominate mobile frames
-            # without placing eyes or important details under the bottom captions.
-            height, feet = ({"wide": (1000 if len(spots) == 1 else 835, 1480),
-                             "medium": (1300, 1500), "close": (1190, 1460)}
-                            if CONFIG.get("explainer_character_stage", True)
-                            else {"wide": (820, 1660), "medium": (1150, 1980), "close": (1500, 2150)}).get(st, (690, 1300))
-            if st == "close" and len(spots) == 1 and spots[0][0] == "you" and spots[0][1] not in self.sm.MOVING:
-                import sprites  # the owner's hi-res head-and-shoulders pack: sharp emotional close-ups
-                if CONFIG.get("explainer_character_stage", True):
-                    # Cropped straight from the SAME rig used for all full-body action poses.
-                    im = sprites.stage_closeup(spots[0][2] or "neutral", spots[0][3] or "front")
-                    if im is not None:
-                        # The approved bust originals are padded transparent RGBA.
-                        # Crop TRANSPARENCY ONLY (not image pixels, aura or shading)
-                        # before sizing; otherwise the head floats near the top
-                        # and hundreds of pixels of invisible padding waste the frame.
-                        alpha_box = im.getchannel("A").getbbox()
-                        if alpha_box:
-                            pad = 8
-                            x0, y0, x1, y1 = alpha_box
-                            im = im.crop((max(0,x0-pad),max(0,y0-pad),
-                                          min(im.width,x1+pad),min(im.height,y1+pad)))
-                        scale = min(1090 / im.width, 1130 / im.height)
-                        im = im.resize((max(1,int(im.width*scale)),
-                                        max(1,int(im.height*scale))),
-                                       Image.Resampling.LANCZOS)
-                        if spots[0][4] == "left":
-                            im = ImageOps.mirror(im)
-                        # Anchor torso just ABOVE caption safe zone (at ~1370px).
-                        # Every F-series close-up uses the same framing rules.
-                        x = int((W-im.width)/2)
-                        y = max(170, 1310-im.height)
-                        self._paste(frame, im, x, y)
-                        spots = []
-                else:
-                    cu = sprites.closeup(spots[0][2] or "neutral", spots[0][3] or "front")
-                    if cu:
-                        w0 = int(1150 * (1.0 + 0.015 * math.sin(t * 2.4)))
-                        im = sprites.closeup_image(str(cu), w0)
-                        if spots[0][4] == "left":
-                            im = ImageOps.mirror(im)
-                        self._paste(frame, im, int(W / 2 - im.width / 2),
-                                    int(1880 - im.height + 6 * math.sin(t * 2.4)))
-                        spots = []
-            for who, act, expr, view, facing, fx in spots:
-                act = act or "standing"
-                move = 0.0 if CONFIG.get('explainer_character_stage', True) else self._travel(act, facing, x)
-                if len(spots) == 1 and act in self.sm.MOVING and not CONFIG.get('explainer_character_stage', True):
-                    fx = 0.5 - (0.22 if facing == "right" else -0.22) * (1 if st == "wide" else 0.4)
-                im, (fxp, fyp) = self.figure(who, act, expr or "neutral", view or "front", facing, t, height,
-                                             alpha=1.0 if CONFIG.get('explainer_character_stage', True) else self._exit_alpha(act, x))
-                px = W * fx + move * (1 if st == "wide" else 0.5)
-                if act == "leaving" and not CONFIG.get("explainer_character_stage", True):  # legacy animated exit
-                    k = 1 - 0.25 * _ease(x)
-                    im = im.resize((max(1, int(im.width * k)), max(1, int(im.height * k))), Image.BILINEAR)
-                    fxp, fyp = fxp * k, fyp * k
-                    feet_y = feet - 120 * _ease(x)
-                else:
-                    feet_y = feet
-                if st == "wide":
-                    sh = self._shadow(int(height * 0.42))
-                    self._paste(frame, sh, int(px - sh.width / 2), int(feet_y - sh.height / 2))
-                self._paste(frame, im, int(px - fxp), int(feet_y - fyp))
-                if who != "you" and target is None:
-                    target = (px, feet_y - height * 0.95)
-        if CONFIG.get("explainer_character_stage", True):
-            self._stage_context(frame, s, seg)
-        else:
-            frame.alpha_composite(self._vignette())
-        self.overlay(frame, s, t, target)
+            height, feet, fx = {"wide": (900, 1470, 0.5), "medium": (1240, 1560, 0.5),
+                                "over_shoulder": (1500, 1900, 0.24)}.get(st, (900, 1470, 0.5))
+            if st == "over_shoulder":
+                view = "back"
+            elif st == "wide":
+                fx = 0.36 if facing == "right" else 0.64
+            im, (fxp, fyp) = self.figure(view, facing, height)
+            ox, oy = int(W * fx - fxp), int(feet - fyp)
+            sh = self._shadow(int(im.width * 0.9))
+            self._paste(frame, sh, int(W * fx - sh.width / 2), int(feet - sh.height / 2))
+            self._spill(frame, im, ox, oy)
+            self._paste(frame, im, ox, oy)
+        frame.alpha_composite(self._vignette())
+        self.overlay(frame, s, t, None)
         return frame
 
-    @staticmethod
-    def _draw_stage_prop(d: ImageDraw.ImageDraw, prop: str, box: tuple, ink: tuple, accent: tuple) -> None:
-        """Reusable minimal vector prop icons, selected by verified storyboard metadata.
-
-        Zero story/person/location names. Any story can request these generic symbols.
-        """
-        x0, y0, x1, y1 = box
-        cx, cy = (x0 + x1) // 2, (y0 + y1) // 2
-        outline = {"outline": ink, "width": 7}
-        if prop in ("document", "folder", "photograph", "map"):
-            d.rounded_rectangle(box, radius=10, **outline)
-            if prop == "photograph":
-                d.ellipse((x0 + 18, y0 + 19, x0 + 55, y0 + 56), outline=accent, width=5)
-                d.line([(x0 + 14, y1 - 20), (cx, cy), (cx + 25, cy + 23), (x1 - 13, y0 + 42)], fill=ink, width=5)
-            elif prop == "map":
-                for k in range(1, 3):
-                    d.line((x0 + k * (x1 - x0) // 3, y0 + 9, x0 + k * (x1 - x0) // 3, y1 - 9), fill=ink, width=4)
-                d.ellipse((cx - 15, cy - 15, cx + 15, cy + 15), outline=accent, width=5)
-            elif prop == "folder":
-                d.line((x0 + 24, y0 + 28, x0 + 83, y0 + 28), fill=accent, width=7)
-            else:
-                for n in range(3):
-                    d.line((x0 + 24, y0 + 28 + 38*n, x1 - 22, y0 + 28 + 38*n),
-                           fill=accent if n == 1 else ink, width=5)
-        elif prop == "suitcase":
-            d.rounded_rectangle((x0, y0 + 38, x1, y1), radius=15, **outline)
-            d.arc((cx - 37, y0, cx + 37, y0 + 82), 180, 360, fill=accent, width=8)
-            d.line((x0 + 16, cy, x1 - 16, cy), fill=ink, width=5)
-        elif prop in ("camera", "phone", "film"):
-            if prop == "phone":
-                d.rounded_rectangle((cx - 58, y0, cx + 58, y1), radius=14, **outline)
-                d.line((cx - 24, y1 - 18, cx + 24, y1 - 18), fill=accent, width=5)
-            else:
-                d.rounded_rectangle(box, radius=14, **outline)
-                if prop == "camera":
-                    d.ellipse((cx - 52, cy - 52, cx + 52, cy + 52), outline=accent, width=9)
-                else:
-                    for yy in (y0 + 25, cy, y1 - 30):
-                        d.rectangle((x0 + 12, yy, x0 + 30, yy + 13), outline=ink, width=3)
-                        d.rectangle((x1 - 30, yy, x1 - 12, yy + 13), outline=ink, width=3)
-        elif prop in ("clock", "magnifier"):
-            d.ellipse((x0 + 15, y0 + 8, x1 - 15, y1 - 26), **outline)
-            if prop == "clock":
-                d.line((cx, cy - 24, cx, cy + 24), fill=accent, width=7)
-                d.line((cx, cy + 24, cx + 35, cy + 5), fill=accent, width=7)
-            else:
-                d.line((cx + 59, cy + 46, x1, y1), fill=accent, width=13)
-        elif prop == "key":
-            d.ellipse((x0 + 16, y0 + 26, x0 + 99, y0 + 109), **outline)
-            d.line((x0 + 93, y0 + 100, x1 - 17, y1 - 16), fill=accent, width=11)
-            d.line((x1 - 38, y1 - 53, x1 - 15, y1 - 75), fill=accent, width=8)
-        elif prop == "flashlight":
-            d.polygon([(x0 + 19, cy - 34), (cx + 25, cy - 34), (x1 - 12, y0 + 8),
-                       (x1 - 12, y1 - 8), (cx + 25, cy + 34), (x0 + 19, cy + 34)], outline=ink)
-            d.line((x0 + 23, cy - 24, cx + 11, cy - 24), fill=accent, width=9)
-        elif prop == "money":
-            d.rounded_rectangle((x0, y0 + 28, x1, y1 - 20), radius=10, **outline)
-            d.ellipse((cx - 33, cy - 35, cx + 33, cy + 34), outline=accent, width=6)
-        elif prop == "aircraft":
-            d.line((cx, y0 + 10, cx, y1 - 17), fill=ink, width=12)
-            d.line((x0 + 12, cy, x1 - 12, cy), fill=accent, width=13)
-            d.line((cx - 56, y1 - 36, cx + 56, y1 - 36), fill=ink, width=9)
-        elif prop == "vehicle":
-            d.rounded_rectangle((x0 + 12, y0 + 35, x1 - 12, y1 - 34), radius=14, **outline)
-            for wx in (x0 + 56, x1 - 56):
-                d.ellipse((wx - 24, y1 - 51, wx + 24, y1 - 3), outline=accent, width=7)
-        elif prop == "door":
-            d.rectangle((x0 + 35, y0, x1 - 35, y1), **outline)
-            d.ellipse((x1 - 65, cy, x1 - 51, cy + 14), fill=accent)
-
-    def _stage_context(self, frame: Image.Image, shot: dict, seg: dict) -> None:
-        """Render *only* user/storyboard-grounded details, never guess from story keywords."""
-        prop = str(shot.get("prop") or "none").lower()
-        if prop not in STAGE_PROPS:
-            prop = "none"
-        label = str(shot.get("text") or "").strip()[:40] if shot.get("text_mode") in (
-            "location", "name", "evidence", "punch", "quote", "stamp") else ""
-        close = shot.get("shot_type") == "close"
-        # A close-up is face-led. Keep all evidence labels/props off the face.
-        if close or (not label and prop == "none"):
-            return
-        key = ("generic-stage", label, prop, close)
+    def _spill(self, frame: Image.Image, im: Image.Image, ox: int, oy: int) -> None:
+        """Light from the figure's red aura on the plate behind it (never on the figure): a blurred red halo of its
+        silhouette, faint, plus a darker pool so the bright cut-out sits in the plate's light."""
+        key = ("spill", im.size, id(im))
         layer = self.layer_cache.get(key)
         if layer is None:
-            layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-            d = ImageDraw.Draw(layer)
-            pale, hot = (210, 221, 235, 216), self.acc + (255,)
-            if label:
-                f = font("mono", 26)
-                label_w = min(W - 140, int(d.textlength(label.upper(), font=f) + 60))
-                d.rounded_rectangle((66, 210, 66 + label_w, 278), radius=13, fill=(16, 21, 28, 230))
-                d.rectangle((76, 230, 85, 263), fill=hot)
-                d.text((100, 232), label.upper(), font=f, fill=(243, 244, 245, 255))
-            if not close and prop != "none":
-                self._draw_stage_prop(d, prop, (790, 460, 1010, 680), pale, hot)
+            pad = 60
+            a = Image.new("L", (im.width + 2 * pad, im.height + 2 * pad), 0)
+            a.paste(im.getchannel("A"), (pad, pad))
+            glow = a.filter(ImageFilter.GaussianBlur(28)).point(lambda v: int(v * 0.30))
+            layer = Image.new("RGBA", a.size, (205, 30, 45, 0))
+            layer.putalpha(glow)
+            if len(self.layer_cache) > 60:
+                self.layer_cache = {k: v for k, v in self.layer_cache.items() if k[0] != "spill"}
             self.layer_cache[key] = layer
-        frame.alpha_composite(layer)
-        # The renderer positions a prop as a foreground object ONLY on a held-object pose.
-        # No special case for luggage, film reels, airports, or any specific story.
-        if prop != "none" and shot.get("primary") == "you" and shot.get("action") == "holding" and (
-                shot.get("shot_type") == "medium"):
-            d = ImageDraw.Draw(frame)
-            self._draw_stage_prop(d, prop, (421, 891, 736, 1045),
-                                  (243, 236, 223, 255), self.acc + (255,))
-
-    @staticmethod
-    def _travel(action, facing, x) -> float:
-        speed = {"walking": 260, "boarding": 300, "sneaking": 160, "running": 520}.get(action or "", 0)
-        return (1 if facing == "right" else -1) * speed * (x - 0.5)
-
-    @staticmethod
-    def _exit_alpha(action, x) -> float:
-        return 1.0 - max(0.0, (x - 0.8) / 0.2) if action == "boarding" else 1.0
+        self._paste(frame, layer, ox - 60, oy - 60)
 
     def _background(self, seg: dict, x: float) -> Image.Image:
         """The painted place, STILL by default; subtle_push / subtle_pan / parallax_light only when planned."""
         s = seg["shot"]
-        if CONFIG.get("explainer_character_stage", True):
-            key = ("blank-stage",)
-            if key not in self.static:
-                self.static[key] = Image.new("RGBA", (W, H), (43, 48, 55, 255))
-            return self.static[key].copy()
-        plate = self.assets["plates"].get(s.get("location")) or next(iter(self.assets["plates"].values()))
+        plates = self.assets["plates"]
+        if not plates:
+            raise ExplainerUnavailable("scene shot without a story plate (a blank studio is not allowed)")
+        plate = plates.get(s.get("location")) or next(iter(plates.values()))
         st = s.get("shot_type", "wide")
         zoom = {"wide": 1.0, "medium": 1.18, "close": 1.4, "over_shoulder": 1.1}.get(st, 1.0)
         motion = s.get("motion", "none")
@@ -1423,8 +1310,6 @@ class Renderer:
 
     # ---------------------------------------------------------------- text on scene shots
     def overlay(self, frame: Image.Image, s: dict, t: float, target) -> None:
-        if CONFIG.get("explainer_character_stage", True):
-            return  # no extra lower-third text over the actor; context label + safe karaoke only
         mode, text = s.get("text_mode", "none"), s.get("text") or ""
         if mode == "none" or not text or t < 0.12:
             return
@@ -1575,8 +1460,6 @@ class Renderer:
         return frame
 
     def _opener_bg(self) -> Image.Image:
-        if CONFIG.get("explainer_character_stage", True):
-            return Image.new("RGBA", (W, H), (28, 32, 39, 255))
         if "opener_bg" not in self.layer_cache:
             first = next((s["shot"] for s in self.segs if s["shot"].get("type") == "scene"), {})
             plate = self.assets["plates"].get(first.get("location")) if first else None
@@ -1639,25 +1522,14 @@ class Renderer:
                        if seg["start"] - 0.05 <= w["start"] < seg["end"]], "bg": bg}
         if sh.get("template") == "filmstrip":
             if "stills" not in self.layer_cache:
-                if CONFIG.get("explainer_character_stage", True):
-                    # Reusable storyboard panels of the ACTOR, not four blank placeholders or AI scenes.
-                    result = []
-                    for act, expr in (("holding", "curious"), ("pointing", "determined"),
-                                      ("thinking", "worried"), ("reacting", "shocked")):
-                        bg_im = Image.new("RGB", (600, 760), (49, 54, 60))
-                        fig, (fx, fy) = self.figure("you", act, expr, "front", "right", 0.0, 600)
-                        bg_im.paste(fig, (round(300 - fx), round(705 - fy)), fig)
-                        result.append(bg_im)
-                    self.layer_cache["stills"] = result
-                else:
-                    self.layer_cache["stills"] = [Image.open(p) for p in list(self.assets["plates"].values())[:4]]
+                self.layer_cache["stills"] = [Image.open(p) for p in list(self.assets["plates"].values())[:4]]
             c["stills"] = self.layer_cache["stills"]
         if sh.get("template") == "missing":
-            who = (sh.get("fields") or {}).get("subject") or "you"
-            key = ("missing_fig", who)
-            if key not in self.layer_cache:
-                self.layer_cache[key] = self.figure(who, "standing", "neutral", "front", "right", 0.0, 900)[0]
-            c["figure"] = self.layer_cache[key]
+            # only the host has approved artwork: another person's disappearance is told without a figure
+            if ((sh.get("fields") or {}).get("subject") or "you") == "you":
+                if "missing_fig" not in self.layer_cache:
+                    self.layer_cache["missing_fig"] = self.figure("front", "right", 900)[0]
+                c["figure"] = self.layer_cache["missing_fig"]
         return c
 
     def _slide_in(self, frame: Image.Image, t: float) -> Image.Image:
@@ -1918,8 +1790,6 @@ class Renderer:
         im = Image.new("RGBA", (W, hgt), (0, 0, 0, 0))
         shadow = Image.new("RGBA", (W, hgt), (0, 0, 0, 0))
         d, ds = ImageDraw.Draw(im), ImageDraw.Draw(shadow)
-        if kind != "card" and CONFIG.get("explainer_character_stage", True):
-            d.rounded_rectangle((58, 0, W - 58, hgt), radius=23, fill=(9, 13, 19, 232))
         k = 0
         for li, line in enumerate(lines):
             widths = [d.textlength(w, font=f) for w in line]
@@ -2082,6 +1952,7 @@ def render(story: dict, narration: dict, p: dict, assets: dict, workdir: Path) -
     story["_visuals"] = {"distinct": len(secs), "longest_s": round(secs[top], 1),
                          "longest_share": round(secs[top] / total, 3), "longest_name": top}
     lens = [s["end"] - s["start"] for s in segs]
+    story["explainer_character_assets"] = sorted(r.used_assets)
     story["explainer_render"] = {"segments": len(segs), "counts": counts, "shot_len_min": round(min(lens), 2),
                                  "shot_len_max": round(max(lens), 2), "shot_len_avg": round(sum(lens) / len(lens), 2),
                                  "render_seconds": round(time.time() - t0)}
@@ -2100,8 +1971,13 @@ def render(story: dict, narration: dict, p: dict, assets: dict, workdir: Path) -
 
 
 def build(story: dict, narration: dict, img_dir: Path, workdir: Path) -> Path:
-    """plan -> painted assets -> render (no music; main.py / the test add it like for classic)."""
+    """approved-asset check -> shot list (plan) -> story plates -> render (no music; main.py adds it like for
+    classic). The shot list is saved atomically in the checkpoint (explainer_storyboard.json, manifest stage
+    "shot_list"): the same narration reuses it with no new LLM call."""
     import hashlib
+    import checkpoint
+    import sprites
+    sprites.require_all()  # missing / changed approved art: fail by asset ID, never substitute
     key = hashlib.sha1(json.dumps([w["word"] for w in narration["words"]]).encode()).hexdigest()[:16]
     saved = img_dir / "explainer_storyboard.json"
     p = None
@@ -2109,17 +1985,21 @@ def build(story: dict, narration: dict, img_dir: Path, workdir: Path) -> Path:
         old = json.loads(saved.read_text())
         if old.get("key") == key:
             p = old["plan"]
+            finalize(p, int(CONFIG.get("explainer_max_plates", 6)))
             log("Explainer storyboard: reused from the earlier try (same narration)")
-    except (OSError, ValueError, KeyError):
-        pass
+    except (OSError, ValueError, KeyError, ExplainerUnavailable) as e:
+        if isinstance(e, ExplainerUnavailable):
+            log(f"Explainer storyboard from the earlier try is not valid any more ({e}): planning again")
+        p = None
     if p is None:
         p = plan(story, narration)
         img_dir.mkdir(parents=True, exist_ok=True)
-        saved.write_text(json.dumps({"key": key, "plan": p}, ensure_ascii=False, default=str))
+        checkpoint.write_atomic(saved, json.dumps({"key": key, "plan": p}, ensure_ascii=False, default=str))
+        checkpoint.register_image(saved, stage="shot_list")
     assets = make_assets(story, p, img_dir)
     story["render_style"] = "explainer"
-    story["explainer_plan"] = {"cast": [c["name"] for c in p["cast"].values()],
-                               "shots": sum(len(s["shots"]) for s in p["scenes"])}
+    story["explainer_plan"] = {"shots": sum(len(s["shots"]) for s in p["scenes"]),
+                               "locations": [l["name"] for l in p["locations"]]}
     return render(story, narration, p, assets, workdir)
 
 
