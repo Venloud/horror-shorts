@@ -377,6 +377,8 @@ def main() -> int:
         manifest.artifact(gate_report, "production-gate")
         manifest.stage("production_gate", "complete", evidence=gate_evidence)
 
+        if os.environ.get("RENDER_STYLE", "").lower() == "explainer" and story.get("render_style") != "explainer":
+            raise RuntimeError("Refusing to buffer a video that did not use the required explainer style")
         buffer.add(stamp, video, meta)
         manifest.artifact(meta, "caption")
         manifest.artifact(workdir / "story.json", "story")
