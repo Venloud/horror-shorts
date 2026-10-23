@@ -2584,5 +2584,70 @@
     "music_file": "unsolved_mystery.mp3",
     "buffered": "2026-10-23_2133",
     "tiktok": null
+  },
+  {
+    "date": "2026-10-23_2249",
+    "story_id": "f8f477b53755",
+    "title": "The Mysterious Disappearance Of Amelia Earhart",
+    "premise": "Renowned aviator Amelia Earhart and her navigator vanished over the Pacific Ocean while attempting to circumnavigate the world.",
+    "subgenre": "real unsolved mystery",
+    "mode": "mystery",
+    "true_story": true,
+    "case": "Amelia Earhart",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Early twentieth century America and the Pacific Ocean",
+    "threat": "The perils of early aviation and a mysterious disappearance over the ocean",
+    "twist": "Earhart and her navigator vanished completely over the Pacific Ocean during their attempted global circumnavigation.",
+    "score": null,
+    "seconds": 68.2,
+    "voice_speed": 1.2,
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [],
+    "visual_mode": "fast",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 90,
+    "visuals": {
+      "distinct": 23,
+      "longest_s": 8.0,
+      "longest_share": 0.111,
+      "longest_name": "scene:The Earhart Family Home:you:medium:front"
+    },
+    "yt_title": "It Is Just Like Flying... Amelia Earhart of the Pacific Ocean #shorts",
+    "hashtags": [
+      "ameliaearhart",
+      "pacificocean",
+      "unsolvedmysteries",
+      "history"
+    ],
+    "yt_tags": [
+      "amelia earhart",
+      "amelia earhart disappearance",
+      "fred noonan",
+      "pacific ocean disappearance",
+      "unsolved mystery",
+      "true story",
+      "aviation history",
+      "amelia earhart history",
+      "lost in the pacific",
+      "disappearance case",
+      "unsolved history",
+      "amelia earhart mystery",
+      "amelia earhart story",
+      "pacific ocean mystery",
+      "true crime story"
+    ],
+    "opening": "Constructing a homemade ramp on her family tool shed, Amelia emerged from her first flight shouting, 'Oh, Pidge, it's just like flying!' This is a true story.",
+    "music_file": "unsolved_mystery.mp3",
+    "buffered": "2026-10-23_2249",
+    "tiktok": null
   }
 ]
