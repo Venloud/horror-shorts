@@ -5,6 +5,12 @@ name: Night Files buffer fill
 # Manual only: owner starts an isolated build, no scheduled generation.
 on:
   workflow_dispatch:
+    inputs:
+      fresh_images:
+        description: "Generate fresh images"
+        type: boolean
+        default: true
+        required: false
 # The builder saves history/checkpoints to this repository; GitHub's default token is read-only.
 permissions:
   contents: write
