@@ -139,7 +139,7 @@ def queue_one(stamp, mp4, json_asset, queued, remote_texts, record, fallback_tit
     if not post or not post.get("id"):
         raise RuntimeError("Queueing result uncertain; review Buffer before retrying: " + repr(result))
     queued[stamp] = {"buffer_post_id": post["id"], "due_at": post.get("dueAt"), "title": title}
-    STATE.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\\n")
+    STATE.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n")
     print("Queued exactly one video:", stamp, "Buffer ID:", post["id"])
     return True
 
