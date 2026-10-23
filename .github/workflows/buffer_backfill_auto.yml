@@ -2,7 +2,7 @@ name: Automated Buffer YouTube backfill
 
 on:
   schedule:
-    - cron: "20 9 * * *"
+    - cron: "*/15 * * * *"
   workflow_dispatch:
 
 permissions:
