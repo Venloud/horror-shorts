@@ -723,7 +723,7 @@ class TestMultiModelWriter(unittest.TestCase):
         import story
         self.story = story
         self.primary = {"title": "Disappeared", "scenes": [
-            {"narration": "This mystery contains enough grounded spoken words " * 10}
+            {"narration": "This mystery contains enough grounded spoken words " * 4}
             for _ in range(6)], "twist_scene": 4, "model": "gemini-3.8-flash", "writer": "gemini"}
         self.prompt = "Use ONLY the supplied facts. Title: Disappeared. Facts: flight lost at sea."
 
