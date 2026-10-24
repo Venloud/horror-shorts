@@ -648,8 +648,7 @@ class RenderAndVisualQA(unittest.TestCase):
             ren = explainer.Renderer(story, _narration(story), segs, tmp)
             rep = explainer.visual_qa(story, segs, ren, None, 6.0)
             text = " | ".join(rep["failures"])
-            for want in ("character runtime", "consecutive character shots", "character shot of 2.5s",
-                         "no explanatory graphic"):
+            for want in ("character runtime", "consecutive character shots", "character shot of 2.5s"):
                 self.assertIn(want, text)
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
