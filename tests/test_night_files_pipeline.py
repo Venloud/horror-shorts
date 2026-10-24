@@ -696,6 +696,52 @@ class FinalNarrationApproval(unittest.TestCase):
             story.final_script_gate(item, "test")
             self.assertEqual(judge.call_count, 2)
 
+    def test_blocked_narration_stays_blocked_after_checkpoint_resume(self):
+        # PR #24 review: a blocked script saved in a checkpoint must be blocked again on resume, not waved through
+        # by its cached approval (same SHA). Only the advisory LLM call is spared.
+        import story
+        item = {"title": "The Disappearance", "mode": "mystery", "scenes": [{"narration": "A biography."}]}
+        reply = {"approved": True, "reasons": [], "title_alignment": 9, "narrative_logic": 9, "payoff": 9,
+                 "fact_integrity": 9}
+        with mock.patch.object(story, "_json_call", return_value=reply) as judge:
+            with self.assertRaises(story.StoryDiscarded):
+                story.final_script_gate(item, "test")
+            self.assertTrue(item["final_script_approval"]["blocked"])
+            resumed = json.loads(json.dumps(item))  # what checkpoint.save_story / resume round-trips
+            with self.assertRaises(story.StoryDiscarded):
+                story.final_script_gate(resumed, "test")
+            with self.assertRaises(story.StoryDiscarded):
+                story.final_script_gate(resumed, "test")
+            self.assertEqual(judge.call_count, 1)
+        self.assertTrue(resumed["final_script_approval"]["blocked"])
+
+    def test_cached_block_is_kept_even_if_checks_cannot_rerun(self):
+        # the same words were blocked before (e.g. the fact source was not saved with the checkpoint): still blocked
+        import story
+        item = {"title": "The Lantern", "mode": "lore", "scenes": [{"narration": "The lantern man walked."}]}
+        digest = hashlib.sha256("The lantern man walked.".encode("utf-8")).hexdigest()
+        item["final_script_approval"] = {"sha256": digest, "checked": True, "blocked": True, "approved": True,
+                                         "checks": [{"code": "unsupported_fact", "severity": "serious",
+                                                     "detail": "1888 is not in the source"}]}
+        with mock.patch.object(story, "writing_checks", return_value=[]), \
+                mock.patch.object(story, "_json_call") as judge:
+            with self.assertRaises(story.StoryDiscarded) as err:
+                story.final_script_gate(item, "test")
+        judge.assert_not_called()
+        self.assertIn("unsupported_fact", str(err.exception))
+
+    def test_stale_clean_approval_does_not_hide_a_new_serious_finding(self):
+        # a cached "not blocked" result for the same words is re-measured; a serious finding now still blocks
+        import story
+        item = {"title": "The Disappearance", "mode": "mystery", "scenes": [{"narration": "A biography."}]}
+        digest = hashlib.sha256("A biography.".encode("utf-8")).hexdigest()
+        item["final_script_approval"] = {"sha256": digest, "checked": True, "blocked": False, "approved": True}
+        with mock.patch.object(story, "_json_call") as judge:
+            with self.assertRaises(story.StoryDiscarded):
+                story.final_script_gate(item, "test")
+        judge.assert_not_called()
+        self.assertTrue(item["final_script_approval"]["blocked"])
+
     def test_critic_failure_is_not_approval(self):
         # Owner, Oct 24: an unavailable editor is NOT recorded as an approval, and does not stop a safe video.
         import story

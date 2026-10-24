@@ -241,7 +241,8 @@ so a new session can pick up without starting over.
      (biography before the event) / unnatural_voice ("you watch / follow / witness") / repetitive / forced_questions
      / empty_ending / fiction_as_fact / unsupported_fact (numbers + years not in the source). BLOCKING only:
      off_title, fiction_as_fact, unsupported_fact (in `final_script_gate` on the voiced narration, after one targeted
-     revision + re-voice in main.py; the editor LLM there is advisory, an unavailable editor never blocks). Fiction:
+     revision + re-voice in main.py; the editor LLM there is advisory, an unavailable editor never blocks; a cached
+     approval for the same narration SHA only skips the editor call: the checks re-run and a cached block stays blocked). Fiction:
      one draft + one rewrite max, `StoryBelowBar` no longer raised; premise check uses the clearest pitch instead of
      discarding. `explainer.adapt` is reverted when it measures worse; it no longer forces second person. Metadata:
      story["writing"] (kind, primary, challenger, judge, selected, reason, evidence, checks, revisions, llm_calls),

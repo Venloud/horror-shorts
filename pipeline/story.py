@@ -1084,12 +1084,22 @@ def final_script_gate(story: dict, api_key: str) -> dict:
     spoken = "\n".join(sc.get("narration", "") for sc in story.get("scenes") or [])
     digest = hashlib.sha256(spoken.encode("utf-8")).hexdigest()
     previous = story.get("final_script_approval") or {}
-    if previous.get("sha256") == digest and previous.get("checked") is True:
-        return story
+    # A saved approval for the same words only spares the advisory LLM call. The objective checks always run again
+    # and a narration once blocked stays blocked: a resumed checkpoint can never carry a rejected script past here.
+    cached = previous if previous.get("sha256") == digest and previous.get("checked") is True else None
     kind = writing_kind(story)
     checks = writing_checks(story, kind, story.get("_fact_source"))
     serious = _severity(checks, "serious")
+    if not serious and cached and cached.get("blocked"):
+        serious = _severity(cached.get("checks") or [], "serious") or [
+            {"code": "previous_block", "severity": "serious", "detail": "this exact narration was blocked before"}]
     approval = {"sha256": digest, "checked": True, "kind": kind, "checks": checks, "blocked": bool(serious)}
+    if cached:
+        approval.update({k: cached[k] for k in ("editor", "approved", "ratings", "reasons") if k in cached})
+        story["final_script_approval"] = approval
+        if serious:
+            raise StoryDiscarded("Final narration has a serious problem: " + _brief(serious)[:260])
+        return story
     prompt = (
         "You are the FINAL script editor for Night Files. Review the final spoken text only. Do not rewrite it. "
         "Reply as JSON with keys approved (boolean), reasons (array of short, concrete strings quoting the text), "
