@@ -1477,8 +1477,8 @@ def visual_qa(story: dict, segs: list[dict], ren: "Renderer", video: Path | None
     for s in body:
         if s["shot"]["type"] == "host" and dur(s) > max_host + 0.05:
             fails.append(f"character shot of {dur(s):.1f}s at {s['start']:.1f}s (max {max_host:.0f}s)")
-        if dur(s) > 3.05 and s is not segs[-1]:
-            fails.append(f"{s['shot']['type']} held {dur(s):.1f}s at {s['start']:.1f}s (max 3 s)")
+        if dur(s) > SHOT_MAX + 0.05 and s is not segs[-1]:
+            fails.append(f"{s['shot']['type']} held {dur(s):.1f}s at {s['start']:.1f}s (max {SHOT_MAX:g} s)")
     by_scene = {}
     for s in body:
         by_scene.setdefault(s["scene"], []).append(s)
