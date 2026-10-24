@@ -1494,8 +1494,7 @@ def visual_qa(story: dict, segs: list[dict], ren: "Renderer", video: Path | None
         for s in imgs:
             if not Path(s["shot"]["file"]).exists() or not valid_image(Path(s["shot"]["file"])):
                 fails.append(f"scene {i + 1}: picture {Path(s['shot']['file']).name} missing or corrupt")
-        if mine and not grs:
-            fails.append(f"scene {i + 1}: no explanatory graphic")
+        # Do not require a graphic in every scene; only factual, purposeful graphics are valid.
         for g in grs:
             p = graphic_problem(story, i, g["shot"]) if g["shot"].get("template") != "closing" else None
             if p:
