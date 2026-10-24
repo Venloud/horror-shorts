@@ -442,7 +442,7 @@ class ShotLists(unittest.TestCase):
                     if s["shot"]["type"] == "host":
                         self.assertLessEqual(s["end"] - s["start"], 2.0 + 1e-6)
                     if s is not segs[-1]:
-                        self.assertLessEqual(s["end"] - s["start"], 3.05)
+                        self.assertLessEqual(s["end"] - s["start"], explainer.SHOT_MAX + 0.05)
                 self.assertAlmostEqual(segs[-1]["end"], total, places=2)  # no end card: the story runs to the end
                 print(f"\n[shot list {name}] {len(segs)} shots, image {secs['image'] / total:.0%}, graphic "
                       f"{secs['graphic'] / total:.0%}, host {secs['host'] / total:.0%}; graphics: "
