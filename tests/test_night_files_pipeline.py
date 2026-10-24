@@ -716,3 +716,43 @@ class FinalNarrationApproval(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestMultiModelWriter(unittest.TestCase):
+    def setUp(self):
+        import story
+        self.story = story
+        self.primary = {"title": "Disappeared", "scenes": [
+            {"narration": "This mystery contains enough grounded spoken words " * 10}
+            for _ in range(6)], "twist_scene": 4, "model": "gemini-3.8-flash", "writer": "gemini"}
+        self.prompt = "Use ONLY the supplied facts. Title: Disappeared. Facts: flight lost at sea."
+
+    def test_challenger_selects_independently_judged_draft(self):
+        candidate = {**self.primary, "title": "Disappeared", "writer": "temporary"}
+        with mock.patch.dict(os.environ, {"NVIDIA_API_KEY": "test-key"}), \
+             mock.patch.object(self.story, "_call_model", side_effect=[candidate, {"winner": "B", "reason": "better hook"}]) as call, \
+             mock.patch.object(self.story, "model_chain", return_value=["gemini-3.8-flash", "groq:judge-model"]), \
+             mock.patch.object(self.story, "_writer", return_value="nvidia writer"), \
+             mock.patch.dict(self.story.CONFIG, {"writer_challenge_enabled": True, "writer_challenger_model": "nvidia:deepseek-ai/deepseek-v4.1-flash"}):
+            result = self.story.challenge_true_story(self.primary.copy(), self.prompt, "dummy")
+        self.assertEqual(result["writer_comparison"]["selected"], "B")
+        self.assertEqual(result["model"], "nvidia:deepseek-ai/deepseek-v4.1-flash")
+        self.assertEqual(call.call_count, 2)
+
+    def test_challenger_failure_preserves_original(self):
+        with mock.patch.dict(os.environ, {"NVIDIA_API_KEY": "test-key"}), \
+             mock.patch.object(self.story, "_call_model", side_effect=RuntimeError("429 quota")), \
+             mock.patch.dict(self.story.CONFIG, {"writer_challenge_enabled": True}):
+            result = self.story.challenge_true_story(self.primary.copy(), self.prompt, "dummy")
+        self.assertEqual(result["model"], "gemini-3.8-flash")
+
+    def test_no_independent_critic_preserves_original(self):
+        candidate = self.primary.copy()
+        with mock.patch.dict(os.environ, {"NVIDIA_API_KEY": "test-key"}), \
+             mock.patch.object(self.story, "_call_model", return_value=candidate) as call, \
+             mock.patch.object(self.story, "model_chain", return_value=["gemini-3.8-flash", "nvidia:deepseek-ai/deepseek-v4.1-flash"]), \
+             mock.patch.dict(self.story.CONFIG, {"writer_challenge_enabled": True}):
+            result = self.story.challenge_true_story(self.primary.copy(), self.prompt, "dummy")
+        self.assertEqual(result["model"], "gemini-3.8-flash")
+        call.assert_called_once()
+
