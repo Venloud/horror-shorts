@@ -1,0 +1,123 @@
+name: Night Files explainer re-render (test only)
+
+# Re-renders an EXISTING story (default: the Amelia Earhart video f8f477b53755) with the current explainer.
+# Test only: never buffers, posts, writes history or touches the production checkpoint. No TikTok / YouTube secrets.
+on:
+  workflow_dispatch:
+    inputs:
+      story_file:
+        description: "Story JSON to re-render (repository path)"
+        type: string
+        default: "tests/fixtures/amelia_f8f477b53755.json"
+        required: false
+      fresh_images:
+        description: "Generate fresh images (OFF: reuse matching library pictures first)"
+        type: boolean
+        default: true
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: explainer-rerender
+  cancel-in-progress: false
+
+jobs:
+  rerender:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Night Files Remotion editing layer
+        run: npm install --prefix remotion --no-audit --no-fund
+
+      - name: Install system tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg espeak-ng fonts-dejavu-core > /dev/null
+
+      - name: Get caption font
+        run: |
+          mkdir -p assets/fonts
+          curl -fsSL -o assets/fonts/Anton-Regular.ttf \
+            https://raw.githubusercontent.com/google/fonts/main/ofl/anton/Anton-Regular.ttf || true
+
+      - name: Cache models
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-models-v4
+          restore-keys: hf-models-
+
+      - name: Install Python packages
+        run: |
+          pip install -q torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -q -r requirements.txt
+
+      - name: Cloudflare neurons used today (this test adds to the same daily ledger)
+        uses: actions/cache/restore@v4
+        with:
+          path: cache/cf-usage
+          key: cf-usage-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: cf-usage-
+
+      - name: Re-render the story (test only)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          SI_API_KEY: ${{ secrets.SI_API_KEY }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          MODELSCOPE_TOKEN: ${{ secrets.MODELSCOPE_TOKEN }}
+          POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+          RENDER_STYLE: "explainer"
+          FRESH_IMAGES: ${{ inputs.fresh_images }}
+          STORY_FILE: ${{ inputs.story_file }}
+        run: cd pipeline && python rerender.py "../$STORY_FILE"
+
+      - name: Save today's Cloudflare usage
+        if: always() && hashFiles('cache/cf-usage/usage.json') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: cache/cf-usage
+          key: cf-usage-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Check the MP4 is there before uploading
+        if: always()
+        run: |
+          ls -la output/rerender/*/ || true
+          for f in output/rerender/*/rerender_final.mp4; do
+            [ -s "$f" ] && ffprobe -v error -show_entries format=duration:stream=codec_type,width,height -of compact "$f"
+          done
+
+      - name: Upload re-render (MP4, frame sheet, manifests, QA)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: explainer-rerender-${{ github.run_id }}
+          path: |
+            output/rerender/*/rerender_final.mp4
+            output/rerender/*/frame_sheet.png
+            output/rerender/*/shot_manifest.json
+            output/rerender/*/provenance.json
+            output/rerender/*/visual_qa.json
+            output/rerender/*/report.txt
+            output/rerender/*/story.json
+          retention-days: 14
+          if-no-files-found: error

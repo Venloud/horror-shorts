@@ -216,6 +216,10 @@ jobs:
             output/**/contact_sheet.png
             output/**/summary.txt
             output/**/production_gate.json
+            output/**/explainer_polished.mp4
+            output/**/visual_qa.json
+            output/**/shot_manifest.json
+            output/**/provenance.json
           retention-days: 7
           if-no-files-found: ignore
 

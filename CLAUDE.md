@@ -644,12 +644,27 @@ so a new session can pick up without starting over.
   fallback (stickman.py, the s1/s2 sprite cycles, the vector close-up pack and the FLUX hoodie set are retired);
   every file is sha256-checked before a render: missing/changed = MissingAsset naming the ID. F16 shocked is an opaque
   black square until re-exported transparent: shocked uses F15. No other people on screen until N01-N04 exist.
-- Scenes = the host composited INTO a Cloudflare FLUX plate of the story's own location (no people, cinematic horror
-  lighting): placement on the floor, contact shadow, faint red aura spill on the plate (never on the figure);
-  close-up = F-face over a blurred crop of the same plate. "blank studio" / empty stage is rejected
-  (`explainer.validate_shot_list`); no plate at all = ImageQuotaWait (Cloudflare out) or a failed attempt, never a
-  blank video. Plates are cached per story by prompt hash (`x_plate_<sha12>.png` in the checkpoint), max
-  `explainer_max_plates` 4 locations per video (others fold into the closest one, each reused 2-4x).
+- **Visual storytelling (Oct 24, owner; supersedes the Oct 23 "host on 4 location plates")**: the story is told
+  with STORY PICTURES, explained by graphics, the host is occasional B-roll. `explainer.story_images` runs the
+  existing chain on each scene's own image_prompt/_2 + image_query (asset library only with fresh_images OFF ->
+  `media.fill_shots`: archive photos / prints, Pexels / Pixabay photos + clips (photo search added Oct 24) -> AI via
+  `images.generate_images`, shots_per_scene 2 = max ~18 AI images per video, same QA / budget / broker fallbacks as
+  classic). Before Oct 24 the explainer never called media.fill_shots (0 archive/stock) and drew 4 generic plates.
+  `media.auto_tag`: TRUE pre-1950 stories search archive photos of the story's own subject (story["case"] named in
+  characters) and of ledger-named aircraft / ships / buildings (flag `archive_person_photos`, `real_photo_max_historic`
+  6); never for child / death / wreck shots; the photo title must contain the name. `explainer.plan_graphics`: LLM
+  picks (checked word by word) + factual auto graphics (date_stamp with the ledger key as kicker, evidence from ledger
+  values, quote, missing, map_route only with 2+ places said in the scene, fact) + impact fallback (reported
+  exception). `explainer.sequence`: picture -> graphic -> second picture -> (host), 1.5-3 s cuts on word starts;
+  host max 1 per scene, never two scenes in a row, <= 2 s (`explainer_host_max_seconds`), <= 15%
+  (`explainer_host_max_share`), mostly F-faces over a blurred crop of the scene's picture. No end card, no Remotion
+  progress rail / corner label. `explainer.visual_qa` (HARD, VisualQAFailed): character share / consecutive /
+  length, a picture of its own + a graphic per scene, graphic facts, provenance + licence of every external asset,
+  approved IDs only, no rail in sampled frames, no end card; writes visual_qa.json, shot_manifest.json,
+  provenance.json. AI pictures are cached by story + prompt + provider + sha256 (`scene_XXl.ai.json`).
+  Test-only re-render of an existing story: `explainer_rerender.yml` -> `pipeline/rerender.py` (never buffers /
+  posts / writes history; the narration is re-voiced from the same text because the buffered video's checkpoint
+  keeps no narration). Fixture: tests/fixtures/amelia_f8f477b53755.json.
 - `fresh_images` (buffer_fill.yml checkbox -> env FRESH_IMAGES; before Oct 23 it was never passed on, so it did
   nothing): ON = new plates for a new story, a resume redraws only missing/corrupt/rejected plates; OFF = this
   story's plates, then a matching asset-library plate, then new images for what is still missing.
@@ -665,11 +680,8 @@ so a new session can pick up without starting over.
   `pipeline/noir.py` (true_story, title, evidence, map_route, fact, filmstrip, quote, impact, connections, compare,
   missing, closing), fields only from the narration's words / numbers, max ONE date on screen per video; saved in
   img_dir/explainer_storyboard.json (same narration = same storyboard, no new LLM call).
-- Cloudflare budget (`explainer.Budget`, img_dir/explainer_images.json, counted across retries): config
-  `explainer_new_images` 2 new images per video, hard `explainer_max_images` 4 calls incl. QA redraws. Order: this
-  story's earlier plates (a text-only retry never redraws) -> asset library painted places (CLIP, empty-place QA) ->
-  new Cloudflare -> a fitting plate of this video mirrored/regraded -> local noir ground. New QA-passed plates go
-  into the asset library after buffering (`explainer.record_plates`).
+- (Oct 24) The plate budget (`explainer.Budget`, explainer_new_images / explainer_max_images / plates) is gone; story
+  pictures follow shots_per_scene + cf_budget like classic and go into the asset library via library.record_video.
 - PIL gotcha: ImageDraw with translucent fills REPLACES pixels on RGBA images; draw on a transparent layer and
   alpha_composite (noir templates and overlays do).
 

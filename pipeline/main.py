@@ -200,8 +200,9 @@ def main() -> int:
                 story_bible.build(story)
                 log(story_bible.summary(story))
             import shot_rules
-            if not use_explainer:  # the explainer plans its own shots (explainer.plan)
-                shot_rules.apply(story)
+            if not story.get("_shot_rules_done"):  # once per story: a resume never rewrites prompts (= redraws)
+                shot_rules.apply(story)  # the explainer's story pictures come from these shots too
+                story["_shot_rules_done"] = True
             if not testing:
                 checkpoint.save_story(story)
             manifest.stage("story_bible", "complete" if CONFIG.get("story_bible", True) else "skipped")
@@ -233,7 +234,7 @@ def main() -> int:
         log(f"Final narration: {narration['duration']:.1f}s at speed {narration.get('speed')}")
         img_dir = workdir / "images" if testing else checkpoint.IMAGES  # images are kept as soon as they exist
         video, imgs = None, None
-        if use_explainer:  # EXPERIMENTAL: stick-figure "you" on painted plates + code-drawn cards (explainer.py)
+        if use_explainer:  # story pictures + explanatory graphics + rare approved-host reactions (explainer.py)
             try:
                 stage = "explainer"
                 manifest.stage("render", "started")
@@ -397,11 +398,9 @@ def main() -> int:
         manifest.artifact(workdir / "story.json", "story")
         manifest.stage("buffer", "complete", buffer_count=buffer.count())
         manifest.finish("success")
-        if story.get("render_style", "classic") == "classic":  # QA-passed pictures go into the asset library
+        if story.get("render_style", "classic") in ("classic", "explainer"):  # QA-passed pictures -> library
             import library
             library.record_video(story, img_dir)
-        elif story.get("render_style") == "explainer":  # new Cloudflare plates are reused by later videos
-            explainer.record_plates(story, img_dir)
         # Used as soon as the video is safely in the buffer, so it can never be made twice.
         for sk in story.pop("_skipped", []):
             history.append({"date": stamp, **sk})

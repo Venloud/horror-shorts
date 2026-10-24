@@ -8,7 +8,8 @@ Every template is drawn locally (0 Cloudflare neurons), takes the story's own wo
 
 render(template, fields, t, dur, ctx) -> RGBA 1080x1920 frame. Templates (TEMPLATES): true_story, title, evidence,
 map_route, fact, filmstrip, quote, impact, connections, compare, missing, closing, photo_scan,
-clock_stop, shadow_reveal.
+clock_stop, shadow_reveal, date_stamp. ctx["bg"] (a darkened blur of the scene's own story image) replaces the
+plain noir ground when given, so a graphic stays inside the story's world.
 Safe area: x 70-960 (TikTok's right-hand buttons), y 200-1300 (captions sit at ~1430, the top bar ends ~140).
 """
 import math
@@ -27,7 +28,7 @@ BONE = (236, 230, 221)  # off-white type
 FONT_DIR = ROOT / "assets" / "fonts" / "explainer"
 SAFE_X0, SAFE_X1, SAFE_Y0, SAFE_Y1 = 70, 960, 200, 1300
 TEMPLATES = ("true_story", "title", "evidence", "map_route", "fact", "filmstrip", "quote", "impact", "connections",
-             "compare", "missing", "closing", "photo_scan", "clock_stop", "shadow_reveal")
+             "compare", "missing", "closing", "photo_scan", "clock_stop", "shadow_reveal", "date_stamp")
 
 
 def accent() -> tuple:
@@ -233,7 +234,37 @@ def render(template: str, fields: dict, t: float, dur: float, ctx: dict) -> Imag
 
 
 def _base(ctx: dict) -> Image.Image:
+    if ctx.get("bg") is not None:
+        return ctx["bg"].copy()
     return ground(ctx.get("tone", "midnight"), ctx.get("seed", 1)).copy()
+
+
+def _t_date_stamp(fields, t, dur, ctx):
+    """WHEN: the year (a year said in the narration) slams in big, digit by digit, a magenta rule wipes under it,
+    the spoken day / month label and the kicker (a fact-ledger key such as DISAPPEARANCE DATE) type in."""
+    acc = ctx["accent"]
+    frame = _base(ctx)
+    ov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(ov)
+    kicker(d, str(fields.get("kicker") or "WHEN")[:26], 110, 520, t, acc)
+    year = str(fields.get("year") or "")
+    f = font("cond", 330)
+    x = 104
+    for k, ch in enumerate(year):
+        g = back((t - 0.12 - 0.09 * k) / 0.28)
+        if g <= 0:
+            break
+        y = 590 + int(70 * (1 - min(1.0, g)))
+        d.text((x, y), ch, font=f, fill=BONE + (int(255 * min(1.0, g)),))
+        x += int(d.textlength(ch, font=f)) + 6
+    g = ease((t - 0.55) / 0.35)
+    d.rectangle((110, 975, 110 + int(760 * g), 985), fill=acc + (255,))
+    label = str(fields.get("label") or "").upper()
+    if label:
+        n = int(len(label) * min(1.0, max(0.0, t - 0.75) / 0.45))
+        d.text((112, 1010), label[:n], font=font("cond", 96), fill=acc + (255,))
+    frame.alpha_composite(ov)
+    return frame
 
 
 def _t_true_story(fields, t, dur, ctx):

@@ -1174,3 +1174,11 @@ once, no suicide angle or wording (BAN lines, now enforced for TRUE files too), 
   data/failed_stories/<id>/ + ntfy; buffer_fill.yml `retry_story_id`.
 - Removed: pipeline/stickman.py, explainer_test.py, explainer_character.py, tools/night_files_visual_preview.py,
   the archived explainer_test.yml / explainer_character.yml, ci.yml's blank-stage preview job.
+
+
+## Visual storytelling rebalance, 2026-10-24
+- Root cause of the character-heavy explainer (Amelia 2026-10-23_2249: 27 of 30 segments host-on-plate, 1 graphic,
+  0 archive/stock): the explainer planner built every scene shot as "host on the location plate" (4 plates per video),
+  never used the story's 36 per-shot prompts/queries and never called media.fill_shots.
+- Now: story pictures (archive / stock / AI per shot) -> graphics -> pictures -> rare host; hard visual QA + reports;
+  no end card, no progress rail. Test-only re-render: explainer_rerender.yml.

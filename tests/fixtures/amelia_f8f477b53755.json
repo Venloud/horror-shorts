@@ -1,0 +1,410 @@
+{
+  "title": "The Mysterious Disappearance Of Amelia Earhart",
+  "premise": "Renowned aviator Amelia Earhart and her navigator vanished over the Pacific Ocean while attempting to circumnavigate the world.",
+  "hook_overlay": "She built a ramp on her roof",
+  "scenes": [
+    {
+      "narration": "Constructing a homemade ramp on her family tool shed, Amelia emerged from her first flight shouting, 'Oh, Pidge, it's just like flying!' This is a true story.",
+      "image_prompt": "A young girl standing proudly next to a wooden ramp built on a rooftop shed",
+      "image_prompt_2": "A weathered wooden box resting on a sloping wooden ramp outdoors",
+      "image_prompt_3": "A broken wooden box on the ground next to a shed",
+      "image_prompt_4": "A young girl smiling with a bruised lip after a fall",
+      "sfx": "none",
+      "image_location": "The Earhart Family Home",
+      "image_location_2": "The Earhart Family Home",
+      "image_location_3": "The Earhart Family Home",
+      "image_location_4": "The Earhart Family Home",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_query": "wooden ramp on rooftop",
+      "image_query_2": "old wooden sled box",
+      "image_query_3": "broken wooden box",
+      "image_query_4": "girl bruised lip",
+      "location": "The Earhart Family Home"
+    },
+    {
+      "narration": "Born in eighteen ninety-seven, you watch as Amelia grows up exploring her neighborhood and climbing trees.",
+      "image_prompt": "A nineteenth century American midwestern town street under an overcast sky",
+      "image_prompt_2": "A classic two-story wooden house with a porch in a quiet neighborhood",
+      "image_prompt_3": "A large old tree in a backyard with thick branches",
+      "image_prompt_4": "A wooden fence bordering a grassy rural field",
+      "sfx": "none",
+      "image_location": "The Earhart Family Home",
+      "image_location_2": "The Earhart Family Home",
+      "image_location_3": "The Earhart Family Home",
+      "image_location_4": "The Earhart Family Home",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_query": "historic midwestern town street",
+      "image_query_2": "historic American house exterior",
+      "image_source_3": "old tree backyard",
+      "image_source_4": "wooden fence rural field",
+      "location": "The Earhart Family Home"
+    },
+    {
+      "narration": "During Christmas vacation, you follow her to Toronto where you see wounded soldiers returning.",
+      "image_prompt": "A historic brick military hospital building during a snowy winter day",
+      "image_prompt_2": "A quiet hospital room interior with a single wooden bed",
+      "image_prompt_3": "A snowy street outside a brick building in winter",
+      "image_prompt_4": "A frosted window pane looking out onto snow",
+      "sfx": "none",
+      "image_location": "Toronto Hospital",
+      "image_location_2": "Toronto Hospital",
+      "image_location_3": "Toronto Hospital",
+      "image_location_4": "Toronto Hospital",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_query": "historic brick military hospital",
+      "image_query_2": "old hospital room interior",
+      "image_source_3": "snowy street brick building",
+      "image_source_4": "frosted window snow",
+      "location": "Toronto Hospital"
+    },
+    {
+      "narration": "Working at Spadina Military Hospital, you listen as Amelia hears stories from pilots and develops an interest in flying.",
+      "image_prompt": "A nurse in a crisp white uniform and cap standing in a hallway",
+      "image_prompt_2": "A small glass medicine bottle and a ceramic spoon on a wooden table",
+      "image_prompt_3": "A vintage wooden desk with medical papers",
+      "image_prompt_4": "A dimly lit hospital corridor with wooden doors",
+      "sfx": "none",
+      "image_location": "Toronto Hospital",
+      "image_location_2": "Toronto Hospital",
+      "image_location_3": "Toronto Hospital",
+      "image_location_4": "Toronto Hospital",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_query": "vintage nurse uniform",
+      "image_query_2": "vintage medicine bottle on table",
+      "image_source_3": "vintage wooden desk medical papers",
+      "image_source_4": "hospital corridor wooden doors",
+      "location": "Toronto Hospital"
+    },
+    {
+      "narration": "In nineteen twenty-eight, you witness Amelia become the first woman to cross the Atlantic by airplane as a passenger.",
+      "image_prompt": "A vintage twin engine propeller airplane flying high above white clouds",
+      "image_prompt_2": "The metal wing of an early twentieth century airplane against a clear sky",
+      "image_prompt_3": "Clouds viewed from an airplane window",
+      "image_prompt_4": "The propeller of an old aircraft spinning fast",
+      "sfx": "none",
+      "image_location": "Open Airfield",
+      "image_location_2": "Open Airfield",
+      "image_location_3": "Open Airfield",
+      "image_location_4": "Open Airfield",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_query": "vintage propeller airplane in flight",
+      "image_query_2": "airplane wing in sky",
+      "image_source_3": "clouds airplane window",
+      "image_source_4": "airplane propeller spinning",
+      "location": "Open Airfield"
+    },
+    {
+      "narration": "By nineteen thirty-two, you see her make the first nonstop solo transatlantic flight by a woman, earning the Distinguished Flying Cross.",
+      "image_prompt": "A lone aviator standing beside a twin engine airplane on an airstrip",
+      "image_prompt_2": "A gleaming metallic medal resting inside a dark velvet lined box",
+      "image_prompt_3": "An airplane cockpit instrument panel from the nineteen thirties",
+      "image_prompt_4": "An aviator leather cap and goggles on a seat",
+      "sfx": "none",
+      "image_location": "Open Airfield",
+      "image_location_2": "Open Airfield",
+      "image_location_3": "Open Airfield",
+      "image_location_4": "Open Airfield",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_query": "aviator next to airplane",
+      "image_query_2": "vintage military medal",
+      "image_source_3": "cockpit instrument panel 1930s",
+      "image_source_4": "aviator leather cap goggles",
+      "location": "Open Airfield"
+    },
+    {
+      "narration": "On July second, nineteen thirty-seven, you track how Amelia and her navigator Fred Noonan disappeared over the Pacific.",
+      "image_prompt": "A silver twin engine airplane flying over vast endless blue ocean waves",
+      "image_prompt_2": "An old brass navigational compass resting on a wooden chart table",
+      "image_prompt_3": "A nautical map spread across a desk with a magnifying glass",
+      "image_prompt_4": "Dark gray storm clouds gathering over an open ocean horizon",
+      "sfx": "none",
+      "image_location": "Pacific Ocean",
+      "image_location_2": "Pacific Ocean",
+      "image_location_3": "Pacific Ocean",
+      "image_location_4": "Pacific Ocean",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_query": "silver airplane over ocean",
+      "image_query_2": "vintage brass compass on wood",
+      "image_source_3": "nautical map magnifying glass",
+      "image_source_4": "storm clouds over open ocean",
+      "location": "Pacific Ocean"
+    },
+    {
+      "narration": "Declared dead in nineteen thirty-nine, no trace of them was found after an extensive search.",
+      "image_prompt": "A stack of old hardcover books resting on a dark wooden desk",
+      "image_prompt_2": "A framed black and white photograph of a historic airplane on a wall",
+      "image_prompt_3": "A calendar page showing the year nineteen thirty-nine",
+      "image_prompt_4": "Empty ocean waters stretching to a hazy horizon under gray skies",
+      "sfx": "none",
+      "image_location": "Pacific Ocean",
+      "image_location_2": "Pacific Ocean",
+      "image_location_3": "Pacific Ocean",
+      "image_location_4": "Pacific Ocean",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_query": "stack of vintage books",
+      "image_query_2": "framed historical photo",
+      "image_source_3": "calendar page vintage",
+      "image_source_4": "empty ocean waters gray skies",
+      "location": "Pacific Ocean"
+    },
+    {
+      "narration": "Her childhood dream of flying ended in the vast depths of the Pacific, leaving you wondering what happened?",
+      "image_prompt": "A vast calm ocean stretching out toward a distant hazy horizon at twilight",
+      "image_prompt_2": "A single beam of light cutting through thick mist over dark water",
+      "image_prompt_3": "Deep dark blue ocean water viewed from above",
+      "image_prompt_4": "Twilight sky fading to black over a silent sea",
+      "sfx": "none",
+      "image_location": "Pacific Ocean",
+      "image_location_2": "Pacific Ocean",
+      "image_location_3": "Pacific Ocean",
+      "image_location_4": "Pacific Ocean",
+      "image_source": "stock_video",
+      "image_source_2": "stock_video",
+      "image_query": "ocean horizon at twilight",
+      "image_query_2": "fog over dark water",
+      "image_source_3": "deep dark blue ocean water",
+      "image_source_4": "twilight sky fading to black sea",
+      "location": "Pacific Ocean"
+    }
+  ],
+  "twist_scene": 7,
+  "caption": "The tragic final flight of Amelia Earhart.",
+  "hashtags": [
+    "ameliaearhart",
+    "aviationhistory",
+    "unsolvedmystery",
+    "history",
+    "mysteries"
+  ],
+  "pinned_comment": "What are your theories on the disappearance of Amelia Earhart and Fred Noonan?",
+  "characters": [
+    {
+      "name": "Amelia Earhart",
+      "look": "woman in her 30s with short wavy hair, wearing a leather aviator jacket"
+    }
+  ],
+  "fact_ledger": [
+    "Name: Amelia Mary Earhart",
+    "Birth date: July 24, 1897",
+    "Disappearance date: July 2, 1937",
+    "Declared dead date: January 5, 1939",
+    "Birth place: Atchison, Kansas",
+    "First Atlantic flight: 1928",
+    "First solo transatlantic flight: 1932",
+    "Award: Distinguished Flying Cross",
+    "Navigator: Fred Noonan",
+    "Aircraft: twin-engine Lockheed Model 10 Electra",
+    "Childhood event: constructed a homemade ramp in 1904",
+    "Nursing training: Red Cross, Spadina Military Hospital"
+  ],
+  "hook_candidates": [
+    "Constructing a homemade ramp on her family tool shed, Amelia emerged from her first flight shouting, 'Oh, Pidge, it's just like flying!'"
+  ],
+  "hook_scores": [
+    "10 | Constructing a homemade ramp on her family tool shed, Amelia emerged from her first flight shouting, 'Oh, Pidge, it's just like flying!'"
+  ],
+  "locations": [
+    {
+      "name": "The Earhart Family Home",
+      "look": "a modest nineteenth century midwestern house with wooden siding and a porch"
+    },
+    {
+      "name": "Toronto Hospital",
+      "look": "a historic brick military hospital with tall windows and snowy grounds"
+    },
+    {
+      "name": "Open Airfield",
+      "look": "a wide grassy airfield with vintage hangars under an open sky"
+    },
+    {
+      "name": "Pacific Ocean",
+      "look": "endless blue ocean waves under an open sky"
+    }
+  ],
+  "setting": "Early twentieth century America and the Pacific Ocean",
+  "threat": "The perils of early aviation and a mysterious disappearance over the ocean",
+  "twist": "Earhart and her navigator vanished completely over the Pacific Ocean during their attempted global circumnavigation.",
+  "model": "gemini-3.5-flash-lite",
+  "writer": "gemini (gemini-3.5-flash-lite)",
+  "critic_score": 90,
+  "sources": [
+    {
+      "title": "Wikipedia: Amelia Earhart",
+      "url": "https://en.wikipedia.org/wiki/Amelia_Earhart",
+      "domain": "en.wikipedia.org"
+    }
+  ],
+  "mode": "mystery",
+  "case": "Amelia Earhart",
+  "subgenre": "real unsolved mystery",
+  "true_story": true,
+  "_skipped": [],
+  "story_id": "f8f477b53755",
+  "explainer_adapted": true,
+  "explainer_before": [
+    "Earhart constructed a homemade ramp on her family tool shed and emerged from her first flight saying, 'Oh, Pidge, it's just like flying!' This is a true story.",
+    "Born in eighteen ninety-seven, Amelia grew up exploring her neighborhood, climbing trees, and hunting rats with a rifle.",
+    "During Christmas vacation in nineteen seventeen, she visited Toronto and saw wounded soldiers returning from the war.",
+    "She worked at Spadina Military Hospital, where she heard stories from military pilots and developed an interest in flying.",
+    "In nineteen twenty-eight, Earhart became the first woman to cross the Atlantic by airplane as a passenger.",
+    "By nineteen thirty-two, she made the first nonstop solo transatlantic flight by a woman, earning the Distinguished Flying Cross.",
+    "On July second, nineteen thirty-seven, Earhart and her navigator Fred Noonan disappeared over the Pacific Ocean.",
+    "Declared dead in nineteen thirty-nine, no trace of them was ever found after an extensive search.",
+    "Her childhood dream of flying ultimately ended in the vast, silent depths of the Pacific."
+  ],
+  "_story_bible": {
+    "title": "The Mysterious Disappearance Of Amelia Earhart",
+    "premise": "Renowned aviator Amelia Earhart and her navigator vanished over the Pacific Ocean while attempting to circumnavigate the world.",
+    "setting": "Early twentieth century America and the Pacific Ocean",
+    "threat": "The perils of early aviation and a mysterious disappearance over the ocean",
+    "twist": "Earhart and her navigator vanished completely over the Pacific Ocean during their attempted global circumnavigation.",
+    "twist_scene": 7,
+    "characters": [
+      {
+        "name": "Amelia Earhart",
+        "look": "woman in her 30s with short wavy hair, wearing a leather aviator jacket"
+      }
+    ],
+    "locations": [
+      {
+        "name": "The Earhart Family Home",
+        "look": "a modest nineteenth century midwestern house with wooden siding and a porch"
+      },
+      {
+        "name": "Toronto Hospital",
+        "look": "a historic brick military hospital with tall windows and snowy grounds"
+      },
+      {
+        "name": "Open Airfield",
+        "look": "a wide grassy airfield with vintage hangars under an open sky"
+      },
+      {
+        "name": "Pacific Ocean",
+        "look": "endless blue ocean waves under an open sky"
+      }
+    ],
+    "timeline": [
+      {
+        "scene": 1,
+        "event": "Constructing a homemade ramp on her family tool shed, Amelia emerged from her first flight shouting, 'Oh, Pidge, it's just like flying!' This is a true story.",
+        "location": "The Earhart Family Home",
+        "characters": []
+      },
+      {
+        "scene": 2,
+        "event": "Born in eighteen ninety-seven, you watch as Amelia grows up exploring her neighborhood, climbing trees, and hunting rats with a rifle.",
+        "location": "The Earhart Family Home",
+        "characters": []
+      },
+      {
+        "scene": 3,
+        "event": "During Christmas vacation, you follow her to Toronto where you see wounded soldiers returning from the war.",
+        "location": "Toronto Hospital",
+        "characters": []
+      },
+      {
+        "scene": 4,
+        "event": "Working at Spadina Military Hospital, you listen as Amelia hears stories from military pilots and develops an interest in flying.",
+        "location": "Toronto Hospital",
+        "characters": []
+      },
+      {
+        "scene": 5,
+        "event": "In nineteen twenty-eight, you witness Amelia become the first woman to cross the Atlantic by airplane as a passenger.",
+        "location": "Open Airfield",
+        "characters": []
+      },
+      {
+        "scene": 6,
+        "event": "By nineteen thirty-two, you see her make the first nonstop solo transatlantic flight by a woman, earning the Distinguished Flying Cross.",
+        "location": "Open Airfield",
+        "characters": []
+      },
+      {
+        "scene": 7,
+        "event": "On July second, nineteen thirty-seven, you track how Amelia and her navigator Fred Noonan disappeared over the Pacific Ocean.",
+        "location": "Pacific Ocean",
+        "characters": []
+      },
+      {
+        "scene": 8,
+        "event": "Declared dead in nineteen thirty-nine, you find that no trace of them was ever found after an extensive search.",
+        "location": "Pacific Ocean",
+        "characters": []
+      },
+      {
+        "scene": 9,
+        "event": "Her childhood dream of flying ended in the vast depths of the Pacific, leaving you to wonder what you would check first?",
+        "location": "Pacific Ocean",
+        "characters": []
+      }
+    ],
+    "continuity_rules": [
+      "Use the exact character names and keep each character's fixed look unchanged.",
+      "Keep each shot in the scene's stated location unless the narration explicitly moves.",
+      "Do not introduce a new person, creature, object, or location that the story does not establish.",
+      "The twist scene must visually support the documented twist, not invent a different reveal."
+    ]
+  },
+  "visual_mode": "fast",
+  "explainer_assets": {
+    "new": 4,
+    "story_reused": 0,
+    "library": 0,
+    "shared": 0,
+    "redrawn": 0,
+    "fresh_images": true,
+    "cloudflare_calls": 4,
+    "new_total": 4
+  },
+  "render_style": "explainer",
+  "explainer_plan": {
+    "shots": 16,
+    "locations": [
+      "The Earhart Family Home",
+      "Toronto Hospital",
+      "Open Airfield",
+      "Pacific Ocean"
+    ]
+  },
+  "_visuals": {
+    "distinct": 23,
+    "longest_s": 8.0,
+    "longest_share": 0.111,
+    "longest_name": "scene:The Earhart Family Home:you:medium:front"
+  },
+  "explainer_character_assets": [
+    "F05",
+    "F07",
+    "F17",
+    "M01",
+    "M02",
+    "M03",
+    "M04"
+  ],
+  "explainer_render": {
+    "segments": 30,
+    "counts": {
+      "opener": 1,
+      "opener_title": 1,
+      "scene": 27,
+      "graphic": 1
+    },
+    "shot_len_min": 1.2,
+    "shot_len_max": 3.0,
+    "shot_len_avg": 2.27,
+    "render_seconds": 109,
+    "remotion_polish": true
+  },
+  "music_file": "unsolved_mystery.mp3",
+  "music_source": "approved_configured_file",
+  "music_stage": "separate_post_render"
+}
