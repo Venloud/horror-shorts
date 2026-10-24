@@ -24,6 +24,24 @@ This guide is shared across the primary writer, alternate writers, script editor
 - The title, hook, scenes and ending must all tell the SAME story. A biography cannot pass as an unsolved mystery merely by mentioning the mystery at the end.
 - If a rewrite changes narration, critique the final narration again; never claim an earlier score validates a changed script.
 
+## Saying what kind of claim it is
+- Fact: said plainly ("Earhart and Noonan never reached Howland Island" only if the source says so).
+- Witness claim: "a radio operator said he heard...". Theory: "one theory is...", "investigators suspected...".
+- Rumor or legend: "people whispered...", "the story goes...". Never upgrade a theory or rumor into a fact.
+- Fiction never claims to be true, and true stories never borrow fiction's invented certainty.
+
+## Endings
+- Mystery: end on what the evidence actually shows and the leading explanations, then the honest open question.
+- Solved case / historical event: end on the documented outcome and why it matters.
+- Legend: end on the legend's own ending or what people still believe. Fiction: an earned, understandable ending.
+
+## How quality is checked (bounded, owner rule Oct 24)
+- Code measures concrete problems (title subject / event late or missing, biography before the event, stage
+  directions like "you watch", repetition, numbers not in the source, fiction presented as fact).
+- One primary draft, at most one challenger draft, one independent comparison, at most one targeted revision.
+- A low subjective score guides the revision and the analytics; it never throws away a finished, safe video. Only
+  demonstrable serious problems block (fabricated numbers/years, off-title story, fiction told as fact).
+
 ## Editor and critic checklist
 - Reject a title/story-promise mismatch, irrelevant biography/filler, fabricated detail, repetitive setup, weak scene causality, unexplained jump, misleading hook, or empty payoff.
 - Do not give high scores to a script that mostly avoids its stated subject. Explain concrete weaknesses and revisions, not just a number.

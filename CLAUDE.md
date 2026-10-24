@@ -201,9 +201,9 @@ so a new session can pick up without starting over.
    - **Story upgrade** (flags `story_upgrade`, `critic_pass`, `critic_min_score` 75, `gemini_min_interval` 4 s
      between Gemini text calls): true stories get UPGRADE_TRUE (strangest true detail, viewer can explain it, a new
      verified fact every 5-8 s, case/place name said early, no invented twists), lore gets UPGRADE_LORE. Then
-     `critic_pass` (scores hook/clarity/pacing/name_early/payoff/integrity + concrete reasons, max 2 rewrites,
-     BEFORE the fact check); still failing = `StoryDiscarded` (next topic / next build; an inbox item or case stays
-     queued). Fiction/coldcase: `pick_shape` rotates discovery / strange rule / gradual realization /
+     `critic_pass` (scores hook/clarity/pacing/name_early/payoff/integrity + concrete reasons, BEFORE the fact
+     check): since Oct 24 ADVISORY, one critic call + at most one targeted revision, never a discard (see **Writing
+     system** below). Fiction/coldcase: `pick_shape` rotates discovery / strange rule / gradual realization /
      investigation / reversal / uncanny normal (history `story_shape`), `pick_premise` pitches 3 premises and
      rejects vague ones (clarity < 7; one clear sentence + question + visual), "90% normal, 10% wrong", the
      ending explains what happened; the existing 80/100 score loop (3 drafts) is its critic.
@@ -227,6 +227,26 @@ so a new session can pick up without starting over.
    - **Hook candidates**: the real-story prompts return `hook_candidates` (3 first sentences); the editor pass
      scores them (`hook_scores`, "score | sentence") and `use_best_hook()` makes scene 1 start with the best one
      that passes `hook_problem()`; then `fix_hook()` still runs as a safety net.
+   - **Writing system (Oct 24, owner: "every finished, safe video gets the chance to be posted")**: every story
+     type (case / mystery / inbox-true, lore + inbox LORE/REMAKE topics, fiction + coldcase at script level) goes
+     primary draft (writer chain: Gemini strongest first -> Groq -> NVIDIA -> ModelScope -> OpenRouter, automatic
+     fallback) -> `story.challenge_draft`: at most ONE challenger draft (`writer_challenger_model`
+     nvidia:deepseek-ai/deepseek-v4.1-flash, same prompt and facts; policy `writer_challenge_policy` on_problems =
+     only when the first draft has a measured problem or came from a last-resort writer) -> `compare_drafts`: fewer
+     SERIOUS measured problems wins outright, else ONE independent judge (`writer_judge_models` GPT-OSS 120B on
+     Groq / OpenRouter first, never a model or model family that wrote a draft; max 2 attempts), no judge = the
+     objective score decides, ties keep the first draft -> editor pass (dropped if it measures worse) -> critic
+     (advisory) -> at most `writer_max_revisions` 1 `targeted_revision` (accepted only if it doesn't measure worse).
+     `story.writing_checks` = deterministic evidence: off_title / late_subject / late_event / setup_first
+     (biography before the event) / unnatural_voice ("you watch / follow / witness") / repetitive / forced_questions
+     / empty_ending / fiction_as_fact / unsupported_fact (numbers + years not in the source). BLOCKING only:
+     off_title, fiction_as_fact, unsupported_fact (in `final_script_gate` on the voiced narration, after one targeted
+     revision + re-voice in main.py; the editor LLM there is advisory, an unavailable editor never blocks). Fiction:
+     one draft + one rewrite max, `StoryBelowBar` no longer raised; premise check uses the clearest pitch instead of
+     discarding. `explainer.adapt` is reverted when it measures worse; it no longer forces second person. Metadata:
+     story["writing"] (kind, primary, challenger, judge, selected, reason, evidence, checks, revisions, llm_calls),
+     story["writer_comparison"], story["final_script_approval"]. Tests: tests/test_writing_room.py (fixtures:
+     Amelia regression, original legend + fiction in tests/fixtures/writing/).
 2. **Voice**: Kokoro TTS `am_michael` (`voice_lang` "a", start speed 1.1, fitted within 1.0-1.2; the original voice, back after a bm_george test), word timings
    tagged by scene. `voice_samples.yml` renders the same hook in several voices for comparison.
 3. **Images** (`images.py`), all free: Cloudflare Workers AI FLUX schnell (10,000 neurons/day, resets 00:00 UTC =

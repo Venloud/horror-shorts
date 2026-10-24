@@ -83,9 +83,11 @@ STORY:
 
 WHO = {
     "true": 'Narrate this REAL case in natural third person. Follow the evidence step by step; never imply the viewer witnessed the case. Avoid forced phrases such as "you watch" or "you follow". Name real people clearly and preserve their actual roles.',
-    "lore": "You are an adult villager or traveller inside the legend as it is told. It is folklore: supernatural claims "
-            "are what people believed ('the village believed...'), never stated as fact.",
-    "fiction": "You are the adult main character living this story.",
+    "lore": "Tell the legend in natural third person, the way a storyteller tells it ('the village believed...'); "
+            "use 'you' only for a direct line to the viewer, never stage directions like 'you watch'. It is folklore: "
+            "supernatural claims are what people believed, never stated as fact.",
+    "fiction": "Keep the story's own point of view (first, second or third person, as written); never add stage "
+               "directions such as 'you watch' or 'you follow'.",
 }
 FACTS = {
     "true": 'This is a TRUE story. Use ONLY the facts the story already has (narration + fact_ledger): every number, '
@@ -104,8 +106,9 @@ def _kind(story: dict) -> str:
 
 
 def adapt(story: dict) -> dict:
-    """Second-person explainer rewrite of a finished story (before voicing). Never raises: a failed rewrite keeps
-    the story as written (the render style still works on any narration)."""
+    """Explainer restyle of a finished story (before voicing): spoken, problem by problem, natural point of view (third
+    person for true stories and legends). Never raises: a failed rewrite, or one the objective checks measure as
+    worse, keeps the story as written (the render style still works on any narration)."""
     import story as st
     if story.get("explainer_adapted"):
         return story
@@ -134,13 +137,21 @@ def adapt(story: dict) -> dict:
     for k in ("characters", "locations", "fact_ledger"):
         if story.get(k) and not new.get(k):
             new[k] = story[k]
-    rules = (f"EXPLAINER style: second person ('you'), {WHO[kind]} {FACTS[kind]} "
+    rules = (f"EXPLAINER style: natural spoken point of view, {WHO[kind]} {FACTS[kind]} "
              "Problem by problem, concrete numbers, ends on an open question for the viewer.")
     new = st.fix_hook(new, api_key, st.sfx_names(), rules)
     if kind == "true":  # only facts the verified story already had
         new = st.fact_check(new, verified, api_key)
     st.mark_true_story(new)
     st.speak_numbers(new)
+    wk = st.writing_kind(story)
+    before_checks = st.writing_checks(story, wk, story.get("_fact_source"))
+    after_checks = st.writing_checks(new, wk, story.get("_fact_source"))
+    if st.check_score(after_checks) < st.check_score(before_checks):  # never let the restyle make it worse
+        log(f"Explainer rewrite measured worse ({st.check_score(before_checks)} -> {st.check_score(after_checks)}: "
+            f"{st._brief(after_checks)[:200]}); keeping the narration as written")
+        story["explainer_adapted"] = True
+        return story
     new["explainer_adapted"] = True
     new["explainer_before"] = [sc.get("narration", "") for sc in story["scenes"]]
     words = sum(len(s["narration"].split()) for s in new["scenes"])

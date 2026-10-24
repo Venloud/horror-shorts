@@ -1182,3 +1182,12 @@ once, no suicide angle or wording (BAN lines, now enforced for TRUE files too), 
   never used the story's 36 per-shot prompts/queries and never called media.fill_shots.
 - Now: story pictures (archive / stock / AI per shot) -> graphics -> pictures -> rare host; hard visual QA + reports;
   no end card, no progress rail. Test-only re-render: explainer_rerender.yml.
+
+
+## Writing system upgrade, 2026-10-24
+- Bounded multi-model writing for every story type: primary (Gemini first, automatic fallback) -> at most one
+  DeepSeek challenger -> one independent judge (GPT-OSS 120B first, never an author) -> at most one targeted
+  revision. Deterministic writing_checks measure title fit, late subject/event, biography-first, "you watch"
+  narration, repetition, empty endings, fiction-as-fact and unsupported numbers/years.
+- Subjective scores are advisory (owner): only off-title, fiction-as-fact and unsupported numbers/years block, after
+  one targeted revision. The Amelia Earhart script (scored 90/100 before) is the regression fixture.

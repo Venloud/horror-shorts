@@ -697,17 +697,20 @@ class FinalNarrationApproval(unittest.TestCase):
             self.assertEqual(judge.call_count, 2)
 
     def test_critic_failure_is_not_approval(self):
+        # Owner, Oct 24: an unavailable editor is NOT recorded as an approval, and does not stop a safe video.
         import story
         item = {"title": "The Disappearance", "scenes": [{"narration": "The plane vanished."}]}
         with mock.patch.object(story, "_json_call", side_effect=RuntimeError("offline")):
-            with self.assertRaises(story.StoryDiscarded):
-                story.final_script_gate(item, "test")
+            out = story.final_script_gate(item, "test")
+        self.assertIsNone(out["final_script_approval"]["approved"])
+        self.assertIn("unavailable", out["final_script_approval"]["editor"])
 
-    def test_low_story_relevance_rejected_even_with_approved_flag(self):
+    def test_off_title_story_rejected_even_with_approved_flag(self):
+        # measured by code (the title's event is never told), whatever the editor says
         import story
-        item = {"title": "The Disappearance", "scenes": [{"narration": "A biography."}]}
-        reply = {"approved": True, "reasons": ["title mismatch"],
-                 "title_alignment": 2, "narrative_logic": 9, "payoff": 9, "fact_integrity": 9}
+        item = {"title": "The Disappearance", "mode": "mystery", "scenes": [{"narration": "A biography."}]}
+        reply = {"approved": True, "reasons": [], "title_alignment": 9, "narrative_logic": 9, "payoff": 9,
+                 "fact_integrity": 9}
         with mock.patch.object(story, "_json_call", return_value=reply):
             with self.assertRaises(story.StoryDiscarded):
                 story.final_script_gate(item, "test")

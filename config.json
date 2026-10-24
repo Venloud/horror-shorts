@@ -18,7 +18,6 @@
   ],
   "channel_name": "Night Files",
   "story_min_score": 80,
-  "story_max_drafts": 3,
   "story_words": [
     138,
     152
@@ -186,6 +185,9 @@
   "openrouter_max_tokens": 8000,
   "writer_challenge_enabled": true,
   "writer_challenger_model": "nvidia:deepseek-ai/deepseek-v4.1-flash",
+  "writer_challenge_policy": "on_problems",
+  "writer_judge_models": ["groq:openai/gpt-oss-120b", "openrouter:openai/gpt-oss-120b"],
+  "writer_max_revisions": 1,
   "groq_vision_qa": true,
   "groq_vision_model": "qwen/qwen3.8-27b",
   "groq_vision_per_minute": 20,

@@ -1,0 +1,32 @@
+{
+ "title": "Room 14 Was Already Warm",
+ "mode": "fiction",
+ "model": "gemini-3.8-flash",
+ "writer": "gemini (gemini-3.8-flash)",
+ "scenes": [
+  {
+   "narration": "The key to room 14 was warm when the night clerk handed it to me, like someone had been holding it all evening."
+  },
+  {
+   "narration": "The motel sat alone off the highway, nine rooms, one flickering sign, and a parking lot with exactly one other car."
+  },
+  {
+   "narration": "Inside, the bed was made, but the pillow had a dent in it, and the bathroom mirror was still fogged from a shower."
+  },
+  {
+   "narration": "I called the front desk. The clerk said nobody had stayed in 14 for three weeks, not since the man who never checked out."
+  },
+  {
+   "narration": "At two in the morning, the other car started outside, drove one slow circle around the lot, and parked again."
+  },
+  {
+   "narration": "Then the knock came, three soft taps, and through the peephole I saw the clerk, holding a second warm key."
+  },
+  {
+   "narration": "He whispered that the man who never checked out always comes back for his room, and tonight he had brought him the key."
+  },
+  {
+   "narration": "I left through the bathroom window, and when I looked back, the light in room 14 was on and the dent in the pillow was gone."
+  }
+ ]
+}
