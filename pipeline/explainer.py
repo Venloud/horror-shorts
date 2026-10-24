@@ -722,7 +722,7 @@ def sequence(story: dict, narration: dict, scene_images: list[list[Path]], graph
         narr = story["scenes"][i].get("narration", "")
         host_ok = (i > 0 and i - last_host_scene > 1 and host_used + 1.8 <= budget
                    and (_EMOTION.search(narr) or len(scene_images[i]) < 2) and span >= 6.0)
-        n = max(1, min(6, round(span / 4.5)))
+        n = max(2 if gs else 1, min(6, round(span / 4.5)))
         order = [imgs[0]]
         if gs:
             order.append(gs[0])
