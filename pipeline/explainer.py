@@ -61,7 +61,7 @@ EXPLAINER style. The video cuts every 2-3 seconds between static character-first
 reusable overlays and motion graphics, information cards, and title cards.
 
 STYLE (Van's mid-conversation method)
-- Second person: the viewer is "you". {who}
+- Point of view: third person for documented true stories; use second person only when the story genuinely calls for an immersive POV. {who}
 - Open mid-conversation: the first sentence sounds like it was said halfway through a conversation with a friend,
   and its FIRST WORDS are the strangest or most shocking detail. Never a date, a year or a place name in the first 6
   words (when/where comes in scene 2). No "Welcome", no "Did you know", no "What if I told you".
@@ -82,7 +82,7 @@ STORY:
 """
 
 WHO = {
-    "true": 'You stand in the shoes of the investigator, the detective or a witness of this REAL case: you see what they '
+    "true": 'Narrate this REAL case in natural third person. The audience follows the evidence; avoid forcing phrases like "you watch" or "you follow". Do not imply the viewer was a witness: they '
             'saw, step by step. You are never the victim or a suspect; real people stay third person, by name.',
     "lore": "You are an adult villager or traveller inside the legend as it is told. It is folklore: supernatural claims "
             "are what people believed ('the village believed...'), never stated as fact.",
