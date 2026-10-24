@@ -82,8 +82,7 @@ STORY:
 """
 
 WHO = {
-    "true": 'Narrate this REAL case in natural third person. The audience follows the evidence; avoid forcing phrases like "you watch" or "you follow". Do not imply the viewer was a witness: they '
-            'saw, step by step. You are never the victim or a suspect; real people stay third person, by name.',
+    "true": 'Narrate this REAL case in natural third person. Follow the evidence step by step; never imply the viewer witnessed the case. Avoid forced phrases such as "you watch" or "you follow". Name real people clearly and preserve their actual roles.',
     "lore": "You are an adult villager or traveller inside the legend as it is told. It is folklore: supernatural claims "
             "are what people believed ('the village believed...'), never stated as fact.",
     "fiction": "You are the adult main character living this story.",
