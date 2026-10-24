@@ -79,11 +79,10 @@
   "cutout_hard_max_images": 20,
   "explainer_for_modes": [],
   "explainer_accent": "#F01767",
-  "explainer_new_images": 4,
-  "explainer_closeups": true,
-  "explainer_max_images": 8,
-  "explainer_max_plates": 5,
-  "explainer_max_inserts": 3,
+  "explainer_host_max_share": 0.15,
+  "explainer_host_max_seconds": 2.0,
+  "archive_person_photos": true,
+  "real_photo_max_historic": 6,
   "visual_ab": true,
   "visual_modes": [
     "classic",
@@ -183,6 +182,8 @@
   "duchas_topic_ids": [],
   "groq_backup": true,
   "groq_model": "openai/gpt-oss-120b",
+  "openrouter_models": ["openai/gpt-oss-120b", "qwen/qwen3-32b"],
+  "openrouter_max_tokens": 8000,
   "groq_vision_qa": true,
   "groq_vision_model": "qwen/qwen3.8-27b",
   "groq_vision_per_minute": 20,
@@ -353,6 +354,5 @@
   ],
   "priority_subgenre_probability": 0.15,
   "priority_subgenre_recent_window": 3,
-  "explainer_character_stage": false,
   "remotion_polish": true
 }

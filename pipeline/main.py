@@ -141,8 +141,18 @@ def main() -> int:
     manifest.provider_snapshot(provider_snapshot())
     history = load_history()
     story: dict = {"title": "(no story yet)"}
+    stage = "preflight"
 
     try:
+        # Resume first, always: a retry by id, else the unfinished checkpoint, before any new story is picked.
+        resumed = None
+        if not testing:
+            retry_id = (os.environ.get("RETRY_STORY_ID") or "").strip()
+            if retry_id:
+                checkpoint.retry(retry_id)
+            resumed = checkpoint.resume(history, buffer.story_ids())
+        import explainer
+        log(f"fresh_images: {'ON' if explainer.fresh_images() else 'OFF'} (buffer_fill.yml checkbox -> FRESH_IMAGES)")
         problem = images.preflight()  # don't spend Gemini + voice time if no image source works
         if problem:
             raise RuntimeError(problem)
@@ -170,14 +180,15 @@ def main() -> int:
                 os.environ["TEST_FRESH"] = "true"  # nothing cached yet: a new story with real images
                 log("Test: nothing cached yet, writing a new story with fresh images")
         elif not testing:
-            story = checkpoint.resume(history)
+            story = resumed
         if story is None:
+            stage = "story"
             manifest.stage("story", "started")
             story = write_story(history)
             manifest.stage("story", "complete", writer=story.get("writer") or story.get("model"))
             if not testing:
                 checkpoint.start(story)
-        import explainer
+        stage = "adapt"
         use_explainer = explainer.style_for(story) == "explainer"
         if use_explainer and not story.get("explainer_adapted"):  # second-person rewrite, before voicing
             story = explainer.adapt(story)
@@ -189,8 +200,9 @@ def main() -> int:
                 story_bible.build(story)
                 log(story_bible.summary(story))
             import shot_rules
-            if not use_explainer:  # the explainer plans its own shots (explainer.plan)
-                shot_rules.apply(story)
+            if not story.get("_shot_rules_done"):  # once per story: a resume never rewrites prompts (= redraws)
+                shot_rules.apply(story)  # the explainer's story pictures come from these shots too
+                story["_shot_rules_done"] = True
             if not testing:
                 checkpoint.save_story(story)
             manifest.stage("story_bible", "complete" if CONFIG.get("story_bible", True) else "skipped")
@@ -207,6 +219,7 @@ def main() -> int:
             f"written by {story.get('writer') or story.get('model')}, visual mode {story.get('visual_mode')})")
         (workdir / "story.json").write_text(json.dumps(story, indent=2, ensure_ascii=False))
 
+        stage = "narration"
         narration = None if testing else checkpoint.load_narration(story, workdir)
         if narration is None:
             before = json.dumps(story.get("scenes"))
@@ -221,12 +234,15 @@ def main() -> int:
         log(f"Final narration: {narration['duration']:.1f}s at speed {narration.get('speed')}")
         img_dir = workdir / "images" if testing else checkpoint.IMAGES  # images are kept as soon as they exist
         video, imgs = None, None
-        if use_explainer:  # EXPERIMENTAL: stick-figure "you" on painted plates + code-drawn cards (explainer.py)
+        if use_explainer:  # story pictures + explanatory graphics + rare approved-host reactions (explainer.py)
             try:
+                stage = "explainer"
                 manifest.stage("render", "started")
                 video = explainer.build(story, narration, img_dir, workdir)
                 manifest.stage("render", "complete")
                 ass = None  # captions are drawn into the frames
+            except images.ImageQuotaWait:
+                raise  # Cloudflare out: the story waits for the quota (no classic substitute, not a failed attempt)
             except Exception as e:  # noqa: BLE001
                 traceback.print_exc()
                 story["_explainer_error"] = f"{type(e).__name__}: {str(e)[:300]}"
@@ -287,6 +303,7 @@ def main() -> int:
 
         # Music is a separate post-render layer. The visual/narration render
         # can be reused if a soundtrack is ever rejected.
+        stage = "music"
         from background_music import add_background_music
         manifest.stage("background_music", "started")
         video = add_background_music(video, workdir, story)
@@ -308,6 +325,7 @@ def main() -> int:
         _short_credit, visual_credits = media.credits(story.get("media_assets") or [])
         (workdir / "caption.txt").write_text(caption + "\n\nPIN: " + story.get("pinned_comment", ""))
 
+        stage = "qa"
         problems = qa_gate(video, ass, narration, story)
         if story.get("render_style") == "explainer":  # captions are burned into the frames, not an .ass file
             problems = [p for p in problems if not p.startswith("captions:")]
@@ -331,16 +349,10 @@ def main() -> int:
                 except images.ImageQuotaWait:
                     pass
                 return 0
-            fails = checkpoint.qa_failed(story, hard)
-            if fails >= 2:  # same story failed twice: skip it for good so the builder can't loop on it
-                history.append({"date": stamp, "story_id": story.get("story_id"), "title": story["title"],
-                                "mode": story.get("mode"), "source": story.get("source"), "case": story.get("case"),
-                                "skipped": True, "reason": f"QA gate: {reason}"})
-                save_history(history)
-                checkpoint.finish(story)
-                notify(story, None, error=f"QA gate failed twice, story skipped for good: {reason}")
-            else:
-                notify(story, None, error=f"QA gate failed, not added to the buffer (next build retries): {reason}")
+            if any(p.startswith("duration") for p in hard):
+                checkpoint.drop_narration()
+            if not checkpoint.failed_attempt(story, "qa", f"QA gate: {reason}"):
+                notify(story, None, error=f"QA gate failed, not added to the buffer (next run resumes it): {reason}")
             return 0  # alert sent; exit 0 so the workflow still saves history + checkpoint
         if problems:  # report-only problems: the video is still buffered and posted
             reason = "; ".join(problems)
@@ -372,6 +384,7 @@ def main() -> int:
         # Hard production boundary: only a real, fully decodable final MP4 with
         # provenance evidence may enter the durable FIFO buffer.
         from production_gate import gate_final_video, write_gate_report
+        stage = "production_gate"
         gate_evidence = gate_final_video(video, story, meta)
         gate_report = write_gate_report(workdir, gate_evidence)
         manifest.artifact(gate_report, "production-gate")
@@ -379,16 +392,15 @@ def main() -> int:
 
         if os.environ.get("RENDER_STYLE", "").lower() == "explainer" and story.get("render_style") != "explainer":
             raise RuntimeError("Refusing to buffer a video that did not use the required explainer style")
+        stage = "buffer"
         buffer.add(stamp, video, meta)
         manifest.artifact(meta, "caption")
         manifest.artifact(workdir / "story.json", "story")
         manifest.stage("buffer", "complete", buffer_count=buffer.count())
         manifest.finish("success")
-        if story.get("render_style", "classic") == "classic":  # QA-passed pictures go into the asset library
+        if story.get("render_style", "classic") in ("classic", "explainer"):  # QA-passed pictures -> library
             import library
             library.record_video(story, img_dir)
-        elif story.get("render_style") == "explainer":  # new Cloudflare plates are reused by later videos
-            explainer.record_plates(story, img_dir)
         # Used as soon as the video is safely in the buffer, so it can never be made twice.
         for sk in story.pop("_skipped", []):
             history.append({"date": stamp, **sk})
@@ -456,6 +468,11 @@ def main() -> int:
         traceback.print_exc()
         if testing:
             notify(story, None, error=f"{type(e).__name__}: {e}", prefix=prefix)
+            return 1
+        from story import ApiBusy
+        if isinstance(e, (images.ImageQuotaWait, ApiBusy)) or stage == "preflight":
+            log(f"Not counted as a failed attempt of the story ({type(e).__name__} at {stage}): it resumes next run")
+        elif checkpoint.failed_attempt(story, stage, f"{type(e).__name__}: {e}"):
             return 1
         # Quiet failure: the checkpoint is kept and the next build (every 3 h) continues from it.
         # Only alert if nothing is waiting to be posted.

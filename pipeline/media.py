@@ -129,6 +129,54 @@ def pixabay(query: str) -> list[dict]:
     return out
 
 
+def pexels_photo(query: str) -> list[dict]:
+    """Pexels photos (same key and hourly limit as the videos): portrait, large enough for a 1080x1920 crop."""
+    key = env("PEXELS_API_KEY", required=False)
+    if not key or not enabled("pexels"):
+        return []
+
+    def fetch():
+        if not _pexels_slot():
+            raise RuntimeError("Pexels hourly limit reached (200/h)")
+        r = requests.get("https://api.pexels.com/v1/search", timeout=30, headers={"Authorization": key},
+                         params={"query": query, "orientation": "portrait", "per_page": 15})
+        r.raise_for_status()
+        return r.json()
+
+    out = []
+    for ph in _cached("pexels_photo", query, fetch).get("photos") or []:
+        src = ph.get("src") or {}
+        if not src.get("large2x") or min(ph.get("width") or 0, ph.get("height") or 0) < 1080:
+            continue
+        out.append({"kind": "photo", "source": "pexels", "id": f"pexels-photo:{ph.get('id')}", "url": ph.get("url"),
+                    "download": src["large2x"], "author": ph.get("photographer", ""), "license": "Pexels License",
+                    "title": ph.get("alt") or "", "date": ""})
+    return out
+
+
+def pixabay_photo(query: str) -> list[dict]:
+    """Pixabay photos and illustrations (vertical), Pixabay Content License."""
+    key = env("PIXABAY_API_KEY", required=False)
+    if not key or not enabled("pixabay"):
+        return []
+
+    def fetch():
+        r = requests.get("https://pixabay.com/api/", timeout=30, params={
+            "key": key, "q": query[:100], "per_page": 30, "safesearch": "true", "orientation": "vertical"})
+        r.raise_for_status()
+        return r.json()
+
+    out = []
+    for h in _cached("pixabay_photo", query, fetch).get("hits") or []:
+        url = h.get("largeImageURL")
+        if not url or (h.get("imageHeight") or 0) < 1600:
+            continue
+        out.append({"kind": "photo", "source": "pixabay", "id": f"pixabay-photo:{h.get('id')}",
+                    "url": h.get("pageURL"), "download": url, "author": h.get("user", ""),
+                    "license": "Pixabay Content License", "title": h.get("tags") or "", "date": ""})
+    return out
+
+
 def _strip_html(text: str) -> str:
     return html.unescape(re.sub(r"<[^>]+>", "", text or "")).strip()
 
@@ -332,7 +380,8 @@ def openverse(query: str) -> list[dict]:
     return out
 
 
-PROVIDERS = {"stock_video": (pexels, pixabay), "real_photo": (wikimedia, smithsonian, loc_photo),
+PROVIDERS = {"stock_video": (pexels, pixabay, pexels_photo, pixabay_photo),
+             "real_photo": (wikimedia, smithsonian, loc_photo),
              "archive_print": (loc_print, openverse)}
 
 
@@ -629,6 +678,57 @@ def honest_place_shots(story: dict, only: set | None = None, force: bool = False
     return done
 
 
+_CHILDISH = re.compile(r"\b(girl|boy|child|children|kid|baby|toddler|young girl|young boy)\b", re.IGNORECASE)
+_HARM = re.compile(r"\b(body|bodies|corpse|remains|dead|death|died|blood|wreck\w*|crash\w*|grave)\b", re.IGNORECASE)
+_LEDGER_THING = [  # shot nouns -> ledger keys / value words that name the real thing (sourced, not the planner's)
+    (re.compile(r"\b(airplane|aircraft|plane|propeller|wing|cockpit|monoplane|biplane)\b", re.I), r"aircraft|plane"),
+    (re.compile(r"\b(ship|boat|vessel|steamer|cutter)\b", re.I), r"ship|vessel|boat|cutter"),
+    (re.compile(r"\b(hospital)\b", re.I), r"hospital"),
+    (re.compile(r"\b(hotel)\b", re.I), r"hotel"),
+    (re.compile(r"\b(lighthouse)\b", re.I), r"lighthouse"),
+]
+
+
+def _ledger_pairs(story: dict) -> list[tuple[str, str]]:
+    out = []
+    for line in story.get("fact_ledger") or []:
+        if isinstance(line, str) and ":" in line:
+            k, v = line.split(":", 1)
+            out.append((k.strip(), v.strip()))
+    return out
+
+
+def _archive_subject(story: dict, sc: dict, text: str) -> str:
+    """Archive query for a shot of a TRUE, pre-1950 story (flag archive_person_photos): the story's own historical
+    subject when the shot shows them (story["case"] = the source page's subject, named in a characters sheet) or a
+    real aircraft / ship / building the fact LEDGER names (sourced, never the planner's wording). Never for a child
+    shot (an adult's photo would misrepresent it), a death / body / wreck shot, or a scene about remains."""
+    if not CONFIG.get("archive_person_photos", True):
+        return ""
+    if _CHILDISH.search(text) or _HARM.search(text) or _HARM.search(sc.get("narration") or ""):
+        return ""
+    case = (story.get("case") or "").strip()
+    chars = [c.get("name", "") for c in story.get("characters") or []]
+    if case and any(case.lower() == c.lower() for c in chars):
+        first = case.split()[0].lower()
+        if _PERSON.search(text) or re.search(r"\b(aviator|aviatrix|explorer|inventor|scientist)\b", text, re.I) \
+                or first in text.lower():
+            return case
+    said = (sc.get("narration") or "").lower()
+    for shot_rx, key_rx in _LEDGER_THING:
+        if not shot_rx.search(text):
+            continue
+        for k, v in _ledger_pairs(story):
+            for part in (p.strip() for p in v.split(",")):
+                name = re.sub(r"^(?:[a-z][\w-]*\s+)+", "", part)  # "twin-engine Lockheed ..." -> "Lockheed ..."
+                words = {w.lower() for m in _PROPER.finditer(name) for w in m.group(1).split()} - _GENERIC_NAME
+                # only in a scene whose narration SAYS the thing (an Electra photo over the 1928 flight was wrong)
+                if (re.search(key_rx, k, re.I) or re.search(key_rx, part, re.I)) and words \
+                        and any(re.search(rf"\b{re.escape(w)}\b", said) for w in words if len(w) > 3):
+                    return name
+    return ""
+
+
 def auto_tag(story: dict) -> int:
     """Re-classify EVERY shot in code after planning (the planner's own tag is not trusted: Groq tagged every shot
     "ai", even "empty hotel hallway"): no story character / person in the shot + atmosphere, place or object ->
@@ -658,7 +758,10 @@ def auto_tag(story: dict) -> int:
                 sc[SRC_KEYS[l]] = "ai"
                 continue
             low = text.lower()
-            if _PERSON.search(text) or any(nm and nm in low for nm in names) or _SCREEN_CONTENT.search(text):
+            archive_name = _archive_subject(story, sc, text) if true and historic else ""
+            if archive_name:  # the story's historical subject or a ledger-named aircraft / building: archive photo
+                new, query = "real_photo", archive_name
+            elif _PERSON.search(text) or any(nm and nm in low for nm in names) or _SCREEN_CONTENT.search(text):
                 new, query = "ai", ""  # people, or a logo / ticker / footage / brand stock video can't match
             else:
                 # a real photo only for a name the STORY itself says ("Cecil Hotel"), never a capitalised generic
@@ -713,6 +816,11 @@ def _setting_note(story: dict, i: int, l: str) -> str:
     return f"; STORY SETTING: {note}" if note else ""
 
 
+def library_archive(story: dict) -> bool:
+    import library
+    return library.archive_story(story)
+
+
 def _cloudflare_out() -> bool:
     """Is Cloudflare unusable for this run (daily limit, no token, or a test build without Cloudflare images)?"""
     import images
@@ -749,7 +857,8 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
              if (sc.get(PROMPT_KEYS[l]) or "").strip()]
     share = float(CONFIG.get("stock_video_max_share_cf_out", 1.0) if cf_out else CONFIG.get("stock_video_max_share", 0.4))
     max_stock = int(len(shots) * share)
-    max_photo = int(CONFIG.get("real_photo_max", 3))
+    max_photo = int(CONFIG.get("real_photo_max_historic", 6) if true and library_archive(story)
+                    else CONFIG.get("real_photo_max", 3))
     if cf_out:
         log(f"Cloudflare is out: real media first for every eligible shot (stock limit {max_stock}), then Spaces, "
             f"then SD-Turbo (max {CONFIG.get('local_image_max', 6)})")

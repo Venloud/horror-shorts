@@ -79,7 +79,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: cache/checkpoint
-          key: ckpt-${{ github.run_id }}
+          key: ckpt-restore-${{ github.run_id }}
           restore-keys: |
             ckpt-
 
@@ -216,17 +216,24 @@ jobs:
             output/**/contact_sheet.png
             output/**/summary.txt
             output/**/production_gate.json
+            output/**/explainer_polished.mp4
+            output/**/visual_qa.json
+            output/**/shot_manifest.json
+            output/**/provenance.json
           retention-days: 7
           if-no-files-found: ignore
 
-      - name: Mark checkpoint complete after verified artifact upload
-        if: always() && steps.artifact.outcome == 'success' && hashFiles('output/**/final.mp4') != ''
+      # The checkpoint is marked complete by main.py only after the video passed validation AND entered the buffer.
+      - name: Name the checkpoint by its story
+        id: ckpt_key
+        if: always()
         run: |
-          python -c "import json,glob,sys; from pathlib import Path; files=glob.glob('output/**/story.json', recursive=True); story=json.loads(Path(files[0]).read_text()) if files else {}; sys.path.insert(0,'pipeline'); import checkpoint; checkpoint.finish_from_artifact(story.get('story_id','unknown'))"
+          sid=$(python -c "import json,pathlib;d=pathlib.Path('cache/checkpoint');f=d/'story.json' if (d/'story.json').exists() else d/'done.json';print(json.loads(f.read_text()).get('story_id') or 'none' if f.exists() else 'none')" 2>/dev/null || echo none)
+          echo "key=ckpt-${sid}-${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_OUTPUT"
 
       - name: Save checkpoint for the next run
         if: always() && hashFiles('cache/checkpoint/**') != ''
         uses: actions/cache/save@v4
         with:
           path: cache/checkpoint
-          key: ckpt-${{ github.run_id }}
+          key: ${{ steps.ckpt_key.outputs.key }}

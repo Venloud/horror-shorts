@@ -639,20 +639,49 @@ so a new session can pick up without starting over.
 - Owner briefs: storyboard beats, suited stick figure, TRUE STORY -> title opener, still backgrounds, no HUD / date
   chips, DARK EDITORIAL NOIR (midnight #101419, charcoal #25282D, smoked taupe #514B48, magenta #F01767; parchment
   #A99E90 only inside small evidence / document elements), bold condensed type (Oswald, OFL).
-- Host = the OWNER'S sprites (`assets/character/host/`, 102 cut-outs from his sheets, index.json action/view/
-  expression/prop; `pipeline/sprites.py`): walk/run cycles from his frames, cast = recoloured host + hat, crowd =
-  grey silhouettes. `pipeline/stickman.py` (code rig) is only the fallback. The FLUX hoodie set (assets/character/*.png,
-  explainer_character.py) is no longer used. Sheet figures are ~240 px tall: close-ups soft until hi-res exports.
+- Host (Oct 23) = ONLY the approved assets in assets/character/host/manifest.json: M01-M04 full body (view), F01-F22
+  faces (mood; close-ups), `pipeline/sprites.py`. Never generated / redrawn / recoloured / substituted, no procedural
+  fallback (stickman.py, the s1/s2 sprite cycles, the vector close-up pack and the FLUX hoodie set are retired);
+  every file is sha256-checked before a render: missing/changed = MissingAsset naming the ID. F16 shocked is an opaque
+  black square until re-exported transparent: shocked uses F15. No other people on screen until N01-N04 exist.
+- **Visual storytelling (Oct 24, owner; supersedes the Oct 23 "host on 4 location plates")**: the story is told
+  with STORY PICTURES, explained by graphics, the host is occasional B-roll. `explainer.story_images` runs the
+  existing chain on each scene's own image_prompt/_2 + image_query (asset library only with fresh_images OFF ->
+  `media.fill_shots`: archive photos / prints, Pexels / Pixabay photos + clips (photo search added Oct 24) -> AI via
+  `images.generate_images`, shots_per_scene 2 = max ~18 AI images per video, same QA / budget / broker fallbacks as
+  classic). Before Oct 24 the explainer never called media.fill_shots (0 archive/stock) and drew 4 generic plates.
+  `media.auto_tag`: TRUE pre-1950 stories search archive photos of the story's own subject (story["case"] named in
+  characters) and of ledger-named aircraft / ships / buildings (flag `archive_person_photos`, `real_photo_max_historic`
+  6); never for child / death / wreck shots; the photo title must contain the name. `explainer.plan_graphics`: LLM
+  picks (checked word by word) + factual auto graphics (date_stamp with the ledger key as kicker, evidence from ledger
+  values, quote, missing, map_route only with 2+ places said in the scene, fact) + impact fallback (reported
+  exception). `explainer.sequence`: picture -> graphic -> second picture -> (host), 1.5-3 s cuts on word starts;
+  host max 1 per scene, never two scenes in a row, <= 2 s (`explainer_host_max_seconds`), <= 15%
+  (`explainer_host_max_share`), mostly F-faces over a blurred crop of the scene's picture. No end card, no Remotion
+  progress rail / corner label. `explainer.visual_qa` (HARD, VisualQAFailed): character share / consecutive /
+  length, a picture of its own + a graphic per scene, graphic facts, provenance + licence of every external asset,
+  approved IDs only, no rail in sampled frames, no end card; writes visual_qa.json, shot_manifest.json,
+  provenance.json. AI pictures are cached by story + prompt + provider + sha256 (`scene_XXl.ai.json`).
+  Test-only re-render of an existing story: `explainer_rerender.yml` -> `pipeline/rerender.py` (never buffers /
+  posts / writes history; the narration is re-voiced from the same text because the buffered video's checkpoint
+  keeps no narration). Fixture: tests/fixtures/amelia_f8f477b53755.json.
+- `fresh_images` (buffer_fill.yml checkbox -> env FRESH_IMAGES; before Oct 23 it was never passed on, so it did
+  nothing): ON = new plates for a new story, a resume redraws only missing/corrupt/rejected plates; OFF = this
+  story's plates, then a matching asset-library plate, then new images for what is still missing.
+- Checkpoints (Oct 23, `pipeline/checkpoint.py`): resume BEFORE a new story is picked; atomic writes + sha256
+  manifest per stage (story / narration / shot_list / images); a corrupt stage is redone, a stale one (other story)
+  cleared; Actions cache key `ckpt-<story id>-<run>-<attempt>` saved with if: always(); done.json ONLY after the
+  production gate + buffer.add (the "mark complete after artifact upload" steps were removed); a story already in
+  history or the buffer never gets a second video. 3 failed attempts (not quota waits / ApiBusy) = parked in
+  data/failed_stories/<id>/ + ntfy "Night Files: story X parked after 3 fails at stage Y"; buffer_fill.yml input
+  `retry_story_id` brings it back. Tests: tests/test_night_files_pipeline.py (mocks, run by ci.yml).
 - Storyboard (`explainer.plan`): literal beats (who/what/where, view, shot type, background motion none by default,
   text modes location/name/punch/evidence/quote/stamp), cards, titles and `graphic` shots = local templates in
   `pipeline/noir.py` (true_story, title, evidence, map_route, fact, filmstrip, quote, impact, connections, compare,
   missing, closing), fields only from the narration's words / numbers, max ONE date on screen per video; saved in
   img_dir/explainer_storyboard.json (same narration = same storyboard, no new LLM call).
-- Cloudflare budget (`explainer.Budget`, img_dir/explainer_images.json, counted across retries): config
-  `explainer_new_images` 2 new images per video, hard `explainer_max_images` 4 calls incl. QA redraws. Order: this
-  story's earlier plates (a text-only retry never redraws) -> asset library painted places (CLIP, empty-place QA) ->
-  new Cloudflare -> a fitting plate of this video mirrored/regraded -> local noir ground. New QA-passed plates go
-  into the asset library after buffering (`explainer.record_plates`).
+- (Oct 24) The plate budget (`explainer.Budget`, explainer_new_images / explainer_max_images / plates) is gone; story
+  pictures follow shots_per_scene + cf_budget like classic and go into the asset library via library.record_video.
 - PIL gotcha: ImageDraw with translucent fills REPLACES pixels on RGBA images; draw on a transparent layer and
   alpha_composite (noir templates and overlays do).
 
@@ -902,7 +931,7 @@ The production renderer intentionally separates soundtrack work from the core vi
 
 The production gate runs after the separate music stage.
 
-Checkpoint rule: keep the checkpoint for failures before a complete final MP4 is preserved. If the workflow successfully uploads a complete `final.mp4` artifact, it may mark the checkpoint complete with `done.json`, per the owner's requested completion boundary. Buffer admission also completes the checkpoint normally.
+Checkpoint rule (Oct 23, owner): the checkpoint is marked complete ONLY after the final video passed validation AND entered the buffer (main.py). The old "complete after artifact upload" boundary was removed.
 
 ## Analytics-driven Bloody Mary content cluster
 

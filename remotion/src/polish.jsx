@@ -95,42 +95,6 @@ const CutTreatment=({shots=[]})=>{
   </AbsoluteFill>;
 };
 
-const ContextMark=({shots=[]})=>{
-  const frame=useCurrentFrame();const {fps}=useVideoConfig();
-  const shot=shots.find(s=>frame>=s.startFrame&&frame<s.endFrame);
-  if(!shot) return null;
-  const local=frame-shot.startFrame;
-  const title=shot.kind==="scene"?"NIGHT FILES" : shot.kind==="graphic" ?
-    cap(shot.template,20).replace(/_/g," ") : "CASE FILE";
-  const rise=spring({fps,frame:local,config:{damping:180,stiffness:190}});
-  const hide=interpolate(frame,[shot.endFrame-7,shot.endFrame-1],[1,0],clamp);
-  return <div style={{
-      position:"absolute",left:72,top:130,
-      transform:`translateY(${(1-rise)*-19}px)`,
-      opacity:Math.min(1,rise)*hide,
-      display:"flex",alignItems:"center",gap:13,
-      pointerEvents:"none",
-    }}>
-      <div style={{width:6,height:42,background:PALETTE.red,borderRadius:4}}/>
-      <div style={{fontSize:23,fontWeight:850,letterSpacing:"3.8px",
-                   color:PALETTE.paper,fontFamily:"Arial, sans-serif",
-                   textShadow:"0 2px 14px rgba(0,0,0,0.85)"}}>{title.toUpperCase()}</div>
-  </div>;
-};
-
-const TimelineRail=({shots=[],durationFrames=1})=>{
-  const frame=useCurrentFrame();
-  const progress=Math.min(1,Math.max(0,frame/Math.max(1,durationFrames-1)));
-  return <div style={{position:"absolute",left:70,right:174,top:93,height:3,
-                      background:"rgba(230,233,238,0.13)",pointerEvents:"none"}}>
-    <div style={{width:`${progress*100}%`,height:"100%",
-                 background:PALETTE.red,boxShadow:"0 0 11px rgba(240,23,103,.6)"}}/>
-    {shots.filter(s=>s.startFrame>0).map((shot,i)=><div key={i} style={{
-      position:"absolute",left:`${(shot.startFrame/durationFrames)*100}%`,
-      top:-2,height:7,width:2,background:"rgba(235,238,242,.42)"}}/>)}
-  </div>;
-};
-
 const GrainAndSafeArea=()=>{
   const frame=useCurrentFrame();
   // Deterministic subtle grain avoids random per-frame flicker and faces remain legible.
@@ -139,6 +103,7 @@ const GrainAndSafeArea=()=>{
       backgroundImage:`repeating-linear-gradient(${90+shift}deg, transparent 0px,rgba(210,226,234,.27) 1px,transparent 3px,transparent 14px)`}}/>;
 };
 
+// No persistent progress rail or corner label (owner, Oct 24): only cut treatment, grain and captions.
 export const NightFilesPolish=({video="",words=[],shots=[],totalFrames=1})=>{
   // Audio is muxed AFTER Remotion, preserving the already composed production mix.
   return <AbsoluteFill style={{backgroundColor:PALETTE.ink}}>
@@ -146,8 +111,6 @@ export const NightFilesPolish=({video="",words=[],shots=[],totalFrames=1})=>{
       style={{height:"100%",width:"100%",objectFit:"cover"}}/>:null}
     <GrainAndSafeArea/>
     <CutTreatment shots={shots}/>
-    <TimelineRail shots={shots} durationFrames={totalFrames}/>
-    <ContextMark shots={shots}/>
     <CaptionTrack words={words}/>
   </AbsoluteFill>;
 };
