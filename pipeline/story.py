@@ -490,6 +490,70 @@ def _run_models(prompt: str, api_key: str, temperature: float, patient: bool = T
     return _with_models(call)
 
 
+
+def challenge_true_story(draft: dict, prompt: str, api_key: str) -> dict:
+    """One optional independent draft plus one impartial comparison, not an endless rejection loop.
+
+    The existing source-locked editing, fact-check and final spoken-script gate still run
+    after selection. Provider failures keep the original draft, preserving output cadence.
+    """
+    if not CONFIG.get("writer_challenge_enabled", True):
+        return draft
+    primary = draft.get("model", "")
+    challenger = str(CONFIG.get("writer_challenger_model", "nvidia:deepseek-ai/deepseek-v4.1-flash"))
+    if primary == challenger or not challenger.startswith("nvidia:") or not (
+        env("NVIDIA_API_KEY", required=False) or env("NVIDIA_NIM_API_KEY", required=False)
+    ):
+        return draft
+    try:
+        candidate = _call_model(challenger, prompt, api_key, temperature=0.6)
+        _validate(candidate)
+        if str(candidate.get("title", "")).upper() in ("SKIP", "INSPIRATION"):
+            raise ValueError("challenger declined the story")
+        candidate["model"], candidate["writer"] = challenger, _writer(challenger)
+    except Exception as exc:  # do not discard a valid first draft when challenger is down
+        log(f"Writer challenger unavailable: {str(exc)[:150]}; keeping primary")
+        return draft
+
+    # Ask a DIFFERENT provider to judge both candidates against the source prompt.
+    # Never send the evaluation to either author, and never promote on a failed review.
+    excluded = {primary, challenger}
+    judges = [m for m in model_chain(light=True) if m not in excluded]
+    if not judges:
+        log("Writer challenger: no independent critic, keeping primary")
+        return draft
+    judge_prompt = (
+        "You are an independent script editor for a short-form historical mystery channel. "
+        "Choose the stronger draft using ONLY the supplied source facts and title. "
+        "Judge title alignment, an immediate relevant hook, conversational third-person narration, "
+        "correct chronology, concrete evidence, narrative flow, and a satisfying factual payoff. "
+        "Do not reward invented details, biography filler, second-person stage directions, "
+        "or unsupported theories. If uncertain, choose A, the original. "
+        "Reply as JSON with winner (A or B) and reason.\n"
+        "ORIGINAL STORY TITLE: " + str(draft.get("title", "")) +
+        "\nSOURCE-LOCKED WRITING PROMPT:\n" + prompt[-11000:] +
+        "\nDRAFT A:\n" + json.dumps(draft, ensure_ascii=False)[:14000] +
+        "\nDRAFT B:\n" + json.dumps(candidate, ensure_ascii=False)[:14000]
+    )
+    for judge in judges[:2]:
+        try:
+            verdict = _call_model(judge, judge_prompt, api_key, temperature=0.1, as_json=True,
+                                  schema={"type": "OBJECT", "properties": {
+                                      "winner": {"type": "STRING"}, "reason": {"type": "STRING"}},
+                                      "required": ["winner", "reason"]})
+            if not isinstance(verdict, dict) or verdict.get("winner") not in ("A", "B"):
+                raise ValueError("invalid independent verdict")
+            chosen = candidate if verdict["winner"] == "B" else draft
+            chosen["writer_comparison"] = {"primary": primary, "challenger": challenger,
+                                            "judge": judge, "selected": verdict["winner"],
+                                            "reason": str(verdict.get("reason", ""))[:300]}
+            log(f"Independent writer comparison: {verdict['winner']} selected by {judge}")
+            return chosen
+        except Exception as exc:
+            log(f"Independent writer critic {judge} unavailable: {str(exc)[:130]}")
+    return draft
+
+
 def sfx_names() -> str:
     """Available sounds with a description of each, so the AI picks ones that really match the scene."""
     from common import ROOT
@@ -1066,6 +1130,8 @@ def _true_story(facts: str, name: str, api_key: str, sfx_list: str, notes: str =
     if notes:
         prompt += "\n\nOWNER NOTES (instructions, not facts; facts only from the SOURCE):\n" + notes
     story = _run_models(prompt, api_key, temperature=0.6)
+    if story.get("title", "").strip().upper() not in ("SKIP", "INSPIRATION"):
+        story = challenge_true_story(story, prompt, api_key)
     flag = story.get("title", "").strip().upper()
     if flag == "INSPIRATION":
         raise UseAsInspiration(facts)
