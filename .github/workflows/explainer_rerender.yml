@@ -3,6 +3,11 @@ name: Night Files explainer re-render (test only)
 # Re-renders an EXISTING story (default: the Amelia Earhart video f8f477b53755) with the current explainer.
 # Test only: never buffers, posts, writes history or touches the production checkpoint. No TikTok / YouTube secrets.
 on:
+  # Before this file is on main GitHub can't dispatch it: committing .github/rerender-request.txt on the dev
+  # branch starts the same test-only render (default story, fresh images ON).
+  push:
+    branches: [claude/admiring-goldberg-l0l8aw]
+    paths: [".github/rerender-request.txt"]
   workflow_dispatch:
     inputs:
       story_file:
@@ -87,8 +92,8 @@ jobs:
           POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
           GITHUB_TOKEN: ${{ github.token }}
           RENDER_STYLE: "explainer"
-          FRESH_IMAGES: ${{ inputs.fresh_images }}
-          STORY_FILE: ${{ inputs.story_file }}
+          FRESH_IMAGES: ${{ github.event_name == 'push' && 'true' || inputs.fresh_images }}
+          STORY_FILE: ${{ inputs.story_file || 'tests/fixtures/amelia_f8f477b53755.json' }}
         run: cd pipeline && python rerender.py "../$STORY_FILE"
 
       - name: Save today's Cloudflare usage
