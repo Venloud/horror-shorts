@@ -106,8 +106,10 @@ sentence, word for word.
 """
 
 
-def edit_story(story: dict, api_key: str, sfx_list: str, rules: str) -> dict:
-    """Second pass: an editor checks logic, ending, and hook payoff, then rewrites."""
+def edit_story(story: dict, api_key: str, sfx_list: str, rules: str, kind: str | None = None,
+               source: str | None = None) -> dict:
+    """Second pass: an editor checks logic, ending, and hook payoff, then rewrites. With a kind, an edit that the
+    objective checks measure as WORSE (e.g. moves the central event later) is dropped and the draft is kept."""
     draft = {k: story[k] for k in SCHEMA["properties"] if k in story}
     cands = [c.strip() for c in story.get("hook_candidates") or [] if c.strip()]
     hooks = HOOKS_TASK.format(candidates="\n".join(f"- {c}" for c in cands)) if len(cands) >= 2 else ""
@@ -118,10 +120,19 @@ def edit_story(story: dict, api_key: str, sfx_list: str, rules: str) -> dict:
         for k in ("characters", "locations", "fact_ledger"):  # keep the sheets + fact ledger if the editor dropped them
             if story.get(k) and not edited.get(k):
                 edited[k] = story[k]
-        log("Editor pass: story revised")
         if cands:
             edited["hook_candidates"] = cands
             use_best_hook(edited)
+        if kind:
+            before, after = writing_checks(story, kind, source), writing_checks(edited, kind, source)
+            if check_score(after) < check_score(before):
+                log(f"Editor pass measured worse ({check_score(before)} -> {check_score(after)}: {_brief(after)[:160]})"
+                    "; keeping the draft")
+                return story
+        for k in ("writing", "writer_comparison", "model", "writer"):  # who wrote it stays on record
+            if story.get(k) and not edited.get(k):
+                edited[k] = story[k]
+        log("Editor pass: story revised")
         return edited
     except Exception as e:  # noqa: BLE001
         log(f"Editor pass failed, keeping the first draft: {str(e)[:200]}")
@@ -491,67 +502,353 @@ def _run_models(prompt: str, api_key: str, temperature: float, patient: bool = T
 
 
 
-def challenge_true_story(draft: dict, prompt: str, api_key: str) -> dict:
-    """One optional independent draft plus one impartial comparison, not an endless rejection loop.
+# ---------- bounded multi-model writing (owner, Oct 24) ----------
+# One primary draft (writer chain: Gemini first, automatic fallback), at most ONE challenger draft (DeepSeek), ONE
+# independent comparison by a model that wrote neither draft, at most ONE targeted revision. Objective checks
+# (writing_checks) decide what is a real problem; subjective scores guide but never discard a finished story.
 
-    The existing source-locked editing, fact-check and final spoken-script gate still run
-    after selection. Provider failures keep the original draft, preserving output cadence.
-    """
-    if not CONFIG.get("writer_challenge_enabled", True):
+TITLE_GENERIC = set(("the a an of in at on and or to for from with by mysterious mystery strange unsolved true story "
+                     "legend tale case curious secret dark haunting haunted last final real untold shocking creepy "
+                     "night files file who what why how that this inside behind".split()))
+TITLE_EVENTS = (  # a title's central event -> the words that tell it in the narration
+    (r"disappear|vanish|missing|lost", r"disappear\w*|vanish\w*|missing|lost|never (?:seen|found|heard)|no trace"),
+    (r"murder|killing|killer|slay", r"murder\w*|kill\w*|slain|stabbed|shot|strangled"),
+    (r"death|died|dead", r"death|died|dead|dying|killed|body"),
+    (r"crash|wreck|sinking|sank", r"crash\w*|wreck\w*|sank|sink\w*|went down"),
+    (r"heist|robbery|theft|stolen", r"heist|rob\w*|theft|stole\w*|stolen|took"),
+    (r"haunt|ghost|curse", r"haunt\w*|ghost\w*|curse\w*|spirit\w*|apparition"),
+)
+UNNATURAL = re.compile(r"\byou (?:watch|follow|witness|observe|see (?:her|him|them|how|as)|listen as|track how|"
+                       r"look on as|stand (?:by|there) as)\b", re.IGNORECASE)
+BIOGRAPHY = re.compile(r"\b(born in|was born|grew up|growing up|childhood|as a (?:child|girl|boy|kid)|early life|"
+                       r"(?:her|his) parents|went to school)\b", re.IGNORECASE)
+UNCERTAIN = re.compile(r"\b(theor\w*|believe\w*|rumou?r\w*|some (?:say|think|believe)|may have|might have|possibly|"
+                       r"perhaps|unknown|never (?:found|solved|explained)|no one knows|nobody knows|evidence|"
+                       r"suggest\w*|claim\w*|clue\w*|explanation\w*|still (?:unsolved|missing))\b", re.IGNORECASE)
+FINAL_ANSWER = re.compile(r"\b(convicted|confessed|solved|found guilty|ruled|identified|turned out|the truth|"
+                          r"was found|were found|revealed|explains?)\b", re.IGNORECASE)
+
+
+def writing_kind(story: dict) -> str:
+    """true (documented real events), lore (legends: told as belief) or fiction (invented: never as fact)."""
+    if story.get("true_story") or story.get("mode") in TRUE_MODES:
+        return "true"
+    return "lore" if story.get("mode") == "lore" else "fiction"
+
+
+def _narr(story: dict) -> str:
+    if not story.get("scenes") and story.get("script"):
+        return str(story["script"])
+    return " ".join(sc.get("narration", "") for sc in story.get("scenes") or [])
+
+
+def title_terms(title: str, case: str = "") -> tuple[list[str], str | None]:
+    """(subject words the narration must say, event regex or None) from the title (+ the case name)."""
+    words = re.findall(r"[A-Za-z][A-Za-z'.-]+", f"{title} {case}")
+    events = "|".join(key for key, _ in TITLE_EVENTS)
+    subject = [w.strip(".'").lower() for w in words if w[:1].isupper() and w.lower() not in TITLE_GENERIC
+               and len(w) > 2 and not re.match(events, w.lower())]  # event words: checked with their synonyms
+    low = (title or "").lower()
+    event = next((rx for key, rx in TITLE_EVENTS if re.search(key, low)), None)
+    return list(dict.fromkeys(subject)), event
+
+
+def writing_checks(story: dict, kind: str | None = None, source: str | None = None) -> list[dict]:
+    """Deterministic, evidence-based checks of a script (no LLM). Each: {code, severity, detail} with severity
+    serious (demonstrable: blocks if it survives the revision), revise (one targeted revision) or advisory.
+    Never a judgement of taste: every finding quotes or locates what it found."""
+    kind = kind or writing_kind(story)
+    out = []
+    text = _narr(story)
+    low = text.lower()
+    words = low.split()
+    n = max(1, len(words))
+
+    def first_at(rx: str) -> float | None:
+        m = re.search(rx, low)
+        return None if not m else len(low[:m.start()].split()) / n
+
+    title = str(story.get("title") or "")
+    if title and title.upper() not in ("SKIP", "INSPIRATION"):
+        subject, event = title_terms(title, str(story.get("case") or ""))
+        if subject:
+            at = min((first_at(rf"\b{re.escape(w)}") for w in subject if first_at(rf"\b{re.escape(w)}") is not None),
+                     default=None)
+            if at is None:  # fiction titles are invented after the script: a creative title is not a wrong story
+                out.append({"code": "off_title", "severity": "serious" if kind != "fiction" else "revise",
+                            "detail": f"the title's subject ({', '.join(subject[:3])}) is never said"})
+            elif at > 0.25:
+                out.append({"code": "late_subject", "severity": "revise",
+                            "detail": f"the title's subject is first named {at:.0%} into the narration"})
+        if event:
+            at = first_at(event)
+            if at is None:
+                out.append({"code": "off_title", "severity": "serious" if kind != "fiction" else "revise",
+                            "detail": f"the title promises '{re.search(r'[a-z]+', event).group(0)}...', the narration "
+                                      "never tells it"})
+            elif at > 0.35:
+                out.append({"code": "late_event", "severity": "revise",
+                            "detail": f"the title's central event first appears {at:.0%} into the narration"})
+            bio = first_at(BIOGRAPHY.pattern)
+            if at is not None and bio is not None and bio < at and at > 0.2:
+                out.append({"code": "setup_first", "severity": "revise",
+                            "detail": f"biography ('{BIOGRAPHY.search(low).group(0)}') comes before the central "
+                                      "event"})
+    for m in UNNATURAL.finditer(text):
+        out.append({"code": "unnatural_voice", "severity": "revise", "detail": f"'{m.group(0)}'"})
+    grams = Counter(" ".join(words[k:k + 4]) for k in range(len(words) - 3))
+    rep = [g for g, c in grams.items() if c >= 3 and len([w for w in g.split() if len(w) > 3]) >= 2]
+    if rep:
+        out.append({"code": "repetitive", "severity": "advisory", "detail": f"'{rep[0]}' x{grams[rep[0]]}"})
+    starts = Counter(s.split()[0].lower() for s in re.split(r"(?<=[.!?])\s+", text) if s.split())
+    common = [w for w, c in starts.items() if c >= 4 and w not in ("the", "this", "it")]
+    if common:
+        out.append({"code": "repetitive", "severity": "advisory",
+                    "detail": f"{starts[common[0]]} sentences open with '{common[0]}'"})
+    if text.count("?") > 3:
+        out.append({"code": "forced_questions", "severity": "advisory", "detail": f"{text.count('?')} questions"})
+    tail = " ".join(sc.get("narration", "") for sc in (story.get("scenes") or [])[-2:])
+    if kind == "true" and story.get("mode") in ("mystery", "inbox-true") and tail \
+            and not UNCERTAIN.search(tail) and not FINAL_ANSWER.search(tail):
+        out.append({"code": "empty_ending", "severity": "advisory",
+                    "detail": "the ending names no evidence, theory, outcome or open fact"})
+    if kind == "fiction" and re.search(r"\b(this is a true story|true story|really happened|based on real)\b", low):
+        out.append({"code": "fiction_as_fact", "severity": "serious",
+                    "detail": "an invented story presents itself as true"})
+    if kind == "true" and source:
+        import spoken_numbers as nums
+        src = nums.values(source)
+        bad = sorted(int(v) for v in nums.values(text) if v > 10 and v not in src)
+        if bad:  # numbers / years are precise evidence; capitalised names are only logged by fact_check
+            out.append({"code": "unsupported_fact", "severity": "serious",
+                        "detail": "not in the source: " + ", ".join(f"{v:,}" for v in bad[:6])})
+    return out
+
+
+def check_score(checks: list[dict]) -> int:
+    """Objective quality for ranking drafts: 100 minus 30 per serious, 10 per revise, 3 per advisory finding."""
+    weight = {"serious": 30, "revise": 10, "advisory": 3}
+    return max(0, 100 - sum(weight.get(c["severity"], 0) for c in checks))
+
+
+def _severity(checks: list[dict], level: str) -> list[dict]:
+    return [c for c in checks if c["severity"] == level]
+
+
+def _record(story: dict) -> dict:
+    return story.setdefault("writing", {"llm_calls": 0, "revisions": 0})
+
+
+def _available(model: str) -> bool:
+    if model.startswith("groq:"):
+        return bool(env("GROQ_API_KEY", required=False))
+    if model.startswith("nvidia:"):
+        return bool(env("NVIDIA_API_KEY", required=False) or env("NVIDIA_NIM_API_KEY", required=False))
+    if model.startswith("modelscope:"):
+        return bool(env("MODELSCOPE_TOKEN", required=False) or env("MODELSCOPE_API_KEY", required=False))
+    if model.startswith("openrouter:"):
+        return bool(env("OPENROUTER_API_KEY", required=False))
+    return not gemini_model_out(model) and model not in _OVERLOADED
+
+
+def _family(model: str) -> str:
+    """deepseek / gemini / gpt-oss / qwen / glm...: a judge of the same family as an author is not independent."""
+    m = model.lower()
+    for fam in ("deepseek", "gemini", "gpt-oss", "qwen", "glm", "llama"):
+        if fam in m:
+            return fam
+    return m
+
+
+def judge_models(authors: set) -> list[str]:
+    """Independent critics: config writer_judge_models first (GPT-OSS 120B), then any other available model; never
+    a model (or model family) that wrote one of the drafts."""
+    fams = {_family(a) for a in authors if a}
+    pref = [m for m in CONFIG.get("writer_judge_models", []) if isinstance(m, str) and _available(m)]
+    out = [m for m in pref + model_chain(light=True)  # model_chain already lists only providers with a key
+           if m not in authors and _family(m) not in fams]
+    return list(dict.fromkeys(out))
+
+
+def challenger_wanted(draft: dict, checks: list[dict]) -> bool:
+    """config writer_challenge_policy: on_problems (default: only when the first draft has a demonstrable problem
+    or came from a last-resort writer, so the extra call is likely to pay off), always, off."""
+    policy = str(CONFIG.get("writer_challenge_policy", "on_problems")).lower()
+    if not CONFIG.get("writer_challenge_enabled", True) or policy == "off":
+        return False
+    if policy == "always":
+        return True
+    model = str(draft.get("model") or draft.get("script_model") or "")
+    weak = "lite" in model or model.startswith(("groq:", "modelscope:", "openrouter:"))
+    return weak or bool(_severity(checks, "serious") or _severity(checks, "revise"))
+
+
+JUDGE_PROMPT = """You are an INDEPENDENT script editor for Night Files, a short dark-documentary storytelling channel.
+You wrote neither draft. Compare them for a {kind} story ({genre_rule}).
+Judge each 0-10 on: title_alignment (it is about what the title promises, from the start), hook (the first line is the
+most gripping relevant detail), pacing (every beat adds something new), accuracy (only the supplied facts; theory,
+rumor and fact kept apart), coherence, suspense, clarity (a viewer can say what happened), payoff (a real ending or an
+honest unresolved question), natural_voice (spoken, conversational, no "you watch / you follow" stage directions).
+Quote the exact words that justify your biggest differences. If the drafts are equally good, choose A.
+OBJECTIVE CHECKS (measured by code, trust them):
+A: {checks_a}
+B: {checks_b}
+Return JSON: {{"winner": "A" or "B", "reason": "...", "evidence": ["quote + why", ...],
+"scores": {{"A": {{"title_alignment": 0, "hook": 0, "pacing": 0, "accuracy": 0, "coherence": 0, "suspense": 0,
+"clarity": 0, "payoff": 0, "natural_voice": 0}}, "B": {{...}}}}}}
+TITLE: {title}
+CONTEXT (source facts / writing brief):
+{context}
+DRAFT A:
+{a}
+DRAFT B:
+{b}"""
+
+GENRE_RULES = {
+    "true": "documented events: only sourced facts, never invented quotes, motives or certainty",
+    "lore": "a legend: told as what people believed, never as proven fact, nothing invented beyond the tradition",
+    "fiction": "original fiction: consistent internal rules and an earned ending; it must never claim to be true",
+}
+
+
+def _brief(checks: list[dict]) -> str:
+    return "; ".join(f"{c['severity']} {c['code']}: {c['detail']}" for c in checks) or "no problems found"
+
+
+def compare_drafts(a: dict, b: dict, context: str, api_key: str, kind: str, source: str | None = None) -> dict:
+    """Pick the stronger of two drafts. Objective checks first (a draft with fewer SERIOUS problems always wins);
+    otherwise one independent judge (max 2 attempts on provider failure); no judge = the objective score decides,
+    ties keep A. Returns {"winner", "reason", "judge", "evidence", "scores", "checks"}."""
+    ca, cb = writing_checks(a, kind, source), writing_checks(b, kind, source)
+    sa, sb = len(_severity(ca, "serious")), len(_severity(cb, "serious"))
+    result = {"checks": {"A": ca, "B": cb}, "objective": {"A": check_score(ca), "B": check_score(cb)}}
+    if sa != sb:
+        return {**result, "winner": "A" if sa < sb else "B", "judge": "objective checks",
+                "reason": f"serious problems: A {sa}, B {sb} ({_brief(_severity(ca if sa > sb else cb, 'serious'))})"}
+    authors = {a.get("model") or a.get("script_model") or "", b.get("model") or b.get("script_model") or ""}
+    for judge in judge_models(authors)[:2]:
+        try:
+            v = _call_model(judge, JUDGE_PROMPT.format(
+                kind=kind, genre_rule=GENRE_RULES[kind], checks_a=_brief(ca), checks_b=_brief(cb),
+                title=a.get("title") or b.get("title") or "", context=context[-9000:],
+                a=json.dumps(_draft_view(a), ensure_ascii=False)[:12000],
+                b=json.dumps(_draft_view(b), ensure_ascii=False)[:12000]),
+                api_key, temperature=0.1, as_json=True, schema={"type": "OBJECT"})
+            if not isinstance(v, dict) or v.get("winner") not in ("A", "B"):
+                raise ValueError("invalid verdict")
+            return {**result, "winner": v["winner"], "judge": judge, "reason": str(v.get("reason", ""))[:400],
+                    "evidence": [str(x)[:200] for x in (v.get("evidence") or [])][:5], "scores": v.get("scores")}
+        except Exception as exc:  # noqa: BLE001
+            log(f"Independent critic {judge} unavailable: {str(exc)[:130]}")
+    oa, ob = result["objective"]["A"], result["objective"]["B"]
+    return {**result, "winner": "B" if ob > oa else "A", "judge": "objective checks (no independent critic)",
+            "reason": f"objective score A {oa}, B {ob}"}
+
+
+def _draft_view(d: dict) -> dict:
+    if d.get("script") and not d.get("scenes"):
+        return {"title": d.get("title", ""), "script": d["script"]}
+    return {k: d[k] for k in ("title", "hook_overlay", "scenes", "fact_ledger") if k in d}
+
+
+def challenge_draft(draft: dict, prompt: str, api_key: str, kind: str, source: str | None = None) -> dict:
+    """At most ONE challenger draft (config writer_challenger_model, DeepSeek) and ONE independent comparison.
+    The challenger gets the SAME prompt (same verified facts and rules). Any failure keeps the valid first draft."""
+    checks = writing_checks(draft, kind, source)
+    rec = _record(draft)
+    rec.update({"kind": kind, "primary": draft.get("model") or draft.get("script_model"),
+                "checks_primary": checks})
+    if not challenger_wanted(draft, checks):
+        rec["challenger"] = "skipped (first draft has no demonstrable problem)"
         return draft
-    primary = draft.get("model", "")
     challenger = str(CONFIG.get("writer_challenger_model", "nvidia:deepseek-ai/deepseek-v4.1-flash"))
-    if primary == challenger or not challenger.startswith("nvidia:") or not (
-        env("NVIDIA_API_KEY", required=False) or env("NVIDIA_NIM_API_KEY", required=False)
-    ):
+    primary = draft.get("model") or draft.get("script_model") or ""
+    if challenger == primary or not _available(challenger):
+        rec["challenger"] = f"unavailable ({challenger})"
         return draft
     try:
-        candidate = _call_model(challenger, prompt, api_key, temperature=0.6)
-        _validate(candidate)
-        if str(candidate.get("title", "")).upper() in ("SKIP", "INSPIRATION"):
-            raise ValueError("challenger declined the story")
+        rec["llm_calls"] += 1
+        if draft.get("script") and not draft.get("scenes"):  # fiction: compete at script level
+            text = _call_model(challenger, prompt, api_key, 1.0, as_json=False)
+            candidate = {"title": draft.get("title", ""), "script": text.strip()}
+            if not 60 <= len(candidate["script"].split()) <= 400:
+                raise ValueError(f"challenger script length {len(candidate['script'].split())} words")
+        else:
+            candidate = _call_model(challenger, prompt, api_key, temperature=0.6)
+            _validate(candidate)
+            if str(candidate.get("title", "")).upper() in ("SKIP", "INSPIRATION"):
+                raise ValueError("challenger declined the story")
         candidate["model"], candidate["writer"] = challenger, _writer(challenger)
-    except Exception as exc:  # do not discard a valid first draft when challenger is down
+    except Exception as exc:  # noqa: BLE001 (do not discard a valid first draft when the challenger is down)
+        rec["challenger"] = f"failed: {str(exc)[:150]}"
         log(f"Writer challenger unavailable: {str(exc)[:150]}; keeping primary")
         return draft
+    verdict = compare_drafts(draft, candidate, prompt, api_key, kind, source)
+    rec["llm_calls"] += 0 if verdict["judge"].startswith("objective") else 1
+    chosen = candidate if verdict["winner"] == "B" else draft
+    if chosen is candidate:
+        for k in ("characters", "locations", "fact_ledger", "hook_candidates"):
+            if draft.get(k) and not candidate.get(k):
+                candidate[k] = draft[k]
+        chosen["writing"] = rec
+    rec.update({"challenger": challenger, "judge": verdict["judge"], "selected": verdict["winner"],
+                "reason": verdict["reason"], "evidence": verdict.get("evidence", []),
+                "objective": verdict["objective"]})
+    chosen["writer_comparison"] = {"primary": primary, "challenger": challenger, "judge": verdict["judge"],
+                                   "selected": verdict["winner"], "reason": verdict["reason"][:300]}
+    log(f"Writer comparison ({kind}): draft {verdict['winner']} selected by {verdict['judge']}: "
+        f"{verdict['reason'][:160]}")
+    return chosen
 
-    # Ask a DIFFERENT provider to judge both candidates against the source prompt.
-    # Never send the evaluation to either author, and never promote on a failed review.
-    excluded = {primary, challenger}
-    judges = [m for m in model_chain(light=True) if m not in excluded]
-    if not judges:
-        log("Writer challenger: no independent critic, keeping primary")
-        return draft
-    judge_prompt = (
-        "You are an independent script editor for a short-form historical mystery channel. "
-        "Choose the stronger draft using ONLY the supplied source facts and title. "
-        "Judge title alignment, an immediate relevant hook, conversational third-person narration, "
-        "correct chronology, concrete evidence, narrative flow, and a satisfying factual payoff. "
-        "Do not reward invented details, biography filler, second-person stage directions, "
-        "or unsupported theories. If uncertain, choose A, the original. "
-        "Reply as JSON with winner (A or B) and reason.\n"
-        "ORIGINAL STORY TITLE: " + str(draft.get("title", "")) +
-        "\nSOURCE-LOCKED WRITING PROMPT:\n" + prompt[-11000:] +
-        "\nDRAFT A:\n" + json.dumps(draft, ensure_ascii=False)[:14000] +
-        "\nDRAFT B:\n" + json.dumps(candidate, ensure_ascii=False)[:14000]
-    )
-    for judge in judges[:2]:
-        try:
-            verdict = _call_model(judge, judge_prompt, api_key, temperature=0.1, as_json=True,
-                                  schema={"type": "OBJECT", "properties": {
-                                      "winner": {"type": "STRING"}, "reason": {"type": "STRING"}},
-                                      "required": ["winner", "reason"]})
-            if not isinstance(verdict, dict) or verdict.get("winner") not in ("A", "B"):
-                raise ValueError("invalid independent verdict")
-            chosen = candidate if verdict["winner"] == "B" else draft
-            chosen["writer_comparison"] = {"primary": primary, "challenger": challenger,
-                                            "judge": judge, "selected": verdict["winner"],
-                                            "reason": str(verdict.get("reason", ""))[:300]}
-            log(f"Independent writer comparison: {verdict['winner']} selected by {judge}")
-            return chosen
-        except Exception as exc:
-            log(f"Independent writer critic {judge} unavailable: {str(exc)[:130]}")
-    return draft
+
+def challenge_true_story(draft: dict, prompt: str, api_key: str) -> dict:
+    """PR #23's entry point, now the true-story case of challenge_draft."""
+    return challenge_draft(draft, prompt, api_key, "true")
+
+
+TARGETED_REVISION = """Revise this {kind} story (same JSON format) to fix ONLY these measured problems. Keep every
+fact, name, number, quote and the fact_ledger exactly; keep the number of scenes and the TRUE STORY line if present;
+change as little as possible.
+{genre_rule}
+PROBLEMS (fix each one):
+{problems}
+{rules}
+STORY:
+{draft}"""
+
+
+def targeted_revision(story: dict, api_key: str, kind: str, rules: str, notes: list[str] | None = None,
+                      source: str | None = None, force: bool = False) -> dict:
+    """At most config writer_max_revisions (1) revision per story, only for measured problems (or the critic's
+    concrete notes). Accepted only if the objective checks don't get worse; otherwise the story stays as it was."""
+    rec = _record(story)
+    checks = writing_checks(story, kind, source)
+    problems = [f"{c['code']}: {c['detail']}" for c in checks if c["severity"] in ("serious", "revise")]
+    problems += [n for n in (notes or []) if n]
+    if not problems or (not force and rec["revisions"] >= int(CONFIG.get("writer_max_revisions", 1))):
+        return story  # force: the final narration check's one revision of a blocking problem (main.py)
+    draft = json.dumps({k: story[k] for k in SCHEMA["properties"] if k in story}, ensure_ascii=False)
+    try:
+        rec["revisions"] += 1
+        rec["llm_calls"] += 1
+        new = _run_models(TARGETED_REVISION.format(kind=kind, genre_rule=GENRE_RULES[kind], rules=rules[:6000],
+                                                   problems="\n".join(f"- {p}" for p in problems[:8]), draft=draft),
+                          api_key, temperature=0.4)
+    except Exception as exc:  # noqa: BLE001
+        log(f"Targeted revision failed ({str(exc)[:120]}); keeping the story")
+        return story
+    after = writing_checks(new, kind, source)
+    if check_score(after) < check_score(checks) or len(_severity(after, "serious")) > len(_severity(checks, "serious")):
+        log(f"Targeted revision made it worse ({check_score(checks)} -> {check_score(after)}): kept the original")
+        rec["revision_rejected"] = _brief(after)[:300]
+        return story
+    for k in ("characters", "locations", "fact_ledger", "hook_candidates", "writing"):
+        if story.get(k) and not new.get(k):
+            new[k] = story[k]
+    merged = {**story, **new}
+    _record(merged)["checks_after_revision"] = after
+    log(f"Targeted revision: {check_score(checks)} -> {check_score(after)} (fixed: {'; '.join(problems)[:200]})")
+    return merged
 
 
 def sfx_names() -> str:
@@ -778,52 +1075,57 @@ STORY:
 
 
 def final_script_gate(story: dict, api_key: str) -> dict:
-    """Fail closed on the final spoken narration, after all rewrites and duration fitting.
-
-    Does not rewrite narration, preserving alignment with TTS and approved visuals.
-    A changed narration invalidates the previous approval automatically.
-    """
+    """The FINAL spoken narration (after every rewrite, the explainer adaptation and duration fitting), keyed to its
+    SHA-256 so a changed narration is checked again. Blocks ONLY on demonstrable serious problems found by the
+    objective checks (the title's subject / event never told, numbers or years not in the source, invented fiction
+    presented as true). The LLM editor's approval and ratings are ADVISORY: recorded for analytics, a low rating or an
+    unavailable editor never stops a finished, safe video."""
     import hashlib
     spoken = "\n".join(sc.get("narration", "") for sc in story.get("scenes") or [])
     digest = hashlib.sha256(spoken.encode("utf-8")).hexdigest()
     previous = story.get("final_script_approval") or {}
-    if previous.get("sha256") == digest and previous.get("approved") is True:
+    # A saved approval for the same words only spares the advisory LLM call. The objective checks always run again
+    # and a narration once blocked stays blocked: a resumed checkpoint can never carry a rejected script past here.
+    cached = previous if previous.get("sha256") == digest and previous.get("checked") is True else None
+    kind = writing_kind(story)
+    checks = writing_checks(story, kind, story.get("_fact_source"))
+    serious = _severity(checks, "serious")
+    if not serious and cached and cached.get("blocked"):
+        serious = _severity(cached.get("checks") or [], "serious") or [
+            {"code": "previous_block", "severity": "serious", "detail": "this exact narration was blocked before"}]
+    approval = {"sha256": digest, "checked": True, "kind": kind, "checks": checks, "blocked": bool(serious)}
+    if cached:
+        approval.update({k: cached[k] for k in ("editor", "approved", "ratings", "reasons") if k in cached})
+        story["final_script_approval"] = approval
+        if serious:
+            raise StoryDiscarded("Final narration has a serious problem: " + _brief(serious)[:260])
         return story
     prompt = (
-        "You are the strict FINAL screenplay approval editor for Night Files. "
-        "Review the final spoken text only, not an earlier draft. Do not rewrite it. "
-        "Reply as JSON with keys approved (boolean), reasons (array of short strings), "
-        "title_alignment (0-10), narrative_logic (0-10), payoff (0-10), "
-        "fact_integrity (0-10). Reject when the title's central event is barely "
-        "covered, scenes are filler or incoherent, outcome contradicts facts, "
-        "the conclusion is empty, or claims are fabricated. An Amelia Earhart "
-        "disappearance story focusing mainly on her childhood must be rejected. "
-        "Judge genre appropriately.\nTITLE: " + str(story.get("title", "")) +
+        "You are the FINAL script editor for Night Files. Review the final spoken text only. Do not rewrite it. "
+        "Reply as JSON with keys approved (boolean), reasons (array of short, concrete strings quoting the text), "
+        "title_alignment (0-10), narrative_logic (0-10), payoff (0-10), fact_integrity (0-10), natural_voice (0-10). "
+        "Judge genre appropriately: " + GENRE_RULES[kind] + ".\nTITLE: " + str(story.get("title", "")) +
         "\nMODE: " + str(story.get("mode", "")) +
+        "\nMEASURED BY CODE: " + _brief(checks) +
         "\nFACT LEDGER: " + json.dumps(story.get("fact_ledger") or [], ensure_ascii=False)[:10000] +
-        "\nFINAL SPOKEN NARRATION:\n" + spoken
-    )
+        "\nFINAL SPOKEN NARRATION:\n" + spoken)
     try:
         result = _json_call(prompt, api_key, temperature=0.1, light=False)
-    except Exception as exc:
-        story["final_script_approval"] = {"sha256": digest, "approved": False,
-                                          "reasons": ["Critic unavailable: " + str(exc)[:180]]}
-        raise StoryDiscarded("Final narration has no completed critic approval") from exc
-    dimensions = ("title_alignment", "narrative_logic", "payoff", "fact_integrity")
-    ratings = {}
-    for name in dimensions:
-        try:
-            ratings[name] = int(result.get(name, 0))
-        except (ValueError, TypeError):
-            ratings[name] = 0
-    approved = result.get("approved") is True and min(ratings.values()) >= 7
-    story["final_script_approval"] = {
-        "sha256": digest, "approved": approved, "ratings": ratings,
-        "reasons": [str(v) for v in (result.get("reasons") or [])][:8]
-    }
-    if not approved:
-        raise StoryDiscarded("Final narration rejected: " +
-                             "; ".join(story["final_script_approval"]["reasons"])[:260])
+        ratings = {}
+        for name in ("title_alignment", "narrative_logic", "payoff", "fact_integrity", "natural_voice"):
+            try:
+                ratings[name] = int(result.get(name, 0))
+            except (ValueError, TypeError):
+                ratings[name] = 0
+        approval.update({"editor": "available", "approved": result.get("approved") is True, "ratings": ratings,
+                         "reasons": [str(v) for v in (result.get("reasons") or [])][:8]})
+    except Exception as exc:  # noqa: BLE001 (unavailable editor = no extra approval, the objective checks stand)
+        approval.update({"editor": "unavailable: " + str(exc)[:160], "approved": None})
+    story["final_script_approval"] = approval
+    log(f"Final narration check ({kind}): measured {_brief(checks)[:300]}; editor "
+        f"{approval.get('ratings') or approval['editor']} (advisory)")
+    if serious:
+        raise StoryDiscarded("Final narration has a serious problem: " + _brief(serious)[:260])
     return story
 
 
@@ -879,7 +1181,8 @@ def pick_shape(history: list[dict]) -> str:
 
 def pick_premise(history: list[dict], api_key: str, shape: str, kind: str, inspiration: str | None) -> dict:
     """Premise check before writing: one clear sentence with a question and a visual. Vague ones are rejected
-    (clarity < 7); two rounds, then StoryDiscarded."""
+    (clarity < 7); two rounds, then the clearest pitch anyway (never a discard)."""
+    best = None
     for round_ in range(2):
         ask = PREMISE_PROMPT.format(kind=kind, shape_name=shape, shape=STORY_SHAPES[shape],
                                     recent=recent_list(history)[-1500:],
@@ -900,12 +1203,19 @@ def pick_premise(history: list[dict], api_key: str, shape: str, kind: str, inspi
         if good:
             return max(good, key=lambda x: x[0])[1]
         log(f"Premise check round {round_ + 1}: all premises too vague")
-    raise StoryDiscarded("no clear premise (every pitch was vague)")
+        best = max(((int(p.get("clarity", 0) or 0), p) for p in pitches if str(p.get("premise", "")).strip()),
+                   key=lambda x: x[0], default=None)
+    if best:  # advisory: the clearest pitch we have, the story is still written
+        log(f"Premise check: using the clearest pitch ({best[0]}/10)")
+        return best[1]
+    return {}
 
 
-def critic_pass(story: dict, api_key: str, kind: str, rules: str) -> dict:
-    """One critic pass with scores + concrete reasons; up to 2 rewrites; still failing -> StoryDiscarded.
-    kind: "true" (real events) or "legend". Rewrites keep every fact (the fact check runs after this)."""
+def critic_pass(story: dict, api_key: str, kind: str, rules: str, source: str | None = None) -> dict:
+    """ONE critic call (scores + concrete reasons) and at most one targeted revision (shared budget
+    writer_max_revisions) for a below-bar score, measured problems or a hard legend rule. ADVISORY: a low score is
+    recorded (critic_score, writing.critic) and guides the revision; it never discards a finished story.
+    kind: "true" (real events) or "legend"."""
     if not CONFIG.get("critic_pass", True):
         return story
     bar = int(CONFIG.get("critic_min_score", 75))
@@ -915,48 +1225,39 @@ def critic_pass(story: dict, api_key: str, kind: str, rules: str) -> dict:
     extra = UPGRADE_TRUE if kind == "true" else UPGRADE_LORE
     legend = kind != "true"
     maxes = CRITIC_MAX_LEGEND if legend else CRITIC_MAX
-    for rnd in range(3):  # score, then up to 2 rewrites
-        draft = json.dumps({k: story[k] for k in SCHEMA["properties"] if k in story}, ensure_ascii=False)
-        try:
-            r = _json_call(CRITIC_PROMPT.format(
-                kind=kind, rules=extra, truth=truth, integrity=integrity, draft=draft,
-                m_hook=maxes["hook"], m_clarity=maxes["clarity"], m_pacing=maxes["pacing"],
-                m_integrity=maxes["integrity"], story_rule=CRITIC_STORY if legend else "",
-                story_key=' "story": 0,' if legend else ""), api_key, 0.2)
-        except Exception as e:  # noqa: BLE001
-            log(f"Critic unavailable ({str(e)[:120]}); keeping the story")
-            return story
-        total = sum(max(0, min(int(r.get(k, 0) or 0), mx)) for k, mx in maxes.items())
-        reasons = [str(x) for x in (r.get("reasons") or [])][:5]
-        said = " ".join(sc.get("narration", "") for sc in story.get("scenes") or [])
-        hard = []
-        if legend and int(r.get("story", 0) or 0) < 12:  # a fact list fails whatever the total
-            hard.append(f"story {r.get('story')}/20: this reads like a list of facts. Rewrite it as ONE scenario "
-                        "with people, a place and rising tension (death, illness, suspicion, the grave opened, the "
-                        "reveal, the remedy), weaving every fact into that scene")
-        talk = SOURCE_TALK.search(said)
-        if talk:
-            hard.append(f"the narration says {talk.group(0)!r}: never talk about sources; just tell the legend")
-        reasons = hard + reasons
-        log(f"Critic {rnd + 1}: {total}/100 ({', '.join(f'{k} {r.get(k)}' for k in maxes)}). "
-            f"What happened: {str(r.get('what_happened', ''))[:120]}. Notes: {' | '.join(reasons)[:400]}")
-        story["critic_score"] = total
-        if total >= bar and not hard:
-            return story
-        if rnd == 2:
-            break
-        try:
-            new = _run_models(CRITIC_REWRITE.format(rules=rules[:6500], notes="\n".join(f"- {x}" for x in reasons),
-                                                    draft=draft), api_key, temperature=0.5)
-            for k in ("characters", "locations", "fact_ledger", "hook_candidates"):
-                if story.get(k) and not new.get(k):
-                    new[k] = story[k]
-            story = {**story, **new}
-            log(f"Critic rewrite {rnd + 1} done")
-        except Exception as e:  # noqa: BLE001
-            log(f"Critic rewrite failed ({str(e)[:120]}); keeping the story")
-            return story
-    raise StoryDiscarded(f"critic score {story.get('critic_score')}/100 after 2 rewrites (needs {bar})")
+    draft = json.dumps({k: story[k] for k in SCHEMA["properties"] if k in story}, ensure_ascii=False)
+    rec = _record(story)
+    try:
+        rec["llm_calls"] += 1
+        r = _json_call(CRITIC_PROMPT.format(
+            kind=kind, rules=extra, truth=truth, integrity=integrity, draft=draft,
+            m_hook=maxes["hook"], m_clarity=maxes["clarity"], m_pacing=maxes["pacing"],
+            m_integrity=maxes["integrity"], story_rule=CRITIC_STORY if legend else "",
+            story_key=' "story": 0,' if legend else ""), api_key, 0.2)
+    except Exception as e:  # noqa: BLE001
+        log(f"Critic unavailable ({str(e)[:120]}); objective checks only")
+        rec["critic"] = {"available": False}
+        return targeted_revision(story, api_key, "true" if kind == "true" else "lore", rules, source=source)
+    total = sum(max(0, min(int(r.get(k, 0) or 0), mx)) for k, mx in maxes.items())
+    reasons = [str(x) for x in (r.get("reasons") or [])][:5]
+    hard = []
+    if legend and int(r.get("story", 0) or 0) < 12:  # a fact list gets the one revision, whatever the total
+        hard.append(f"story {r.get('story')}/20: this reads like a list of facts. Rewrite it as ONE scenario "
+                    "with people, a place and rising tension (death, illness, suspicion, the grave opened, the "
+                    "reveal, the remedy), weaving every fact into that scene")
+    talk = SOURCE_TALK.search(_narr(story))
+    if talk:
+        hard.append(f"the narration says {talk.group(0)!r}: never talk about sources; just tell the legend")
+    checks = writing_checks(story, "true" if kind == "true" else "lore", source)
+    log(f"Critic (advisory): {total}/100 ({', '.join(f'{k} {r.get(k)}' for k in maxes)}). "
+        f"What happened: {str(r.get('what_happened', ''))[:120]}. Notes: {' | '.join(hard + reasons)[:400]}. "
+        f"Measured: {_brief(checks)[:200]}")
+    story["critic_score"] = total
+    rec["critic"] = {"available": True, "score": total, "bar": bar, "notes": (hard + reasons)[:6]}
+    if total >= bar and not hard and not _severity(checks, "serious") and not _severity(checks, "revise"):
+        return story
+    return targeted_revision(story, api_key, "true" if kind == "true" else "lore", rules,
+                             notes=hard + (reasons if total < bar else []), source=source)
 
 
 
@@ -1022,9 +1323,7 @@ The narration must be {lo} to {hi} words in total (about {round(lo / 2.3)}-{roun
         shape = pick_shape(history)
         try:
             premise = pick_premise(history, api_key, shape, "original cold case file" if cold_case else subgenre,
-                                   inspiration)
-        except StoryDiscarded:
-            raise
+                                   inspiration) or None
         except Exception as e:  # noqa: BLE001 (premise check unavailable: write as before)
             log(f"Premise check unavailable ({str(e)[:120]}); writing without it")
         if premise:
@@ -1037,39 +1336,57 @@ The narration must be {lo} to {hi} words in total (about {round(lo / 2.3)}-{roun
                    "from it: new characters, names, setting details, twist and ending. Never copy its sentences.\n\"\"\"\n"
                    + mark_source(inspiration[:6000]) + "\n\"\"\"\n")
     bar = int(CONFIG.get("story_min_score", 80))
-    tries = int(CONFIG.get("story_max_drafts", 3))
-    best = None  # (score, script, model, review)
-    ask = prompt
-    for attempt in range(1, tries + 1):
-        script, model = _run_text(ask, api_key, lo, hi)
-        try:
-            score, review = score_script(script, api_key)
-        except Exception as e:  # noqa: BLE001
-            log(f"Scoring unavailable ({str(e)[:120]}); keeping this draft")
-            best = (bar, script, model, {"what_happened": "(not scored)"})
-            break
-        log(f"Draft {attempt} ({file.name}, {len(script.split())} words): {score}/100. "
-            f"What happened: {review.get('what_happened', '')[:140]}")
-        slow = hook_problem(script) if cold_case else None
-        if slow:  # cold case: a date/year/place opener fails the draft, whatever its score
-            log(f"Draft {attempt} hook {slow}: counting it as below the bar")
-            score = min(score, bar - 1)
-            review = {**review, "fixes": f"The first sentence {slow}. Open on the strangest detail; when/where go in "
-                                         f"scene 2. " + str(review.get("fixes", ""))}
-        if best is None or score > best[0]:
-            best = (score, script, model, review)
-        if score >= bar:
-            break
-        ask = (prompt + f"\n\n## YOUR LAST DRAFT SCORED {score}/100. REWRITE IT.\n"
-               f"Fix these: {review.get('fixes', '')}\n"
+    kind = "fiction"
+    script, model = _run_text(prompt, api_key, lo, hi)
+    draft = {"title": "", "script": script, "script_model": model, "model": model}  # titled later by plan_scenes
+    draft = challenge_draft(draft, prompt, api_key, kind)  # optional DeepSeek draft + independent comparison
+    script, model = draft["script"], draft.get("model") or model
+    rec = _record(draft)
+    try:
+        score, review = score_script(script, api_key)
+        rec["llm_calls"] += 1
+    except Exception as e:  # noqa: BLE001
+        log(f"Scoring unavailable ({str(e)[:120]}); keeping this draft")
+        score, review = None, {"what_happened": "(not scored)", "fixes": ""}
+    measured = writing_checks({"script": script}, kind)
+    slow = hook_problem(script) if cold_case else None
+    if slow:  # cold case: a date/year/place opener is a measured problem
+        measured.append({"code": "slow_hook", "severity": "revise", "detail": f"the first sentence {slow}"})
+    log(f"Draft ({file.name}, {len(script.split())} words): {score if score is not None else '?'}/100 (advisory). "
+        f"What happened: {review.get('what_happened', '')[:140]}. Measured: {_brief(measured)[:200]}")
+    needs = (score is not None and score < bar) or _severity(measured, "revise") or _severity(measured, "serious")
+    if needs and rec["revisions"] < int(CONFIG.get("writer_max_revisions", 1)):
+        rec["revisions"] += 1
+        fixes = "; ".join([str(review.get("fixes", ""))] + [f"{c['code']}: {c['detail']}" for c in measured
+                                                            if c["severity"] != "advisory"])
+        ask = (prompt + f"\n\n## YOUR LAST DRAFT SCORED {score}/100. REWRITE IT ONCE.\n"
+               f"Fix these: {fixes}\n"
                "Keep what worked, fix what didn't, and make sure the viewer can say what happened in one sentence.\n"
                "LAST DRAFT:\n\"\"\"\n" + script + "\n\"\"\"\n")
-    if best[0] < bar:
-        raise StoryBelowBar(f"best made-up story scored {best[0]}/100 (needs {bar})")
-    score, script, model, review = best
-    log(f"Story passed with {score}/100")
+        try:
+            new_script, new_model = _run_text(ask, api_key, lo, hi)
+            rec["llm_calls"] += 1
+            after = writing_checks({"script": new_script}, kind)
+            try:
+                new_score, new_review = score_script(new_script, api_key)
+                rec["llm_calls"] += 1
+            except Exception:  # noqa: BLE001
+                new_score, new_review = None, review
+            better = check_score(after) >= check_score(measured) and (
+                new_score is None or score is None or new_score >= score)
+            log(f"Rewrite: {new_score}/100, measured {check_score(after)} vs {check_score(measured)}: "
+                + ("kept" if better else "the first draft stays"))
+            if better:
+                script, model, score, review = new_script, new_model, new_score, new_review
+        except Exception as e:  # noqa: BLE001
+            log(f"Rewrite failed ({str(e)[:120]}); keeping the first draft")
+    if score is not None and score < bar:  # ADVISORY: the story is still made (owner, Oct 24)
+        log(f"Story scored {score}/100 (bar {bar}): made anyway, the score is kept for analytics")
+    else:
+        log(f"Story passed with {score}/100")
 
     story = plan_scenes(script, api_key, sfx_list)
+    story["writing"] = rec
     story.update({"mode": "coldcase" if cold_case else "fiction", "subgenre": subgenre, "prompt_file": file.name, "script_model": model, "writer": _writer(model),
                   "score": score, "what_happened": review.get("what_happened", ""), "story_shape": shape,
                   "checked_premise": (premise or {}).get("premise")})
@@ -1131,7 +1448,7 @@ def _true_story(facts: str, name: str, api_key: str, sfx_list: str, notes: str =
         prompt += "\n\nOWNER NOTES (instructions, not facts; facts only from the SOURCE):\n" + notes
     story = _run_models(prompt, api_key, temperature=0.6)
     if story.get("title", "").strip().upper() not in ("SKIP", "INSPIRATION"):
-        story = challenge_true_story(story, prompt, api_key)
+        story = challenge_draft(story, prompt, api_key, "true", facts)
     flag = story.get("title", "").strip().upper()
     if flag == "INSPIRATION":
         raise UseAsInspiration(facts)
@@ -1144,10 +1461,11 @@ def _true_story(facts: str, name: str, api_key: str, sfx_list: str, notes: str =
              "look; RESEARCH lines marked RUMOR only as rumor ('it was rumored', 'some say'), never as fact."
              + (("\nOWNER NOTES: " + notes[:1500]) if notes else "")
              + "\nSOURCE:\n" + mark_source(facts[:9000]))
-    story = edit_story(story, api_key, sfx_list, rules)
+    story = edit_story(story, api_key, sfx_list, rules, "true", facts)
     story = fix_hook(story, api_key, sfx_list, rules)
-    story = critic_pass(story, api_key, "true", rules)  # before the fact check, which then checks any rewrite
+    story = critic_pass(story, api_key, "true", rules, facts)  # before the fact check, which then checks any rewrite
     story = fact_check(story, facts, api_key)
+    story["_fact_source"] = facts[:20000]  # the final narration check compares numbers / years with it
     story["sources"] = holder.get("sources", [])
     log(f"True story '{story['title']}' ({len(story['scenes'])} scenes) via {story['model']}")
     return story
@@ -1690,7 +2008,8 @@ def topic_story(history: list[dict], item: dict, api_key: str, sfx_list: str) ->
     extra = ""
     for attempt in range(3):
         story = _run_models(prompt + UPGRADE_LORE + block + extra, api_key, temperature=0.8)
-        story = edit_story(story, api_key, sfx_list, rules)
+        story = challenge_draft(story, prompt + UPGRADE_LORE + block + extra, api_key, "lore")
+        story = edit_story(story, api_key, sfx_list, rules, "lore")
         story = fix_hook(story, api_key, sfx_list, rules)
         story = critic_pass(story, api_key, "legend", rules)
         opening = re.split(r"(?<=[.!?])\s+", story["scenes"][0]["narration"].strip())[0]
@@ -1740,14 +2059,18 @@ def _real_story(history: list[dict], mode: str, api_key: str, sfx_list: str) -> 
                 if CONFIG.get("story_upgrade", True):
                     prompt += UPGRADE_TRUE if mode == "mystery" else UPGRADE_LORE
                 story = _run_models(prompt, api_key, temperature=0.6)
+                kind = "true" if mode == "mystery" else "lore"
+                src = facts if mode == "mystery" else None
+                story = challenge_draft(story, prompt, api_key, kind, src)
                 rules = ((f'scene 1 = the hook sentence, then the exact words "{TRUE_OPENER}"; ' if mode == "mystery" else "")
                          + "ONLY facts from this source, never invent details; theories/legends clearly labelled; "
                          "no accusing real people; respectful; no gore; third person; plain English.\nSOURCE:\n" + mark_source(facts[:6000]))
-                story = edit_story(story, api_key, sfx_list, rules)
+                story = edit_story(story, api_key, sfx_list, rules, kind, src)
                 story = fix_hook(story, api_key, sfx_list, rules)
-                story = critic_pass(story, api_key, "true" if mode == "mystery" else "legend", rules)
+                story = critic_pass(story, api_key, "true" if mode == "mystery" else "legend", rules, src)
                 if mode == "mystery":  # real events: fact check (lore = legends, not checked)
                     story = fact_check(story, facts, api_key)
+                    story["_fact_source"] = facts[:20000]
                 lead = case if isinstance(case, dict) else None  # discovery lead: keep its source page
                 story["sources"] = holder.get("sources", []) + ([{"title": lead["title"], "url": lead["url"]}]
                                                                 if lead else [])

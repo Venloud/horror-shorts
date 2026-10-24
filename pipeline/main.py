@@ -238,8 +238,25 @@ def main() -> int:
         # The original critic runs before explainer.adapt() and fit_duration(), both
         # of which may rewrite narration. Gate the ACTUAL voiced script before media spend.
         if story.get("mode") != "inbox-script":
-            from story import final_script_gate
-            story = final_script_gate(story, env("GEMINI_API_KEY"))
+            import story as story_mod
+            try:
+                story = story_mod.final_script_gate(story, env("GEMINI_API_KEY"))
+            except story_mod.StoryDiscarded as gate_error:
+                # a demonstrable serious problem in the final narration: ONE targeted revision, re-voice, check again
+                # (the story is never rewritten in a loop; a second failure counts as a failed attempt)
+                log(f"Final narration blocked ({gate_error}); one targeted revision before giving up")
+                kind = story_mod.writing_kind(story)
+                revised = story_mod.targeted_revision(story, env("GEMINI_API_KEY"), kind,
+                                                      story_mod.GENRE_RULES[kind], source=story.get("_fact_source"),
+                                                      force=True)
+                if revised is story:
+                    raise
+                story = revised
+                mark_true_story(story)
+                story, narration = fit_duration(story, workdir, narrate, allow_rewrite=False)
+                story = story_mod.final_script_gate(story, env("GEMINI_API_KEY"))
+                if not testing:
+                    checkpoint.save_narration(story, narration)
             if not testing:
                 checkpoint.save_story(story)
         else:

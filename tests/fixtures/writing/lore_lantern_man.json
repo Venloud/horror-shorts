@@ -1,0 +1,32 @@
+{
+ "title": "The Lantern Man of the Fens",
+ "mode": "lore",
+ "model": "gemini-3.8-flash",
+ "writer": "gemini (gemini-3.8-flash)",
+ "scenes": [
+  {
+   "narration": "The light was moving against the wind, low over the black water, and the old men told the boy never to whistle at it."
+  },
+  {
+   "narration": "In the fen villages of eastern England, people called it the Lantern Man, a glowing shape that drifted over the marsh at night."
+  },
+  {
+   "narration": "The story goes that a farmhand named Tom walked home late across the dyke path and saw the lantern swinging ahead of him."
+  },
+  {
+   "narration": "He laughed and whistled to it, the way the old men warned against, and the light stopped, then turned toward him."
+  },
+  {
+   "narration": "It came faster than a man could run, skimming the reeds, and Tom threw himself face down into the mud as the villagers advised."
+  },
+  {
+   "narration": "The people believed the Lantern Man would pass over anyone lying flat, and in the tale the light swept past him and was gone."
+  },
+  {
+   "narration": "Tom never whistled on the fen again, and for years he told anyone who would listen that the light had been looking for him."
+  },
+  {
+   "narration": "Some say it was marsh gas. The fen villages still say: if you see the lantern, keep your mouth shut and lie down."
+  }
+ ]
+}
