@@ -4,8 +4,10 @@ buffered, posted or written to history / inbox / counter.
 1. Ping: one tiny JSON call to the challenger (config writer_challenger_model, DeepSeek on NVIDIA) and to every
    configured independent judge (writer_judge_models, GPT-OSS 120B on Groq / OpenRouter).
 2. Generation: one real story through story.write_story with writer_challenge_policy forced to "always", so the
-   challenger draft and the comparison really run. If the comparison was settled by the objective checks (no judge
-   call needed), each configured judge is also asked to compare the two real drafts with the production prompt.
+   challenger draft (DeepSeek, else the configured fallbacks) and the comparison really run. Each configured judge is
+   also asked to compare the two drafts with the production prompt (sample drafts if no comparison ran).
+0. NVIDIA diagnosis: catalogue listing, tiny plain + streaming requests, a small control model and a verdict
+   (wrong id / overloaded / model stalled / endpoint down / too slow for long generations).
 
   STORY_MODE=lore python writer_endpoint_test.py   (STORY_MODE skips the inbox)
 Writes output/writer_endpoint_test/report.md + story.json. Exit 1 when the challenger or every judge failed.
@@ -34,6 +36,81 @@ def _ping(model: str) -> dict:
         return {"model": model, "ok": False, "seconds": round(time.time() - t, 1), "error": str(exc)[:300]}
 
 
+def _tiny(model: str, stream: bool = False, timeout: float = 45) -> dict:
+    """One minimal chat (16 tokens) straight to NVIDIA: status, latency (to the first byte when streaming), body."""
+    import requests
+    from providers import nvidia
+    body = {"model": model, "messages": [{"role": "user", "content": "Say OK."}], "max_tokens": 16,
+            "temperature": 0.0, "stream": stream}
+    t = time.time()
+    try:
+        r = requests.post("https://integrate.api.nvidia.com/v1/chat/completions", json=body, timeout=timeout,
+                          stream=stream, headers={"Authorization": f"Bearer {nvidia.key()}",
+                                                  "Accept": "text/event-stream" if stream else "application/json"})
+        first = None
+        if stream and r.status_code == 200:
+            for chunk in r.iter_lines():
+                if chunk:
+                    first = round(time.time() - t, 1)
+                    break
+        text = "" if stream and r.status_code == 200 else r.text[:200]
+        return {"status": r.status_code, "seconds": round(time.time() - t, 1), "first_byte": first, "body": text,
+                "headers": {k: v for k, v in r.headers.items() if k.lower() in ("retry-after", "x-ratelimit-remaining",
+                                                                               "nvcf-status", "nvcf-reqid")}}
+    except Exception as exc:  # noqa: BLE001
+        return {"status": None, "seconds": round(time.time() - t, 1), "error": f"{type(exc).__name__}: {exc}"[:200]}
+
+
+def diagnose_nvidia(model: str) -> list[str]:
+    """Is the model in NVIDIA's catalogue, does the endpoint answer for it at all (tiny request, streaming first
+    byte), and does a small control model answer with the same key? Distinguishes: wrong / retired id (404 or not
+    listed), overloaded (429 / 503 / 504), this model stalled (timeout while the control answers), endpoint or key
+    down (control fails too)."""
+    import requests
+    from providers import nvidia
+    out = []
+    ids = []
+    try:
+        r = requests.get("https://integrate.api.nvidia.com/v1/models",
+                         headers={"Authorization": f"Bearer {nvidia.key()}"}, timeout=30)
+        ids = [m.get("id", "") for m in (r.json().get("data") or [])] if r.status_code == 200 else []
+        out.append(f"- Catalogue /v1/models: HTTP {r.status_code}, {len(ids)} models; `{model}` listed: "
+                   f"**{model in ids}**")
+        out.append("- DeepSeek ids offered: " + (", ".join(f"`{i}`" for i in ids if "deepseek" in i.lower())
+                                                 or "none"))
+    except Exception as exc:  # noqa: BLE001
+        out.append(f"- Catalogue check failed: {str(exc)[:200]}")
+    tries = [_tiny(model), _tiny(model), _tiny(model, stream=True)]
+    for k, res in enumerate(tries, 1):
+        kind = "streaming" if k == 3 else "plain"
+        out.append(f"- `{model}` tiny {kind} request {k}: HTTP {res.get('status')} in {res['seconds']} s"
+                   + (f", first byte {res['first_byte']} s" if res.get("first_byte") else "")
+                   + (f", headers {res['headers']}" if res.get("headers") else "")
+                   + f": {res.get('error') or res.get('body') or 'answered'}")
+    control_id = next((i for i in ("meta/llama-3.1-8b-instruct", "meta/llama-3.2-3b-instruct") if i in ids),
+                      next((i for i in ids if "8b-instruct" in i), None))
+    control = _tiny(control_id) if control_id else None
+    if control:
+        out.append(f"- Control model `{control_id}`: HTTP {control.get('status')} in {control['seconds']} s: "
+                   f"{control.get('error') or control.get('body') or 'answered'}")
+    codes = [t.get("status") for t in tries]
+    if ids and model not in ids or 404 in codes:
+        verdict = "MODEL ID NOT AVAILABLE (not in the catalogue / 404): the configured id is wrong or retired"
+    elif any(c in (429, 503, 504) for c in codes):
+        verdict = "OVERLOADED / RATE-LIMITED (429 / 503 / 504 from NVIDIA)"
+    elif all(c == 200 for c in codes):
+        verdict = ("ENDPOINT RESPONDS for tiny requests: the timeouts come from long generations (full story, "
+                   "8000 max tokens) being too slow on this model")
+    elif control and control.get("status") == 200:
+        verdict = "THIS MODEL IS STALLED (no response) while the endpoint + key answer for the control model"
+    elif control:
+        verdict = "NVIDIA ENDPOINT / KEY NOT RESPONDING (the control model fails too)"
+    else:
+        verdict = "NO RESPONSE and no control model to compare"
+    out.append(f"- **Verdict: {verdict}**")
+    return out
+
+
 def main() -> int:
     import story
     OUT.mkdir(parents=True, exist_ok=True)
@@ -43,25 +120,17 @@ def main() -> int:
               f"Challenger: `{challenger}` (key present: {story._available(challenger)})",
               "Judges: " + ", ".join(f"`{j}` (key present: {story._available(j)})" for j in judges), "",
               "## 1. Direct pings"]
-    pings = {m: _ping(m) for m in [challenger] + judges}
+    fallbacks = [m for m in CONFIG.get("writer_challenger_fallbacks", []) if isinstance(m, str)]
+    report.insert(3, "Challenger fallbacks: " + ", ".join(f"`{m}` (key present: {story._available(m)})"
+                                                         for m in fallbacks))
+    with story.request_limit(60):
+        pings = {m: _ping(m) for m in dict.fromkeys([challenger] + fallbacks + judges)}
     for p in pings.values():
         report.append(f"- `{p['model']}`: {'OK' if p['ok'] else 'FAILED'} in {p['seconds']} s: "
                       f"{p.get('answer') or p.get('error')}")
 
     if challenger.startswith("nvidia:"):
-        report += ["", "### NVIDIA catalogue check"]
-        try:
-            import requests
-            from providers import nvidia
-            r = requests.get("https://integrate.api.nvidia.com/v1/models",
-                             headers={"Authorization": f"Bearer {nvidia.key()}"}, timeout=30)
-            ids = [m.get("id", "") for m in (r.json().get("data") or [])] if r.status_code == 200 else []
-            want = challenger[7:]
-            report.append(f"- /v1/models HTTP {r.status_code}, {len(ids)} models; `{want}` listed: {want in ids}")
-            report.append("- DeepSeek ids offered: " + (", ".join(f"`{i}`" for i in ids if "deepseek" in i.lower())
-                                                       or "none"))
-        except Exception as exc:  # noqa: BLE001
-            report.append(f"- catalogue check failed: {str(exc)[:200]}")
+        report += ["", "### NVIDIA diagnosis (independent of the pipeline code)"] + diagnose_nvidia(challenger[7:])
 
     report += ["", "## 2. Real story generation (challenger forced on)"]
     CONFIG["writer_challenge_policy"] = "always"
@@ -73,7 +142,7 @@ def main() -> int:
         captured.append({"a": a, "b": b, "context": context, "kind": kind, "source": source, "verdict": verdict})
         return verdict
     story.compare_drafts = compare
-    gen_ok, judged_live = False, set()
+    judged_live = set()
     try:
         made = story.write_story(load_history())
         w = made.get("writing") or {}
@@ -82,7 +151,6 @@ def main() -> int:
                    f"- Primary: `{w.get('primary')}`", f"- Challenger: `{w.get('challenger')}`",
                    f"- Judge: `{w.get('judge')}`, selected draft {w.get('selected')}: {str(w.get('reason'))[:300]}",
                    f"- LLM calls in the writing room: {w.get('llm_calls')}"]
-        gen_ok = bool(captured)
         for c in captured:
             j = str(c["verdict"].get("judge", ""))
             if j in judges:
@@ -129,16 +197,19 @@ def main() -> int:
             except Exception as exc:  # noqa: BLE001
                 report.append(f"- `{j}`: FAILED in {time.time() - t:.1f} s: {str(exc)[:300]}")
 
-    challenger_ok = pings[challenger]["ok"] and any(str(c["b"].get("model")) == challenger for c in captured)
+    used = [str(c["b"].get("model")) for c in captured if c["b"].get("model")]
+    deepseek_ok = pings[challenger]["ok"] and challenger in used
+    challenger_ok = bool(used)
     judge_ok = bool(judged_live)
     report += ["", "## Result",
-               f"- DeepSeek challenger: {'WORKS' if challenger_ok else 'NOT WORKING'} (ping + real draft)",
+               f"- DeepSeek challenger (`{challenger}`): {'WORKS' if deepseek_ok else 'NOT WORKING'} (ping + real draft)",
+               f"- Challenger used in generation: {', '.join(f'`{m}`' for m in used) or 'none (no draft compared)'}",
                f"- GPT-OSS judge: {'WORKS' if judge_ok else 'NOT WORKING'} "
                f"({', '.join(sorted(judged_live)) or 'no valid verdict'})",
-               f"- Generation: {'completed' if gen_ok else 'did not reach the comparison'}"]
+               f"- Generation: {'completed with a comparison' if challenger_ok else 'no challenger draft compared'}"]
     (OUT / "report.md").write_text("\n".join(report) + "\n")
     log("\n" + "\n".join(report))
-    return 0 if challenger_ok and judge_ok else 1
+    return 0 if challenger_ok and judge_ok else 1  # DeepSeek itself is reported, the fallback keeps production going
 
 
 if __name__ == "__main__":

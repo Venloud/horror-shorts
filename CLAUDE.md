@@ -231,13 +231,18 @@ so a new session can pick up without starting over.
      type (case / mystery / inbox-true, lore + inbox LORE/REMAKE topics, fiction + coldcase at script level) goes
      primary draft (writer chain: Gemini strongest first -> Groq -> NVIDIA -> ModelScope -> OpenRouter, automatic
      fallback) -> `story.challenge_draft`: at most ONE challenger draft (`writer_challenger_model`
-     nvidia:deepseek-ai/deepseek-v4.1-flash, same prompt and facts; policy `writer_challenge_policy` on_problems =
+     nvidia:deepseek-ai/deepseek-v4.1-flash, same prompt and facts; if it fails / times out, the next of
+     `writer_challenger_fallbacks` (other families first, never the primary's model), max `writer_challenger_max_attempts`
+     2 models, each request <= `writer_challenger_timeout_seconds` 75, all <= `writer_challenger_total_seconds` 160,
+     rate limits fail at once (`story.request_limit`); policy `writer_challenge_policy` on_problems =
      only when the first draft has a measured problem or came from a last-resort writer) -> `compare_drafts`: fewer
      SERIOUS measured problems wins outright, else ONE independent judge (`writer_judge_models` GPT-OSS 120B on
      Groq / OpenRouter first, never a model or model family that wrote a draft; max 2 attempts), no judge = the
      objective score decides, ties keep the first draft -> editor pass (dropped if it measures worse) -> critic
      (advisory) -> at most `writer_max_revisions` 1 `targeted_revision` (accepted only if it doesn't measure worse).
      `story.writing_checks` = deterministic evidence: off_title / late_subject / late_event / setup_first
+     / contradiction (`continuity_findings`: a stated death / broken spine / unconsciousness / ropes / blindness, then the
+     same character runs / speaks / sees with nothing that undoes it; revise-level, quoted)
      (biography before the event) / unnatural_voice ("you watch / follow / witness") / repetitive / forced_questions
      / empty_ending / fiction_as_fact / unsupported_fact (numbers + years not in the source). BLOCKING only:
      off_title, fiction_as_fact, unsupported_fact (in `final_script_gate` on the voiced narration, after one targeted

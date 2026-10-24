@@ -57,7 +57,7 @@ def generate_image(prompt: str, *, model: str = "Qwen/Qwen-Image-2.1",
 
 
 def chat(model: str, prompt: str, *, temperature: float = 0.7, as_json: bool = True,
-         schema: dict | None = None) -> str:
+         schema: dict | None = None, timeout: float = 180) -> str:
     """OpenAI-compatible ModelScope text fallback."""
     token = key()
     if not token:
@@ -70,7 +70,7 @@ def chat(model: str, prompt: str, *, temperature: float = 0.7, as_json: bool = T
         body["response_format"] = {"type": "json_object"}
     r = requests.post(f"{BASE}/v1/chat/completions",
                       headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-                      json=body, timeout=180)
+                      json=body, timeout=timeout)
     if r.status_code != 200:
         raise RuntimeError(f"ModelScope chat HTTP {r.status_code}: {r.text[:300]}")
     return r.json()["choices"][0]["message"]["content"] or ""

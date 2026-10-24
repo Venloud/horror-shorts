@@ -315,5 +315,113 @@ class Compatibility(unittest.TestCase):
         self.assertEqual(cfg["writer_judge_models"][0], "groq:openai/gpt-oss-120b")
 
 
+class ChallengerFallback(unittest.TestCase):
+    KEYS = {"NVIDIA_API_KEY": "x", "OPENROUTER_API_KEY": "x", "GROQ_API_KEY": "x", "MODELSCOPE_TOKEN": ""}
+
+    def _weak(self):
+        d = copy.deepcopy(AMELIA)
+        d["model"] = "gemini-3.8-flash"
+        return d
+
+    def test_deepseek_timeout_falls_back_to_another_family(self):
+        calls, limits = [], []
+
+        def call(model, prompt, api_key, temperature=1.0, as_json=True, schema=None):
+            calls.append(model)
+            limits.append(story._timeout(180))
+            if model.startswith("nvidia:"):
+                raise TimeoutError("Read timed out. (read timeout=75)")
+            if "INDEPENDENT" in prompt:
+                return {"winner": "B", "reason": "subject first"}
+            d = copy.deepcopy(GOOD_AMELIA)
+            d["model"] = model
+            return d
+
+        with mock.patch.dict(os.environ, self.KEYS), mock.patch.object(story, "_call_model", side_effect=call):
+            out = story.challenge_draft(self._weak(), "prompt", "k", "true", AMELIA_SOURCE)
+        self.assertEqual(calls[:2], ["nvidia:deepseek-ai/deepseek-v4.1-flash", "openrouter:qwen/qwen3-32b"])
+        self.assertEqual(out["writing"]["challenger"], "openrouter:qwen/qwen3-32b")
+        self.assertIn("TimeoutError", out["writing"]["challenger_attempts"][0])
+        self.assertEqual(limits[:2], [75.0, 75.0])  # every challenger request is capped
+        self.assertEqual(story._REQUEST_LIMIT, [])  # the cap ends with the challenger
+
+    def test_attempts_are_limited_and_first_draft_kept(self):
+        calls = []
+
+        def call(model, *a, **k):
+            calls.append(model)
+            raise story.Overloaded(f"{model} HTTP 503")
+
+        with mock.patch.dict(os.environ, self.KEYS), mock.patch.object(story, "_call_model", side_effect=call):
+            out = story.challenge_draft(self._weak(), "prompt", "k", "true")
+        self.assertEqual(len(calls), story.CONFIG.get("writer_challenger_max_attempts", 2))
+        self.assertEqual(out["model"], "gemini-3.8-flash")
+        self.assertIn("failed", out["writing"]["challenger"])
+
+    def test_time_budget_stops_further_attempts(self):
+        calls = []
+        clock = iter([0.0, 0.0, 200.0, 200.0, 200.0])
+
+        def call(model, *a, **k):
+            calls.append(model)
+            raise TimeoutError("slow")
+
+        with mock.patch.dict(os.environ, self.KEYS), mock.patch.object(story, "_call_model", side_effect=call), \
+                mock.patch.object(story.time, "time", side_effect=lambda: next(clock, 200.0)):
+            out = story.challenge_draft(self._weak(), "prompt", "k", "true")
+        self.assertEqual(len(calls), 1)
+        self.assertIn("time budget", " ".join(out["writing"]["challenger_attempts"]))
+
+    def test_other_family_first_and_never_the_primary(self):
+        with mock.patch.dict(os.environ, self.KEYS):
+            self.assertEqual(story.challenger_models("groq:openai/gpt-oss-120b"),
+                             ["nvidia:deepseek-ai/deepseek-v4.1-flash", "openrouter:qwen/qwen3-32b"])
+            with mock.patch.dict(story.CONFIG, {"writer_challenger_model": "openrouter:openai/gpt-oss-120b"}):
+                order = story.challenger_models("groq:openai/gpt-oss-120b")
+            self.assertEqual(order[-1], "openrouter:openai/gpt-oss-120b")  # same family only as a last resort
+
+    def test_rate_limit_does_not_wait_inside_the_cap(self):
+        resp = mock.Mock(status_code=429, text="rate limit tokens per minute", headers={"retry-after": "60"})
+        with mock.patch.dict(os.environ, {"GROQ_API_KEY": "x"}), \
+                mock.patch.object(story.requests, "post", return_value=resp) as post, \
+                mock.patch.object(story.time, "sleep") as sleep:
+            with story.request_limit(30):
+                with self.assertRaises(story.RateLimited):
+                    story._call_groq("openai/gpt-oss-120b", "hi")
+        sleep.assert_not_called()
+        self.assertEqual(post.call_args.kwargs["timeout"], 30)
+
+
+class Continuity(unittest.TestCase):
+    def test_contradictions_are_found_and_quoted(self):
+        for text in ("The creature slammed Mara against the wall and her spine snapped. Mara ran for the door.",
+                     "The thing tore her throat open. She fled into the woods.",
+                     "It broke Ana's legs. Ana climbed the ladder to the loft.",
+                     "Tom passed out on the floor. Tom screamed for help."):
+            found = story.continuity_findings(text)
+            self.assertEqual(len(found), 1, text)
+            self.assertEqual(found[0]["severity"], "revise")  # sent to the one targeted revision, never blocks
+            self.assertIn("then '", found[0]["detail"])
+
+    def test_no_false_alarm_when_the_story_explains_it(self):
+        for text in ("He was knocked out cold. Hours later he woke and ran to the road.",
+                     "They tied her to the chair. She broke free and ran.",
+                     "She drowned in the lake. Her ghost walks the shore every winter.",
+                     "The thing killed him. She ran.",
+                     "She cut his throat. She ran from the barn.",
+                     "Her husband died in the winter. She walked to the grave every night.",
+                     "They were declared dead in 1939. One theory says they ran out of fuel and sank.",
+                     "The traveler died that night. In other versions, he walked home at dawn."):
+            self.assertEqual(story.continuity_findings(text), [], text)
+
+    def test_fixtures_have_no_contradiction_and_check_is_in_writing_checks(self):
+        for fixture in (AMELIA, GOOD_AMELIA, LORE, FICTION):
+            self.assertNotIn("contradiction", {c["code"] for c in story.writing_checks(fixture)})
+        bad = _with(["A lantern drifted over the marsh.", "The marsh thing broke Eli's legs.",
+                     "Eli ran home before dawn."], LORE)
+        codes = {c["code"]: c["severity"] for c in story.writing_checks(bad, "lore")}
+        self.assertEqual(codes.get("contradiction"), "revise")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -239,7 +239,7 @@ def _call_gemini(model: str, prompt: str, api_key: str, temperature: float = 1.0
                                                   else "its daily quota is used up"))
     body["contents"][0]["parts"][0]["text"] = strip_marks(prompt)
     _gemini_pace()
-    r = requests.post(GEMINI_URL.format(model=model), json=body, timeout=60,
+    r = requests.post(GEMINI_URL.format(model=model), json=body, timeout=_timeout(60),
                       headers={"x-goog-api-key": api_key})
     if is_gemini_auth_error(r.status_code, r.text):  # suspended project / bad key: Gemini is done for the run
         note_gemini_auth(r.status_code, r.text, f"story writer ({model})")
@@ -329,6 +329,27 @@ def model_chain(light: bool = False) -> list[str]:
     return list(dict.fromkeys(models or list(CONFIG["llm_models"])))
 
 
+_REQUEST_LIMIT: list[float] = []  # seconds; set by request_limit() around calls that must not hold up the build
+
+
+class request_limit:
+    """Within this block every text request times out after `seconds` and a rate limit fails at once instead of
+    waiting (the optional challenger must never hold up the production schedule)."""
+    def __init__(self, seconds: float):
+        self.seconds = float(seconds)
+
+    def __enter__(self):
+        _REQUEST_LIMIT.append(self.seconds)
+        return self
+
+    def __exit__(self, *exc):
+        _REQUEST_LIMIT.pop()
+
+
+def _timeout(default: float) -> float:
+    return min(default, _REQUEST_LIMIT[-1]) if _REQUEST_LIMIT else default
+
+
 def _call_model(model: str, prompt: str, api_key: str, temperature: float = 1.0, as_json: bool = True, schema=None):
     prompt = shared_style(prompt)
     if model.startswith("openrouter:"):
@@ -337,11 +358,13 @@ def _call_model(model: str, prompt: str, api_key: str, temperature: float = 1.0,
         return _call_groq(model[5:], prompt, temperature, as_json, schema)
     if model.startswith("nvidia:"):
         from providers import nvidia
-        text = nvidia.chat(model[7:], prompt, temperature=temperature, as_json=as_json, schema=schema or SCHEMA)
+        text = nvidia.chat(model[7:], prompt, temperature=temperature, as_json=as_json, schema=schema or SCHEMA,
+                           timeout=_timeout(180))
         return json.loads(text) if as_json else text.strip()
     if model.startswith("modelscope:"):
         from providers import modelscope
-        text = modelscope.chat(model[11:], prompt, temperature=temperature, as_json=as_json, schema=schema or SCHEMA)
+        text = modelscope.chat(model[11:], prompt, temperature=temperature, as_json=as_json,
+                               schema=schema or SCHEMA, timeout=_timeout(180))
         return json.loads(text) if as_json else text.strip()
     return _call_gemini(model, prompt, api_key, temperature, as_json, schema)
 
@@ -354,7 +377,7 @@ def _call_openrouter(model: str, prompt: str, temperature: float = 1.0, as_json:
                "temperature": min(1.0, temperature), "max_tokens": int(CONFIG.get("openrouter_max_tokens", 8000))}
     if as_json:
         payload["response_format"] = {"type": "json_object"}
-    r = requests.post(OPENROUTER_URL, json=payload, timeout=120,
+    r = requests.post(OPENROUTER_URL, json=payload, timeout=_timeout(120),
                       headers={"Authorization": f"Bearer {env('OPENROUTER_API_KEY')}"})
     if r.status_code == 429:
         raise RateLimited(f"openrouter:{model} HTTP 429", _retry_after(r))
@@ -379,7 +402,7 @@ def _call_groq(model: str, prompt: str, temperature: float = 1.0, as_json: bool 
     if as_json:
         body["response_format"] = {"type": "json_object"}
     for attempt in range(4):
-        r = requests.post(GROQ_URL, json=body, timeout=120,
+        r = requests.post(GROQ_URL, json=body, timeout=_timeout(120),
                           headers={"Authorization": f"Bearer {env('GROQ_API_KEY')}"})
         if r.status_code != 429:
             break
@@ -388,8 +411,8 @@ def _call_groq(model: str, prompt: str, temperature: float = 1.0, as_json: bool 
         if re.search(r"per day|\bTPD\b|\bRPD\b|tokens_per_day|requests_per_day", text, re.IGNORECASE):
             raise DailyLimit(f"groq:{model} HTTP 429 daily limit: {text[:300]}")
         wait = min(65.0, max(2.0, _retry_after(r) or 20.0 * (attempt + 1)))
-        if attempt == 3:
-            raise RateLimited(f"groq:{model} HTTP 429 (per-minute limit, 3 retries): {text[:300]}", wait)
+        if attempt == 3 or _REQUEST_LIMIT:
+            raise RateLimited(f"groq:{model} HTTP 429 (per-minute limit, {attempt} retries): {text[:300]}", wait)
         log(f"Groq rate limit (per minute): waiting {wait:.0f}s, then the same request again ({attempt + 1}/3)")
         time.sleep(wait)
     if r.status_code in (500, 502, 503, 504):
@@ -553,6 +576,135 @@ def title_terms(title: str, case: str = "") -> tuple[list[str], str | None]:
     return list(dict.fromkeys(subject)), event
 
 
+# Continuity: a consequence the story states (death, a broken spine, unconsciousness, ropes, blindness) followed by the
+# SAME character doing what that consequence rules out, with nothing in between that undoes it.
+_REF = r"(?:he|she|they|him|her|his|their|them|[A-Z][a-z]+)"
+INCAPACITY = [  # (state, pattern, what it rules out, what undoes it)
+    ("dead", r"\b(?:killed|kills|dies|died|dead|lifeless|beheaded|decapitated|bled out|bleeds out|drowned|drowns|"
+             r"stopped breathing|stops breathing|heart stopped|crushed to death|torn apart|ripped apart|eaten alive|"
+             r"devoured|throat (?:was |is )?(?:slit|slashed|cut|torn (?:out|open)|ripped (?:out|open))|"
+             r"neck (?:was |is )?(?:snapped|snaps|broken|broke)|"
+             r"(?:tore|tears|ripped|rips|slit|slits|cut|cuts|slashed|slashes) (?:open )?(?:her|his|their|[A-Z][a-z]+'s) "
+             r"throat(?: open| out)?|(?:snapped|snaps|broke|breaks) (?:her|his|their|[A-Z][a-z]+'s) neck)\b",
+     "any", r"\b(?:ghost|spirit|came back|comes back|rose|rises|risen|returned from the dead|undead|revenant|"
+            r"dream\w*|nightmare|vision|survived|survives|somehow|miraculous\w*|versions?|tellings?|"
+            r"(?:legend|story|stories) (?:says?|claims?)|was not dead|wasn't dead|only pretended|faked|theor\w*|believ\w*|"
+            r"some say|may have|might have|perhaps|earlier|before (?:that|this|then|she|he|they)|years before|"
+            r"flashback|had been)\b"),
+    ("paralysed", r"\b(?:paraly[sz]ed|(?:legs?|spine|back|ankles?|knees?) (?:was |were |is |are )?(?:broken|shattered|"
+                  r"snapped|crushed)|(?:broke|breaks|snapped|snaps|shattered|crushed) (?:her|his|their|[A-Z][a-z]+'s) "
+              r"(?:legs?|spine|back|ankles?)|could(?:n't| not) move)\b",
+     "move", r"\b(?:healed|recovered|crawl\w*|drag\w* (?:her|him|them)sel\w+|limp\w*|feeling returned|"
+             r"could move again|was carried|were carried|is carried)\b"),
+    ("unconscious", r"\b(?:knocked (?:out|unconscious)|(?:lost|loses) consciousness|passed out|passes out|"
+                    r"unconscious|blacked out|blacks out|fainted|faints)\b",
+     "any", r"\b(?:woke|wakes|awoke|awakens?|awakened|came to|comes to|regained|opened (?:her|his|their) eyes|"
+            r"hours later|the next (?:morning|day)|later)\b"),
+    ("bound", r"\b(?:chained|shackled|tied (?:up|down|to)|bound (?:hand|to|with)|pinned (?:down|beneath|under|to)|"
+              r"trapped (?:beneath|under)|nailed (?:shut|to))\b",
+     "move", r"\b(?:broke free|breaks free|freed|frees|untied|unties|wriggled|slipped (?:free|out|loose)|pulled free|"
+             r"cut (?:the|her|his|their) (?:ropes?|bonds|chains?)|loosened|let (?:her|him|them) go|released)\b"),
+    ("blinded", r"\b(?:blinded|eyes (?:were |are )?(?:gouged|torn out|burned out|put out)|went blind|goes blind)\b",
+     "see", r"\b(?:sight returned|could see again|healed|recovered)\b"),
+]
+_ACTIONS = {
+    "move": r"\b(?:(?:ran|runs|run)(?! out of| low)|fled|flees|escaped|escapes|bolted|bolts|sprinted|sprints|raced|races|climbed|climbs|"
+            r"walked|walks|jumped|jumps|leapt|leaps|dashed|dashes|got up|gets up|stood up|stands up|drove|drives|"
+            r"stumbled|stumbles|hurried|hurries|chased|chases|made it (?:out|home|back))\b",
+    "see": r"\b(?:saw|sees|see|watched|watches|read|reads|spotted|spots|noticed|notices|looked|looks)\b",
+    "speak": r"\b(?:screamed|screams|shouted|shouts|said|says|whispered|whispers|told|tells|called|calls|spoke|speaks|"
+             r"answered|answers)\b",
+}
+_ACTIONS["any"] = "|".join(_ACTIONS[k] for k in ("move", "see", "speak"))
+_PRONOUN = {"he": "he", "him": "he", "his": "he", "she": "she", "her": "she", "they": "they", "them": "they",
+            "their": "they"}
+_NOT_NAMES = {"The", "A", "An", "This", "That", "Then", "When", "But", "And", "In", "On", "At", "It", "Its", "No",
+              "One", "Every", "Some", "Nobody", "Something", "Someone", "There", "Her", "His", "She", "He", "They",
+              "Their", "Him", "Them", "What", "Who", "Why", "How", "If", "As", "After", "Before", "By", "For", "Only"}
+
+
+def _ref(token: str) -> str | None:
+    if token.lower() in _PRONOUN and token not in ("Her", "His", "Their") or token in ("Her", "His", "Their", "He",
+                                                                                       "She", "They", "Him", "Them"):
+        return _PRONOUN.get(token.lower())
+    return token if token[:1].isupper() and token not in _NOT_NAMES else None
+
+
+def _victim(sentence: str, m: re.Match) -> str | None:
+    """Who the consequence happened to: the word right after an active verb ("killed her"), the owner of the body
+    part ("her neck snapped"), else the nearest person before it ("Mara was knocked out")."""
+    inside = re.search(r"\b(her|his|their|[A-Z][a-z]+(?='s))\b", m.group(0))
+    if inside and inside.start() > 0:
+        return _ref(inside.group(1))
+    after = re.match(r"\s+(" + _REF + r")\b", sentence[m.end():])
+    if after and m.group(0).split()[0].lower() in ("killed", "kills", "beheaded", "decapitated", "drowned", "drowns",
+                                                   "blinded", "paralysed", "paralyzed", "chained", "shackled"):
+        return _ref(after.group(1))
+    before = re.findall(r"\b(" + _REF + r")\b", sentence[:m.start()])
+    owner = re.search(r"\b(her|his|their|[A-Z][a-z]+'s)\s+$", sentence[:m.start()])
+    if owner:
+        return _ref(owner.group(1).removesuffix("'s"))
+    third = re.search(r"\b(?:her|his|their|[A-Z][a-z]+'s)\s+(?:\w+\s+){0,2}?([a-z]+)\s+(?:was |is |were |are )?$",
+                      sentence[:m.start()], re.IGNORECASE)
+    if third:  # "her husband died": the consequence is someone else's
+        return None
+    for tok in reversed(before):
+        r = _ref(tok)
+        if r:
+            return r
+    return None
+
+
+def _actor(sentence: str, verb_at: int) -> str | None:
+    """The subject of an action: the last person named before the verb, within the clause."""
+    clause = re.split(r"[,;:]|\b(?:and|but|while|as|when)\b", sentence[:verb_at])[-1]
+    for tok in reversed(re.findall(r"\b(" + _REF + r")\b", clause)):
+        if tok.lower() in ("him", "her", "them", "his", "their"):  # objects / possessives are not the subject
+            continue
+        r = _ref(tok)
+        if r:
+            return r
+    return None
+
+
+def continuity_findings(text: str) -> list[dict]:
+    """Contradictions inside one story, quoted: e.g. "her spine snapped" ... later "she ran for the door" with no
+    recovery in between. Deterministic and conservative: same character reference only (a name or the same pronoun),
+    a stated consequence only (never a guess about an injury's severity)."""
+    sents = [x.strip() for x in re.split(r"(?<=[.!?])\s+", text) if x.strip()]
+    out, seen = [], set()
+    for i, s in enumerate(sents):
+        for state, rx, rules_out, undo in INCAPACITY:
+            for m in re.finditer(rx, s, re.IGNORECASE):
+                who = _victim(s, m)
+                if not who:
+                    continue
+                names = [t for t in re.findall(r"\b[A-Z][a-z]+\b", " ".join(sents[max(0, i - 1):i]) + " " +
+                                                s[:m.start()]) if _ref(t) == t]
+                alias = {who} | ({names[-1]} if who in ("he", "she") and names else set())
+                for j in range(i, len(sents)):
+                    later = sents[j] if j > i else s[m.end():]
+                    act = None
+                    for a in re.finditer(_ACTIONS[rules_out], later, re.IGNORECASE):
+                        if re.search(undo, later[:a.start()], re.IGNORECASE):
+                            break
+                        if _actor(later, a.start()) in alias:
+                            act = a
+                            break
+                    if re.search(undo, later, re.IGNORECASE) and not act:
+                        break  # undone (woke, broke free, a ghost...) before any contradiction
+                    if act:
+                        key = (state, who, j)
+                        if key not in seen:
+                            seen.add(key)
+                            out.append({"code": "contradiction", "severity": "revise",
+                                        "detail": f"'{s[max(0, m.start() - 30):m.end() + 12].strip()}' ({who}: {state}), "
+                                                  f"then '{later[max(0, act.start() - 30):act.end() + 20].strip()}' "
+                                                  "with nothing that undoes it"})
+                        break
+    return out
+
+
 def writing_checks(story: dict, kind: str | None = None, source: str | None = None) -> list[dict]:
     """Deterministic, evidence-based checks of a script (no LLM). Each: {code, severity, detail} with severity
     serious (demonstrable: blocks if it survives the revision), revise (one targeted revision) or advisory.
@@ -605,6 +757,7 @@ def writing_checks(story: dict, kind: str | None = None, source: str | None = No
     if common:
         out.append({"code": "repetitive", "severity": "advisory",
                     "detail": f"{starts[common[0]]} sentences open with '{common[0]}'"})
+    out += continuity_findings(text)
     if text.count("?") > 3:
         out.append({"code": "forced_questions", "severity": "advisory", "detail": f"{text.count('?')} questions"})
     tail = " ".join(sc.get("narration", "") for sc in (story.get("scenes") or [])[-2:])
@@ -687,7 +840,8 @@ JUDGE_PROMPT = """You are an INDEPENDENT script editor for Night Files, a short 
 You wrote neither draft. Compare them for a {kind} story ({genre_rule}).
 Judge each 0-10 on: title_alignment (it is about what the title promises, from the start), hook (the first line is the
 most gripping relevant detail), pacing (every beat adds something new), accuracy (only the supplied facts; theory,
-rumor and fact kept apart), coherence, suspense, clarity (a viewer can say what happened), payoff (a real ending or an
+rumor and fact kept apart), coherence (no contradictions: nobody does what the story already made
+impossible), suspense, clarity (a viewer can say what happened), payoff (a real ending or an
 honest unresolved question), natural_voice (spoken, conversational, no "you watch / you follow" stage directions).
 Quote the exact words that justify your biggest differences. If the drafts are equally good, choose A.
 OBJECTIVE CHECKS (measured by code, trust them):
@@ -751,9 +905,41 @@ def _draft_view(d: dict) -> dict:
     return {k: d[k] for k in ("title", "hook_overlay", "scenes", "fact_ledger") if k in d}
 
 
+def challenger_models(primary: str) -> list[str]:
+    """Eligible challengers, in order: config writer_challenger_model (DeepSeek), then writer_challenger_fallbacks,
+    never the primary's own model; models of a DIFFERENT family than the primary first (a second opinion from the
+    same family adds little), only ones whose provider has a key."""
+    pref = [CONFIG.get("writer_challenger_model", "nvidia:deepseek-ai/deepseek-v4.1-flash")]
+    pref += list(CONFIG.get("writer_challenger_fallbacks", []))
+    out = [m for m in dict.fromkeys(m for m in pref if isinstance(m, str) and m.strip())
+           if m != primary and _available(m)]
+    fam = _family(primary) if primary else ""
+    return sorted(out, key=lambda m: bool(fam) and _family(m) == fam)  # stable: config order within each group
+
+
+def _challenger_draft(model: str, draft: dict, prompt: str, api_key: str) -> dict:
+    """One challenger draft from `model` with the SAME prompt; raises when it is unusable."""
+    if draft.get("script") and not draft.get("scenes"):  # fiction: compete at script level
+        text = _call_model(model, prompt, api_key, 1.0, as_json=False)
+        candidate = {"title": draft.get("title", ""), "script": text.strip()}
+        if not 60 <= len(candidate["script"].split()) <= 400:
+            raise ValueError(f"challenger script length {len(candidate['script'].split())} words")
+    else:
+        candidate = _call_model(model, prompt, api_key, temperature=0.6)
+        _validate(candidate)
+        if str(candidate.get("title", "")).upper() in ("SKIP", "INSPIRATION"):
+            raise ValueError("challenger declined the story")
+    candidate["model"], candidate["writer"] = model, _writer(model)
+    return candidate
+
+
 def challenge_draft(draft: dict, prompt: str, api_key: str, kind: str, source: str | None = None) -> dict:
-    """At most ONE challenger draft (config writer_challenger_model, DeepSeek) and ONE independent comparison.
-    The challenger gets the SAME prompt (same verified facts and rules). Any failure keeps the valid first draft."""
+    """At most ONE challenger draft and ONE independent comparison. The challenger is config writer_challenger_model
+    (DeepSeek); if it fails or times out, the next eligible model (challenger_models: writer_challenger_fallbacks,
+    other families first), at most writer_challenger_max_attempts models, each request capped at
+    writer_challenger_timeout_seconds and all of them at writer_challenger_total_seconds (rate limits fail at once,
+    no waiting). The challenger gets the SAME prompt (same verified facts and rules). Any failure keeps the valid
+    first draft."""
     checks = writing_checks(draft, kind, source)
     rec = _record(draft)
     rec.update({"kind": kind, "primary": draft.get("model") or draft.get("script_model"),
@@ -761,27 +947,36 @@ def challenge_draft(draft: dict, prompt: str, api_key: str, kind: str, source: s
     if not challenger_wanted(draft, checks):
         rec["challenger"] = "skipped (first draft has no demonstrable problem)"
         return draft
-    challenger = str(CONFIG.get("writer_challenger_model", "nvidia:deepseek-ai/deepseek-v4.1-flash"))
     primary = draft.get("model") or draft.get("script_model") or ""
-    if challenger == primary or not _available(challenger):
-        rec["challenger"] = f"unavailable ({challenger})"
+    candidate, challenger, tried = None, "", []
+    candidates = challenger_models(primary)
+    if not candidates:
+        rec["challenger"] = "unavailable (no eligible challenger model)"
         return draft
-    try:
-        rec["llm_calls"] += 1
-        if draft.get("script") and not draft.get("scenes"):  # fiction: compete at script level
-            text = _call_model(challenger, prompt, api_key, 1.0, as_json=False)
-            candidate = {"title": draft.get("title", ""), "script": text.strip()}
-            if not 60 <= len(candidate["script"].split()) <= 400:
-                raise ValueError(f"challenger script length {len(candidate['script'].split())} words")
-        else:
-            candidate = _call_model(challenger, prompt, api_key, temperature=0.6)
-            _validate(candidate)
-            if str(candidate.get("title", "")).upper() in ("SKIP", "INSPIRATION"):
-                raise ValueError("challenger declined the story")
-        candidate["model"], candidate["writer"] = challenger, _writer(challenger)
-    except Exception as exc:  # noqa: BLE001 (do not discard a valid first draft when the challenger is down)
-        rec["challenger"] = f"failed: {str(exc)[:150]}"
-        log(f"Writer challenger unavailable: {str(exc)[:150]}; keeping primary")
+    per_call = float(CONFIG.get("writer_challenger_timeout_seconds", 75))
+    budget = float(CONFIG.get("writer_challenger_total_seconds", 160))
+    started = time.time()
+    pool = candidates[:max(1, int(CONFIG.get("writer_challenger_max_attempts", 2)))]
+    for model in pool:
+        left = budget - (time.time() - started)
+        if left < 15:  # not enough time for a real draft: keep the schedule, keep the first draft
+            tried.append(f"{model}: skipped (challenger time budget used)")
+            break
+        try:
+            rec["llm_calls"] += 1
+            with request_limit(min(per_call, left)):
+                candidate = _challenger_draft(model, draft, prompt, api_key)
+            challenger = model
+            break
+        except Exception as exc:  # noqa: BLE001 (a failed challenger never discards the valid first draft)
+            tried.append(f"{model}: {type(exc).__name__}: {str(exc)[:120]}")
+            log(f"Writer challenger {model} failed ({str(exc)[:120]}); "
+                + ("trying the next eligible model" if model != pool[-1] else "no more attempts"))
+    if tried:
+        rec["challenger_attempts"] = tried
+    if candidate is None:
+        rec["challenger"] = "failed: " + "; ".join(tried)[:300]
+        log(f"Writer challenger unavailable after {len(tried)} attempt(s); keeping primary")
         return draft
     verdict = compare_drafts(draft, candidate, prompt, api_key, kind, source)
     rec["llm_calls"] += 0 if verdict["judge"].startswith("objective") else 1
