@@ -1,1 +1,0 @@
-Test-only re-render request: tests/fixtures/amelia_f8f477b53755.json (2026-10-24, run 2: 3 s cap after word snap, no archival photo behind the host)
