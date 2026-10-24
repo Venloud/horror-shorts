@@ -69,3 +69,18 @@ OTHER FIELDS
 - caption: line 1 = the exact phrase people type into search for this story (e.g. "What happened to D.B. Cooper?", "What is the Wendigo?"); the channel adds "illustrated horror story" itself. Line 2 = a question for comments. Max 150 characters. May use 1 emoji.
 - hashtags: 5 topic hashtags without # (the case, place, legend or subject + its genre, e.g. dbcooper, unsolvedmysteries). The channel adds #illustratedhorror #horrorstory itself. Never fyp, foryou or viral. For true stories, hashtags and caption must match the source: never "unsolved" / #unsolved when the source gives an official ruling (e.g. a coroner's finding) or the case was solved.
 - pinned_comment: a short comment the creator can pin to start discussion.
+
+CONTEXT-SENSITIVE EDITING NOTES FOR THE SHOT PLANNER
+
+## General-purpose contextual graphic and sound direction
+The bot is an editor for **any** story, not an Aka Manto template. First identify the narrated event, then decide whether an on-screen effect improves comprehension. Examples of a reusable event-to-presentation vocabulary:
+- **Incoming text / phone alert:** show a convincing phone/screen insert, reveal only the message actually stated in the narration or provided source, animate its appearance, optionally add one subtle vibration/notification sound if a licensed matching SFX exists. Do not fabricate messages or private details.
+- **Phone ringing / call:** show caller interface or incoming-call visual; sync a brief ring or buzz to the line, avoid ringing over speech or inventing caller identity.
+- **Weather:** show rain, wind, lightning, fog only when the story establishes it; sync restrained rain/wind/thunder ambience if available.
+- **Discovery / evidence:** use a clean, legible reveal, close-up, highlight, photo-scan or document insert only when the object or finding is supported. Never generate illegible fake evidence text.
+- **Travel / location change:** use a map move, line or location transition only with grounded locations, never invent routes.
+- **Time shift / flashback:** use a restrained date, clock, lighting or transition cue to mark temporal change when necessary, not every scene.
+- **Choice, warning, interruption:** use split emphasis, short graphic beat, or intentional silence only when narratively motivated.
+- **Motion:** use thirds, circular/radial, leading lines, framing-within-frame, or diagonal composition when useful; never force all methods into one scene.
+
+Choose from existing supported graphic templates/SFX and do not claim nonexistent effect implementations. When the exact asset or template is absent, use a clean existing alternative or no effect, never hallucinate a media capability. Text on screen must be sourced or verbatim from narration, legible, and separate from base image generation. Respect caption safe zones, audio ducking, and cooldowns to avoid overediting.
