@@ -1,0 +1,52 @@
+name: Writer endpoint test
+
+# TEST ONLY, manual. Pings the DeepSeek challenger + GPT-OSS judges and writes ONE story with the challenger forced on.
+# Nothing is voiced, rendered, buffered, posted or saved to history (no TikTok / YouTube secrets, read-only token).
+on:
+  push:  # runs once from the test branch (a manual-only workflow cannot be dispatched before it is on main)
+    branches: [claude/admiring-goldberg-l0l8aw]
+    paths: [".github/workflows/writer_endpoint_test.yml", "pipeline/writer_endpoint_test.py"]
+  workflow_dispatch:
+    inputs:
+      story_mode:
+        description: "Story mode (inbox skipped)"
+        type: choice
+        options: [lore, mystery, case, coldcase]
+        default: lore
+
+permissions:
+  contents: read
+
+concurrency:
+  group: writer-endpoint-test
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          pip install -q torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -q -r requirements.txt
+      - name: Run the writer endpoint test
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          MODELSCOPE_TOKEN: ${{ secrets.MODELSCOPE_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          STORY_MODE: ${{ inputs.story_mode || 'lore' }}
+        run: cd pipeline && python writer_endpoint_test.py
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: writer-endpoint-test
+          path: output/writer_endpoint_test/
+          if-no-files-found: warn
