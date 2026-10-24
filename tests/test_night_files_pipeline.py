@@ -682,5 +682,38 @@ class Workflow(unittest.TestCase):
         self.assertFalse(re.search(r"publish\.py", (ROOT / ".github" / "workflows" / "buffer_fill.yml").read_text()))
 
 
+
+class FinalNarrationApproval(unittest.TestCase):
+    def test_approval_is_invalidated_when_final_words_change(self):
+        import story
+        item = {"title": "The Disappearance", "scenes": [{"narration": "The plane vanished."}]}
+        reply = {"approved": True, "reasons": [], "title_alignment": 9,
+                 "narrative_logic": 9, "payoff": 9, "fact_integrity": 9}
+        with mock.patch.object(story, "_json_call", return_value=reply) as judge:
+            story.final_script_gate(item, "test")
+            story.final_script_gate(item, "test")
+            self.assertEqual(judge.call_count, 1)
+            item["scenes"][0]["narration"] += " Investigators searched."
+            story.final_script_gate(item, "test")
+            self.assertEqual(judge.call_count, 2)
+
+    def test_critic_failure_is_not_approval(self):
+        import story
+        item = {"title": "The Disappearance", "scenes": [{"narration": "The plane vanished."}]}
+        with mock.patch.object(story, "_json_call", side_effect=RuntimeError("offline")):
+            with self.assertRaises(story.StoryDiscarded):
+                story.final_script_gate(item, "test")
+
+    def test_low_story_relevance_rejected_even_with_approved_flag(self):
+        import story
+        item = {"title": "The Disappearance", "scenes": [{"narration": "A biography."}]}
+        reply = {"approved": True, "reasons": ["title mismatch"],
+                 "title_alignment": 2, "narrative_logic": 9, "payoff": 9, "fact_integrity": 9}
+        with mock.patch.object(story, "_json_call", return_value=reply):
+            with self.assertRaises(story.StoryDiscarded):
+                story.final_script_gate(item, "test")
+
+
+
 if __name__ == "__main__":
     unittest.main()
