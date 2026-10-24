@@ -13,6 +13,7 @@ buffered, posted or written to history / inbox / counter.
 Writes output/writer_endpoint_test/report.md + story.json. Exit 1 when the challenger or every judge failed.
 """
 import json
+import re
 import os
 import sys
 import time
@@ -87,12 +88,22 @@ def diagnose_nvidia(model: str) -> list[str]:
                    + (f", first byte {res['first_byte']} s" if res.get("first_byte") else "")
                    + (f", headers {res['headers']}" if res.get("headers") else "")
                    + f": {res.get('error') or res.get('body') or 'answered'}")
-    control_id = next((i for i in ("meta/llama-3.1-8b-instruct", "meta/llama-3.2-3b-instruct") if i in ids),
-                      next((i for i in ids if "8b-instruct" in i), None))
-    control = _tiny(control_id) if control_id else None
-    if control:
-        out.append(f"- Control model `{control_id}`: HTTP {control.get('status')} in {control['seconds']} s: "
-                   f"{control.get('error') or control.get('body') or 'answered'}")
+    # control: a small model that answers 200 (a catalogue entry can still be "Not found for account": listed is not
+    # the same as deployed). Any fast HTTP answer, even a 404, proves the endpoint and the key respond.
+    control, control_id = None, None
+    pool = [i for i in ("meta/llama-3.1-8b-instruct", "meta/llama-3.2-3b-instruct", "mistralai/mistral-7b-instruct-v0.3",
+                        "google/gemma-2-9b-it", "microsoft/phi-3-mini-4k-instruct") if i in ids]
+    pool += [i for i in ids if re.search(r"\b(?:[1-9]b)-instruct", i) and i not in pool]
+    answered = None
+    for cid in pool[:6]:
+        res = _tiny(cid, timeout=30)
+        out.append(f"- Control `{cid}`: HTTP {res.get('status')} in {res['seconds']} s: "
+                   f"{res.get('error') or (res.get('body') or 'answered')[:120]}")
+        if res.get("status") is not None and answered is None:
+            answered = res
+        if res.get("status") == 200:
+            control, control_id = res, cid
+            break
     codes = [t.get("status") for t in tries]
     if ids and model not in ids or 404 in codes:
         verdict = "MODEL ID NOT AVAILABLE (not in the catalogue / 404): the configured id is wrong or retired"
@@ -101,12 +112,14 @@ def diagnose_nvidia(model: str) -> list[str]:
     elif all(c == 200 for c in codes):
         verdict = ("ENDPOINT RESPONDS for tiny requests: the timeouts come from long generations (full story, "
                    "8000 max tokens) being too slow on this model")
-    elif control and control.get("status") == 200:
-        verdict = "THIS MODEL IS STALLED (no response) while the endpoint + key answer for the control model"
     elif control:
-        verdict = "NVIDIA ENDPOINT / KEY NOT RESPONDING (the control model fails too)"
+        verdict = (f"THIS MODEL IS STALLED: listed, but no response (not even a first streamed byte) while "
+                   f"`{control_id}` answers 200 with the same key")
+    elif answered:
+        verdict = ("THIS MODEL IS STALLED: listed, but no response, while the endpoint answers other requests at "
+                   "once with the same key (no 200 control found)")
     else:
-        verdict = "NO RESPONSE and no control model to compare"
+        verdict = "NVIDIA ENDPOINT / KEY NOT RESPONDING (no control model answered at all)"
     out.append(f"- **Verdict: {verdict}**")
     return out
 
