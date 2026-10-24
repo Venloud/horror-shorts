@@ -756,11 +756,24 @@ def sequence(story: dict, narration: dict, scene_images: list[list[Path]], graph
                     and order[k]["crop"] == order[k - 1]["crop"]:
                 order[k] = dict(order[k], crop="detail_right" if order[k]["crop"] != "detail_right" else "top")
         lens = _slot_lengths(len(order), [x["type"] for x in order], span)
+        for _ in range(12):  # every shot <= SHOT_MAX: a long picture gets a second framing; graphics give time away
+            k = next((k for k, ln in enumerate(lens) if ln > SHOT_MAX - 0.15 and order[k] is not closing), None)
+            if k is None:
+                break
+            if order[k]["type"] == "image" or not any(x["type"] == "image" for x in order):
+                src = order[k] if order[k]["type"] == "image" else imgs[0]
+                order.insert(k + 1, dict(src, crop=("detail_right", "top", "detail_left", "bottom")[(k + i) % 4]))
+            else:
+                j = max((j for j, x in enumerate(order) if x["type"] == "image"), key=lambda j: -lens[j])
+                order.insert(j + 1, dict(order[j], crop="detail_left" if order[j].get("crop") != "detail_left"
+                                         else "detail_right"))
+            lens = _slot_lengths(len(order), [x["type"] for x in order], span)
         t = a
         cuts = [a]
         for ln in lens[:-1]:
             t += ln
-            near = [w["start"] for w in words if abs(w["start"] - t) < 0.35 and cuts[-1] + SHOT_MIN <= w["start"]]
+            near = [w["start"] for w in words if abs(w["start"] - t) < 0.35 and cuts[-1] + SHOT_MIN <= w["start"]
+                    <= cuts[-1] + SHOT_MAX - 0.05]
             cuts.append(min(near, key=lambda x: abs(x - t)) if near else t)
         cuts.append(b)
         for k, item in enumerate(order):
@@ -1026,6 +1039,10 @@ class Renderer:
         s = seg["shot"]
         scene_imgs = [x["shot"]["file"] for x in self.segs if x["shot"].get("type") == "image"
                       and x["scene"] == seg["scene"]] or [self.first_image]
+        # behind the host: never an archival photo (it may show the real person); another picture of the scene
+        drawn = [f for f in scene_imgs if f and provenance_of(f).get("kind") != "archival"]
+        scene_imgs = drawn or [f for f in (x["shot"]["file"] for x in self.segs if x["shot"].get("type") == "image")
+                               if provenance_of(f).get("kind") != "archival"][:1] or scene_imgs
         frame = self._blurred(scene_imgs[0]).copy() if scene_imgs[0] else Image.new("RGBA", (W, H), BLACK + (255,))
         n = sum(1 for x in self.segs[:self._index(seg)] if x["shot"].get("type") == "host")
         dur = max(0.01, seg["end"] - seg["start"])

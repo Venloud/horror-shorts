@@ -542,6 +542,7 @@ class MediaSources(unittest.TestCase):
                              "image_prompt_2": "dark ocean waves"} for k in range(4)]}
         tmp = Path(tempfile.mkdtemp())
         boom = mock.Mock(side_effect=RuntimeError("HTTP 503"))
+        boom.__name__ = "provider_down"
         try:
             with mock.patch.dict(media.PROVIDERS, {"stock_video": (boom,), "real_photo": (boom,),
                                                    "archive_print": (boom,)}), \
