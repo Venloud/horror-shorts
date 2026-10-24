@@ -219,6 +219,10 @@ def main() -> int:
             f"written by {story.get('writer') or story.get('model')}, visual mode {story.get('visual_mode')})")
         (workdir / "story.json").write_text(json.dumps(story, indent=2, ensure_ascii=False))
 
+        if not story.get("narrator_voice"):
+            story["_previous_narrator_voice"] = next(
+                (item.get("narrator_voice") for item in reversed(history)
+                 if item.get("narrator_voice")), "")
         stage = "narration"
         narration = None if testing else checkpoint.load_narration(story, workdir)
         if narration is None:
@@ -381,6 +385,7 @@ def main() -> int:
             **({"yt_title": story["packaging"]["yt_title"], "yt_tags": story["packaging"]["yt_tags"],
                 "yt_description": packaging.youtube_description(story)} if story.get("packaging") else {}),
             "true_story": bool(story.get("true_story")), "seconds": round(narration["duration"], 1),
+            "narrator_voice": story.get("narrator_voice") or narration.get("voice"),
             "visual_credits": visual_credits, "visual_mode": story.get("visual_mode"),
             "render_style": story.get("render_style", "classic"),
             "provenance": {
@@ -430,6 +435,7 @@ def main() -> int:
             "score": story.get("score"),
             "seconds": round(narration["duration"], 1),
             "voice_speed": narration.get("speed"),
+            "narrator_voice": story.get("narrator_voice") or narration.get("voice"),
             "writer": story.get("writer") or story.get("model"),  # which provider wrote it (gemini / groq)
             "media_ids": [a["id"] for a in story.get("media_assets") or []],
             "visual_mode": story.get("visual_mode"),  # A/B test: classic / fast / analog
