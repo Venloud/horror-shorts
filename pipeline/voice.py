@@ -1,5 +1,6 @@
 """Free narration with Kokoro TTS, plus word-level timings for captions."""
 import re
+import secrets
 from pathlib import Path
 
 import numpy as np
@@ -59,7 +60,18 @@ def narrate(story: dict, outdir: Path, speed: float | None = None) -> dict:
     if "pipe" not in _PIPE:  # re-voicing at another speed reuses the loaded model
         _PIPE["pipe"] = KPipeline(lang_code=CONFIG.get("voice_lang", "a"))
     pipe = _PIPE["pipe"]
-    voice = CONFIG["voice"]
+    # One randomly chosen eligible voice per NEW story; persisted on the story for resumes.
+    # Do not change the voice when adjusting speech speed or regenerating narration.
+    if not story.get("narrator_voice"):
+        candidates = list(dict.fromkeys(CONFIG.get("voice_test_pool") or
+            ["af_heart", "am_michael", "af_bella", "am_adam", "bf_emma", "bm_george"]))
+        if not candidates:
+            raise ValueError("No narrator voices configured")
+        previous = (CONFIG.get("voice_previous") or "").strip()
+        choices = [v for v in candidates if v != previous] or candidates
+        story["narrator_voice"] = secrets.choice(choices)
+    voice = story["narrator_voice"]
+    log(f"Narrator voice: {voice}")
     speed = float(speed or CONFIG.get("voice_speed", 1.0))
 
     pieces = [np.zeros(int(LEAD_IN * SR), dtype=np.float32)]
@@ -103,4 +115,4 @@ def narrate(story: dict, outdir: Path, speed: float | None = None) -> dict:
     path = outdir / "narration.wav"
     sf.write(path, wav, SR)
     log(f"Narration: {t:.1f}s at speed {speed:.2f}, {len(words)} words timed")
-    return {"path": path, "duration": t, "words": words, "scene_times": scene_times, "speed": speed}
+    return {"path": path, "duration": t, "words": words, "scene_times": scene_times, "speed": speed, "voice": voice}
