@@ -3,6 +3,7 @@ import json
 import random
 import re
 import time
+from pathlib import Path
 from collections import Counter
 
 import requests
@@ -13,6 +14,13 @@ from common import (CONFIG, blocked_topic, env, gemini_model_out, gemini_out, is
 
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+STYLE_FILE = Path(__file__).resolve().parent.parent / "docs" / "NIGHT_FILES_STORYTELLING_STYLE.md"
+
+def shared_style(prompt: str) -> str:
+    """Use one checked-in voice/style standard across ALL model calls."""
+    return "NIGHT FILES SHARED STYLE:\n" + STYLE_FILE.read_text(encoding="utf-8") + "\n\nTASK:\n" + prompt
+
 
 SCHEMA = {
     "type": "OBJECT",
@@ -303,10 +311,17 @@ def model_chain(light: bool = False) -> list[str]:
         models.append("nvidia:" + CONFIG.get("nvidia_text_model", "z-ai/glm-5.3-flash"))
     if env("MODELSCOPE_TOKEN", required=False) or env("MODELSCOPE_API_KEY", required=False):
         models.append("modelscope:" + CONFIG.get("modelscope_text_model", "Qwen/Qwen3.5-27B"))
-    return models or list(CONFIG["llm_models"])
+    if env("OPENROUTER_API_KEY", required=False):
+        for name in CONFIG.get("openrouter_models", []):
+            if isinstance(name, str) and name.strip():
+                models.append("openrouter:" + name.strip())
+    return list(dict.fromkeys(models or list(CONFIG["llm_models"])))
 
 
 def _call_model(model: str, prompt: str, api_key: str, temperature: float = 1.0, as_json: bool = True, schema=None):
+    prompt = shared_style(prompt)
+    if model.startswith("openrouter:"):
+        return _call_openrouter(model[11:], prompt, temperature, as_json, schema)
     if model.startswith("groq:"):
         return _call_groq(model[5:], prompt, temperature, as_json, schema)
     if model.startswith("nvidia:"):
@@ -318,6 +333,26 @@ def _call_model(model: str, prompt: str, api_key: str, temperature: float = 1.0,
         text = modelscope.chat(model[11:], prompt, temperature=temperature, as_json=as_json, schema=schema or SCHEMA)
         return json.loads(text) if as_json else text.strip()
     return _call_gemini(model, prompt, api_key, temperature, as_json, schema)
+
+
+def _call_openrouter(model: str, prompt: str, temperature: float = 1.0, as_json: bool = True, schema=None):
+    """Optional OpenRouter model fallback; unavailable without a configured key."""
+    if as_json:
+        prompt += "\n\nReturn ONLY a JSON object following this schema: " + json.dumps(schema or SCHEMA)
+    payload = {"model": model, "messages": [{"role": "user", "content": strip_marks(prompt)}],
+               "temperature": min(1.0, temperature), "max_tokens": int(CONFIG.get("openrouter_max_tokens", 8000))}
+    if as_json:
+        payload["response_format"] = {"type": "json_object"}
+    r = requests.post(OPENROUTER_URL, json=payload, timeout=120,
+                      headers={"Authorization": f"Bearer {env('OPENROUTER_API_KEY')}"})
+    if r.status_code == 429:
+        raise RateLimited(f"openrouter:{model} HTTP 429", _retry_after(r))
+    if r.status_code in (500, 502, 503, 504):
+        raise Overloaded(f"openrouter:{model} HTTP {r.status_code}")
+    if r.status_code != 200:
+        raise RuntimeError(f"openrouter:{model} HTTP {r.status_code}: {r.text[:200]}")
+    content = r.json()["choices"][0]["message"]["content"] or ""
+    return json.loads(content) if as_json else content.strip()
 
 
 def _call_groq(model: str, prompt: str, temperature: float = 1.0, as_json: bool = True, schema=None):
@@ -683,10 +718,11 @@ class StoryDiscarded(Exception):
 
 
 def _json_call(prompt: str, api_key: str, temperature: float = 0.3, light: bool = True) -> dict:
-    """A small JSON answer (premise pitch, critic scores) from the model chain (light=False: strongest first)."""
+    """A small JSON answer using the same shared style and provider fallbacks."""
+    prompt = shared_style(prompt)
     def call(model):
-        if model.startswith("groq:"):
-            return _call_groq(model[5:], prompt, temperature, True, {"type": "OBJECT"})
+        if model.startswith(("groq:", "nvidia:", "modelscope:", "openrouter:")):
+            return _call_model(model, prompt, api_key, temperature, True, {"type": "OBJECT"})
         if gemini_model_out(model):
             raise DailyLimit(f"{model}: daily quota used up")
         gen = {"temperature": temperature, "responseMimeType": "application/json"}
