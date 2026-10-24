@@ -14,6 +14,13 @@ SPLIT IT INTO SCENES
 - COPY THE WORDS EXACTLY. Do not rewrite, shorten, add or reorder anything. Only remove markdown symbols, headings and quotation marks around dialogue if they would sound odd read aloud.
 - Scene 1 must be the script's opening hook.
 
+EDITORIAL PRIORITY, WALTER MURCH RULE OF SIX
+- Design the whole visual sequence around this descending priority: Emotion (51%), Story (23%), Rhythm (10%), Eye trace (7%), screen plane (5%), spatial continuity (4%). The percentages express priorities, NOT scores, quotas or mechanical runtime allocation. Prioritize credible emotion and actual story progression over motion-graphic spectacle, flashy transitions and rigid continuity.
+- For each scene, identify the intended feeling and the NEW information/action/choice it conveys. A shot must make the audience feel or understand something, not just look atmospheric. Use pauses and stillness for tension where appropriate.
+- Think across adjacent shots: natural timing with narration, continuity of the viewer's focus, meaningful eyeline and screen direction, then physical geography. Place subjects and clues at readable focal points; respect lower caption safe zone. Preserve locations and character looks unless the story actually changes them.
+- Composition (thirds, circle/radial, leading lines, framing within frame, diagonals) is a TOOL for viewer attention and emotion, not mandatory ornament. Do not tell the image AI to render editing graphics, underlines or readable text.
+- If the narrator describes a choice, reveal, phone notification or evidence, plan the most meaningful visual beat first, then only contextual text/graphic and matching subtle audio cues. Do not insert an unapproved character pose or invent factual screen text.
+
 IMAGE PROMPTS
 - Every image prompt is a full cinematic description of 25 to 45 words: WHO is in it (by character name) and what they are doing, the exact setting details, the lighting (lamp glow, moonlight, flashlight beam, shadows), the camera angle and shot size, and the mood. Short prompts like "the narrator looking shocked" produce bland images and are not allowed.
   Good example: "Medium shot of the narrator gripping a chipped yellow coffee mug at a worn diner counter at 5 AM, harsh fluorescent light, rain on the dark window behind her, the bald stranger's reflection in the glass, tense and uneasy"
