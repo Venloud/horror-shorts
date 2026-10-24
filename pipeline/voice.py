@@ -64,7 +64,7 @@ def narrate(story: dict, outdir: Path, speed: float | None = None) -> dict:
     # Do not change the voice when adjusting speech speed or regenerating narration.
     if not story.get("narrator_voice"):
         candidates = list(dict.fromkeys(CONFIG.get("voice_test_pool") or
-            ["af_heart", "am_michael", "af_bella", "am_adam", "bf_emma", "bm_george"]))
+            ["af_heart", "am_michael", "af_bella", "am_adam"]))
         if not candidates:
             raise ValueError("No narrator voices configured")
         previous = (story.get("_previous_narrator_voice") or CONFIG.get("voice_previous") or "").strip()
