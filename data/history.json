@@ -2456,7 +2456,15 @@
     "opening": "Iron teeth grind together when she sniffs you out inside her spinning forest hut.",
     "music_file": "bk_grnde.mp3",
     "buffered": "2026-10-23_0413",
-    "tiktok": null
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7700095544407984158",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "pending": "youtube_paused"
+    },
+    "draft_sent": "2026-10-24_0505"
   },
   {
     "date": "2026-10-23_2037",

@@ -190,8 +190,17 @@
       "posted": "2026-10-23_2017",
       "status": "pending",
       "file": true
+    },
+    {
+      "stamp": "2026-10-23_0413",
+      "story_id": "e123cf5c7e71",
+      "title": "The Legend of Baba Yaga",
+      "video_number": null,
+      "posted": "2026-10-24_0505",
+      "status": "pending",
+      "file": true
     }
   ],
   "uploads": {},
-  "last_alert": "2026-10-23"
+  "last_alert": "2026-10-24"
 }
