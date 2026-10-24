@@ -67,7 +67,7 @@ def narrate(story: dict, outdir: Path, speed: float | None = None) -> dict:
             ["af_heart", "am_michael", "af_bella", "am_adam", "bf_emma", "bm_george"]))
         if not candidates:
             raise ValueError("No narrator voices configured")
-        previous = (CONFIG.get("voice_previous") or "").strip()
+        previous = (story.get("_previous_narrator_voice") or CONFIG.get("voice_previous") or "").strip()
         choices = [v for v in candidates if v != previous] or candidates
         story["narrator_voice"] = secrets.choice(choices)
     voice = story["narrator_voice"]
