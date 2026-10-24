@@ -188,6 +188,8 @@
   "writer_challenge_policy": "on_problems",
   "writer_judge_models": ["groq:openai/gpt-oss-120b", "openrouter:openai/gpt-oss-120b"],
   "writer_max_revisions": 1,
+  "writer_challenger_timeout_seconds": 30,
+  "writer_challenger_fallbacks": ["openrouter:qwen/qwen3-32b"],
   "groq_vision_qa": true,
   "groq_vision_model": "qwen/qwen3.8-27b",
   "groq_vision_per_minute": 20,
