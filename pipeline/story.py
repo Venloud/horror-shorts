@@ -713,6 +713,56 @@ STORY:
 {draft}"""
 
 
+def final_script_gate(story: dict, api_key: str) -> dict:
+    """Fail closed on the final spoken narration, after all rewrites and duration fitting.
+
+    Does not rewrite narration, preserving alignment with TTS and approved visuals.
+    A changed narration invalidates the previous approval automatically.
+    """
+    import hashlib
+    spoken = "\\n".join(sc.get("narration", "") for sc in story.get("scenes") or [])
+    digest = hashlib.sha256(spoken.encode("utf-8")).hexdigest()
+    previous = story.get("final_script_approval") or {}
+    if previous.get("sha256") == digest and previous.get("approved") is True:
+        return story
+    prompt = (
+        "You are the strict FINAL screenplay approval editor for Night Files. "
+        "Review the final spoken text only, not an earlier draft. Do not rewrite it. "
+        "Reply as JSON with keys approved (boolean), reasons (array of short strings), "
+        "title_alignment (0-10), narrative_logic (0-10), payoff (0-10), "
+        "fact_integrity (0-10). Reject when the title's central event is barely "
+        "covered, scenes are filler or incoherent, outcome contradicts facts, "
+        "the conclusion is empty, or claims are fabricated. An Amelia Earhart "
+        "disappearance story focusing mainly on her childhood must be rejected. "
+        "Judge genre appropriately.\nTITLE: " + str(story.get("title", "")) +
+        "\nMODE: " + str(story.get("mode", "")) +
+        "\nFACT LEDGER: " + json.dumps(story.get("fact_ledger") or [], ensure_ascii=False)[:10000] +
+        "\nFINAL SPOKEN NARRATION:\n" + spoken
+    )
+    try:
+        result = _json_call(prompt, api_key, temperature=0.1, light=False)
+    except Exception as exc:
+        story["final_script_approval"] = {"sha256": digest, "approved": False,
+                                          "reasons": ["Critic unavailable: " + str(exc)[:180]]}
+        raise StoryDiscarded("Final narration has no completed critic approval") from exc
+    dimensions = ("title_alignment", "narrative_logic", "payoff", "fact_integrity")
+    ratings = {}
+    for name in dimensions:
+        try:
+            ratings[name] = int(result.get(name, 0))
+        except (ValueError, TypeError):
+            ratings[name] = 0
+    approved = result.get("approved") is True and min(ratings.values()) >= 7
+    story["final_script_approval"] = {
+        "sha256": digest, "approved": approved, "ratings": ratings,
+        "reasons": [str(v) for v in (result.get("reasons") or [])][:8]
+    }
+    if not approved:
+        raise StoryDiscarded("Final narration rejected: " +
+                             "; ".join(story["final_script_approval"]["reasons"])[:260])
+    return story
+
+
 class StoryDiscarded(Exception):
     """The critic rejected a story after the allowed rewrites: throw it away, the next attempt tries again."""
 
