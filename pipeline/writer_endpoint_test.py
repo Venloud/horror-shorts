@@ -48,6 +48,21 @@ def main() -> int:
         report.append(f"- `{p['model']}`: {'OK' if p['ok'] else 'FAILED'} in {p['seconds']} s: "
                       f"{p.get('answer') or p.get('error')}")
 
+    if challenger.startswith("nvidia:"):
+        report += ["", "### NVIDIA catalogue check"]
+        try:
+            import requests
+            from providers import nvidia
+            r = requests.get("https://integrate.api.nvidia.com/v1/models",
+                             headers={"Authorization": f"Bearer {nvidia.key()}"}, timeout=30)
+            ids = [m.get("id", "") for m in (r.json().get("data") or [])] if r.status_code == 200 else []
+            want = challenger[7:]
+            report.append(f"- /v1/models HTTP {r.status_code}, {len(ids)} models; `{want}` listed: {want in ids}")
+            report.append("- DeepSeek ids offered: " + (", ".join(f"`{i}`" for i in ids if "deepseek" in i.lower())
+                                                       or "none"))
+        except Exception as exc:  # noqa: BLE001
+            report.append(f"- catalogue check failed: {str(exc)[:200]}")
+
     report += ["", "## 2. Real story generation (challenger forced on)"]
     CONFIG["writer_challenge_policy"] = "always"
     captured: list = []
@@ -82,6 +97,14 @@ def main() -> int:
     finally:
         story.compare_drafts = real_compare
 
+    if not captured:  # the judge path still gets a real test: two short drafts, production prompt
+        captured.append({"kind": "lore", "source": None, "context": "Legend of a lantern seen over a marsh.",
+                         "a": {"title": "The Marsh Lantern", "scenes": [{"narration": "A lantern drifts over the "
+                               "marsh where no one walks. Villagers say it leads travelers into the water."}]},
+                         "b": {"title": "The Marsh Lantern", "scenes": [{"narration": "The marsh lantern burns "
+                               "where no road runs. Follow it, the old people said, and the water keeps you."}]},
+                         "verdict": {}})
+        report.append("- (no comparison ran in generation: the judges get two short sample drafts below)")
     if captured:
         c = captured[-1]
         report += ["", "## 3. Each judge on the two real drafts (production judge prompt)"]
