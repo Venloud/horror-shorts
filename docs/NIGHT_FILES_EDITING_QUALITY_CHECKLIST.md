@@ -66,3 +66,11 @@ The actual Aka Manto preview, `explainer_polished(1).mp4`, and its generated sce
 ### Hugging Face Diffusers, optional research track, NOT installed or production-enabled
 Project: https://github.com/huggingface/diffusers, Apache-2.0 library. Docs: https://huggingface.co/docs/diffusers/using-diffusers/text-img2vid
 Potential uses: short image-to-video inserts from existing licensed/approved plates, controlled image generation, and local experiments comparing temporal consistency with current FFmpeg Ken Burns/parallax and other existing motion providers. Not a compositor, captioner or editor brain. Modern video pipelines can require significant GPU VRAM and runtime, not guaranteed free on GitHub Actions CPU. Check every chosen model's separate license, hardware usage, provenance, quality, caching, and cost. Run isolated GPU benchmarks and review output before opt-in; preserve the original still-image route as the default with no background installation or added CI GPU requirement.
+
+## Walter Murch's Rule of Six: final editorial hierarchy
+
+[Detailed and sourced Night Files implementation](WALTER_MURCH_RULE_OF_SIX.md).
+
+At each major cut or graphic decision, rank: **Emotion (51%) > Story (23%) > Rhythm (10%) > Eye trace (7%) > 2D screen composition (5%) > 3D spatial continuity (4%)**. These values are Murch's illustrative priorities, not an objective formula or publishing score. Preserve story truth, safety and rights regardless of aesthetics. The rule explicitly ranks *feeling and meaning* above technical flourishes: a simple hold or hard cut beats a swoosh if it makes the moment land.
+
+Practical audit questions: What should the viewer feel now? What changes in the story? Why cut at this exact moment? Where does their eye go next? Are captions/graphics legible and shot direction coherent? Does the place still make sense? Keep existing caption coverage, subtle camera motion, selective useful graphics and scene-matched sound. Never add a graphic to satisfy a quota or force one of the five composition patterns into every shot.
