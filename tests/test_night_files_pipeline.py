@@ -560,7 +560,14 @@ class MediaSources(unittest.TestCase):
                 for i, sc in enumerate(story["scenes"]) for l in images._letters()}
         self.assertEqual(tags[(0, "a")][0], "ai")  # the hook stays AI
         self.assertEqual(tags[(5, "a")], ("real_photo", "Amelia Earhart"))  # "a lone aviator beside an airplane"
-        self.assertEqual(tags[(4, "a")], ("real_photo", "Lockheed Model 10 Electra"))  # ledger-named aircraft
+        # the ledger's aircraft is never said: no Electra photo over the 1928 / 1932 flights (wrong plane, wrong era)
+        self.assertNotEqual(tags[(4, "a")], ("real_photo", "Lockheed Model 10 Electra"))
+        said = json.loads(AMELIA.read_text())
+        said["scenes"][6]["narration"] += " Their Lockheed Electra was never found."
+        said["scenes"][6]["image_prompt_2"] = "a silver twin engine airplane on a runway"
+        media.auto_tag(said)
+        self.assertEqual((said["scenes"][6]["image_source_2"], said["scenes"][6]["image_query_2"]),
+                         ("real_photo", "Lockheed Model 10 Electra"))  # said in this scene: the real aircraft
         self.assertNotEqual(tags[(0, "b")][0], "real_photo")  # childhood shots never get an adult's photo
 
     def test_provenance_records_everything(self):

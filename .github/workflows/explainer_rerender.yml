@@ -124,5 +124,7 @@ jobs:
             output/rerender/*/visual_qa.json
             output/rerender/*/report.txt
             output/rerender/*/story.json
+            output/rerender/*/ckpt/images/scene_*.png
+            output/rerender/*/ckpt/images/scene_*.json
           retention-days: 14
           if-no-files-found: error

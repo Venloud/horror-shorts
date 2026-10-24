@@ -714,13 +714,18 @@ def _archive_subject(story: dict, sc: dict, text: str) -> str:
         if _PERSON.search(text) or re.search(r"\b(aviator|aviatrix|explorer|inventor|scientist)\b", text, re.I) \
                 or first in text.lower():
             return case
+    said = (sc.get("narration") or "").lower()
     for shot_rx, key_rx in _LEDGER_THING:
         if not shot_rx.search(text):
             continue
         for k, v in _ledger_pairs(story):
             for part in (p.strip() for p in v.split(",")):
-                if (re.search(key_rx, k, re.I) or re.search(key_rx, part, re.I)) and _PROPER.search(part):
-                    return re.sub(r"^(?:[a-z][\w-]*\s+)+", "", part)  # "twin-engine Lockheed ..." -> "Lockheed ..."
+                name = re.sub(r"^(?:[a-z][\w-]*\s+)+", "", part)  # "twin-engine Lockheed ..." -> "Lockheed ..."
+                words = {w.lower() for m in _PROPER.finditer(name) for w in m.group(1).split()} - _GENERIC_NAME
+                # only in a scene whose narration SAYS the thing (an Electra photo over the 1928 flight was wrong)
+                if (re.search(key_rx, k, re.I) or re.search(key_rx, part, re.I)) and words \
+                        and any(re.search(rf"\b{re.escape(w)}\b", said) for w in words if len(w) > 3):
+                    return name
     return ""
 
 
