@@ -184,6 +184,8 @@
   "groq_model": "openai/gpt-oss-120b",
   "openrouter_models": ["openai/gpt-oss-120b", "qwen/qwen3-32b"],
   "openrouter_max_tokens": 8000,
+  "writer_challenge_enabled": true,
+  "writer_challenger_model": "nvidia:deepseek-ai/deepseek-v4.1-flash",
   "groq_vision_qa": true,
   "groq_vision_model": "qwen/qwen3.8-27b",
   "groq_vision_per_minute": 20,
