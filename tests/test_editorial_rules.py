@@ -35,7 +35,7 @@ class EditorialPriorityContract(unittest.TestCase):
         for term in ("Always-on kinetic captions", "BGM and SFX", "Five composition techniques",
                      "factual integrity", "story", "eye trace", "NOT a deterministic grade"):
             self.assertIn(term.lower(), guide.lower())
-        self.assertIn("No publishing", "No publishing" if "may not publish" in guide else "not found")
+        self.assertIn("may not publish", guide)
 
 
 if __name__ == "__main__":
