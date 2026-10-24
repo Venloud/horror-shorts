@@ -329,7 +329,7 @@ def model_chain(light: bool = False) -> list[str]:
     return list(dict.fromkeys(models or list(CONFIG["llm_models"])))
 
 
-def _call_model(model: str, prompt: str, api_key: str, temperature: float = 1.0, as_json: bool = True, schema=None):
+def _call_model(model: str, prompt: str, api_key: str, temperature: float = 1.0, as_json: bool = True, schema=None, timeout_seconds=None):
     prompt = shared_style(prompt)
     if model.startswith("openrouter:"):
         return _call_openrouter(model[11:], prompt, temperature, as_json, schema)
@@ -337,7 +337,8 @@ def _call_model(model: str, prompt: str, api_key: str, temperature: float = 1.0,
         return _call_groq(model[5:], prompt, temperature, as_json, schema)
     if model.startswith("nvidia:"):
         from providers import nvidia
-        text = nvidia.chat(model[7:], prompt, temperature=temperature, as_json=as_json, schema=schema or SCHEMA)
+        text = nvidia.chat(model[7:], prompt, temperature=temperature, as_json=as_json, schema=schema or SCHEMA,
+                           **({"timeout_seconds": timeout_seconds} if timeout_seconds is not None else {}))
         return json.loads(text) if as_json else text.strip()
     if model.startswith("modelscope:"):
         from providers import modelscope
@@ -407,6 +408,8 @@ def _writer(model: str) -> str:
         return f"nvidia ({model[7:]})"
     if model.startswith("modelscope:"):
         return f"modelscope ({model[11:]})"
+    if model.startswith("openrouter:"):
+        return f"openrouter ({model[11:]})"
     return f"gemini ({model})"
 
 
@@ -761,27 +764,42 @@ def challenge_draft(draft: dict, prompt: str, api_key: str, kind: str, source: s
     if not challenger_wanted(draft, checks):
         rec["challenger"] = "skipped (first draft has no demonstrable problem)"
         return draft
-    challenger = str(CONFIG.get("writer_challenger_model", "nvidia:deepseek-ai/deepseek-v4.1-flash"))
     primary = draft.get("model") or draft.get("script_model") or ""
-    if challenger == primary or not _available(challenger):
-        rec["challenger"] = f"unavailable ({challenger})"
+    configured = [CONFIG.get("writer_challenger_model", "nvidia:deepseek-ai/deepseek-v4.1-flash")]
+    configured += CONFIG.get("writer_challenger_fallbacks", [])
+    # One primary challenger and one alternative at most, never the original writer
+    # or a model from its family. A timed-out provider cannot stall all subsequent candidates.
+    choices = [m for m in configured if isinstance(m, str) and m != primary
+               and _family(m) != _family(primary) and _available(m)]
+    if not choices:
+        rec["challenger"] = "unavailable (no independent configured challenger)"
         return draft
-    try:
-        rec["llm_calls"] += 1
-        if draft.get("script") and not draft.get("scenes"):  # fiction: compete at script level
-            text = _call_model(challenger, prompt, api_key, 1.0, as_json=False)
-            candidate = {"title": draft.get("title", ""), "script": text.strip()}
-            if not 60 <= len(candidate["script"].split()) <= 400:
-                raise ValueError(f"challenger script length {len(candidate['script'].split())} words")
-        else:
-            candidate = _call_model(challenger, prompt, api_key, temperature=0.6)
-            _validate(candidate)
-            if str(candidate.get("title", "")).upper() in ("SKIP", "INSPIRATION"):
-                raise ValueError("challenger declined the story")
-        candidate["model"], candidate["writer"] = challenger, _writer(challenger)
-    except Exception as exc:  # noqa: BLE001 (do not discard a valid first draft when the challenger is down)
-        rec["challenger"] = f"failed: {str(exc)[:150]}"
-        log(f"Writer challenger unavailable: {str(exc)[:150]}; keeping primary")
+    candidate = None
+    challenger = None
+    failures = []
+    for model in choices[:2]:
+        try:
+            rec["llm_calls"] += 1
+            timeout = float(CONFIG.get("writer_challenger_timeout_seconds", 30))
+            opts = {"timeout_seconds": timeout} if model.startswith("nvidia:") else {}
+            if draft.get("script") and not draft.get("scenes"):
+                candidate_text = _call_model(model, prompt, api_key, 1.0, as_json=False, **opts)
+                trial = {"title": draft.get("title", ""), "script": candidate_text.strip()}
+                if not 60 <= len(trial["script"].split()) <= 400:
+                    raise ValueError("challenger script length invalid")
+            else:
+                trial = _call_model(model, prompt, api_key, temperature=0.6, **opts)
+                _validate(trial)
+                if str(trial.get("title", "")).upper() in ("SKIP", "INSPIRATION"):
+                    raise ValueError("challenger declined the story")
+            trial["model"], trial["writer"] = model, _writer(model)
+            candidate, challenger = trial, model
+            break
+        except Exception as exc:
+            failures.append(f"{model}: {type(exc).__name__}: {str(exc)[:110]}")
+            log(f"Writer challenger {model} unavailable: {str(exc)[:130]}; trying next provider")
+    if candidate is None:
+        rec["challenger"] = "failed: " + "; ".join(failures)[:350]
         return draft
     verdict = compare_drafts(draft, candidate, prompt, api_key, kind, source)
     rec["llm_calls"] += 0 if verdict["judge"].startswith("objective") else 1
