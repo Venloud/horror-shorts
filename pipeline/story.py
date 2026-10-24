@@ -720,7 +720,7 @@ def final_script_gate(story: dict, api_key: str) -> dict:
     A changed narration invalidates the previous approval automatically.
     """
     import hashlib
-    spoken = "\\n".join(sc.get("narration", "") for sc in story.get("scenes") or [])
+    spoken = "\n".join(sc.get("narration", "") for sc in story.get("scenes") or [])
     digest = hashlib.sha256(spoken.encode("utf-8")).hexdigest()
     previous = story.get("final_script_approval") or {}
     if previous.get("sha256") == digest and previous.get("approved") is True:
