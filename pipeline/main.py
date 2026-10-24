@@ -231,6 +231,15 @@ def main() -> int:
                 checkpoint.save_story(story)
                 checkpoint.save_narration(story, narration)
 
+        # The original critic runs before explainer.adapt() and fit_duration(), both
+        # of which may rewrite narration. Gate the ACTUAL voiced script before media spend.
+        if story.get("mode") != "inbox-script":
+            from story import final_script_gate
+            story = final_script_gate(story, env("GEMINI_API_KEY"))
+            if not testing:
+                checkpoint.save_story(story)
+        else:
+            log("Owner's exact-word script: no AI story rewrites or editorial gate")
         log(f"Final narration: {narration['duration']:.1f}s at speed {narration.get('speed')}")
         img_dir = workdir / "images" if testing else checkpoint.IMAGES  # images are kept as soon as they exist
         video, imgs = None, None
