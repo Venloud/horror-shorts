@@ -139,7 +139,7 @@ class Providers(unittest.TestCase):
         weak = copy.deepcopy(AMELIA)
         weak["model"] = "gemini-3.8-flash"
 
-        def call(model, prompt, api_key, temperature=1.0, as_json=True, schema=None):
+        def call(model, prompt, api_key, temperature=1.0, as_json=True, schema=None, **kwargs):
             if model.startswith("nvidia:"):
                 return copy.deepcopy(GOOD_AMELIA)
             raise RuntimeError("HTTP 503 judge down")
