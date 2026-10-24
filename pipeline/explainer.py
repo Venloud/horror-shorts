@@ -418,6 +418,16 @@ RULES
 - Pick the graphic that EXPLAINS the beat: date_stamp for when, map_route only when the scene names 2+ places
   someone travels between, evidence for a clue / object / record / name, quote for words someone said, missing when
   someone vanishes, fact for a number said, compare for two explanations, closing only for the final question.
+- Follow Walter Murch's Rule of Six priority for editorial decisions: EMOTION first, STORY second,
+  then RHYTHM, EYE TRACE, 2D SCREEN PLANE, and 3D SPACE. Murch's illustrative weights are 51/23/10/7/5/4,
+  but they are NOT a numeric grading formula. Only create a graphic if it clarifies an important story beat
+  or strengthens the intended feeling; use a calm image or held shot where another card would interrupt suspense.
+- Graphic emphasis MUST be a meaningful, contiguous expression from the narration, not unrelated keywords.
+  Underline or accent only the key choice, consequence, evidence or reveal. Don't overuse transitions, whooshes,
+  stamps, giant text or repeated templates. Keep a clear focal point and respect captions in vertical framing.
+- Think about how the gaze moves from the preceding story image to this graphic and from the graphic back to
+  the next story image. Maintain comprehensible screen direction and subject position when possible; preserving
+  story emotion is more important than mechanically matching geometry.
 - No people drawn, nothing occult, no gore.
 """
 
