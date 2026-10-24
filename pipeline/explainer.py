@@ -26,7 +26,7 @@ from common import CONFIG, ROOT, env, log
 
 W, H, FPS = 1080, 1920, 30
 FONT_DIR = ROOT / "assets" / "fonts" / "explainer"
-SHOT_MIN, SHOT_MAX = 1.5, 3.0
+SHOT_MIN, SHOT_MAX = 2.0, 7.0
 # Dark Editorial Noir (Oct 21): INK = bone text on dark grounds, BLACK = midnight
 INK, BLACK = (236, 230, 221), (16, 20, 25)
 CAP_Y = 1565  # Pillow captions (only when Remotion polish is off) sit in the lower strip
@@ -690,7 +690,7 @@ def _slot_lengths(n: int, kinds: list[str], span: float) -> list[float]:
 def sequence(story: dict, narration: dict, scene_images: list[list[Path]], graphics: list[list[dict]],
              total: float) -> list[dict]:
     """The production shot list: per scene  story image -> graphic -> second story image -> (rare host reaction),
-    each 1.5-3 s, cut on word starts. The host: max 1 shot per scene, never in two scenes in a row, never first in a
+    with varied deliberate holds and cuts on word starts. The host: max 1 shot per scene, never in two scenes in a row, never first in a
     scene, <= explainer_host_max_seconds (2 s), <= explainer_host_max_share (15%) of the runtime. The video opens on
     the TRUE STORY / title graphics and ends on the closing graphic (no end card)."""
     spans = _scene_spans(story, narration)
@@ -722,7 +722,7 @@ def sequence(story: dict, narration: dict, scene_images: list[list[Path]], graph
         narr = story["scenes"][i].get("narration", "")
         host_ok = (i > 0 and i - last_host_scene > 1 and host_used + 1.8 <= budget
                    and (_EMOTION.search(narr) or len(scene_images[i]) < 2) and span >= 6.0)
-        n = max(2, min(40, round(span / 2.4)))
+        n = max(2 if gs else 1, min(6, round(span / 4.5)))
         order = [imgs[0]]
         if gs:
             order.append(gs[0])
@@ -732,14 +732,14 @@ def sequence(story: dict, narration: dict, scene_images: list[list[Path]], graph
             order.append({"type": "host", "scene": i, "expression": _expr_for(narr)})
         if len(gs) > 1 and span > 9.0:
             order.append(gs[1])
-        extras = imgs[len(scene_images[i]):] + imgs[:len(scene_images[i])]
-        k = 0
-        while len(order) + (1 if closing else 0) < n:  # more cuts: the scene's pictures as new framings
-            order.append(dict(extras[k % len(extras)], crop=("detail_left", "detail_right", "top", "bottom",
-                                                             "full")[(k + i) % 5]))
-            k += 1
+        # Avoid manufacturing extra cuts by repeating crops of the same image.
         if closing:
             order.append(closing)
+        while len(order) > max(1, n) and len(order) > (2 if closing else 1):
+            drop = next((x for x in reversed(order[1:]) if x["type"] == "host"), None) or next((x for x in reversed(order[1:]) if x["type"] == "image"), None) or next((x for x in reversed(order[1:]) if x["type"] == "graphic" and x is not closing), None)
+            if drop is None:
+                break
+            order.remove(drop)
         while len(order) > 2 and span / len(order) < SHOT_MIN:
             # too many cuts for a short scene: host first, then extra framings, then the second picture; the
             # scene's graphic (and its first picture) stay
@@ -755,7 +755,7 @@ def sequence(story: dict, narration: dict, scene_images: list[list[Path]], graph
                     and order[k]["crop"] == order[k - 1]["crop"]:
                 order[k] = dict(order[k], crop="detail_right" if order[k]["crop"] != "detail_right" else "top")
         lens = _slot_lengths(len(order), [x["type"] for x in order], span)
-        for _ in range(12):  # every shot <= SHOT_MAX: a long picture gets a second framing; graphics give time away
+        for _ in range(4):  # Avoid repeated crops except for excessively long holds
             k = next((k for k, ln in enumerate(lens) if ln > SHOT_MAX - 0.15 and order[k] is not closing), None)
             if k is None:
                 break
@@ -1015,11 +1015,11 @@ class Renderer:
         base = clip if clip is not None else self._cover(s["file"], 1.08)
         k = self._index(seg) % 3
         if k == 0:
-            frame = self._crop(base, cx, cy, z * (1.0 + 0.06 * x))
+            frame = self._crop(base, cx, cy, z * (1.0 + 0.095 * x))
         elif k == 1:
-            frame = self._crop(base, cx + 0.04 * (x - 0.5), cy, z * 1.03)
+            frame = self._crop(base, cx + 0.075 * (x - 0.5), cy, z * 1.03)
         else:
-            frame = self._crop(base, cx, cy + 0.03 * (0.5 - x), z * (1.06 - 0.05 * x))
+            frame = self._crop(base, cx, cy + 0.06 * (0.5 - x), z * (1.09 - 0.075 * x))
         frame.alpha_composite(self._vignette())
         return frame
 
@@ -1307,17 +1307,21 @@ def render(story: dict, narration: dict, segs: list[dict], workdir: Path, img_di
     total = _total(narration)
     r = Renderer(story, narration, segs, img_dir)
     events = []
-    for k, s in enumerate(segs):
-        sh = s["shot"]
-        if k and sh["type"] == "graphic" and segs[k - 1]["shot"]["type"] != "graphic":
-            events.append((max(0.0, s["start"] - 0.12), "whoosh", 0.22, 0.6))
-        if sh.get("template") in ("date_stamp", "evidence", "missing"):
-            events.append((s["start"] + 0.35, "ui_click", 0.5, 0.4))
+    last_whoosh, last_click = -100.0, -100.0
+    for k, seg in enumerate(segs):
+        shot = seg["shot"]
+        at = float(seg["start"])
+        if k and shot["type"] == "graphic" and segs[k - 1]["shot"]["type"] != "graphic" and at - last_whoosh >= 5.0:
+            events.append((max(0.0, at - 0.12), "whoosh", 0.18, 0.6))
+            last_whoosh = at
+        if shot.get("template") in ("date_stamp", "evidence", "missing") and at - last_click >= 3.5:
+            events.append((at + 0.35, "ui_click", 0.35, 0.4))
+            last_click = at
     t_true, t_title = opener_length(story)
     if t_true:
-        events.append((0.18, "ui_click", 0.8))  # the TRUE STORY slam
-    if t_title:
-        events.append((max(0.0, t_true - 0.1), "whoosh", 0.25))
+        events.append((0.18, "ui_click", 0.55))
+    if t_title and t_true - last_whoosh >= 5.0:
+        events.append((max(0.0, t_true - 0.1), "whoosh", 0.2))
     audio = _mix_audio(narration, total, events, workdir / "explainer_audio.wav")
     out = workdir / "explainer.mp4"
     n = int(round(total * FPS))
@@ -1473,8 +1477,8 @@ def visual_qa(story: dict, segs: list[dict], ren: "Renderer", video: Path | None
     for s in body:
         if s["shot"]["type"] == "host" and dur(s) > max_host + 0.05:
             fails.append(f"character shot of {dur(s):.1f}s at {s['start']:.1f}s (max {max_host:.0f}s)")
-        if dur(s) > 3.05 and s is not segs[-1]:
-            fails.append(f"{s['shot']['type']} held {dur(s):.1f}s at {s['start']:.1f}s (max 3 s)")
+        if dur(s) > SHOT_MAX + 0.05 and s is not segs[-1]:
+            fails.append(f"{s['shot']['type']} held {dur(s):.1f}s at {s['start']:.1f}s (max {SHOT_MAX:g} s)")
     by_scene = {}
     for s in body:
         by_scene.setdefault(s["scene"], []).append(s)
@@ -1490,8 +1494,7 @@ def visual_qa(story: dict, segs: list[dict], ren: "Renderer", video: Path | None
         for s in imgs:
             if not Path(s["shot"]["file"]).exists() or not valid_image(Path(s["shot"]["file"])):
                 fails.append(f"scene {i + 1}: picture {Path(s['shot']['file']).name} missing or corrupt")
-        if mine and not grs:
-            fails.append(f"scene {i + 1}: no explanatory graphic")
+        # Do not require a graphic in every scene; only factual, purposeful graphics are valid.
         for g in grs:
             p = graphic_problem(story, i, g["shot"]) if g["shot"].get("template") != "closing" else None
             if p:
