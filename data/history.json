@@ -2526,7 +2526,15 @@
     "opening": "My exact jagged knuckle scar was staring right back at me from a preserved severed thumb.",
     "music_file": "background_music.mp3",
     "buffered": "2026-10-23_2037",
-    "tiktok": null
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7700301097906489375",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "pending": "youtube_paused"
+    },
+    "draft_sent": "2026-10-24_1822"
   },
   {
     "date": "2026-10-23_2133",
