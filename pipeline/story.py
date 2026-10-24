@@ -719,7 +719,6 @@ class StoryDiscarded(Exception):
 
 def _json_call(prompt: str, api_key: str, temperature: float = 0.3, light: bool = True) -> dict:
     """A small JSON answer using the same shared style and provider fallbacks."""
-    prompt = shared_style(prompt)
     def call(model):
         if model.startswith(("groq:", "nvidia:", "modelscope:", "openrouter:")):
             return _call_model(model, prompt, api_key, temperature, True, {"type": "OBJECT"})
@@ -728,7 +727,7 @@ def _json_call(prompt: str, api_key: str, temperature: float = 0.3, light: bool 
         gen = {"temperature": temperature, "responseMimeType": "application/json"}
         _gemini_pace()
         r = requests.post(GEMINI_URL.format(model=model), timeout=90, headers={"x-goog-api-key": api_key},
-                          json={"contents": [{"role": "user", "parts": [{"text": strip_marks(prompt)}]}],
+                          json={"contents": [{"role": "user", "parts": [{"text": strip_marks(shared_style(prompt))}]}],
                                 "generationConfig": gen})
         if r.status_code == 429:
             note_gemini_429(r.text, model)
