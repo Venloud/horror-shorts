@@ -1,6 +1,8 @@
 name: Night Files buffer fill
 
-# Generates exactly one finished video per manual run, without publishing.
+# Generates one complete production video per manual run and queues it for the normal publishing slots.
+# A video produced to test creative edits is STILL publishable when it passes the production gate.
+# This workflow buffers rather than posting immediately; daily.yml / publish.py perform actual delivery.
 
 # Manual only: owner starts an isolated build, no scheduled generation.
 on:
