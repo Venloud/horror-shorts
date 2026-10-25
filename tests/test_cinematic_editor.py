@@ -77,7 +77,7 @@ class SemanticPhrases(unittest.TestCase):
     def test_viewer_beats(self):
         self.assertEqual(explainer.viewer_beat("Red or blue?"), ("choice", "thinking"))
         self.assertEqual(explainer.viewer_beat("Don't pick a color."), ("warning", "worried"))
-        self.assertEqual(explainer.viewer_beat("Refuse both choices and walk away.")[0], "decision")
+        self.assertEqual(explainer.viewer_beat("Refuse both choices and walk away."), ("decision", "serious"))
         self.assertIsNone(explainer.viewer_beat("The steamer left Boston in 1922."))
         for kind, mood in [explainer.viewer_beat(t) for t in ("Red or blue?", "Don't pick a color.",
                                                               "Refuse both and walk away.", "Imagine the silence.")]:
@@ -186,6 +186,18 @@ class ContextGraphicsAndSound(unittest.TestCase):
         ev = explainer.sound_plan({"scenes": story["scenes"]}, narr, segs)
         self.assertIn("phone_notification", [e[1] for e in ev])
         self.assertNotIn("whoosh", [e[1] for e in ev])  # a pop is not a swoosh
+
+    def test_ui_clicks_are_rationed(self):
+        segs = [{"start": 4.0 * k, "end": 4.0 * k + 4, "scene": k, "transition": "pop",
+                 "shot": {"type": "graphic", "template": "date_stamp", "scene": k}} for k in range(1, 12)]
+        ev = explainer.sound_plan({"scenes": []}, {"words": []}, segs)
+        clicks = [e for e in ev if e[1] == "ui_click"]
+        self.assertLessEqual(len(clicks), 3)
+        self.assertTrue(all(b[0] - a[0] >= 10.0 for a, b in zip(clicks, clicks[1:])))
+
+    def test_weak_one_word_and_name_only_cards_are_dropped(self):
+        for t in ("He's making you choose how your story ends.", "The sheriff found Nora's phone in the yard."):
+            self.assertIsNone(explainer._impact_fallback({"scenes": [{"narration": t}]}, 0), t)
 
     def test_event_sfx_only_for_described_events(self):
         narr = {"words": _words("The night was quiet and long. She ran across the gravel yard. "

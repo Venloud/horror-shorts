@@ -600,7 +600,7 @@ def _impact_fallback(story: dict, i: int) -> dict | None:
     """No factual graphic fits this beat: the beat's strongest COMPLETE phrases (key_phrases, at most two,
     in spoken order) as an impact card, the payoff word accented. None when no phrase would add meaning: a clean
     story picture beats a card of random words (the old version glued the two longest words: "CHOOSE COVERED")."""
-    phrases = [p for p in key_phrases(story["scenes"][i].get("narration", ""), limit=2)
+    phrases = [p for p in key_phrases(story["scenes"][i].get("narration", ""), limit=2, min_score=3.0)
                if len(p["text"].split()) >= 2 or re.match(r"\d", p["text"]) or p["first"][:1].isupper()
                and p["first"].lower() not in FUNCTION]  # one generic word ("ENDS", "FATE") is not a card
     if not phrases or all(len(p["text"].split()) < 2 for p in phrases) and not re.match(r"\d", phrases[0]["text"]):
@@ -912,13 +912,14 @@ _REACTION = re.compile(r"\b(imagine|what if|wonder|why|how could|would you)\b", 
 
 def viewer_beat(text: str) -> tuple[str, str] | None:
     """(kind, mood) when a beat speaks to the viewer: 'choice' (thinking), 'warning' (worried), 'decision'
-    (determined) or 'reaction' (curious). The mood names an approved host expression (sprites.FACES)."""
+    (serious: F19 'determined' grins, wrong for dread) or 'reaction' (curious). The mood names an approved host
+    expression (sprites.FACES)."""
     if choice_options(text):
         return "choice", "thinking"
     if _WARNING.search(text) and re.search(r"\byou\b|^\s*don't|^\s*never", text, re.IGNORECASE):
         return "warning", "worried"
     if _DECISION.search(text):
-        return "decision", "determined"
+        return "decision", "serious"
     if _REACTION.search(text):
         return "reaction", "curious"
     return None
@@ -1165,7 +1166,8 @@ def caption_accents(story: dict, narration: dict, per_scene: int = 1) -> set[int
     words = narration.get("words") or []
     out = set()
     for i, sc in enumerate(story.get("scenes") or []):
-        phrases = key_phrases(sc.get("narration", ""), limit=per_scene, min_score=3.0)
+        phrases = [p for p in key_phrases(sc.get("narration", ""), limit=per_scene, min_score=3.0)
+                   if len(p["text"].split()) >= 2 or p["first"][:1].isupper() or re.match(r"\d", p["text"])]
         idx = [k for k, w in enumerate(words) if w.get("scene") == i]
         for p in phrases:
             target = _bare(p["accent"])
@@ -1905,7 +1907,7 @@ def sound_plan(story: dict, narration: dict, segs: list[dict]) -> list[tuple]:
     narration describes (event_sfx: footsteps when someone runs, a door when it slams...). Never two
     effects within 1 s of each other; silence is allowed. Music is added later, under the voice."""
     events = []
-    last_click = -100.0
+    last_click, clicks = -100.0, 0
     for k, seg in enumerate(segs):
         shot, at = seg["shot"], float(seg["start"])
         tr = seg.get("transition", "cut")
@@ -1913,9 +1915,10 @@ def sound_plan(story: dict, narration: dict, segs: list[dict]) -> list[tuple]:
             events.append((max(0.0, at - 0.12), "whoosh", 0.18, 0.6))
         if shot.get("template") == "phone":
             events.append((at + 0.55, "phone_notification", 0.34, 1.2))  # when the bubble lands
-        elif tr == "pop" and shot.get("template") in ("date_stamp", "evidence", "missing") and at - last_click >= 3.5:
+        elif tr == "pop" and shot.get("template") in ("date_stamp", "evidence", "missing") \
+                and at - last_click >= 10.0 and clicks < 3:  # a click on every card is a loop, not a cue
             events.append((at + 0.2, "ui_click", 0.3, 0.4))
-            last_click = at
+            last_click, clicks = at, clicks + 1
     t_true, _ = opener_length(story)
     if t_true:
         events.append((0.18, "ui_click", 0.5))
