@@ -391,7 +391,8 @@ def fill_shots(story: dict, outdir: Path, history: list[dict] | None = None) -> 
 def _fill(story: dict, outdir: Path) -> int:
     import images
     idx = load_index()
-    pool = [a for a in idx.get("assets", []) if not a.get("character_specific")]
+    pool = [a for a in idx.get("assets", []) if not a.get("character_specific") and not a.get('case_specific')
+            and a.get('reuse_scope') != 'project' and a.get('license_status') != 'unknown']
     if not pool:
         log(f"Asset library: {len(idx.get('assets', []))} assets, none reusable yet")
         return 0
@@ -407,12 +408,13 @@ def _fill(story: dict, outdir: Path) -> int:
         for l in images._letters():
             text = (sc.get(PROMPT_KEYS[l]) or "").strip()
             png = outdir / f"scene_{i:02d}{l}.png"
-            if not text or (i, l) == (0, "a") or png.exists() or reused >= limit:
+            prefer_existing=bool(story.get('_prefer_existing_assets'))
+            if not text or ((i, l) == (0, "a") and not prefer_existing) or png.exists() or reused >= limit:
                 continue  # the hook stays a fresh picture; checkpoints / real media already placed stay
             if _shot_has_person(story, text):
                 continue  # people / story characters: never a picture from another story
             import shot_rules
-            if shot_rules.ai_only(story, i, l):
+            if shot_rules.ai_only(story, i, l) and not (prefer_existing and (i,l)==(0,'a')):
                 continue  # creature / hook / twist shots: always a fresh AI picture
             inside, _words = _setting(story, i, l, text)
             pos = _position(i, n_scenes)
@@ -531,6 +533,8 @@ def _record(story: dict, outdir: Path) -> None:
                 continue
             side = png.with_suffix(".json")
             meta = json.loads(side.read_text()) if side.exists() else {}
+            if meta.get('project_asset'):
+                continue  # Project originals require explicit rights clearance and verified promotion.
             passed = (meta.get("qa") == "PASS") if meta else (qa.get(f"{i:02d}{l}") == "PASS")
             if not passed:
                 continue  # only pictures that clearly passed QA (SKIPPED / checkpoint / unknown are left out)
@@ -593,14 +597,16 @@ def _prune(idx: dict) -> None:
         return
     max_uses = int(CONFIG.get("asset_max_uses", 4))
     assets.sort(key=lambda a: (a.get("times_used", 0) < max_uses, a.get("last_used_seq", 0)))
-    for a in assets[:len(assets) - cap]:
+    removable=[a for a in assets if not a.get('retain_original')][:len(assets)-cap]
+    for a in removable:
         for name in {a["file"], a.get("poster")}:
             if name:
                 try:
                     _store().delete(name)
                 except Exception:  # noqa: BLE001
                     pass
-    idx["assets"] = assets[len(assets) - cap:]
+    removed={a['id'] for a in removable}
+    idx["assets"] = [a for a in assets if a['id'] not in removed]
 
 
 def summary(outdir: Path) -> dict:
@@ -612,7 +618,9 @@ def summary(outdir: Path) -> dict:
         if png.with_suffix(".reuse.json").exists():
             out["reused"] += 1
         elif png.with_suffix(".json").exists():
-            out["archive_stock"] += 1
+            meta=json.loads(png.with_suffix('.json').read_text())
+            if meta.get('project_asset'):out['project']=out.get('project',0)+1
+            else:out["archive_stock"] += 1
         else:
             out["ai"] += 1
     return out

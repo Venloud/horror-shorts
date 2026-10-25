@@ -116,6 +116,67 @@ def write_summary(workdir: Path, story: dict, video: Path, problems: list[str]) 
         log(f"summary.txt failed ({e})")
 
 
+def preview_project(identifier: str, workdir: Path) -> int:
+    """Isolated entry to the existing stages: no buffer, history, publishing or charged generation."""
+    import copy
+    import hashlib
+    import library
+    import project_assets
+    import render
+    from captions import build_ass
+    from voice import narrate
+    base,manifest=project_assets.load(identifier)
+    story=copy.deepcopy(manifest['preview_story'])
+    if story.get('source') != f'inbox/{identifier}.txt':raise ValueError('Preview source does not match its project')
+    workdir=Path(workdir).resolve();workdir.mkdir(parents=True,exist_ok=True)
+    if (workdir/'final.mp4').exists():raise ValueError('Preserve the previous review export; choose a new output directory')
+    original_config=copy.deepcopy(CONFIG);original_state=library._STATE.copy()
+    previous_library=os.environ.get('LIBRARY_DIR')
+    try:
+        os.environ['LIBRARY_DIR']=str(workdir/'isolated-library')
+        library._STATE.update(index=None,store=None,readonly=False,reused=0)
+        # Offline preview keeps the existing Ken Burns / FFmpeg path without fetching a depth model.
+        CONFIG.setdefault('effects',{})['parallax']=False
+        CONFIG.setdefault('ai_motion',{})['enabled']=False
+        script='\n'.join(s['narration'] for s in story['scenes'])
+        script_sha=hashlib.sha256(script.encode()).hexdigest()
+        narration_file=workdir/'preview-narration.json'
+        cached=json.loads(narration_file.read_text()) if narration_file.exists() else {}
+        if (cached.get('script_sha256')==script_sha and cached.get('voice')==story.get('narrator_voice')
+                and Path(cached['path']).is_file()):
+            narration=cached; narration['path']=Path(narration['path'])
+        else:
+            narration=narrate(story,workdir)
+            goal=sum(CONFIG.get('target_seconds',[61,68]))/2-render.TAIL
+            if abs(narration['duration']-goal)>1.5:
+                speed=max(.75,min(1.35,narration['speed']*narration['duration']/goal))
+                narration=narrate(story,workdir,speed=speed)
+            narration_file.write_text(json.dumps({**narration,'path':str(narration['path']),'script_sha256':script_sha},indent=2))
+        pictures=project_assets.fill_scene_assets(story,workdir/'images',[],offline=True)
+        total=narration['duration']+render.tail_for(narration['duration'])
+        ass=build_ass(narration['words'],story['hook_text'],total,workdir/'captions.ass',
+                      end_start=narration['duration']+render.END_CARD_DELAY,badge='TRUE STORY')
+        video=render.render(story,pictures,narration,ass,workdir)
+        from background_music import add_background_music
+        import shutil
+        shutil.copy2(video,workdir/'visual-narration.mp4')
+        video=add_background_music(video,workdir,story)
+        info=project_assets.verify_render(video)
+        gate=render.qa_gate(video,ass,narration,story)
+        lifecycle=project_assets.finalize(story,video,video_verified=not gate,cleanup=False)
+        (workdir/'story.json').write_text(json.dumps(story,indent=2,default=str))
+        (workdir/'preview-result.json').write_text(json.dumps({'scope':'Existing pipeline isolated preview; not published or buffered',
+            'video':str(video),'media':info,'production_gate':{'passed':not gate,'problems':gate},'asset_lifecycle':lifecycle,
+            'project_assets_used':story.get('_project_asset_placements',0),'paid_calls_made':False,
+            'narration_script_sha256':script_sha,'source_manifest_sha256':project_assets.digest(base/'manifest.json')},indent=2,default=str))
+        log('Isolated project preview complete; no queues, history or buffers changed')
+        return 2 if gate else 0
+    finally:
+        CONFIG.clear();CONFIG.update(original_config);library._STATE.clear();library._STATE.update(original_state)
+        if previous_library is None:os.environ.pop('LIBRARY_DIR',None)
+        else:os.environ['LIBRARY_DIR']=previous_library
+
+
 def main() -> int:
     # Production-only builder: every invocation creates a real buffered video.
     testing = False
@@ -153,7 +214,17 @@ def main() -> int:
             resumed = checkpoint.resume(history, buffer.story_ids())
         import explainer
         log(f"fresh_images: {'ON' if explainer.fresh_images() else 'OFF'} (buffer_fill.yml checkbox -> FRESH_IMAGES)")
-        problem = images.preflight()  # don't spend Gemini + voice time if no image source works
+        import project_assets
+        pending_source=(resumed or {}).get('source')
+        if not resumed:
+            import sources
+            pending=sources.next_inbox(history)
+            pending_source=(pending or {}).get('key')
+        pending_project=project_assets.project_id({'source':pending_source})
+        has_project=bool(pending_project and (project_assets.directory(pending_project)/'manifest.json').is_file())
+        if has_project:
+            project_assets.load(pending_project)  # Reject corrupted source files before any generation spend.
+        problem = None if has_project else images.preflight()
         if problem:
             raise RuntimeError(problem)
         if (os.environ.get("RENDER_STYLE") or "").strip().lower() == "cutout":
@@ -310,14 +381,13 @@ def main() -> int:
                         log(f"Test cap: this video needs ~{need:.0f} neurons, tests have {cf_budget.test_room():.0f} "
                             f"left ({cf_budget.line()}): no Cloudflare, real media + library + local gap fillers only")
                 import library
-                library.fill_shots(story, img_dir, history)  # 1) asset library reuse (never raises)
-                media.fill_shots(story, img_dir, history)  # 2) stock video / archive photos + prints (never raises)
                 manifest.stage("visual_sources", "started")
-                imgs = images.generate_images(story, img_dir)  # 3) AI for the rest
+                from project_assets import fill_scene_assets
+                imgs = fill_scene_assets(story, img_dir, history)
                 manifest.stage("visual_sources", "complete", summary=library.summary(img_dir))
                 vs = library.summary(img_dir)
                 story["_visual_sources"] = vs
-                log(f"Visual sources: {vs['reused']} reused, {vs['archive_stock']} archive/stock, {vs['ai']} AI")
+                log(f"Visual sources: {vs.get('project',0)} project, {vs['reused']} reused, {vs['archive_stock']} archive/stock, {vs['ai']} AI")
                 if images._STATE["cf_out"]:
                     story["_low_quota"] = True
                     log(f"Low-quota build: {vs['reused'] + vs['archive_stock']} real, {vs['ai']} AI")
@@ -432,6 +502,11 @@ def main() -> int:
         if story.get("render_style", "classic") in ("classic", "explainer"):  # QA-passed pictures -> library
             import library
             library.record_video(story, img_dir)
+        try:
+            import project_assets
+            story['_project_asset_lifecycle']=project_assets.finalize(story,video,video_verified=True)
+        except Exception as error:
+            log(f'Project asset promotion incomplete; originals retained: {type(error).__name__}')
         # Used as soon as the video is safely in the buffer, so it can never be made twice.
         for sk in story.pop("_skipped", []):
             history.append({"date": stamp, **sk})
@@ -537,4 +612,11 @@ def defer_test(workdir: Path, why: str) -> None:
 
 
 if __name__ == "__main__":
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--preview-project')
+    parser.add_argument('--output-dir',type=Path)
+    args=parser.parse_args()
+    if args.preview_project:
+        if not args.output_dir:parser.error('--preview-project requires a separate --output-dir')
+        sys.exit(preview_project(args.preview_project,args.output_dir))
     sys.exit(main())

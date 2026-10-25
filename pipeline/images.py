@@ -1123,7 +1123,7 @@ def _fits(story: dict, i: int, letter: str, j: int, other: str) -> bool:
     return (p1 == p2 and bool(p1)) or (not p1 and not p2 and out1 == out2)
 
 
-def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
+def generate_images(story: dict, outdir: Path, *, offline: bool = False) -> list[list[Path]]:
     """`shots_per_scene` images per scene (default 2: shot a = the narration's main visual, shot b = a different
     subject/angle of it). Returns [[a, b], ...]. Every image must pass the checks to be used: a valid portrait/square
     file, and (when Gemini QA is available) a strict "does it show this subject, action and location" check.
@@ -1153,6 +1153,9 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
     # Every scene's "a" shot first, then every "b", then any extra cuts: if a quota or the local time budget runs
     # out we lose cuts, never whole scenes.
     jobs.sort(key=lambda j: ("abcd".index(j[1]), j[0]))
+    if offline:
+        missing=[f'{i:02d}{letter}' for i,letter,_ in jobs if not _is_image(outdir/f'scene_{i:02d}{letter}.png')]
+        if missing:raise RuntimeError('Offline project preview has no approved matching asset for shots: '+', '.join(missing))
     # Cloudflare out and only SD-Turbo left (max local_image_max): scenes with no image at all (no real media, no
     # checkpoint) come first, so the few local images fill empty scenes instead of extra cuts of covered ones.
     local_only = not (has_cf and not _STATE["cf_out"]) and (testing or _STATE["spaces_out"])
@@ -1198,8 +1201,13 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
                 count["library"] = count.get("library", 0) + 1
                 log(f"Image {tag}: provider=asset library ({json.loads(path.with_suffix('.reuse.json').read_text())['asset']})")
             elif side.exists():
-                count["real_media"] += 1
-                log(f"Image {tag}: provider={json.loads(side.read_text()).get('source', 'real media')} (real media)")
+                meta=json.loads(side.read_text())
+                if meta.get('project_asset'):
+                    count['project']=count.get('project',0)+1
+                    log(f"Image {tag}: provider=owner_project ({meta.get('visual_kind','provided media')})")
+                else:
+                    count["real_media"] += 1
+                    log(f"Image {tag}: provider={meta.get('source', 'real media')} (real media)")
             else:
                 count["virtual_cached"] += 1
                 log(f"Image {tag}: provider=checkpoint")
@@ -1379,6 +1387,7 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
     log(f"HF images: {count['hf_space']}")
     log(f"Local SD images: {count['local_sd']}" + (f" ({_STATE['local_secs']:.0f}s)" if _STATE["local_secs"] else ""))
     log(f"Real media (stock video / archive photos): {count['real_media']}")
+    if count.get('project'):log(f"Owner project assets (not classified as archival photos): {count['project']}")
     log(f"Rejected images: {count['rejected']}")
     log(f"Virtual/cached images: {count['virtual_cached']}")
     missing = len(jobs) - sum(1 for p in results.values() if p)
