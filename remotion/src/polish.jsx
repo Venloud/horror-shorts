@@ -80,25 +80,6 @@ const CaptionTrack=({words=[],shots=[]})=>{
   </div>;
 };
 
-const CutTreatment=({shots=[]})=>{
-  const frame=useCurrentFrame();const {fps}=useVideoConfig();
-  // The magenta sweep marks only a planned swoosh (explainer.plan_transitions); a hard cut stays a clean cut.
-  const s=shots.find((x,i)=>i>0 && x.transition==="swoosh" && frame>=x.startFrame &&
-    frame<x.startFrame+Math.min(10,Math.round(.4*fps)));
-  if(!s) return null;
-  const progress=frame-s.startFrame;
-  const fade=interpolate(progress,[0,2,8],[0.40,0.15,0],clamp);
-  const sweep=interpolate(progress,[0,8],[-350,1700],clamp);
-  return <AbsoluteFill style={{pointerEvents:"none"}}>
-    <div style={{position:"absolute",inset:0,background:`rgba(10,16,26,${fade})`}}/>
-    <div style={{
-      position:"absolute",height:"130%",width:185,top:"-15%",
-      left:sweep,transform:"rotate(12deg)",
-      background:"linear-gradient(90deg,transparent,rgba(241,23,103,0.25),transparent)",
-      filter:"blur(28px)",opacity:Math.max(0,fade*2)}}/>
-  </AbsoluteFill>;
-};
-
 const GrainAndSafeArea=()=>{
   const frame=useCurrentFrame();
   // Deterministic subtle grain avoids random per-frame flicker and faces remain legible.
@@ -107,14 +88,13 @@ const GrainAndSafeArea=()=>{
       backgroundImage:`repeating-linear-gradient(${90+shift}deg, transparent 0px,rgba(210,226,234,.27) 1px,transparent 3px,transparent 14px)`}}/>;
 };
 
-// No persistent progress rail or corner label (owner, Oct 24): only cut treatment, grain and captions.
+// No persistent progress rail, decorative cut sweep or corner label: only subtle grain and captions.
 export const NightFilesPolish=({video="",words=[],shots=[],totalFrames=1})=>{
   // Audio is muxed AFTER Remotion, preserving the already composed production mix.
   return <AbsoluteFill style={{backgroundColor:PALETTE.ink}}>
     {video?<OffthreadVideo src={staticFile(video)} muted
       style={{height:"100%",width:"100%",objectFit:"cover"}}/>:null}
     <GrainAndSafeArea/>
-    <CutTreatment shots={shots}/>
     <CaptionTrack words={words} shots={shots}/>
   </AbsoluteFill>;
 };
