@@ -1044,3 +1044,5 @@ When writing Bloody Mary content:
 - Fictional spin-offs must be original and clearly fictional.
 - Do not provide ritual instructions.
 - Preserve the normal Night Files safety and duplicate-history rules.
+
+ECC task routing: read the ECC section in `AGENTS.md` and `.ecc/project.json`; preserve all original project instructions.

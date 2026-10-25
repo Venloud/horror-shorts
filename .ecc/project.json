@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "repository": "Venloud/horror-shorts",
+  "skills": [
+    "remotion-video-creation",
+    "video-editing",
+    "verification-loop"
+  ],
+  "restrictions": "Preserve approved assets and pipeline. Hard cuts default, dissolves only for genuine time passage, black fades only for endings. No rendering production queues, workflow dispatch or publishing.",
+  "upstream": "v2.2.3",
+  "memory": "Vandam canonical; no automatic observation or separate memory store"
+}
