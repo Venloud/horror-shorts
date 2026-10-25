@@ -178,6 +178,41 @@ def _drop_posted(buffer, video: dict, h: dict) -> None:
         log(f"Buffer removal failed again ({e}); still marked removal pending")
 
 
+
+def _next_buffered_video(waiting: list[dict]) -> dict:
+    """Choose owner-requested next buffered stamp first, keeping all other videos in FIFO order.
+
+    This is a general queue policy, not a per-story branch. The override only has an effect
+    while the named completed MP4 and caption JSON pair still exist in the normal buffer.
+    """
+    priorities = CONFIG.get("publish_priority_stamps") or []
+    for stamp in priorities:
+        match = next((video for video in waiting if video.get("stamp") == stamp), None)
+        if match is not None:
+            log(f"OWNER NEXT VIDEO: {stamp} selected before the older FIFO queue; others preserved")
+            return match
+    return waiting[0]
+
+
+def _apply_approved_publish_music(video: dict, mp4, meta: dict) -> None:
+    """Mix the explicitly allowed track for this buffered entry, before platform uploading.
+
+    Fully validated buffer originals are never mutated. Failed remote delivery gets another
+    fresh download and an idempotent mix on the next scheduled attempt.
+    """
+    override = (CONFIG.get("publish_music_overrides") or {}).get(video["stamp"])
+    if not override:
+        return
+    from background_music import add_background_music
+    from production_gate import validate_final_video
+    log(f"Owner soundtrack override for {video['stamp']}: {override}; remixing with voice ducking")
+    add_background_music(mp4, mp4.parent, meta, approved_track=override)
+    validate_final_video(mp4)
+    # Keep pending YouTube upload/caption package accurately labeled with the actually mixed track.
+    (mp4.parent / "caption.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2) + "\n")
+    log(f"OWNER MUSIC READY: approved track={override}, revalidated={mp4.name}")
+
+
 def main(from_build: bool = False) -> int:
     import buffer
     import tiktok
@@ -229,9 +264,9 @@ def main(from_build: bool = False) -> int:
         log(f"Buffer is empty after generation: missed slot {slot} recorded in data/missed_slot.json")
         return 1
 
-    # main.py puts the newly rendered video in the buffer before this function runs.
-    # Sort defensively so the oldest waiting production video is posted first.
-    video = waiting[0]
+    # Normally FIFO; one owner-requested *existing buffered stamp* can be served next
+    # without deleting, reuploading or reordering the other queued videos.
+    video = _next_buffered_video(waiting)
     out = ROOT / "output" / "publish"
     out.mkdir(parents=True, exist_ok=True)
 
@@ -259,6 +294,11 @@ def main(from_build: bool = False) -> int:
             return 1 if from_build else 0
         if not from_build:
             _late_slot_served()
+
+        # Video/caption passed the normal production gate and duplicate check above.
+        # Swap ONLY its soundtrack from an owner-approved local file. A failure leaves
+        # the remote original in the buffer for the next legitimate publishing slot.
+        _apply_approved_publish_music(video, mp4, meta)
 
         log(
             f"Posting '{meta['title']}' "
