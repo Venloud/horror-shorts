@@ -216,7 +216,6 @@ def _apply_approved_publish_music(video: dict, mp4, meta: dict) -> None:
 def main(from_build: bool = False) -> int:
     import buffer
     import tiktok
-    import youtube
     from notify import notify, notify_text
 
     # Keep the existing safety purge policy. This is not a manual buffer clear.
@@ -335,30 +334,11 @@ def main(from_build: bool = False) -> int:
         tt_error = f"{type(e).__name__}: {str(e)[:300]}"
 
     import youtube_pending
-    yt, yt_error = None, None
-    yt_paused = youtube_pending.paused()
-    if yt_paused:  # Google account restricted (Oct 6): no upload attempt, the video is kept for later
-        log("YouTube: PAUSED (config youtube_paused): not uploading, kept in youtube_pending for later")
-    elif not CONFIG.get("youtube_enabled", True):
-        log("YouTube: off (config youtube_enabled)")
-    elif not youtube.configured():
-        log(
-            "YouTube: skipped "
-            "(YT_CLIENT_ID / YT_CLIENT_SECRET / YT_REFRESH_TOKEN secrets not set)"
-        )
-    else:
-        try:
-            yt = youtube.upload(
-                mp4,
-                meta.get("yt_title") or meta["title"],
-                meta.get("yt_description") or meta["caption_text"],
-                meta.get("hashtags"),
-                credits=meta.get("visual_credits") or "",
-                tags=meta.get("yt_tags"),
-            )
-        except Exception as e:  # noqa: BLE001
-            traceback.print_exc()
-            yt_error = f"{type(e).__name__}: {str(e)[:300]}"
+    # YouTube Data API uploads are retired. The Daily workflow queues this
+    # accepted MP4 through Buffer.com after its durable release/state is saved.
+    # The 15-minute Buffer worker also picks up videos whose TikTok delivery failed.
+    yt, yt_error, yt_paused = None, None, True
+    log("YouTube: Buffer.com only, no Google upload API calls")
 
     if result is None and yt is None:
         notify_text(
@@ -391,7 +371,7 @@ def main(from_build: bool = False) -> int:
     number = take_video_number() if publicly_posted else None
     if number is not None:
         _gh_output("video_number", number)
-    if yt_paused and result:  # on TikTok, not on YouTube: keep the mp4 for the upload once YouTube is back
+    if result:  # Retain the exact accepted MP4 + metadata so Buffer.com can queue it
         youtube_pending.record(video["stamp"], mp4, out / "caption.json", number)
     log(
         f"Video {'#' + str(number) if number is not None else '(TikTok inbox draft)'}: "
@@ -408,7 +388,7 @@ def main(from_build: bool = False) -> int:
             if number is not None:
                 h["video_number"] = number
             h["tiktok"] = result if result else {"error": tt_error}
-            h["youtube"] = yt if yt else ({"pending": "youtube_paused"} if yt_paused else
+            h["youtube"] = yt if yt else ({"pending": "buffer_queue_pending"} if yt_paused else
                                           ({"error": yt_error} if yt_error else None))
             if publicly_posted:
                 h["posted"] = delivery_time
@@ -429,7 +409,7 @@ def main(from_build: bool = False) -> int:
             "premise": meta.get("premise"), "opening": meta.get("opening"),
             "visual_mode": meta.get("visual_mode"), "seconds": meta.get("seconds"),
             "video_number": number, "tiktok": result if result else {"error": tt_error},
-            "youtube": yt if yt else ({"pending": "youtube_paused"} if yt_paused else
+            "youtube": yt if yt else ({"pending": "buffer_queue_pending"} if yt_paused else
                                       ({"error": yt_error} if yt_error else None)),
             **({"posted": delivery_time} if publicly_posted else {}),
             **({"draft_sent": delivery_time} if draft_sent else {}),
@@ -457,7 +437,7 @@ def main(from_build: bool = False) -> int:
             + ")"
         )
     elif yt_paused:
-        lines.append(f"YouTube: paused, queued for later "
+        lines.append(f"YouTube: staged for Buffer.com queue "
                      f"({sum(1 for v in youtube_pending.load()['videos'] if v.get('status') == 'pending')} waiting)")
     elif yt_error:
         lines.append(f"YouTube FAILED: {yt_error}")
@@ -488,9 +468,9 @@ def main(from_build: bool = False) -> int:
         log(f"Done: TikTok inbox draft delivered, NOT publicly posted. {left} video(s) left in buffer.")
     else:
         log(f"Done: video #{number} publicly posted. {left} video(s) left in buffer.")
-    try:  # keep artifact-only pending videos safe; upload pending ones once YouTube is back (max 6/day)
+    try:  # Preserve any remaining artifact-only historical media; never call Google upload.
         youtube_pending.stash()
-        youtube_pending.upload_some()
+        # Buffer.com queueing is handled by the Daily workflow and backfill worker.
     except Exception as e:  # noqa: BLE001
         log(f"YouTube pending step failed ({e}); next run tries again")
     return 0

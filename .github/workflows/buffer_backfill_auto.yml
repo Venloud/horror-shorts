@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: buffer-backfill-queue
+  group: night-files
   cancel-in-progress: false
 
 jobs:
@@ -19,6 +19,10 @@ jobs:
     env:
       BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
       BUFFER_YOUTUBE_CHANNEL_ID: "6ad2d7d2778b240e2f331d8e"
+      TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+      TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+      TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
+      GH_TOKEN: ${{ secrets.GH_PAT }}
       GITHUB_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
@@ -28,18 +32,20 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: python -m pip install requests
+      - run: python -m pip install requests yt-dlp
+      - name: Ensure ffprobe for validating recovered videos
+        run: command -v ffprobe >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
       - name: Queue one eligible video with Buffer
         run: python tools/auto_buffer_backfill.py
-      - name: Persist Buffer queue receipt
-        if: success()
+      # State is now written directly to GitHub BEFORE the Buffer API mutation.
+      # No stale checkout push can overwrite concurrent Daily/video history.
+      - name: Preserve rotated TikTok token after optional public-video discovery
+        if: always() && hashFiles('.new_refresh_token') != ''
         run: |
-          git config user.name "horror-bot"
-          git config user.email "horror-bot@users.noreply.github.com"
-          git add data/buffer_backfill_queue.json
-          if git diff --cached --quiet; then
-            echo "No new Buffer receipt"
-            exit 0
+          if [ -n "$GH_TOKEN" ]; then
+            gh secret set TIKTOK_REFRESH_TOKEN --repo "$GITHUB_REPOSITORY" < .new_refresh_token
+          else
+            echo "::error::Token rotated but GH_PAT is absent; TikTok reconnect required"
+            exit 1
           fi
-          git commit -m "Record Buffer backfill queued video"
-          git push origin HEAD:main
+          rm -f .new_refresh_token

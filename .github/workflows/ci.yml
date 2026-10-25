@@ -9,6 +9,10 @@ on:
   push:
     branches:
       - main
+    # Buffer queue receipts have their own offline-tested writer; don't run full
+    # render/unit CI twice for every 15-minute queue admission.
+    paths-ignore:
+      - data/buffer_backfill_queue.json
   pull_request:
     branches:
       - main
@@ -64,6 +68,10 @@ jobs:
           python -m unittest discover -s tests -p test_clip_matching.py -v
           python -m unittest discover -s tests -p test_writer_reliability.py -v
           python -m unittest discover -s tests -p test_cinematic_editor.py -v
+
+      - name: Verify Buffer.com delivery and historic TikTok recovery (offline)
+        run: |
+          python -m unittest discover -s tests -p test_buffer_delivery.py -v
 
       - name: Validate JSON configuration
         run: |

@@ -1,14 +1,13 @@
-"""YouTube paused (config youtube_paused; Oct 6: the Google account behind the YouTube project is restricted, appeal
-pending). While paused, publish.py posts to TikTok only and every video that skipped YouTube is recorded here:
+"""Durable MP4 staging for Buffer.com YouTube delivery (no Google upload API).
+The Daily publisher archives every accepted Night Files video here:
 
   data/youtube_pending.json  {"videos": [{stamp, story_id, title, video_number, posted, status, file, ...}],
                               "last_alert": "YYYY-MM-DD", "uploads": {"YYYY-MM-DD": n}}
   release "youtube-pending"  <stamp>.mp4 + <stamp>.json (caption.json: yt_title / yt_description / yt_tags ...)
 
-The buffer deletes a posted video and build artifacts expire after 7 days, so the mp4 is kept in the release.
-At most ONE ntfy alert per UTC day about the pause. Once the owner says YouTube is back (youtube_paused false),
-upload_some() uploads the pending videos oldest first, max youtube_pending_per_day (6) per UTC day, and writes the
-YouTube result into history.json. Nothing here raises into the publisher: a failure is logged and retried later.
+The GitHub Release MP4 remains reachable after the TikTok video buffer item is removed;
+Buffer.com queues the public release asset independently. Historical statuses remain intact.
+The direct API uploader is permanently disabled.
 """
 import json
 import os
@@ -97,27 +96,15 @@ def _store(stamp: str, mp4: Path, meta: Path) -> None:
         _upload(rel, f"{stamp}.mp4", mp4, "video/mp4")
 
 
-# ---------- recording (publish.py, while paused) ----------
+# ---------- recording (publish.py, Buffer.com delivery) ----------
 
 def _alert(d: dict) -> None:
-    """At most one ntfy per UTC day about the pause."""
-    if d.get("last_alert") == _today():
-        return
-    waiting = [v for v in d["videos"] if v.get("status") == "pending"]
-    try:
-        from notify import notify_text
-        notify_text("Night Files: YouTube paused",
-                    f"{len(waiting)} video(s) wait for YouTube (Google account restricted, appeal pending): "
-                    + ", ".join(f"#{v.get('video_number')} {v.get('title')}" for v in waiting[-8:])
-                    + ". They post to TikTok as usual and upload to YouTube (max "
-                    f"{CONFIG.get('youtube_pending_per_day', 6)}/day) once you say it's restored.")
-        d["last_alert"] = _today()
-    except Exception as e:  # noqa: BLE001
-        log(f"YouTube pause alert not sent ({e})")
+    """Buffer.com delivery is automatic; no daily Google-OAuth pause alarms."""
+    return
 
 
 def record(stamp: str, mp4: Path, meta: Path, video_number: int | None) -> None:
-    """A video went to TikTok while YouTube is paused: keep it for the later upload. Never raises."""
+    """Store accepted video for Buffer.com; never call Google. Never raises."""
     d = load()
     if any(v["stamp"] == stamp for v in d["videos"]):
         return
@@ -130,10 +117,10 @@ def record(stamp: str, mp4: Path, meta: Path, video_number: int | None) -> None:
     try:
         _store(stamp, Path(mp4), Path(meta))
         entry["file"] = True
-        log(f"YouTube paused: #{video_number} '{entry['title']}' kept in the {TAG} release for the later upload")
+        log(f"YouTube Buffer staging: #{video_number} '{entry['title']}' archived in {TAG}")
     except Exception as e:  # noqa: BLE001
         entry["file_error"] = str(e)[:200]
-        log(f"YouTube paused: could not keep the mp4 of {stamp} ({e}); recorded anyway")
+        log(f"YouTube Buffer staging failed for {stamp} ({e}); kept queue record")
     d["videos"].append(entry)
     _alert(d)
     save(d)
@@ -173,61 +160,15 @@ def stash() -> None:
     save(d)
 
 
-# ---------- backfill (only when youtube_paused is false) ----------
+# ---------- retired Google YouTube uploader ----------
 
 def upload_some(per_run: int = 3) -> None:
-    """Upload pending videos, oldest first: max youtube_pending_per_day per UTC day (and `per_run`). Never raises."""
-    if paused():
-        return
-    d = load()
-    waiting = [v for v in d["videos"] if v.get("status") == "pending" and v.get("file")]
-    if not waiting:
-        return
-    import youtube
-    if not youtube.configured():
-        log("YouTube pending: YT_* secrets not set, nothing uploaded")
-        return
-    cap = int(CONFIG.get("youtube_pending_per_day", 6))
-    done = int(d["uploads"].get(_today(), 0))
-    assets = _assets()
-    for v in waiting[:max(0, min(per_run, cap - done))]:
-        try:
-            with tempfile.TemporaryDirectory() as tmp:
-                mp4, meta = Path(tmp) / "v.mp4", Path(tmp) / "m.json"
-                for name, dest in ((f"{v['stamp']}.mp4", mp4), (f"{v['stamp']}.json", meta)):
-                    r = requests.get(assets[name]["url"], headers=_h({"Accept": "application/octet-stream"}),
-                                     timeout=600, stream=True)
-                    r.raise_for_status()
-                    with open(dest, "wb") as f:
-                        for chunk in r.iter_content(1 << 20):
-                            f.write(chunk)
-                m = json.loads(meta.read_text())
-                yt = youtube.upload(mp4, m.get("yt_title") or m["title"], m.get("yt_description") or m["caption_text"],
-                                    m.get("hashtags"), credits=m.get("visual_credits") or "", tags=m.get("yt_tags"))
-        except Exception as e:  # noqa: BLE001 (quota / auth / network: stays pending, next run tries again)
-            v["last_error"] = f"{type(e).__name__}: {str(e)[:200]}"
-            log(f"YouTube pending: #{v.get('video_number')} upload failed ({v['last_error']}); stays pending")
-            break
-        v.update(status="uploaded", youtube=yt, uploaded=datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M"))
-        v.pop("last_error", None)
-        d["uploads"][_today()] = d["uploads"].get(_today(), 0) + 1
-        log(f"YouTube pending: #{v.get('video_number')} '{v.get('title')}' uploaded: {yt.get('url')}")
-        hist = load_history()
-        for h in reversed(hist):
-            if h.get("buffered") == v["stamp"] or h.get("date") == v["stamp"] or (
-                    v.get("story_id") and h.get("story_id") == v["story_id"] and h.get("video_number")):
-                h["youtube"] = yt
-                break
-        save_history(hist)
-        save(d)
-        for name in (f"{v['stamp']}.mp4", f"{v['stamp']}.json"):  # uploaded: free the release space
-            try:
-                if name in assets:
-                    requests.delete(f"{API}/repos/{_repo()}/releases/assets/{assets[name]['id']}", headers=_h(),
-                                    timeout=30)
-            except Exception as e:  # noqa: BLE001
-                log(f"YouTube pending: could not delete {name} from the release ({e})")
-    save(d)
+    """Retired: direct YouTube API uploading is no longer a supported route.
+
+    Legacy callers cannot silently re-enable Google uploads by switching config.
+    The Daily workflow and the 15-minute Buffer worker handle YouTube delivery.
+    """
+    raise RuntimeError("Direct YouTube uploads retired; use Buffer.com queue")
 
 
 def merge(base: dict, ours: dict, theirs: dict) -> dict:
