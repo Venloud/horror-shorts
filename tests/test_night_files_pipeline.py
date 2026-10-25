@@ -847,3 +847,67 @@ class PreferredNarratorContract(unittest.TestCase):
         self.assertEqual(common.CONFIG["voice_test_pool"], ["am_adam"])
         self.assertEqual(common.CONFIG["voice"], "am_adam")
         self.assertAlmostEqual(common.CONFIG["voice_speed"], 1.1)
+
+
+class OwnerQueueAndApprovedSoundtrack(unittest.TestCase):
+    """An approved already-buffered video goes next without deleting older entries or new publishing routes."""
+
+    def test_owner_priority_only_affects_existing_buffered_stamp(self):
+        import publish
+        waiting = [
+            {"stamp": "2026-10-23_2133"},
+            {"stamp": "2026-10-23_2249"},
+            {"stamp": "2026-10-25_0354"},
+        ]
+        with mock.patch.dict(publish.CONFIG, {"publish_priority_stamps": ["2026-10-25_0354"]}):
+            result = publish._next_buffered_video(waiting)
+        self.assertIs(result, waiting[2])
+        self.assertEqual([x["stamp"] for x in waiting],
+                         ["2026-10-23_2133", "2026-10-23_2249", "2026-10-25_0354"])
+        with mock.patch.dict(publish.CONFIG, {"publish_priority_stamps": ["missing"]}):
+            self.assertIs(publish._next_buffered_video(waiting), waiting[0])
+
+    def test_publisher_uses_approved_track_and_revalidates_before_delivery(self):
+        import publish
+        import background_music
+        import production_gate
+        with tempfile.TemporaryDirectory() as temporary:
+            mp4 = Path(temporary) / "final.mp4"
+            mp4.write_bytes(b"placeholder; neither audio nor video is transmitted during unit tests")
+            meta = {"title": "generic owner-approved test", "story_id": "example", "caption_text": "test"}
+            stamp = "2026-10-25_0354"
+            with mock.patch.dict(publish.CONFIG, {"publish_music_overrides": {
+                    stamp: "unsolved_mystery.mp3"}}), \
+                 mock.patch.object(background_music, "add_background_music") as mix, \
+                 mock.patch.object(production_gate, "validate_final_video") as validate:
+                publish._apply_approved_publish_music({"stamp": stamp}, mp4, meta)
+            mix.assert_called_once_with(mp4, mp4.parent, meta, approved_track="unsolved_mystery.mp3")
+            validate.assert_called_once_with(mp4)
+            self.assertEqual(json.loads((mp4.parent / "caption.json").read_text())["story_id"], "example")
+
+    def test_no_override_does_not_modify_video(self):
+        import publish
+        with tempfile.TemporaryDirectory() as temporary:
+            mp4 = Path(temporary) / "final.mp4"
+            with mock.patch.dict(publish.CONFIG, {"publish_music_overrides": {
+                    "different_stamp": "bk_grnde.mp3"}}):
+                publish._apply_approved_publish_music({"stamp": "ordinary_video"}, mp4, {})
+            self.assertFalse((mp4.parent / "caption.json").exists())
+
+    def test_unapproved_or_unsafe_music_paths_are_rejected(self):
+        import background_music
+        with mock.patch.dict(background_music.CONFIG, {
+                "music_policy": "approved_files", "approved_music": [
+                    "unsolved_mystery.mp3", "bk_grnde.mp3"]}), \
+             mock.patch.object(background_music, "media_duration", return_value=58.65):
+            for invalid in ("../private.mp3", "unauthorized.mp3", "/tmp/unsolved_mystery.mp3"):
+                with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                    background_music.add_background_music(
+                        Path("not_real.mp4"), Path("/tmp"), {}, approved_track=invalid)
+
+    def test_story_music_override_matches_existing_approved_owner_track(self):
+        self.assertEqual(common.CONFIG["publish_priority_stamps"], ["2026-10-25_0354"])
+        self.assertEqual(common.CONFIG["publish_music_overrides"]["2026-10-25_0354"],
+                         "unsolved_mystery.mp3")
+        self.assertIn("unsolved_mystery.mp3", common.CONFIG["approved_music"])
+        self.assertTrue((ROOT / "assets/music/unsolved_mystery.mp3").is_file())

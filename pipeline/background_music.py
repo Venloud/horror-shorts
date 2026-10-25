@@ -44,10 +44,27 @@ def _procedural_music(workdir: Path, seconds: float) -> Path:
     ])
     return out
 
-def add_background_music(video: Path, workdir: Path, story: dict) -> Path:
-    """Add the soundtrack after the main render, preserving video frames."""
+def add_background_music(video: Path, workdir: Path, story: dict,
+                         *, approved_track: str | None = None) -> Path:
+    """Mix music under narration without reencoding video; an override must be owner-approved.
+
+    This is also used for a queued video's single soundtrack change at the existing publish
+    boundary. The buffer keeps its original validated MP4 if an upload fails, so retries
+    always start from the same source, never repeatedly accumulate music layers.
+    """
     total = media_duration(video)
-    music = _pick_approved()
+    if approved_track is not None:
+        # The same trusted allowlist as the renderer: no arbitrary song URL or file path.
+        if (CONFIG.get("music_policy") != "approved_files"
+                or approved_track not in CONFIG.get("approved_music", [])
+                or Path(approved_track).name != approved_track
+                or Path(approved_track).suffix.lower() not in AUDIO_EXTS):
+            raise ValueError("Requested soundtrack is not an owner-approved music file")
+        music = ROOT / "assets" / "music" / approved_track
+        if not music.is_file():
+            raise FileNotFoundError(f"Approved soundtrack not found: {approved_track}")
+    else:
+        music = _pick_approved()
     source = "approved_configured_file" if music else "procedural_original"
     if music is None:
         music = _procedural_music(workdir, total)
