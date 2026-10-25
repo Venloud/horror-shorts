@@ -1248,7 +1248,13 @@ def sequence(story: dict, narration: dict, scene_images: list[list[Path]], graph
         if len(scene_images[i]) > 1:
             order.append(imgs[1])
         if host_ok:
-            order.append({"type": "host", "scene": i, "expression": beat[1] if beat else _expr_for(narr),
+            import sprites
+            # the viewer beat (warning -> worried, decision -> serious...) gives the deterministic expression; the
+            # shared local CLIP (sprites.select_for_beat) may pick a better APPROVED asset, never new art
+            expression = beat[1] if beat else _expr_for(narr)
+            selected = sprites.select_for_beat(narr, expression)
+            asset_id = selected if selected != sprites.face_id(expression) else None
+            order.append({"type": "host", "scene": i, "expression": expression, "asset_id": asset_id,
                           "beat": beat[0] if beat else ""})
         if len(gs) > 1 and span > 9.0:
             order.append(gs[1])
@@ -1402,6 +1408,25 @@ def story_images(story: dict, img_dir: Path) -> list[list[Path]]:
         library.fill_shots(story, img_dir, history)
     media.fill_shots(story, img_dir, history)
     per_scene = images.generate_images(story, img_dir)
+    # Semantic selection after the *existing* licensed-library -> real-media -> AI generation chain.
+    # All hard QA/rights/scene-specific constraints remain intact; only order surviving shots.
+    for i, picture_paths in enumerate(per_scene):
+        if not picture_paths:
+            continue
+        ranked = library.rank_images(story["scenes"][i].get("narration", ""),
+                                     list(picture_paths), source="scene_final")
+        if ranked:
+            primary = ranked[0]
+            story.setdefault("_clip_scene_matches", {})[str(i)] = {
+                "chosen": Path(primary["path"]).name, "score": round(primary["score"], 4),
+                "runner_up": round(ranked[1]["score"], 4) if len(ranked) > 1 else None}
+            if len(ranked) > 1 and i != 0 and primary["score"] - ranked[1]["score"] >= float(
+                    CONFIG.get("clip_reorder_min_margin", 0.02)):
+                by_name = {str(p): p for p in picture_paths}
+                per_scene[i] = [by_name[item["path"]] for item in ranked if item["path"] in by_name]
+            log(f"CLIP scene {i:02d}: chosen={primary['path']}, score={primary['score']:.3f}, "
+                f"runner_up={ranked[1]['score']:.3f}" if len(ranked) > 1 else
+                f"CLIP scene {i:02d}: chosen={primary['path']}, score={primary['score']:.3f}")
     for f in img_dir.glob("scene_*.png"):  # cache key for AI pictures + checkpoint manifest entry for all
         if ".rejected" in f.name or ".qa" in f.name or f.name.endswith(".ai.png"):
             continue
@@ -1600,13 +1625,22 @@ class Renderer:
         n = sum(1 for x in self.segs[:self._index(seg)] if x["shot"].get("type") == "host")
         dur = max(0.01, seg["end"] - seg["start"])
         push = 1.0 + 0.025 * _ease(t / dur)
-        if n % 3 == 2:
+        selected = s.get("asset_id")
+        if selected and selected.startswith("P"):  # optional approved full pose, never a generated replacement
+            im = sprites.approved_image(selected)
+            self.used_assets.add(selected)
+            scale = min(930 / im.width, 1450 / im.height) * push
+            im = im.resize((max(1, int(im.width * scale)), max(1, int(im.height * scale))),
+                           Image.Resampling.LANCZOS)
+            ox, oy = (W - im.width) // 2, H - im.height + 25
+        elif n % 3 == 2 and not selected:
             im, (fxp, fyp) = self.figure("three_quarter", "right", int(1150 * push))
             ox, oy = int(W * 0.5 - fxp), int(1640 - fyp)
             sh = self._shadow(int(im.width * 0.9))
             self._paste(frame, sh, int(W * 0.5 - sh.width / 2), 1640 - sh.height // 2)
         else:
-            im, aid = sprites.bust(s.get("expression") or "neutral")
+            im, aid = (sprites.approved_image(selected), selected) if selected else sprites.bust(
+                s.get("expression") or "neutral")
             self.used_assets.add(aid)
             scale = min(1400 / im.width, 1250 / im.height) * push  # the bust's cut edge sits below the frame
             im = im.resize((max(1, int(im.width * scale)), max(1, int(im.height * scale))), Image.Resampling.LANCZOS)
@@ -2132,7 +2166,7 @@ def visual_qa(story: dict, segs: list[dict], ren: "Renderer", video: Path | None
     for p in prov.values():
         if p.get("license_problem"):
             fails.append(f"{p['file']}: {p['license_problem']}")
-    approved = {r["id"] for r in sprites.approved_registry().get("approved", [])} | set(sprites.POSES)
+    approved = {r["id"] for r in sprites.approved_registry().get("approved", [])}
     bad = sorted(set(ren.used_assets) - approved)
     if bad:
         fails.append(f"unapproved character assets: {bad}")
@@ -2218,12 +2252,6 @@ def build(story: dict, narration: dict, img_dir: Path, workdir: Path) -> Path:
                                                   ensure_ascii=False, default=str))
         checkpoint.register_image(saved, stage="shot_list")
     total = _total(narration)
-    if CONFIG.get("explainer_clip_picture_order", True):
-        sims = picture_match(story, scene_images)
-        story["explainer_picture_match"] = sims
-        for i, sc in enumerate(sims):  # the picture that best matches the words opens the scene (never the hook)
-            if i > 0 and len(sc) == len(scene_images[i]) > 1 and sc[1] > sc[0] + 0.02:
-                scene_images[i] = [scene_images[i][1], scene_images[i][0]] + scene_images[i][2:]
     segs = sequence(story, narration, scene_images, graphics, total)
     story["render_style"] = "explainer"
     video, ren = render(story, narration, segs, workdir, img_dir)
@@ -2273,25 +2301,6 @@ def verify_narration(video: Path, narration: dict, model: str = "openai/whisper-
     log(f"Narration check (Whisper): {rep_['coverage']:.0%} of caption words heard, median offset "
         f"{rep_['median_offset_s']}s, {rep_['late_or_early_over_0_3s']} word(s) off by > 0.3 s")
     return rep_
-
-
-def picture_match(story: dict, scene_images: list[list[Path]]) -> list[list[float]]:
-    """CLIP similarity (library.embed_*: the asset library's own openai/clip-vit-base-patch32, local) of each scene
-    picture to the scene's narration: the better-matching picture opens the scene, and very low matches are reported
-    as exceptions in visual_qa. Empty lists when CLIP can't run here (the order then stays as planned)."""
-    try:
-        import library
-        out = []
-        for i, files in enumerate(scene_images):
-            if len(files) < 1:
-                out.append([])
-                continue
-            t = library.embed_text(story["scenes"][i].get("narration", "")[:300])
-            out.append([round(float((library.embed_image(Path(f)) * t).sum()), 3) for f in files])
-        return out
-    except Exception as exc:  # noqa: BLE001 (no CLIP here: keep the planned order)
-        log(f"Picture match (CLIP) unavailable: {str(exc)[:120]}")
-        return [[] for _ in scene_images]
 
 
 def frame_sheet(video: Path, dest: Path, n: int = 8) -> Path | None:

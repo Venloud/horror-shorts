@@ -3,6 +3,30 @@
 Read this first. It sums up the decisions from the long chat where this project was built (Sept 2026),
 so a new session can pick up without starting over.
 
+## OWNER PUBLISHING RULE (2026-10-24): PUBLISH EVERY FINISHED VIDEO, EVEN EXPERIMENTS
+
+**Latest explicit owner clarification:** "every completed video should be published, including test videos". A video created to test CLIP, a new editing effect, Aka Manto, visual style, narration, or another creative change is NOT disposable merely because it was called a test. If it is a complete, valid, publishable Night Files video, it must enter the same real production buffer and normal publishing process as any other completed video. Keep deduplication, metadata, provenance, rights checks, production safety gates, history tracking, and posting cadence. Do not make an alternate "testing means never publish" pipeline or quietly leave a finished deliverable as a download-only preview.
+
+**Precisely distinguish:** unit tests, mock renders, intermediate snippets, frame sheets, diagnostics and unfinished/rejected MP4s are NOT completed publishable videos. They do not post or enter history. A full final MP4 that passes the regular production gate DOES enter the buffer and remains queued until the legitimate publisher can deliver it; don't pretend queueing or sending to a draft inbox is the same as a public post. The daily publisher and platform permissions are the authoritative delivery mechanism. Don't bypass account restrictions, credentials, scheduled slots, approval requirements or safety checks to force a post.
+
+**Current implementation reality when this rule was recorded:** `pipeline/main.py` already uses production-only `testing = False`, puts complete validated MP4s into the buffer, and `daily.yml` runs `publish.py` on its configured slots; manual `buffer_fill.yml` fills the queue without immediate posting. `config.json` currently sets `tiktok_mode="draft"` and `youtube_paused=true`, so neither a draft handoff nor a paused YouTube upload is evidence of public posting. Preserve actual supported credentials/capabilities; report any delivery blockers truthfully rather than silently declaring videos "published". This is a POLICY update, not evidence that the social-platform restrictions were lifted.
+
+## Current CLIP integration, merged main 2026-10-24
+
+CLIP image matching is NOW wired into the existing production code via [PR #27](https://github.com/Venloud/horror-shorts/pull/27), merge `ddb7287`. It REUSES the preexisting `pipeline/library.py` local CLIP model (ViT-B/32) and adds no parallel `.py` module: `media.py` ranks fetched/archive candidates, `images.py` gates new AI images, `explainer.py` ranks scene images and selects approved expressions through `sprites.py`; `tests/test_clip_matching.py` is offline. **Do not reimplement CLIP inside `editorial.py` or create another visual matcher.** Merge concurrent Claude changes carefully, retaining these hooks and older editing functionality. P08 cannot be used unless its manifest record and checksum are merged. CI run [40148851610](https://github.com/Venloud/horror-shorts/actions/runs/40148851610) passed. Actual CLIP inference and real-video creative benefit are not yet independently validated.
+
+## OWNER DIRECTIVE (2026-10-24): ONE UNIVERSAL VIDEO EDITOR, NO STORY-SPECIFIC PYTHON FILES
+
+**Read before making or keeping a new module.** Night Files makes videos about many unrelated subjects. The owner does NOT want a new `.py`, separate renderer, "V2", graphic engine or workaround for each individual story. Do not hardcode Aka Manto, a named case, specific scripted lines, or an individual pose selection into application code. Story-specific details belong in inbox files, story JSON, config/data, prompts or assets, handled by ONE reusable pipeline. "Make it exist first, make it good later"; avoid uncontrolled code proliferation.
+
+The owner explicitly noticed an agent creating `editorial.py` while fixing the Aka Manto video and asked why. **Do not blindly delete that work or create a competing module.** First inspect it. It is acceptable ONLY if it is one genuinely generalized, tested editing-decision helper shared by the existing `pipeline/explainer.py`, `pipeline/noir.py`, Remotion and others where appropriate; not a story-specific script, disconnected experimental editor, duplicate of existing utilities or hidden new production route. Prefer placing small logic changes into the existing relevant module. If `editorial.py` adds little value, consolidate its reusable functions into the existing editor and remove the unnecessary file after updating imports and tests. If it earns its place as a cohesive reusable module, document precisely why and how the current renderer uses it; don't add another version.
+
+Owner-confirmed asset: the **P08 approved open-palms pose already exists**. Search existing manifest and original assets before declaring any pose missing. For decision/choice beats, consider approved P08 when appropriate, with manifest/checksum verification and NO changes to original approved PNG bytes. This is a general-purpose decision-visual rule, never an Aka Manto-only conditional or automatic asset redraw.
+
+**Zero paid inference:** Hugging Face Inference Providers' tiny free credits are NOT an acceptable dependable production option. Use only independently licensed free downloadable models executed locally on existing available hardware, with caching, optional execution and graceful fallback: CLIP for scene/image or pose matching, Whisper for checking synthesized narration, CLAP for searching already licensed SFX, and Depth Anything V2 for depth/parallax (already present, do not duplicate). Do not add paid API calls, subscription requirements, cloud GPU dependency or a permanent expensive CPU step to the production build. `HF_TOKEN` may already be configured and should be reused only when needed; never display secrets.
+
+Keep user-approved editing standards in `docs/NIGHT_FILES_EDITING_QUALITY_CHECKLIST.md` and Vandam's master editing guide. Walter Murch's emotion > story > rhythm > eye trace > 2D > 3D priorities guide cuts and graphics; complete meaningful phrases for impact words; no needless underlines or repeat whooshes; scene-grounded sound, consistent character assets. Test using several DIFFERENT story types and inspect an actual nonpublishing MP4. Do not publish test content, mutate the video buffer, or delete existing work without an integration check.
+
 ## Who / what
 - Owner: Van (GitHub **Venloud**). Computer science student who codes (Python, Java, web) and can debug;
   also works a day job, and is building this to earn income. Treat him as a developer: he prefers you write the
@@ -727,8 +751,8 @@ so a new session can pick up without starting over.
   sentence, max 4, silence allowed. Local free HF models only (no paid inference): CLAP laion/clap-htsat-unfused
   (Apache-2.0) checked every licensed SFX once -> assets/sfx/clap_index.json (27/31 match their label; wind,
   radio_static, ghost_presence, ui_click do not: event SFX never use an unverified file; rebuild with
-  `python -c "import explainer; explainer.sfx_index(rebuild=True)"`); CLIP (library.embed_*) orders each scene's
-  pictures by match to its words (`picture_match`, flag explainer_clip_picture_order); Depth Anything V2
+  `python -c "import explainer; explainer.sfx_index(rebuild=True)"`); CLIP scene-picture order and approved-asset choice
+  are PR #27's shared `library.rank_images` / `sprites.select_for_beat` (no second matcher); Depth Anything V2
   (effects.depth_map) gives stills a near layer that moves more (flag explainer_depth_parallax); Whisper
   openai/whisper-base (MIT) `verify_narration` = report-only check of what a listener hears vs the captions (flag
   whisper_narration_check, default off in production). Storyboard cache version 3 (old plans are not reused).

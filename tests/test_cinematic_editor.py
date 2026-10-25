@@ -133,12 +133,12 @@ class Transitions(unittest.TestCase):
 
 class ViewerSurrogate(unittest.TestCase):
     def test_p08_is_checksum_verified_and_unchanged(self):
-        p = sprites.pose_path("P08")
+        p = sprites.asset_path("P08")
         want = json.loads((ROOT / "assets" / "poses" / "asset_checksums.json").read_text())["P08_shrugging.png"]
         self.assertEqual(hashlib.sha256(p.read_bytes()).hexdigest(), want)
         self.assertEqual(sprites.POSE_FOR["choice"], "P08")
         with self.assertRaises(sprites.MissingAsset):
-            sprites.pose_path("P07")  # not approved for automatic use
+            sprites.asset_path("P07")  # not in the approved manifest: never picked
 
     def test_choice_graphic_planned_and_rendered_with_p08(self):
         story = {"scenes": [{"narration": "Someone whispers from the next stall, \"Red or blue?\""}],
@@ -169,7 +169,7 @@ class ViewerSurrogate(unittest.TestCase):
         self.assertEqual(used, set())
 
     def test_visual_qa_accepts_p08_as_approved(self):
-        self.assertIn("P08", sprites.POSES)
+        self.assertIn("P08", {r["id"] for r in sprites.approved_registry()["approved"]})
 
 
 class ContextGraphicsAndSound(unittest.TestCase):

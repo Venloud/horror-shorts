@@ -12,6 +12,7 @@ The storyboard picks a mood and a view; body_id() / face_id() turn them into ass
 """
 import hashlib
 import json
+import re
 from functools import lru_cache
 from pathlib import Path
 
@@ -103,6 +104,43 @@ def face_id(mood: str) -> str:
     return aid
 
 
+
+def select_for_beat(narration: str, mood: str = "neutral") -> str:
+    """Choose among existing checksum-verified owner-approved faces/poses for a generic story beat.
+
+    CLIP is optional and conservative. New action poses are candidates ONLY once in the approved
+    manifest. No image generation, new art or story-specific conditional is permitted.
+    """
+    fallback = face_id(mood)
+    if not narration.strip():
+        return fallback
+    approved = approved_registry().get("approved", [])
+    choice = bool(re.search(
+        r"\b(choos\w*|decid\w*|option|either|which|two choices|left or right)\b",
+        narration, re.I))
+    # A small semantic set keeps the CPU pass bounded. Reuse the approved registry, never guess paths.
+    useful_faces = {"F01", "F07", "F09", "F10", "F11", "F12", "F13", "F14", "F15", "F19", "F21"}
+    ids = [r["id"] for r in approved if r.get("status") == "approved"
+           and (r["id"] in useful_faces or r["id"] == fallback
+                or (choice and r["id"].startswith("P")))]
+    if fallback not in ids:
+        ids.insert(0, fallback)
+    try:
+        import library
+        intent = ("A person with open hands showing two choices, choosing between options. "
+                  if choice else "The person reacts to the scene. ") + narration[:170]
+        return library.best_approved_asset(intent, ids, fallback)
+    except Exception:  # optional local model must never stop rendering or compromise the approved set
+        return fallback
+
+
+def approved_image(asset_id: str) -> Image.Image:
+    """A transparent approved sprite, verified against its manifest, returned without changing the source."""
+    if not usable(asset_id):
+        raise MissingAsset(asset_id, "is not an approved transparent asset")
+    return _trimmed(asset_id).copy()
+
+
 def view_for(action: str, view: str) -> str:
     return ACTIONS.get(action) or (view if view in VIEWS else "front")
 
@@ -142,35 +180,16 @@ def full_body(view: str = "front", height: int = 900, facing: str = "right"):
     return im, (im.width / 2.0, float(im.height))
 
 
-# Owner-approved P-series poses the editor may pick AUTOMATICALLY (POSE_RENDER_STANDARD.md: no automatic P-series
-# selection until approval). P08 = both palms open: the viewer-surrogate for a binary choice (owner, Oct 25: "Use
-# P08"). The bytes are checked against assets/poses/asset_checksums.json; other P poses stay unused until approved.
-POSES = {"P08": "P08_shrugging.png"}
+# P-series poses the editor picks for a beat (POSE_RENDER_STANDARD.md: only poses in the approved manifest).
+# P08 = both palms open: the viewer surrogate for a binary choice (owner, Oct 25: "Use P08"), registered in
+# manifest.json with the SHA-256 from assets/poses/asset_checksums.json; asset_path() verifies it like every asset.
 POSE_FOR = {"choice": "P08"}
-POSE_DIRS = (DIR / "poses", ROOT / "assets" / "poses")
-
-
-@lru_cache(maxsize=8)
-def pose_path(asset_id: str) -> Path:
-    """The approved pose file, its SHA-256 checked against the owner's checksum list. Raises MissingAsset."""
-    name = POSES.get(asset_id)
-    if not name:
-        raise MissingAsset(asset_id, "is not an owner-approved automatic pose")
-    sums_file = ROOT / "assets" / "poses" / "asset_checksums.json"
-    want = json.loads(sums_file.read_text()).get(name) if sums_file.is_file() else None
-    if not want:
-        raise MissingAsset(asset_id, f"has no recorded SHA-256 ({name})")
-    for d in POSE_DIRS:
-        p = d / name
-        if p.is_file() and hashlib.sha256(p.read_bytes()).hexdigest() == want:
-            return p
-    raise MissingAsset(asset_id, f"is missing or changed ({name})")
 
 
 @lru_cache(maxsize=8)
 def pose(asset_id: str, height: int) -> Image.Image:
     """The approved pose trimmed to its visible pixels and scaled to `height` (uniform scale, placement only)."""
-    im = Image.open(pose_path(asset_id)).convert("RGBA")
+    im = Image.open(asset_path(asset_id)).convert("RGBA")
     box = im.getchannel("A").getbbox()
     im = im.crop(box) if box else im
     height = max(100, int(height))
