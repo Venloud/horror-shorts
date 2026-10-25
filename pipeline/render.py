@@ -1,4 +1,4 @@
-"""Renders the final 1080x1920 video with FFmpeg: Ken Burns scenes, crossfades, grade, grain, captions, music."""
+"""Renders the final 1080x1920 video with FFmpeg: Ken Burns, hard cuts, grade, grain, captions, music."""
 import json
 import random
 import re
@@ -12,7 +12,7 @@ import cutout
 import effects
 
 W, H, FPS = 1080, 1920, 30
-XFADE = 0.4      # transition length between scenes
+XFADE = 0.4      # reserved for explicitly planned dissolves, never automatic
 MIN_SHOT = 1.2   # shortest a single picture stays on screen (seconds)
 TAIL = 3.4       # seconds after the last word (end card lives here)
 # config target_seconds = the FINISHED VIDEO's length (TikTok Creator Rewards needs > 60 s): [61, 68]. The narration
@@ -177,16 +177,12 @@ def _ai_into_still(ai: Path, img: Path, depth, length: float, out: Path, move: s
 
 
 def _transitions(scene_cut: list[bool], mode: str) -> list[tuple[str, float]]:
-    """(xfade transition, duration) into each shot (index 0 unused). classic/analog: soft crossfades.
-    fast: hard cuts inside a scene (one frame), a whip-pan or a white flash at scene changes."""
-    out = [("fade", 0.0)]
-    for i in range(1, len(scene_cut)):
-        if mode == "fast":
-            out.append((random.choice(["slideleft", "slideup", "fadewhite"]), 0.2) if scene_cut[i] else ("fade", 1 / FPS))
-        else:
-            out.append((random.choice(["fadeblack", "fade", "fadeblack"]) if scene_cut[i]
-                        else random.choice(["fade", "dissolve"]), XFADE))
-    return out
+    """Hard cuts for every visual mode unless a meaningful transition was explicitly planned.
+
+    Neither a scene boundary nor the fast/analog style authorizes a decorative effect.
+    This legacy renderer has no grounded time-passage metadata, so it never invents dissolves.
+    """
+    return [("cut", 0.0)] * len(scene_cut)
 
 
 def _join(clips: list[Path], seg: list[float], scene_cut: list[bool], out: Path,
@@ -206,12 +202,19 @@ def _join(clips: list[Path], seg: list[float], scene_cut: list[bool], out: Path,
     prev, acc = "[n0]", frames[0]
     for i in range(1, len(clips)):
         kind, dur = trans[i]
-        d = max(1, min(int(round(dur * FPS)), frames[i] - 1, acc - 1))
-        offset = acc - d
         label = f"[x{i}]"
-        fc.append(f"{prev}[n{i}]xfade=transition={kind}:duration={d / FPS:.6f}:offset={offset / FPS:.6f}{label}")
-        prev, acc = label, acc + frames[i] - d
-    log("FFMPEG: starting xfade join")
+        if kind == "cut":
+            fc.append(f"{prev}[n{i}]concat=n=2:v=1:a=0{label}")
+            prev, acc = label, acc + frames[i]
+        else:
+            # Only an explicitly justified dissolve should enter this path.
+            if kind != "dissolve":
+                raise ValueError(f"Unsupported transition: {kind}")
+            d = max(1, min(int(round(dur * FPS)), frames[i] - 1, acc - 1))
+            offset = acc - d
+            fc.append(f"{prev}[n{i}]xfade=transition=fade:duration={d / FPS:.6f}:offset={offset / FPS:.6f}{label}")
+            prev, acc = label, acc + frames[i] - d
+    log("FFMPEG: starting semantic cut join")
     run(["ffmpeg", "-y", "-loglevel", "error", *inputs, "-filter_complex", ";".join(fc),
          "-map", prev, "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "14", "-r", str(FPS),
          "-pix_fmt", "yuv420p", str(out)])
@@ -378,7 +381,7 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
     log(f"Visual mode: {mode} ({len(shot_imgs)} shots)")
     story["_visuals"] = visual_summary(shot_imgs, seg, total)
 
-    # 1) One moving clip per shot (each clip is XFADE longer so crossfades don't eat time)
+    # 1) One moving clip per shot (only explicitly planned dissolves add overlap).
     motions = list(MOTIONS)
     clips, last = [], None
     depths: dict = {}
@@ -452,7 +455,7 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
         clips.append(_scene_clip(img, length, m, out))
         log(f"Shot {k}: {length:.1f}s {m}")
 
-    # 2) Chain crossfades (every clip normalized to 1080x1920 / 30 fps / yuv420p / SAR 1, audio dropped)
+    # 2) Chain exact hard cuts (or explicit meaningful dissolves), after normalizing shot formats.
     joined = _join(clips, seg, scene_cut, workdir / "joined.mp4", trans)
 
     # 3) Final pass: colour grade, grain, vignette, captions, narration/SFX audio. Music is added separately.
