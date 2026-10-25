@@ -201,6 +201,9 @@ def download_public_post(post, item):
 
 
 def from_tiktok(items, queued):
+    if not os.environ.get("GH_TOKEN"):
+        print("GH_PAT unavailable; refusing TikTok refresh that may rotate an unpersistable token")
+        return False
     if not all(os.environ.get(k) for k in ("TIKTOK_CLIENT_KEY", "TIKTOK_CLIENT_SECRET", "TIKTOK_REFRESH_TOKEN")):
         print("No TikTok discovery credentials; original artifacts only")
         return False
