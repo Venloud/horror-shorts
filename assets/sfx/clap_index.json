@@ -1,0 +1,222 @@
+{
+ "model": "laion/clap-htsat-unfused",
+ "files": {
+  "footsteps_wood": {
+   "label": "footsteps on a wooden floor",
+   "best": "footsteps_wood",
+   "rank": 1,
+   "similarity": 0.055,
+   "verified": true
+  },
+  "footsteps_gravel": {
+   "label": "footsteps on gravel",
+   "best": "footsteps_gravel",
+   "rank": 1,
+   "similarity": 0.511,
+   "verified": true
+  },
+  "footsteps_grass": {
+   "label": "footsteps on grass",
+   "best": "footsteps_grass",
+   "rank": 1,
+   "similarity": 0.418,
+   "verified": true
+  },
+  "footsteps_leaves": {
+   "label": "footsteps on dry leaves",
+   "best": "footsteps_grass",
+   "rank": 3,
+   "similarity": 0.387,
+   "verified": true
+  },
+  "footsteps_mud": {
+   "label": "footsteps in mud",
+   "best": "footsteps_mud",
+   "rank": 1,
+   "similarity": 0.534,
+   "verified": true
+  },
+  "footsteps_snow": {
+   "label": "footsteps in snow",
+   "best": "footsteps_snow",
+   "rank": 1,
+   "similarity": 0.402,
+   "verified": true
+  },
+  "door_slam": {
+   "label": "a door slamming shut",
+   "best": "door_unlock",
+   "rank": 2,
+   "similarity": 0.452,
+   "verified": true
+  },
+  "door_creak": {
+   "label": "a creaking door opening",
+   "best": "door_creak",
+   "rank": 1,
+   "similarity": 0.113,
+   "verified": true
+  },
+  "door_unlock": {
+   "label": "a key unlocking a door",
+   "best": "keys_jingle",
+   "rank": 2,
+   "similarity": 0.207,
+   "verified": true
+  },
+  "knocking": {
+   "label": "knocking on a door",
+   "best": "knocking",
+   "rank": 1,
+   "similarity": 0.437,
+   "verified": true
+  },
+  "phone_notification": {
+   "label": "a phone message notification chime",
+   "best": "phone_notification",
+   "rank": 1,
+   "similarity": 0.302,
+   "verified": true
+  },
+  "phone_buzz": {
+   "label": "a phone vibrating",
+   "best": "phone_buzz",
+   "rank": 1,
+   "similarity": 0.416,
+   "verified": true
+  },
+  "thunder": {
+   "label": "thunder rumbling",
+   "best": "thunder",
+   "rank": 1,
+   "similarity": 0.526,
+   "verified": true
+  },
+  "wind": {
+   "label": "wind howling",
+   "best": "ghost_presence",
+   "rank": 4,
+   "similarity": 0.169,
+   "verified": false
+  },
+  "clock_ticking": {
+   "label": "a clock ticking",
+   "best": "clock_ticking",
+   "rank": 1,
+   "similarity": 0.347,
+   "verified": true
+  },
+  "whispers": {
+   "label": "people whispering",
+   "best": "whispers",
+   "rank": 1,
+   "similarity": 0.469,
+   "verified": true
+  },
+  "creepy_laugh": {
+   "label": "a creepy laugh",
+   "best": "creepy_laugh",
+   "rank": 1,
+   "similarity": 0.334,
+   "verified": true
+  },
+  "glass_break": {
+   "label": "glass shattering",
+   "best": "glass_break",
+   "rank": 1,
+   "similarity": 0.733,
+   "verified": true
+  },
+  "heartbeat": {
+   "label": "a heartbeat",
+   "best": "heartbeat",
+   "rank": 1,
+   "similarity": 0.391,
+   "verified": true
+  },
+  "owl": {
+   "label": "an owl hooting",
+   "best": "owl",
+   "rank": 1,
+   "similarity": 0.522,
+   "verified": true
+  },
+  "church_bell": {
+   "label": "a church bell ringing",
+   "best": "church_bell",
+   "rank": 1,
+   "similarity": 0.507,
+   "verified": true
+  },
+  "camera_shutter": {
+   "label": "a camera shutter click",
+   "best": "camera_shutter",
+   "rank": 1,
+   "similarity": 0.392,
+   "verified": true
+  },
+  "radio_static": {
+   "label": "radio static",
+   "best": "phone_buzz",
+   "rank": 6,
+   "similarity": 0.054,
+   "verified": false
+  },
+  "whoosh": {
+   "label": "a fast whoosh",
+   "best": "whoosh",
+   "rank": 1,
+   "similarity": 0.277,
+   "verified": true
+  },
+  "ui_click": {
+   "label": "a soft click",
+   "best": "camera_shutter",
+   "rank": 6,
+   "similarity": -0.047,
+   "verified": false
+  },
+  "doorbell": {
+   "label": "a doorbell",
+   "best": "doorbell",
+   "rank": 1,
+   "similarity": 0.557,
+   "verified": true
+  },
+  "keys_jingle": {
+   "label": "keys jingling",
+   "best": "keys_jingle",
+   "rank": 1,
+   "similarity": 0.563,
+   "verified": true
+  },
+  "twigs_snap": {
+   "label": "twigs snapping",
+   "best": "twigs_snap",
+   "rank": 1,
+   "similarity": 0.389,
+   "verified": true
+  },
+  "floor_creak": {
+   "label": "a wooden floor creaking",
+   "best": "floor_creak",
+   "rank": 1,
+   "similarity": 0.121,
+   "verified": true
+  },
+  "breathing_calm": {
+   "label": "calm breathing",
+   "best": "breathing_calm",
+   "rank": 1,
+   "similarity": 0.294,
+   "verified": true
+  },
+  "ghost_presence": {
+   "label": "an eerie ghostly drone",
+   "best": "keys_jingle",
+   "rank": 5,
+   "similarity": -0.105,
+   "verified": false
+  }
+ }
+}

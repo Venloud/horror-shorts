@@ -28,7 +28,8 @@ BONE = (236, 230, 221)  # off-white type
 FONT_DIR = ROOT / "assets" / "fonts" / "explainer"
 SAFE_X0, SAFE_X1, SAFE_Y0, SAFE_Y1 = 70, 960, 200, 1300
 TEMPLATES = ("true_story", "title", "evidence", "map_route", "fact", "filmstrip", "quote", "impact", "connections",
-             "compare", "missing", "closing", "photo_scan", "clock_stop", "shadow_reveal", "date_stamp")
+             "compare", "missing", "closing", "photo_scan", "clock_stop", "shadow_reveal", "date_stamp", "choice",
+             "phone")
 
 
 def accent() -> tuple:
@@ -516,28 +517,156 @@ def _t_quote(fields, t, dur, ctx):
 
 
 def _t_impact(fields, t, dur, ctx):
-    """One or two impact words, huge, with a hand-drawn magenta underline; slow push."""
+    """One or two complete phrases of the narration ("CHOOSE RED" / "COVERED IN BLOOD"), huge, each revealed when it
+    is spoken; ONLY the payoff word (fields["accent"]) is coloured and underlined, never every line. Slow push."""
     acc = ctx["accent"]
     frame = ctx.get("bg") or _base(ctx)
-    words = str(fields.get("text") or "").upper()
+    beats = [str(b).upper() for b in (fields.get("lines") or []) if str(b).strip()] or \
+        [str(fields.get("text") or "").upper()]
+    accent = str(fields.get("accent") or "")
     z = 1.0 + 0.03 * ease(t / max(dur, 0.1))
-    f, lines = fit(words, "cond", int(880 / z), 3, int(230 * z), 90)
+    size = int((230 if len(beats) == 1 else 170) * z)
+    blocks = []
+    for k, beat in enumerate(beats):
+        f, lines = fit(beat, "cond", int(860 / z), 2, size, 80)
+        blocks.append((k, f, lines))
     ov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(ov)
-    lh = int(f.size * 1.02)
-    y = 860 - len(lines) * lh // 2
-    for k, line in enumerate(lines):
-        at = spoken_at(line.split()[0], ctx, 0.08 * k)
+    gap = 70
+    heights = [len(lines) * int(f.size * 1.02) for _, f, lines in blocks]
+    y = 840 - (sum(heights) + gap * (len(blocks) - 1)) // 2
+    for (k, f, lines), hgt in zip(blocks, heights):
+        at = spoken_at(lines[0].split()[0], ctx, 0.5 * k) if lines else 0.5 * k
         a = back((t - at) / 0.22)
+        lh = int(f.size * 1.02)
+        if a > 0.02:
+            for li, line in enumerate(lines):
+                words = line.split()
+                widths = [d.textlength(w, font=f) for w in words]
+                sp = d.textlength(" ", font=f)
+                x = (W - (sum(widths) + sp * (len(words) - 1))) / 2
+                yy = y + li * lh + int(30 * (1 - min(1, a)))
+                for w, ww in zip(words, widths):
+                    hit = _same(w, accent)
+                    d.text((x, yy), w, font=f, fill=(acc if hit else BONE) + (int(255 * min(1, a)),))
+                    if hit:
+                        underline(d, x, x + ww, d.textbbox((x, yy), w, font=f)[3] + 16,
+                                  ease((t - at - 0.2) / 0.35), acc, 14)
+                    x += ww + sp
+        y += hgt + gap
+    frame.alpha_composite(ov)
+    return frame
+
+
+COLOURS = {"RED": (205, 32, 48), "BLUE": (46, 96, 210), "YELLOW": (232, 192, 44), "GREEN": (44, 154, 86),
+           "BLACK": (24, 24, 28), "WHITE": (238, 238, 238), "PURPLE": (124, 56, 168)}
+
+
+def _t_choice(fields, t, dur, ctx):
+    """A binary choice the narration offers: the approved P08 pose (both palms open, placement only) in a circular
+    pool of light, one option above each open hand, each revealed when it is spoken. Without the pose (missing /
+    changed file) the two options stand alone: never a substitute drawing."""
+    acc = ctx["accent"]
+    frame = ctx.get("bg") or _base(ctx)
+    left, right = str(fields.get("left") or "").upper(), str(fields.get("right") or "").upper()
+    ov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(ov)
+    cx, cy = W // 2, 900
+    glow = Image.new("L", (W, H), 0)
+    ImageDraw.Draw(glow).ellipse((cx - 430, cy - 430, cx + 430, cy + 430), fill=70)
+    glow = glow.filter(ImageFilter.GaussianBlur(90))
+    light = Image.new("RGBA", (W, H), (205, 196, 184, 0))
+    light.putalpha(glow)
+    frame.alpha_composite(light)
+    hands = [(250, 610), (830, 610)]
+    figure = None
+    try:
+        import sprites
+        figure = sprites.pose("P08", 980)
+        if isinstance(ctx.get("used_assets"), set):
+            ctx["used_assets"].add("P08")
+    except Exception:  # noqa: BLE001 (MissingAsset: options only, the build never substitutes art)
+        figure = None
+    if figure is not None:
+        fx, fy = (W - figure.width) // 2, 1330 - figure.height
+        rise = int(24 * (1 - ease(t / 0.3)))
+        paste(frame, figure, fx, fy + rise)
+        hands = [(fx + int(figure.width * 0.06), fy + int(figure.height * 0.27)),
+                 (fx + int(figure.width * 0.94), fy + int(figure.height * 0.27))]
+    for k, (opt, (hx, hy)) in enumerate(zip((left, right), hands)):
+        if not opt:
+            continue
+        at = spoken_at(opt.split()[0], ctx, 0.25 + 0.45 * k)
+        a = back((t - at) / 0.25)
         if a <= 0.02:
             continue
-        lw = d.textlength(line, font=f)
-        x = (W - lw) / 2
-        d.text((x, y + int(30 * (1 - min(1, a)))), line, font=f, fill=BONE + (int(255 * min(1, a)),))
-        if k == len(lines) - 1 or any(_same(w, fields.get("accent", "")) for w in line.split()):
-            underline(d, x, x + lw, d.textbbox((x, y), line, font=f)[3] + 18, ease((t - at - 0.2) / 0.35), acc, 16)
-        y += lh
+        f, lines = fit(opt, "cond", 360, 2, 120, 60)
+        tw = max(d.textlength(l, font=f) for l in lines)
+        lh = int(f.size * 1.02)
+        bx = int(max(SAFE_X0 + tw / 2 + 30, min(SAFE_X1 - tw / 2 - 30, hx)))
+        by = hy - 70 - len(lines) * lh
+        col = COLOURS.get(opt)
+        if col:  # a glowing orb of that colour resting on the open palm
+            r = int(46 * min(1, a))
+            d.ellipse((hx - r, hy - 40 - r, hx + r, hy - 40 + r), fill=col + (235,))
+        for li, line in enumerate(lines):
+            lw = d.textlength(line, font=f)
+            yy = by + li * lh + int(24 * (1 - min(1, a)))
+            d.text((bx - lw / 2 + 4, yy + 5), line, font=f, fill=(0, 0, 0, int(170 * min(1, a))))
+            d.text((bx - lw / 2, yy), line, font=f, fill=(col or BONE) + (int(255 * min(1, a)),))
+    if left and right:  # the decision between them
+        a = ease((t - spoken_at(right.split()[0], ctx, 0.7) - 0.1) / 0.3)
+        if a > 0:
+            fo = font("cond", 64)
+            ow = d.textlength("OR", font=fo)
+            d.text(((W - ow) / 2, 360), "OR", font=fo, fill=acc + (int(220 * a),))
     frame.alpha_composite(ov)
+    return frame
+
+
+def _t_phone(fields, t, dur, ctx):
+    """A phone screen insert: the message the narration states (verbatim), typing dots, then the bubble pops in.
+    No invented sender, number or time: an optional sender only when the narration names one."""
+    frame = ctx.get("bg") or _base(ctx)
+    k = back(t / 0.3)
+    pw, ph = 560, 1000
+    phone = Image.new("RGBA", (pw, ph), (0, 0, 0, 0))
+    dp = ImageDraw.Draw(phone)
+    dp.rounded_rectangle((0, 0, pw - 1, ph - 1), radius=70, fill=(12, 13, 16, 255), outline=(70, 72, 80, 255),
+                         width=6)
+    dp.rounded_rectangle((22, 22, pw - 23, ph - 23), radius=54, fill=(24, 27, 33, 255))
+    dp.rounded_rectangle((pw // 2 - 70, 40, pw // 2 + 70, 66), radius=13, fill=(10, 10, 12, 255))
+    who = str(fields.get("from") or "").upper()[:22]
+    if who:
+        fw = font("mono", 30)
+        dp.text(((pw - dp.textlength(who, font=fw)) / 2, 110), who, font=fw, fill=PARCHMENT + (255,))
+    dp.line((50, 170, pw - 50, 170), fill=(50, 54, 62, 255), width=2)
+    text = str(fields.get("text") or "")
+    f, lines = fit(text, "bold", pw - 170, 6, 48, 30)
+    lh = int(f.size * 1.2)
+    bh = len(lines) * lh + 50
+    bw = int(max(dp.textlength(l, font=f) for l in lines) + 60) if lines else 200
+    show = t >= 0.55
+    if not show:  # typing dots before the message lands
+        for j in range(3):
+            on = int((t * 6 + j) % 3 == 0)
+            dp.ellipse((70 + j * 34, 240, 92 + j * 34, 262), fill=(150, 150, 160, 160 + 95 * on))
+    else:
+        g = back((t - 0.55) / 0.2)
+        x0, y0 = 50, 220
+        bub = Image.new("RGBA", (bw, bh), (0, 0, 0, 0))
+        db = ImageDraw.Draw(bub)
+        db.rounded_rectangle((0, 0, bw - 1, bh - 1), radius=34, fill=(58, 62, 72, 255))
+        for li, line in enumerate(lines):
+            db.text((30, 25 + li * lh), line, font=f, fill=BONE + (255,))
+        bub = bub.resize((max(1, int(bw * min(1.0, g))), max(1, int(bh * min(1.0, g)))))
+        phone.alpha_composite(bub, (x0, y0))
+    phone = phone.rotate(-2, expand=True, resample=Image.BICUBIC)
+    shadow = Image.new("RGBA", phone.size, (0, 0, 0, 0))
+    shadow.putalpha(phone.getchannel("A").point(lambda a: int(a * 0.6)).filter(ImageFilter.GaussianBlur(20)))
+    x, y = (W - phone.width) // 2, int(300 + 140 * (1 - min(1.0, k)))
+    paste(frame, shadow, x + 18, y + 26)
+    paste(frame, phone, x, y)
     return frame
 
 

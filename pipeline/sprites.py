@@ -142,6 +142,41 @@ def full_body(view: str = "front", height: int = 900, facing: str = "right"):
     return im, (im.width / 2.0, float(im.height))
 
 
+# Owner-approved P-series poses the editor may pick AUTOMATICALLY (POSE_RENDER_STANDARD.md: no automatic P-series
+# selection until approval). P08 = both palms open: the viewer-surrogate for a binary choice (owner, Oct 25: "Use
+# P08"). The bytes are checked against assets/poses/asset_checksums.json; other P poses stay unused until approved.
+POSES = {"P08": "P08_shrugging.png"}
+POSE_FOR = {"choice": "P08"}
+POSE_DIRS = (DIR / "poses", ROOT / "assets" / "poses")
+
+
+@lru_cache(maxsize=8)
+def pose_path(asset_id: str) -> Path:
+    """The approved pose file, its SHA-256 checked against the owner's checksum list. Raises MissingAsset."""
+    name = POSES.get(asset_id)
+    if not name:
+        raise MissingAsset(asset_id, "is not an owner-approved automatic pose")
+    sums_file = ROOT / "assets" / "poses" / "asset_checksums.json"
+    want = json.loads(sums_file.read_text()).get(name) if sums_file.is_file() else None
+    if not want:
+        raise MissingAsset(asset_id, f"has no recorded SHA-256 ({name})")
+    for d in POSE_DIRS:
+        p = d / name
+        if p.is_file() and hashlib.sha256(p.read_bytes()).hexdigest() == want:
+            return p
+    raise MissingAsset(asset_id, f"is missing or changed ({name})")
+
+
+@lru_cache(maxsize=8)
+def pose(asset_id: str, height: int) -> Image.Image:
+    """The approved pose trimmed to its visible pixels and scaled to `height` (uniform scale, placement only)."""
+    im = Image.open(pose_path(asset_id)).convert("RGBA")
+    box = im.getchannel("A").getbbox()
+    im = im.crop(box) if box else im
+    height = max(100, int(height))
+    return im.resize((max(1, round(im.width * height / im.height)), height), Image.Resampling.LANCZOS)
+
+
 def bust(mood: str = "neutral") -> tuple[Image.Image, str]:
     """(RGBA trimmed to its visible pixels, asset ID) of the approved F-series face for this mood."""
     aid = face_id(mood)

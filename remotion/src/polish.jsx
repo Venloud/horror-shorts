@@ -69,7 +69,8 @@ const CaptionTrack=({words=[]})=>{
           opacity:hit?1:0.60,
           transform:`translateY(${hit?(1-p)*7:0}px)`,
           textShadow:hit?"0 1px 8px rgba(255,255,255,0.12)":"none",
-          borderBottom:hit&&t<=Number(w.end)+0.06?`4px solid ${PALETTE.red}`:"4px solid transparent",
+          // Underline ONLY the payoff words the editor chose (explainer.caption_accents), never every word.
+          borderBottom:hit&&w.accent?`4px solid ${PALETTE.red}`:"4px solid transparent",
           transition:"none"
         }}>{w.word}</span>;
       })}
@@ -79,7 +80,8 @@ const CaptionTrack=({words=[]})=>{
 
 const CutTreatment=({shots=[]})=>{
   const frame=useCurrentFrame();const {fps}=useVideoConfig();
-  const s=shots.find((x,i)=>i>0 && frame>=x.startFrame &&
+  // The magenta sweep marks only a planned swoosh (explainer.plan_transitions); a hard cut stays a clean cut.
+  const s=shots.find((x,i)=>i>0 && x.transition==="swoosh" && frame>=x.startFrame &&
     frame<x.startFrame+Math.min(10,Math.round(.4*fps)));
   if(!s) return null;
   const progress=frame-s.startFrame;

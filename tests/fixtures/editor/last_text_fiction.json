@@ -1,0 +1,107 @@
+{
+ "story_id": "preview_last_text",
+ "title": "The Last Text",
+ "mode": "coldcase",
+ "true_story": false,
+ "subgenre": "fiction",
+ "twist_scene": 5,
+ "characters": [
+  {
+   "name": "Nora",
+   "look": "a woman in her thirties in a grey wool sweater and jeans, long brown braid"
+  }
+ ],
+ "locations": [
+  {
+   "name": "Farmhouse Kitchen",
+   "look": "a farmhouse kitchen at night, one hanging bulb, a wooden table and a window to the dark yard"
+  },
+  {
+   "name": "Gravel Yard",
+   "look": "a gravel farmyard at night under a single porch light, an old barn in the background"
+  },
+  {
+   "name": "Barn Interior",
+   "look": "the inside of an old wooden barn, hay, a lantern, tall double doors"
+  }
+ ],
+ "scenes": [
+  {
+   "narration": "At eleven fifty, Nora's phone lit up on the kitchen table: “Don't open the barn.”",
+   "image_prompt": "a phone glowing face down on a wooden kitchen table at night, Nora's hand reaching for it, rule of thirds",
+   "image_prompt_2": "Nora reading her phone by a dark window, worried, medium shot",
+   "image_location": "Farmhouse Kitchen",
+   "image_location_2": "Farmhouse Kitchen",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "sfx": "none",
+   "location": "Farmhouse Kitchen"
+  },
+  {
+   "narration": "The message came from her brother's number. Her brother had been missing for three years.",
+   "image_prompt": "an old framed photograph of a young man on a kitchen shelf, close-up, warm lamp light",
+   "image_prompt_2": "Nora staring at the phone, the screen light on her face, close-up",
+   "image_location": "Farmhouse Kitchen",
+   "image_location_2": "Farmhouse Kitchen",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "sfx": "none",
+   "location": "Farmhouse Kitchen"
+  },
+  {
+   "narration": "She grabbed a flashlight and ran across the gravel yard toward the barn.",
+   "image_prompt": "Nora running across a gravel farmyard at night with a flashlight beam, diagonal composition",
+   "image_prompt_2": "the barn's tall double doors at the end of the yard, flashlight beam leading toward them",
+   "image_location": "Gravel Yard",
+   "image_location_2": "Gravel Yard",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "sfx": "none",
+   "location": "Gravel Yard"
+  },
+  {
+   "narration": "The barn door was already open. Inside, the hay was pressed flat, as if someone had slept there for years.",
+   "image_prompt": "the barn's tall doors standing open into darkness, frame within a frame",
+   "image_prompt_2": "a patch of flattened hay in the lantern light, close-up",
+   "image_location": "Barn Interior",
+   "image_location_2": "Barn Interior",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "sfx": "none",
+   "location": "Barn Interior"
+  },
+  {
+   "narration": "Then the door slammed shut behind her, and the lantern on the post went out.",
+   "image_prompt": "Nora spinning toward the barn doors as they close, flashlight beam cutting diagonally",
+   "image_prompt_2": "a lantern on a wooden post going dark, wisp of smoke, close-up",
+   "image_location": "Barn Interior",
+   "image_location_2": "Barn Interior",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "sfx": "none",
+   "location": "Barn Interior"
+  },
+  {
+   "narration": "Hours later, the sheriff found Nora's phone in the yard. The last text on it was one she had sent herself.",
+   "image_prompt": "a phone lying face up on gravel at dawn, cold blue light, high angle",
+   "image_prompt_2": "a sheriff's patrol car at the edge of a farmyard at dawn, wide shot",
+   "image_location": "Gravel Yard",
+   "image_location_2": "Gravel Yard",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "sfx": "none",
+   "location": "Gravel Yard"
+  },
+  {
+   "narration": "So who warned her? And who was waiting in the barn?",
+   "image_prompt": "the old barn at dawn, doors closed, mist across the yard, wide shot, centered",
+   "image_prompt_2": "the kitchen table at dawn with an empty chair, the hanging bulb still on",
+   "image_location": "Gravel Yard",
+   "image_location_2": "Farmhouse Kitchen",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "sfx": "none",
+   "location": "Gravel Yard"
+  }
+ ]
+}
