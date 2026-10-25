@@ -19,7 +19,7 @@ def manifest(source: Path, output: Path, segments: list[dict],
              narration: dict, fps: int, total_frames: int, accents: set | None = None) -> dict[str, Any]:
     """accents: indexes of the narration words the caption track may underline (explainer.caption_accents);
     every other word is captioned plainly. Each shot carries its planned transition (explainer.plan_transitions):
-    the cut treatment is drawn only on a 'swoosh', never on every cut."""
+    decorative transitions are not reintroduced during the final Remotion pass."""
     if int(fps) not in (24, 25, 30, 50, 60):
         raise ValueError("Unsupported polish FPS")
     if total_frames < 1:
@@ -36,7 +36,7 @@ def manifest(source: Path, output: Path, segments: list[dict],
                       "kind": str(shot.get("type") or "scene")[:24],
                       "template": str(shot.get("template") or "")[:32],
                       "label": str(shot.get("text") or "")[:64],
-                      "transition": str(seg.get("transition") or "cut")[:12],
+                      "transition": seg.get("transition") if seg.get("transition") in ("cut", "dissolve") else "cut",
                       "index": i})
     accents = accents or set()
     words = [{"word": str(w.get("word") or "")[:32],
