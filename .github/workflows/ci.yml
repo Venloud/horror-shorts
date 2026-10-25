@@ -61,6 +61,7 @@ jobs:
           python -m unittest discover -s tests -p test_night_files_pipeline.py -v
           python -m unittest discover -s tests -p test_writing_room.py -v
           python -m unittest discover -s tests -p test_editorial_rules.py -v
+          python -m unittest discover -s tests -p test_clip_matching.py -v
           python -m unittest discover -s tests -p test_writer_reliability.py -v
 
       - name: Validate JSON configuration

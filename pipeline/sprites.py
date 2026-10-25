@@ -12,6 +12,7 @@ The storyboard picks a mood and a view; body_id() / face_id() turn them into ass
 """
 import hashlib
 import json
+import re
 from functools import lru_cache
 from pathlib import Path
 
@@ -101,6 +102,43 @@ def face_id(mood: str) -> str:
     if not usable(aid) and aid in FACE_FALLBACK:
         return FACE_FALLBACK[aid]
     return aid
+
+
+
+def select_for_beat(narration: str, mood: str = "neutral") -> str:
+    """Choose among existing checksum-verified owner-approved faces/poses for a generic story beat.
+
+    CLIP is optional and conservative. New action poses are candidates ONLY once in the approved
+    manifest. No image generation, new art or story-specific conditional is permitted.
+    """
+    fallback = face_id(mood)
+    if not narration.strip():
+        return fallback
+    approved = approved_registry().get("approved", [])
+    choice = bool(re.search(
+        r"\b(choos\w*|decid\w*|option|either|which|two choices|left or right)\b",
+        narration, re.I))
+    # A small semantic set keeps the CPU pass bounded. Reuse the approved registry, never guess paths.
+    useful_faces = {"F01", "F07", "F09", "F10", "F11", "F12", "F13", "F14", "F15", "F19", "F21"}
+    ids = [r["id"] for r in approved if r.get("status") == "approved"
+           and (r["id"] in useful_faces or r["id"] == fallback
+                or (choice and r["id"].startswith("P")))]
+    if fallback not in ids:
+        ids.insert(0, fallback)
+    try:
+        import library
+        intent = ("A person with open hands showing two choices, choosing between options. "
+                  if choice else "The person reacts to the scene. ") + narration[:170]
+        return library.best_approved_asset(intent, ids, fallback)
+    except Exception:  # optional local model must never stop rendering or compromise the approved set
+        return fallback
+
+
+def approved_image(asset_id: str) -> Image.Image:
+    """A transparent approved sprite, verified against its manifest, returned without changing the source."""
+    if not usable(asset_id):
+        raise MissingAsset(asset_id, "is not an approved transparent asset")
+    return _trimmed(asset_id).copy()
 
 
 def view_for(action: str, view: str) -> str:

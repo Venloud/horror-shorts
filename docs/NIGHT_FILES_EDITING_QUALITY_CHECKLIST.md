@@ -74,3 +74,16 @@ Potential uses: short image-to-video inserts from existing licensed/approved pla
 At each major cut or graphic decision, rank: **Emotion (51%) > Story (23%) > Rhythm (10%) > Eye trace (7%) > 2D screen composition (5%) > 3D spatial continuity (4%)**. These values are Murch's illustrative priorities, not an objective formula or publishing score. Preserve story truth, safety and rights regardless of aesthetics. The rule explicitly ranks *feeling and meaning* above technical flourishes: a simple hold or hard cut beats a swoosh if it makes the moment land.
 
 Practical audit questions: What should the viewer feel now? What changes in the story? Why cut at this exact moment? Where does their eye go next? Are captions/graphics legible and shot direction coherent? Does the place still make sense? Keep existing caption coverage, subtle camera motion, selective useful graphics and scene-matched sound. Never add a graphic to satisfy a quota or force one of the five composition patterns into every shot.
+
+
+## Local CLIP: scene relevance and approved-asset selection (2026-10-24)
+
+The already-present image-reuse library (`pipeline/library.py`) uses local `openai/clip-vit-base-patch32`. Night Files PR #27 extends that SAME model to the existing media and renderer without a second model or a story-specific editor.
+
+- Real stock/archives: download up to three licensed/title-checked candidates, rank their visual similarity to the narration beat's own image prompt, then apply the original strict visual QA before accepting one; source attribution is preserved.
+- AI images: score the generated picture against its own story-shot prompt; low scores trigger the existing rejected-image retry/fallback logic. CLIP does not validate real identity, historical accuracy, factual truth or rights.
+- Explainer: optionally order surviving images inside a scene by semantic relevance, retaining the original hook order; do not move images between scenes or bypass acceptance gates.
+- Approved reactions: only match assets with `status=approved`, valid manifest SHA-256 and usable transparency. Reuse the owner's already-existing art; a new pose (such as P08) can only become selectable when its explicit manifest entry has been approved and integrated, never by assuming a file exists.
+- No paid API: use CPU-hosted Transformers locally, model weights from Hugging Face as a free download and existing model cache. If model download/inference fails, keep the established editor and QA. No pay-as-you-go inference/paid GPU dependency.
+- Config: `clip_matching_enabled`, `clip_real_media_min_similarity`, `clip_generated_min_similarity`, `clip_approved_asset_matching`, `clip_approved_asset_min_similarity`, `clip_pose_min_gain` and `clip_reorder_min_margin`. Values are deliberately conservative initial heuristics, not an objective quality score; tune from manually checked, varied real output.
+- Operational evidence: recorded per-candidate source/similarity and rejected fallback reasons. The offline tests mock CLIP vectors and use small local image files, without API calls or posting. An actual finished MP4 and a real free model inference must still be reviewed before claiming improved cinematic results.

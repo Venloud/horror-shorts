@@ -201,6 +201,81 @@ def _unpack(s: str):
     return _norm(np.frombuffer(base64.b64decode(s), dtype="float16").astype("float32"))
 
 
+# ---------- general local CLIP selection (same weights as the existing reuse library) ----------
+
+# No paid inference: _model() loads openai/clip-vit-base-patch32 via Transformers on CPU.
+# This is shared by fetched, generated, cached and owner-approved images. Never a new render pipeline.
+_CLIP_IMAGE_CACHE: dict[tuple[str, int, int], object] = {}
+_CLIP_UNAVAILABLE = False
+
+
+def rank_images(text: str, paths: list[Path], source: str = "image") -> list[dict] | None:
+    """Descending cosine similarity, one entry per valid candidate; None if CLIP is disabled/unavailable.
+
+    Scores are advisory semantic matches, NOT historical fact/identity/rights verification. Hard filters and
+    existing Gemini/Groq image QA still apply. This helper never calls hosted inference or paid APIs.
+    Cache invalidates when the image file changes, and only stores current-run image vectors.
+    """
+    global _CLIP_UNAVAILABLE
+    if not CONFIG.get("clip_matching_enabled", True) or _CLIP_UNAVAILABLE or not paths or not text.strip():
+        return None
+    try:
+        import numpy as np
+        text_vec = embed_text(text[:280])
+        scores = []
+        for raw in paths:
+            path = Path(raw)
+            if not path.is_file():
+                continue
+            st = path.stat()
+            key = (str(path.resolve()), st.st_mtime_ns, st.st_size)
+            if key not in _CLIP_IMAGE_CACHE:
+                if len(_CLIP_IMAGE_CACHE) > 512:
+                    _CLIP_IMAGE_CACHE.clear()
+                _CLIP_IMAGE_CACHE[key] = embed_image(path)
+            scores.append({"path": str(path), "score": float(np.dot(text_vec, _CLIP_IMAGE_CACHE[key])),
+                           "source": source})
+        return sorted(scores, key=lambda x: -x["score"])
+    except Exception as exc:  # first-time free model download may be unavailable; fail open to established QA
+        _CLIP_UNAVAILABLE = True
+        log(f"CLIP local matching unavailable ({type(exc).__name__}: {str(exc)[:170]}); existing image QA retained")
+        return None
+
+
+def best_approved_asset(intent: str, candidate_ids: list[str], fallback: str) -> str:
+    """Rank ONLY manifest-approved, checksum-verified transparent character artwork.
+
+    Uses the same CLIP weights/cache as story-media ranking. Unsupported/missing poses are not invented.
+    The caller supplies the normal deterministic expression as a safe fallback.
+    """
+    if not CONFIG.get("clip_approved_asset_matching", True):
+        return fallback
+    try:
+        import sprites
+        available = [(aid, sprites.asset_path(aid)) for aid in candidate_ids if sprites.usable(aid)]
+        if not available:
+            return fallback
+        ranked = rank_images(intent, [path for _, path in available], source="approved_asset")
+        if not ranked:
+            return fallback
+        by_path = {str(path): aid for aid, path in available}
+        winner = ranked[0]
+        threshold = float(CONFIG.get("clip_approved_asset_min_similarity", 0.22))
+        fallback_path = next((str(p) for aid, p in available if aid == fallback), None)
+        fallback_score = next((row["score"] for row in ranked if row["path"] == fallback_path), None)
+        minimum_gain = float(CONFIG.get("clip_pose_min_gain", 0.015))
+        enough_gain = fallback_score is None or winner["score"] >= fallback_score + minimum_gain
+        selected = (by_path.get(winner["path"], fallback)
+                    if winner["score"] >= threshold and enough_gain else fallback)
+        runner_up = f"{ranked[1]['score']:.3f}" if len(ranked) > 1 else "none"
+        log(f"CLIP approved pose: intent={intent[:55]!r}, selected={selected}, "
+            f"score={winner['score']:.3f}, runner_up={runner_up}, min={threshold:.3f}")
+        return selected
+    except Exception as exc:
+        log(f"CLIP approved pose fallback {fallback}: {str(exc)[:120]}")
+        return fallback
+
+
 # ---------- metadata ----------
 
 _NATURE = re.compile(r"\b(fog|mist|sky|moon|clouds?|forest|woods|trees?|river|lake|sea|ocean|waves|snow|field|"
