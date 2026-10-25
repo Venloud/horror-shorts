@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "pipeline"))
 
 import explainer  # noqa: E402
+import render as classic_render  # noqa: E402
 import noir  # noqa: E402
 import sprites  # noqa: E402
 
@@ -102,9 +103,9 @@ class Transitions(unittest.TestCase):
                  + _words("The mask came off.", 2, 12.5))
         tr = explainer.plan_transitions(segs, words)
         self.assertEqual(tr[0], "cut")
-        self.assertEqual(tr[1], "pop")  # small date stamp
+        self.assertEqual(tr[1], "cut")  # graphic alone is not a transition
         self.assertEqual(tr[2], "dissolve")  # time cue at a scene change
-        self.assertEqual(tr[3], "slide")  # a route: real progression
+        self.assertEqual(tr[3], "cut")  # location/map changes can hard cut
         self.assertEqual(tr[4], "cut")  # impact lands hard
         self.assertEqual([s["transition"] for s in segs], tr)
 
@@ -116,8 +117,39 @@ class Transitions(unittest.TestCase):
         tr = explainer.plan_transitions(segs, words)
         for a, b in zip(tr, tr[1:]):
             self.assertFalse(a == b and a != "cut", tr)
-        self.assertLessEqual(tr.count("swoosh"), 2)
+        self.assertEqual(tr.count("swoosh"), 0)
+        self.assertEqual(set(tr), {"cut"})
         self.assertGreater(tr.count("cut"), 0)
+
+    def test_mood_and_place_are_not_time_passage(self):
+        segs = self._segs([("image", None, 0), ("image", None, 1), ("image", None, 2)])
+        words = (_words("The fog hid the empty road.", 1, 2.5)
+                 + _words("They arrived at the station.", 2, 5.0))
+        self.assertEqual(explainer.plan_transitions(segs, words), ["cut", "cut", "cut"])
+
+    def test_explicit_time_passage_dissolves_once_not_repeated(self):
+        segs = self._segs([("image", None, 0), ("image", None, 1),
+                           ("image", None, 2), ("image", None, 3)])
+        words = (_words("Years later the house reopened.", 1, 2.5)
+                 + _words("The next morning they returned.", 2, 5.0)
+                 + _words("At midnight someone called.", 3, 7.5))
+        self.assertEqual(explainer.plan_transitions(segs, words), ["cut", "dissolve", "cut", "cut"])
+
+    def test_legacy_modes_only_produce_real_hard_cuts(self):
+        for mode in classic_render.VISUAL_MODES:
+            self.assertEqual(classic_render._transitions([True, False, True], mode),
+                             [("cut", 0.0)] * 3)
+
+    def test_legacy_ffmpeg_join_uses_concat_not_one_frame_fade(self):
+        with mock.patch.object(classic_render, "_frame_count", side_effect=[60, 60]), \
+             mock.patch.object(classic_render, "media_duration", return_value=4.0), \
+             mock.patch.object(classic_render, "run") as runner:
+            classic_render._join([Path("a.mp4"), Path("b.mp4")],
+                                 [2.0, 2.0], [True, True], Path("out.mp4"))
+        cmd = runner.call_args.args[0]
+        filters = cmd[cmd.index("-filter_complex") + 1]
+        self.assertIn("concat=n=2:v=1:a=0", filters)
+        self.assertNotIn("xfade=", filters)
 
     def test_motion_allows_stillness_but_not_repeats(self):
         segs = self._segs([("image", None, k) for k in range(8)])
