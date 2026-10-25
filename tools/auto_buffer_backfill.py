@@ -294,9 +294,12 @@ def main(argv=None):
     # video from its build artifact or authenticated TikTok public post. Never fetch other accounts.
     from buffer_recovery import recover_one
     recovered = recover_one(queued)
-    if recovered and attempt(candidates(queued) + historical_candidates(queued)
-                             + pairs(release_assets("youtube-pending"), queued)):
-        return 0
+    if recovered:
+        assets = release_assets("youtube-pending")
+        stamp = str(recovered)
+        if (stamp + ".mp4") in assets and (stamp + ".json") in assets:
+            if attempt([(stamp, assets[stamp + ".mp4"], assets[stamp + ".json"])]):
+                return 0
     print("Buffer queue caught up; no recoverable verified Night Files video")
 
 
