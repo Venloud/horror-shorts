@@ -6,6 +6,10 @@ name: Night Files buffer fill
 
 # Manual only: owner starts an isolated build, no scheduled generation.
 on:
+  # One branch-scoped retry of the normal producer, no new pipeline or scheduler.
+  push:
+    branches:
+      - test/clip-one-video-publishable-20261024
   workflow_dispatch:
     inputs:
       fresh_images:
@@ -154,7 +158,7 @@ jobs:
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
           MAKEUP_POSTS: "0"  # generate and buffer only, never publish during manual fill
           RENDER_STYLE: "explainer"  # fail instead of silently using classic style
-          FRESH_IMAGES: ${{ inputs.fresh_images }}  # the checkbox (was never passed on, so it did nothing)
+          FRESH_IMAGES: ${{ github.event_name == 'push' && 'false' || inputs.fresh_images }}  # the checkbox (was never passed on, so it did nothing)
           RETRY_STORY_ID: ${{ inputs.retry_story_id }}
         run: cd pipeline && python main.py
 
