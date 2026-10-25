@@ -1356,7 +1356,15 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
                 log(f"Scene {i}: redraw with {name} failed: {str(e)[:150]}")
                 continue
             count["cloudflare" if provider is _cloudflare else name] += 1
-            verdict, why = check_image(path, request)
+            clip_rank = library.rank_images(raw, [path], source=name)
+            clip_score = clip_rank[0]["score"] if clip_rank else None
+            story.setdefault("_shot_clip", {})[f"{i:02d}a"] = (
+                round(clip_score, 4) if clip_score is not None else None)
+            clip_min = float(CONFIG.get("clip_generated_min_similarity", 0.18))
+            if clip_score is not None and clip_score < clip_min:
+                verdict, why = False, f"CLIP semantic mismatch {clip_score:.3f} < {clip_min:.3f}"
+            else:
+                verdict, why = check_image(path, request)
             qa = "PASS" if verdict else ("FAIL" if verdict is False else "SKIPPED")
             story.setdefault("_shot_qa", {})[f"{i:02d}a"] = qa
             story.setdefault("_shot_provider", {})[f"{i:02d}a"] = name
