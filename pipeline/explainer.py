@@ -943,55 +943,32 @@ def _seg_text(seg: dict, words: list[dict]) -> str:
     return " ".join(w["word"] for w in words if seg["start"] - 0.05 <= w["start"] < seg["end"])
 
 
-def plan_transitions(segs: list[dict], words: list[dict], max_swoosh: int = 2) -> list[str]:
-    """One transition INTO each segment (index 0 = 'cut'), stored as seg['transition'].
-    Hard cut by default (immediate change, impact); dissolve for time / atmosphere at a scene change; slide only for
-    real movement or a map / progression graphic; pop for small UI-like graphics (dates, evidence, phone); swoosh
-    only for a rare graphic entrance on a sudden beat. No accent effect twice in a row, at most max_swoosh swooshes,
-    dissolves at most a quarter of the cuts."""
-    out = []
-    swoosh_used, last_swoosh_t = 0, -99.0
-    for k, seg in enumerate(segs):
-        shot = seg.get("shot") or {}
-        if k == 0:
-            out.append("cut")
-            continue
-        prev = segs[k - 1]
-        text = _seg_text(seg, words)
-        new_scene = seg.get("scene") != prev.get("scene")
-        kind = shot.get("type")
-        tpl = shot.get("template") or ""
-        want = "cut"
-        if kind == "graphic":
-            if tpl in POP_TEMPLATES:
-                want = "pop"
-            elif tpl in SLIDE_TEMPLATES:
-                want = "slide"
-            elif tpl in CUT_TEMPLATES:
-                want = "cut"
-            if SUDDEN.search(text) and tpl not in CUT_TEMPLATES and swoosh_used < max_swoosh \
-                    and seg["start"] - last_swoosh_t > 12.0:
-                want = "swoosh"
-        elif kind == "image" and new_scene:
-            if TIME_CUE.search(text):
-                want = "dissolve"
-            elif MOVE_CUE.search(text):
-                want = "slide"
-        elif kind in ("opener", "opener_title"):
-            want = "cut"
-        # repetition: an accent effect never twice in a row; dissolves rationed
-        if want != "cut" and out and out[-1] == want:
-            want = "cut"
-        if want == "dissolve" and out.count("dissolve") + 1 > max(1, len(segs) // 4):
-            want = "cut"
-        if want == "swoosh":
-            swoosh_used += 1
-            last_swoosh_t = seg["start"]
-        out.append(want)
-    for seg, tr in zip(segs, out):
-        seg["transition"] = tr
-    return out
+TIME_PASSAGE_CUE = re.compile(
+    r"\b(?:years?|months?|weeks?|days?|hours?|decades?)\s+(?:earlier|later)\b|"
+    r"\b(?:later|afterwards?|meanwhile|eventually|previously|flashback|back then|by the time)\b|"
+    r"\b(?:the next|the following|the previous)\s+(?:morning|day|night|week|month|year)\b",
+    re.IGNORECASE,
+)
 
+
+def plan_transitions(segs: list[dict], words: list[dict], max_swoosh: int = 2) -> list[str]:
+    """Plan purposeful punctuation between shots; preserve max_swoosh only for caller compatibility.
+
+    A hard cut is always the default, including graphics, locations, ideas and sudden beats.
+    A short dissolve is allowed only at a NEW scene with explicit narrated passage of time.
+    Fade to black is reserved for a terminal outro, never a scene boundary.
+    """
+    out = []
+    for k, seg in enumerate(segs):
+        kind = (seg.get("shot") or {}).get("type")
+        new_scene = k > 0 and seg.get("scene") != segs[k - 1].get("scene")
+        text = _seg_text(seg, words) if new_scene else ""
+        want = "dissolve" if kind == "image" and new_scene and TIME_PASSAGE_CUE.search(text) else "cut"
+        if want == "dissolve" and out and out[-1] == "dissolve":
+            want = "cut"
+        out.append(want)
+        seg["transition"] = want
+    return out
 
 REVEAL = re.compile(r"\b(reveal\w*|face|mask|eyes|blood|dead|body|grave|still|silence|waiting|watch\w*|stare\w*)\b",
                     re.IGNORECASE)
@@ -1312,7 +1289,7 @@ def sequence(story: dict, narration: dict, scene_images: list[list[Path]], graph
             segs.append({"start": round(s0, 3), "end": round(s1, 3), "shot": item, "scene": i})
     for k in range(1, len(segs)):  # contiguous timeline
         segs[k]["start"] = segs[k - 1]["end"]
-    plan_transitions(segs, words)  # cut / dissolve / slide / pop / swoosh by context, no repeats
+    plan_transitions(segs, words)  # hard cut by default; dissolve only when narrated time passes
     plan_motion(segs, words)  # push / pan / pull / still per story picture
     return segs
 
