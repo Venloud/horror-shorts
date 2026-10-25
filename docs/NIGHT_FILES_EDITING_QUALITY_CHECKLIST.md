@@ -25,7 +25,7 @@ These are permanent creative acceptance guidelines, not four effects that must a
 ## Production and review contract
 - Preserve existing caption, Ken Burns/parallax, explanatory-graphic, narration, rights-aware soundtrack and SFX systems. Improve rather than creating duplicate renderers.
 - Render QA should identify missing captions, unreadable text, repeated motion, excess graphics and sound mismatch; do not declare semantic quality validated solely from technical unit tests.
-- No test may create production buffer entries, publish, or alter posting history.
+- Offline unit tests, mock render checks and incomplete/rejected previews must not create buffer entries, publish, or alter posting history. **A complete production-valid video, including one made to test an editing change, MUST enter the normal publishing queue.** Its test origin is not an exemption. Publication still requires the existing publisher, permissions, duplicate checks, and schedule; a draft submission is not a public post.
 - Keep permanent CI, buffer-fill, daily delivery, social connection and other owner-approved workflows. Remove only verified disposable test-only workflows after their run, never CI.
 
 ## General-purpose contextual graphic and sound direction
@@ -61,7 +61,7 @@ The actual Aka Manto preview, `explainer_polished(1).mp4`, and its generated sce
 - If a decision cue exists and approved character/pose metadata allows, plan a viewer-surrogate composition, otherwise fall back gracefully without unauthorized art.
 - Verify readability and caption safe area in 1080×1920 and inspect real frames, not only mocked frame plans.
 - Verify optional SFX are event-matched, mixed beneath voice, and silence is allowed.
-- No publishing, buffer mutation, history write or new parallel rendering engine during tests.
+- During offline tests, no publishing, buffer mutation, history write, or parallel rendering engine. If the exercise produces a complete, fully validated video intended as a real Night Files output, route it through the standard buffered publishing process rather than leaving it as an isolated preview.
 
 ### Hugging Face Diffusers, optional research track, NOT installed or production-enabled
 Project: https://github.com/huggingface/diffusers, Apache-2.0 library. Docs: https://huggingface.co/docs/diffusers/using-diffusers/text-img2vid
@@ -87,3 +87,7 @@ The already-present image-reuse library (`pipeline/library.py`) uses local `open
 - No paid API: use CPU-hosted Transformers locally, model weights from Hugging Face as a free download and existing model cache. If model download/inference fails, keep the established editor and QA. No pay-as-you-go inference/paid GPU dependency.
 - Config: `clip_matching_enabled`, `clip_real_media_min_similarity`, `clip_generated_min_similarity`, `clip_approved_asset_matching`, `clip_approved_asset_min_similarity`, `clip_pose_min_gain` and `clip_reorder_min_margin`. Values are deliberately conservative initial heuristics, not an objective quality score; tune from manually checked, varied real output.
 - Operational evidence: recorded per-candidate source/similarity and rejected fallback reasons. The offline tests mock CLIP vectors and use small local image files, without API calls or posting. An actual finished MP4 and a real free model inference must still be reviewed before claiming improved cinematic results.
+
+## Owner's completed-video publishing decision (October 24, 2026)
+
+Owner explicitly confirmed: **"every completed video should be published, including test videos."** The word *test* describes why a video was produced, not whether the finished video gets posted. A complete Night Files MP4 that passes the normal production gate is a real output, joins the ordinary buffer and progresses through established publishing slots and retries. Diagnostic frame sheets, mock unit tests, unfinished snippets and invalid renders are not completed videos and must not be posted. Keep factual/source/rights verification and existing delivery restrictions. Do not claim success until a destination actually confirms public publishing, not just a buffer entry or TikTok draft.
