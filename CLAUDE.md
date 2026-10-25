@@ -3,6 +3,10 @@
 Read this first. It sums up the decisions from the long chat where this project was built (Sept 2026),
 so a new session can pick up without starting over.
 
+## Owner's current preferred Night Files voice (October 24, 2026)
+
+The owner listened to the finished Aka Manto explainer and said **"I like that voice."** Its story.json identifies the Kokoro narrator as **`am_adam`**. Keep that exact voice for NEW stories as the current default at existing speech speed 1.1, rather than randomized alternatives. `config.json` now sets `voice_test_pool: ["am_adam"]` and `voice: "am_adam"` for consistency. Existing story checkpoints already pin their own `narrator_voice` and must not be re-voiced just for this preference. Do not change the voice until the owner requests it.
+
 ## OWNER PUBLISHING RULE (2026-10-24): PUBLISH EVERY FINISHED VIDEO, EVEN EXPERIMENTS
 
 **Latest explicit owner clarification:** "every completed video should be published, including test videos". A video created to test CLIP, a new editing effect, Aka Manto, visual style, narration, or another creative change is NOT disposable merely because it was called a test. If it is a complete, valid, publishable Night Files video, it must enter the same real production buffer and normal publishing process as any other completed video. Keep deduplication, metadata, provenance, rights checks, production safety gates, history tracking, and posting cadence. Do not make an alternate "testing means never publish" pipeline or quietly leave a finished deliverable as a download-only preview.
