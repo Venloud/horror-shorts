@@ -840,3 +840,10 @@ class VirtualShotProvenanceRegression(unittest.TestCase):
             self.assertEqual(meta["virtual_crop_of"], "scene_01b.png")
             self.assertEqual(meta["kind"], "ai_reconstruction")
             self.assertEqual(meta["provider"], "cloudflare")
+
+
+class PreferredNarratorContract(unittest.TestCase):
+    def test_new_stories_use_owner_approved_aka_manto_voice(self):
+        self.assertEqual(common.CONFIG["voice_test_pool"], ["am_adam"])
+        self.assertEqual(common.CONFIG["voice"], "am_adam")
+        self.assertAlmostEqual(common.CONFIG["voice_speed"], 1.1)
