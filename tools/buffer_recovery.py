@@ -168,7 +168,39 @@ def matches(post, record):
     return len(caption) >= 28 and (caption in description or description in caption and len(description) >= 28)
 
 
-def from_tiktok(items):
+def download_public_post(post, item):
+    """One exact public TikTok ID, no playlist, and a verified MP4."""
+    video_id = str(post.get("id") or "")
+    url = str(post.get("share_url") or "").split("?", 1)[0]
+    if not re.fullmatch(r"\d{10,25}", video_id) or "tiktok.com/" not in url.lower() or video_id not in url:
+        raise RuntimeError("Public video.list did not return a verified TikTok post URL")
+    import yt_dlp
+    with tempfile.TemporaryDirectory() as tmp:
+        with yt_dlp.YoutubeDL({
+            "outtmpl": str(Path(tmp) / (video_id + ".%(ext)s")),
+            "format": "b[ext=mp4][acodec!=none]/bv*+ba/b",
+            "merge_output_format": "mp4", "noplaylist": True,
+            "playlist_items": "1", "quiet": True, "no_warnings": True,
+            "retries": 2, "socket_timeout": 30, "cachedir": False,
+        }) as dl:
+            info = dl.extract_info(url, download=True)
+        if str((info or {}).get("id") or video_id) != video_id:
+            raise RuntimeError("TikTok video ID changed during download")
+        mp4s = list(Path(tmp).glob(video_id + "*.mp4"))
+        if not mp4s:
+            raise RuntimeError("TikTok extractor returned no MP4")
+        mp4 = mp4s[0]
+        probe(mp4)
+        meta = Path(tmp) / "caption.json"
+        saved = metadata(item)
+        saved["source_tiktok_video_id"] = video_id
+        meta.write_text(json.dumps(saved, ensure_ascii=False) + "\n")
+        upload_pair(item["stamp"], mp4, meta)
+    print("Recovered", item["stamp"], "from verified owned public TikTok", video_id)
+    return item["stamp"]
+
+
+def from_tiktok(items, queued):
     if not all(os.environ.get(k) for k in ("TIKTOK_CLIENT_KEY", "TIKTOK_CLIENT_SECRET", "TIKTOK_REFRESH_TOKEN")):
         print("No TikTok discovery credentials; original artifacts only")
         return False
@@ -177,53 +209,52 @@ def from_tiktok(items):
     except Exception as exc:
         print("TikTok discovery unavailable:", type(exc).__name__, str(exc)[:130])
         return False
+
+    # Original backfill story + exact caption matching is strongest evidence.
     for item in items:
         found = [post for post in posts if matches(post, item)]
         if len(found) != 1:
             continue
-        post = found[0]
-        video_id = str(post.get("id") or "")
-        url = str(post.get("share_url") or "").split("?", 1)[0]
-        if not re.fullmatch(r"\d{10,25}", video_id):
-            continue
-        if "tiktok.com/" not in url.lower() or video_id not in url:
-            continue
         try:
-            import yt_dlp
-            with tempfile.TemporaryDirectory() as tmp:
-                with yt_dlp.YoutubeDL({
-                    "outtmpl": str(Path(tmp) / (video_id + ".%(ext)s")),
-                    "format": "b[ext=mp4][acodec!=none]/bv*+ba/b",
-                    "merge_output_format": "mp4",
-                    "noplaylist": True, "playlist_items": "1",
-                    "quiet": True, "no_warnings": True,
-                    "retries": 2, "socket_timeout": 30, "cachedir": False,
-                }) as dl:
-                    info = dl.extract_info(url, download=True)
-                if str((info or {}).get("id") or video_id) != video_id:
-                    raise RuntimeError("TikTok video ID changed during download")
-                matches_mp4 = list(Path(tmp).glob(video_id + "*.mp4"))
-                if not matches_mp4:
-                    raise RuntimeError("TikTok extractor returned no MP4")
-                mp4 = matches_mp4[0]
-                probe(mp4)
-                meta = Path(tmp) / "caption.json"
-                saved = metadata(item)
-                saved["source_tiktok_video_id"] = video_id
-                meta.write_text(json.dumps(saved, ensure_ascii=False) + "\n")
-                upload_pair(item["stamp"], mp4, meta)
-            print("Recovered", item["stamp"], "from verified owned public TikTok", video_id)
-            return item["stamp"]
+            return download_public_post(found[0], item)
         except Exception as exc:
-            print("Public TikTok recovery failed:", item["stamp"],
-                  type(exc).__name__, str(exc)[:150])
+            print("Known TikTok recovery failed:", item["stamp"], type(exc).__name__, str(exc)[:150])
+
+    # Social Backfill fallback: discover the oldest PUBLIC video from this
+    # authorized account, but only if its description matches an owner-recorded
+    # public TikTok caption AND it is not associated with an existing backfill.
+    # Draft-inbox receipts alone never qualify.
+    posted_file = Path(__file__).resolve().parents[1] / "data" / "tiktok_posted.txt"
+    verified = [norm(line) for line in posted_file.read_text().splitlines()
+                if len(norm(line)) >= 28] if posted_file.exists() else []
+    known = json.loads(BACKFILL.read_text()).get("videos", []) if BACKFILL.exists() else []
+    archived = release_assets("youtube-pending")
+    for post in posts:
+        desc = norm(post.get("video_description") or post.get("title"))
+        if not any(v in desc for v in verified):
+            continue
+        if any(matches(post, record) for record in known):
+            continue
+        video_id = str(post.get("id") or "")
+        stamp = "tt_" + video_id
+        if stamp in queued:
+            continue
+        if stamp + ".mp4" in archived and stamp + ".json" in archived:
+            return stamp
+        title = str(post.get("title") or post.get("video_description") or "").strip()[:100]
+        if not title or "mrbeast" in norm(title):
+            continue
+        entry = {"stamp": stamp, "title": title, "yt_title": title,
+                 "caption": str(post.get("video_description") or title)}
+        try:
+            return download_public_post(post, entry)
+        except Exception as exc:
+            print("Public Night Files recovery failed:", video_id, type(exc).__name__, str(exc)[:150])
     return False
 
 
 def recover_one(queued):
     items = legacy_candidates(queued)
-    if not items:
-        return False
     archive = release_assets("youtube-pending")
     # Do not retry files already archived, even if the caller has a stale receipt.
     eligible = [v for v in items if v["stamp"] + ".mp4" not in archive]
@@ -233,4 +264,4 @@ def recover_one(queued):
                 return item["stamp"]
         except Exception as exc:
             print("Artifact recovery failed:", item["stamp"], type(exc).__name__, str(exc)[:120])
-    return from_tiktok(eligible)
+    return from_tiktok(eligible, queued)
