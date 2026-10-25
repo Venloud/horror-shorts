@@ -70,7 +70,7 @@ jobs:
           key: hf-models-v5-whisper
           restore-keys: |
             hf-models-v4
-          restore-keys: hf-models-
+            hf-models-
 
       - name: Install Python packages
         run: |
