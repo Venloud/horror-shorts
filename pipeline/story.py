@@ -1568,6 +1568,10 @@ def mark_true_story(story: dict) -> dict:
         story["true_story"] = True
     if story.get("mode") in ("coldcase", "fiction", "lore"):
         story["true_story"] = False  # made-up stories and legends are never labelled true
+    if story.get("mode") == "inbox-script":
+        import project_assets
+        if project_assets.exact_opening(story.get("source", "")):
+            return story  # validated owner script keeps its complete opening verbatim
     if story.get("true_story") and story.get("scenes"):
         scenes = story["scenes"]
         # Never said twice: if ANY scene already says it (an owner's script split by the planner put it in scene 2),
@@ -1755,7 +1759,8 @@ def _write_story(history: list[dict], skipped: list[dict]) -> dict:
                 return topic_story(history, item, api_key, sfx_list)
             if item["kind"] == "script":
                 log("Inbox SCRIPT: narrating it exactly as written, only adding visuals")
-                if item.get("true"):
+                import project_assets
+                if item.get("true") and not project_assets.exact_opening(item['key']):
                     text = with_true_opener(text)
                 story = plan_scenes(text, api_key, sfx_list, real=item.get("true", False))
                 story.update({"mode": "inbox-script", "source": item["key"], "subgenre": "creator script",

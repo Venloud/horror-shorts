@@ -1050,3 +1050,7 @@ When writing Bloody Mary content:
 - Preserve the normal Night Files safety and duplicate-history rules.
 
 ECC task routing: read the ECC section in `AGENTS.md` and `.ecc/project.json`; preserve all original project instructions.
+
+## Project-scoped owner media
+
+See [the project asset workflow](docs/PROJECT_ASSET_PIPELINE.md): project assets precede the shared library, licensed search and AI gaps. Preserve exact validated owner openings, source hashes/rights and durable promotion verification before cleanup. The isolated `--preview-project` command never consumes or publishes an inbox item.

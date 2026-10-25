@@ -1381,10 +1381,10 @@ def story_images(story: dict, img_dir: Path) -> list[list[Path]]:
                 sc[key] = "ai"
     dropped = _stale_images(story, img_dir)
     history = load_history()
-    if not fresh:
-        library.fill_shots(story, img_dir, history)
-    media.fill_shots(story, img_dir, history)
-    per_scene = images.generate_images(story, img_dir)
+    import project_assets
+    identifier=project_assets.project_id(story)
+    has_project=bool(identifier and (project_assets.directory(identifier)/'manifest.json').is_file())
+    per_scene = project_assets.fill_scene_assets(story,img_dir,history,reuse_general=not fresh or has_project)
     # Semantic selection after the *existing* licensed-library -> real-media -> AI generation chain.
     # All hard QA/rights/scene-specific constraints remain intact; only order surviving shots.
     for i, picture_paths in enumerate(per_scene):

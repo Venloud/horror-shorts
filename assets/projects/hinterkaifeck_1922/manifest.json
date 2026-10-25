@@ -1,0 +1,673 @@
+{
+  "schema": 1,
+  "project_id": "hinterkaifeck_1922",
+  "inbox_script": "inbox/hinterkaifeck_1922.txt",
+  "preserve_exact_opening": true,
+  "original_upload_manifest": {
+    "project": "Night Files",
+    "episode": "The Hinterkaifeck Mystery",
+    "assets": [
+      {
+        "filename": "archival_farmhouse_reference.png",
+        "source_upload": "image(20261025-165043).png",
+        "sha256": "3b163fbc0c1426453364ca66ac84c938ca242eac203b7259c393f860e7bfd17e",
+        "kind": "archival_reference",
+        "rights": "verify rights for archival source"
+      },
+      {
+        "filename": "snow_farmhouse_footprints_concept.png",
+        "source_upload": "image(20261025-165052).png",
+        "sha256": "74fa5fc373b100aaa0bcf3b84ed025924f759d11ab4f68f63ebbac68d1c4ff2c",
+        "kind": "illustration",
+        "rights": "user_provided"
+      },
+      {
+        "filename": "barn_investigation_lantern_illustration.png",
+        "source_upload": "image(20261025-165100).png",
+        "sha256": "440f95f90f5ca903ee5edc760b605fa2a8c6650aae9df527682a73ab515c4bf3",
+        "kind": "illustration",
+        "rights": "user_provided"
+      },
+      {
+        "filename": "snow_forest_farmhouse_figure_illustration.jpg",
+        "source_upload": "f03AAZerOoGA5Kcqwf_YMbygA.jpg",
+        "sha256": "b4dc51fa637ddc8edc6b065878dffce45e546c697b3ea97c26830054b82002c8",
+        "kind": "illustration",
+        "rights": "user_provided"
+      },
+      {
+        "filename": "snow_farmhouse_warm_window.png",
+        "source_upload": "image(20261025-165707).png",
+        "sha256": "8d2ccf1e5ad4d6622b70e8adf51d37dc775e5b8935616bd8c68dd9f5fde76099",
+        "kind": "illustration",
+        "rights": "user_provided"
+      },
+      {
+        "filename": "attic_shadow_figure.png",
+        "source_upload": "image(20261025-165717).png",
+        "sha256": "b3eb974bc886299770aaa4dd8c64bd15901fd967c7f36a6bba7bb6a57a760b1d",
+        "kind": "illustration",
+        "rights": "user_provided"
+      },
+      {
+        "filename": "barn_mattock_tool.png",
+        "source_upload": "image(20261025-165725).png",
+        "sha256": "db64a61bdfcdc1007ed1ec6860d1742a87ca12d0ee9d09e0275cd3ae57b955d5",
+        "kind": "illustration",
+        "rights": "user_provided"
+      },
+      {
+        "filename": "moonlit_farmhouse_footprints_shadow.png",
+        "source_upload": "image(20261025-170312).png",
+        "sha256": "0424d84197c30164feb06f8dfcfc1c3b065b29173cc6eeb90cf113c867acbbbb",
+        "kind": "illustration",
+        "rights": "user_provided"
+      },
+      {
+        "filename": "farmhouse_chimney_smoke.png",
+        "source_upload": "image(20261025-170610).png",
+        "sha256": "86f5d01ff3b533b69e8fde2f5c2e46b70ca817063aec48665720639d2efce66e",
+        "kind": "illustration",
+        "rights": "user_provided"
+      },
+      {
+        "filename": "hooded_figure_attic.png",
+        "source_upload": "image(20261025-170621).png",
+        "sha256": "422b7c740cdc2d950d7dbce3960b71599e19692d1e313194cca9ae47307c08af",
+        "kind": "illustration",
+        "rights": "user_provided"
+      },
+      {
+        "filename": "snow_footprint_trail.png",
+        "source_upload": "image(20261025-170627).png",
+        "sha256": "4bb1e8fb0634e0a0682626ffaf08cce52a26422a077b136e4eb071bfc7559dc9",
+        "kind": "illustration",
+        "rights": "user_provided"
+      }
+    ],
+    "publication_status": "not published",
+    "note": "Local handoff pack, not committed to GitHub. Illustrations are not archival evidence."
+  },
+  "assets": [
+    {
+      "id": "archival_farmhouse_reference",
+      "file": "images/hinterkaifeck_archival_farmhouse_reference.png",
+      "sha256": "3b163fbc0c1426453364ca66ac84c938ca242eac203b7259c393f860e7bfd17e",
+      "kind": "image",
+      "description": "archival farmhouse reference",
+      "tags": [
+        "archival",
+        "farmhouse",
+        "reference"
+      ],
+      "scene_relevance": [
+        "archival",
+        "farmhouse",
+        "reference"
+      ],
+      "era": "1900-1949",
+      "setting": "exterior",
+      "style": "photo",
+      "visual_kind": "archival_reference_unverified",
+      "subjects": [
+        "rural farmhouse",
+        "historical mystery"
+      ],
+      "case_specific": true,
+      "project_use_authorized": false,
+      "general_reuse_approved": false,
+      "license_status": "unknown",
+      "rights": "verify rights for archival source",
+      "source": "owner_upload",
+      "source_url": "",
+      "provenance": {
+        "source_upload": "image(20261025-165043).png",
+        "supplied_filename": "archival_farmhouse_reference.png",
+        "supplied_kind": "archival_reference",
+        "note": "Preserved upload metadata; illustration is not documentary evidence. Archival provenance/rights are not independently established."
+      },
+      "media": {
+        "width": 918,
+        "height": 716
+      }
+    },
+    {
+      "id": "snow_farmhouse_footprints_concept",
+      "file": "images/hinterkaifeck_snow_farmhouse_footprints_concept.png",
+      "sha256": "74fa5fc373b100aaa0bcf3b84ed025924f759d11ab4f68f63ebbac68d1c4ff2c",
+      "kind": "image",
+      "description": "snow farmhouse footprints concept",
+      "tags": [
+        "snow",
+        "farmhouse",
+        "footprints",
+        "concept"
+      ],
+      "scene_relevance": [
+        "snow",
+        "farmhouse",
+        "footprints",
+        "concept"
+      ],
+      "era": "1900-1949",
+      "setting": "exterior",
+      "style": "painted",
+      "visual_kind": "illustration",
+      "subjects": [
+        "rural farmhouse",
+        "historical mystery"
+      ],
+      "case_specific": true,
+      "project_use_authorized": true,
+      "general_reuse_approved": false,
+      "license_status": "owner_supplied_for_episode_only",
+      "rights": "user_provided",
+      "source": "owner_upload",
+      "source_url": "",
+      "provenance": {
+        "source_upload": "image(20261025-165052).png",
+        "supplied_filename": "snow_farmhouse_footprints_concept.png",
+        "supplied_kind": "illustration",
+        "note": "Preserved upload metadata; illustration is not documentary evidence. Archival provenance/rights are not independently established."
+      },
+      "media": {
+        "width": 763,
+        "height": 761
+      }
+    },
+    {
+      "id": "barn_investigation_lantern_illustration",
+      "file": "images/hinterkaifeck_barn_investigation_lantern_illustration.png",
+      "sha256": "440f95f90f5ca903ee5edc760b605fa2a8c6650aae9df527682a73ab515c4bf3",
+      "kind": "image",
+      "description": "barn investigation lantern illustration",
+      "tags": [
+        "barn",
+        "investigation",
+        "lantern",
+        "illustration"
+      ],
+      "scene_relevance": [
+        "barn",
+        "investigation",
+        "lantern",
+        "illustration"
+      ],
+      "era": "1900-1949",
+      "setting": "exterior",
+      "style": "painted",
+      "visual_kind": "illustration",
+      "subjects": [
+        "rural farmhouse",
+        "historical mystery"
+      ],
+      "case_specific": true,
+      "project_use_authorized": true,
+      "general_reuse_approved": false,
+      "license_status": "owner_supplied_for_episode_only",
+      "rights": "user_provided",
+      "source": "owner_upload",
+      "source_url": "",
+      "provenance": {
+        "source_upload": "image(20261025-165100).png",
+        "supplied_filename": "barn_investigation_lantern_illustration.png",
+        "supplied_kind": "illustration",
+        "note": "Preserved upload metadata; illustration is not documentary evidence. Archival provenance/rights are not independently established."
+      },
+      "media": {
+        "width": 1400,
+        "height": 782
+      }
+    },
+    {
+      "id": "snow_forest_farmhouse_figure_illustration",
+      "file": "images/hinterkaifeck_snow_forest_farmhouse_figure_illustration.jpg",
+      "sha256": "b4dc51fa637ddc8edc6b065878dffce45e546c697b3ea97c26830054b82002c8",
+      "kind": "image",
+      "description": "snow forest farmhouse figure illustration",
+      "tags": [
+        "snow",
+        "forest",
+        "farmhouse",
+        "figure",
+        "illustration"
+      ],
+      "scene_relevance": [
+        "snow",
+        "forest",
+        "farmhouse",
+        "figure",
+        "illustration"
+      ],
+      "era": "1900-1949",
+      "setting": "exterior",
+      "style": "painted",
+      "visual_kind": "illustration",
+      "subjects": [
+        "rural farmhouse",
+        "historical mystery"
+      ],
+      "case_specific": true,
+      "project_use_authorized": true,
+      "general_reuse_approved": false,
+      "license_status": "owner_supplied_for_episode_only",
+      "rights": "user_provided",
+      "source": "owner_upload",
+      "source_url": "",
+      "provenance": {
+        "source_upload": "f03AAZerOoGA5Kcqwf_YMbygA.jpg",
+        "supplied_filename": "snow_forest_farmhouse_figure_illustration.jpg",
+        "supplied_kind": "illustration",
+        "note": "Preserved upload metadata; illustration is not documentary evidence. Archival provenance/rights are not independently established."
+      },
+      "media": {
+        "width": 704,
+        "height": 384
+      }
+    },
+    {
+      "id": "snow_farmhouse_warm_window",
+      "file": "images/hinterkaifeck_snow_farmhouse_warm_window.png",
+      "sha256": "8d2ccf1e5ad4d6622b70e8adf51d37dc775e5b8935616bd8c68dd9f5fde76099",
+      "kind": "image",
+      "description": "snow farmhouse warm window",
+      "tags": [
+        "snow",
+        "farmhouse",
+        "warm",
+        "window"
+      ],
+      "scene_relevance": [
+        "snow",
+        "farmhouse",
+        "warm",
+        "window"
+      ],
+      "era": "1900-1949",
+      "setting": "exterior",
+      "style": "painted",
+      "visual_kind": "illustration",
+      "subjects": [
+        "rural farmhouse",
+        "historical mystery"
+      ],
+      "case_specific": true,
+      "project_use_authorized": true,
+      "general_reuse_approved": false,
+      "license_status": "owner_supplied_for_episode_only",
+      "rights": "user_provided",
+      "source": "owner_upload",
+      "source_url": "",
+      "provenance": {
+        "source_upload": "image(20261025-165707).png",
+        "supplied_filename": "snow_farmhouse_warm_window.png",
+        "supplied_kind": "illustration",
+        "note": "Preserved upload metadata; illustration is not documentary evidence. Archival provenance/rights are not independently established."
+      },
+      "media": {
+        "width": 768,
+        "height": 1365
+      }
+    },
+    {
+      "id": "attic_shadow_figure",
+      "file": "images/hinterkaifeck_attic_shadow_figure.png",
+      "sha256": "b3eb974bc886299770aaa4dd8c64bd15901fd967c7f36a6bba7bb6a57a760b1d",
+      "kind": "image",
+      "description": "attic shadow figure",
+      "tags": [
+        "attic",
+        "shadow",
+        "figure"
+      ],
+      "scene_relevance": [
+        "attic",
+        "shadow",
+        "figure"
+      ],
+      "era": "1900-1949",
+      "setting": "interior",
+      "style": "painted",
+      "visual_kind": "illustration",
+      "subjects": [
+        "rural farmhouse",
+        "historical mystery"
+      ],
+      "case_specific": true,
+      "project_use_authorized": true,
+      "general_reuse_approved": false,
+      "license_status": "owner_supplied_for_episode_only",
+      "rights": "user_provided",
+      "source": "owner_upload",
+      "source_url": "",
+      "provenance": {
+        "source_upload": "image(20261025-165717).png",
+        "supplied_filename": "attic_shadow_figure.png",
+        "supplied_kind": "illustration",
+        "note": "Preserved upload metadata; illustration is not documentary evidence. Archival provenance/rights are not independently established."
+      },
+      "media": {
+        "width": 768,
+        "height": 1365
+      }
+    },
+    {
+      "id": "barn_mattock_tool",
+      "file": "images/hinterkaifeck_barn_mattock_tool.png",
+      "sha256": "db64a61bdfcdc1007ed1ec6860d1742a87ca12d0ee9d09e0275cd3ae57b955d5",
+      "kind": "image",
+      "description": "barn mattock tool",
+      "tags": [
+        "barn",
+        "mattock",
+        "tool"
+      ],
+      "scene_relevance": [
+        "barn",
+        "mattock",
+        "tool"
+      ],
+      "era": "1900-1949",
+      "setting": "interior",
+      "style": "painted",
+      "visual_kind": "illustration",
+      "subjects": [
+        "rural farmhouse",
+        "historical mystery"
+      ],
+      "case_specific": true,
+      "project_use_authorized": true,
+      "general_reuse_approved": false,
+      "license_status": "owner_supplied_for_episode_only",
+      "rights": "user_provided",
+      "source": "owner_upload",
+      "source_url": "",
+      "provenance": {
+        "source_upload": "image(20261025-165725).png",
+        "supplied_filename": "barn_mattock_tool.png",
+        "supplied_kind": "illustration",
+        "note": "Preserved upload metadata; illustration is not documentary evidence. Archival provenance/rights are not independently established."
+      },
+      "media": {
+        "width": 768,
+        "height": 1365
+      }
+    },
+    {
+      "id": "moonlit_farmhouse_footprints_shadow",
+      "file": "images/hinterkaifeck_moonlit_farmhouse_footprints_shadow.png",
+      "sha256": "0424d84197c30164feb06f8dfcfc1c3b065b29173cc6eeb90cf113c867acbbbb",
+      "kind": "image",
+      "description": "moonlit farmhouse footprints shadow",
+      "tags": [
+        "moonlit",
+        "farmhouse",
+        "footprints",
+        "shadow"
+      ],
+      "scene_relevance": [
+        "moonlit",
+        "farmhouse",
+        "footprints",
+        "shadow"
+      ],
+      "era": "1900-1949",
+      "setting": "exterior",
+      "style": "painted",
+      "visual_kind": "illustration",
+      "subjects": [
+        "rural farmhouse",
+        "historical mystery"
+      ],
+      "case_specific": true,
+      "project_use_authorized": true,
+      "general_reuse_approved": false,
+      "license_status": "owner_supplied_for_episode_only",
+      "rights": "user_provided",
+      "source": "owner_upload",
+      "source_url": "",
+      "provenance": {
+        "source_upload": "image(20261025-170312).png",
+        "supplied_filename": "moonlit_farmhouse_footprints_shadow.png",
+        "supplied_kind": "illustration",
+        "note": "Preserved upload metadata; illustration is not documentary evidence. Archival provenance/rights are not independently established."
+      },
+      "media": {
+        "width": 941,
+        "height": 1672
+      }
+    },
+    {
+      "id": "farmhouse_chimney_smoke",
+      "file": "images/hinterkaifeck_farmhouse_chimney_smoke.png",
+      "sha256": "86f5d01ff3b533b69e8fde2f5c2e46b70ca817063aec48665720639d2efce66e",
+      "kind": "image",
+      "description": "farmhouse chimney smoke",
+      "tags": [
+        "farmhouse",
+        "chimney",
+        "smoke"
+      ],
+      "scene_relevance": [
+        "farmhouse",
+        "chimney",
+        "smoke"
+      ],
+      "era": "1900-1949",
+      "setting": "exterior",
+      "style": "painted",
+      "visual_kind": "illustration",
+      "subjects": [
+        "rural farmhouse",
+        "historical mystery"
+      ],
+      "case_specific": true,
+      "project_use_authorized": true,
+      "general_reuse_approved": false,
+      "license_status": "owner_supplied_for_episode_only",
+      "rights": "user_provided",
+      "source": "owner_upload",
+      "source_url": "",
+      "provenance": {
+        "source_upload": "image(20261025-170610).png",
+        "supplied_filename": "farmhouse_chimney_smoke.png",
+        "supplied_kind": "illustration",
+        "note": "Preserved upload metadata; illustration is not documentary evidence. Archival provenance/rights are not independently established."
+      },
+      "media": {
+        "width": 768,
+        "height": 1365
+      }
+    },
+    {
+      "id": "hooded_figure_attic",
+      "file": "images/hinterkaifeck_hooded_figure_attic.png",
+      "sha256": "422b7c740cdc2d950d7dbce3960b71599e19692d1e313194cca9ae47307c08af",
+      "kind": "image",
+      "description": "hooded figure attic",
+      "tags": [
+        "hooded",
+        "figure",
+        "attic"
+      ],
+      "scene_relevance": [
+        "hooded",
+        "figure",
+        "attic"
+      ],
+      "era": "1900-1949",
+      "setting": "interior",
+      "style": "painted",
+      "visual_kind": "illustration",
+      "subjects": [
+        "rural farmhouse",
+        "historical mystery"
+      ],
+      "case_specific": true,
+      "project_use_authorized": true,
+      "general_reuse_approved": false,
+      "license_status": "owner_supplied_for_episode_only",
+      "rights": "user_provided",
+      "source": "owner_upload",
+      "source_url": "",
+      "provenance": {
+        "source_upload": "image(20261025-170621).png",
+        "supplied_filename": "hooded_figure_attic.png",
+        "supplied_kind": "illustration",
+        "note": "Preserved upload metadata; illustration is not documentary evidence. Archival provenance/rights are not independently established."
+      },
+      "media": {
+        "width": 768,
+        "height": 1365
+      }
+    },
+    {
+      "id": "snow_footprint_trail",
+      "file": "images/hinterkaifeck_snow_footprint_trail.png",
+      "sha256": "4bb1e8fb0634e0a0682626ffaf08cce52a26422a077b136e4eb071bfc7559dc9",
+      "kind": "image",
+      "description": "snow footprint trail",
+      "tags": [
+        "snow",
+        "footprint",
+        "trail"
+      ],
+      "scene_relevance": [
+        "snow",
+        "footprint",
+        "trail"
+      ],
+      "era": "1900-1949",
+      "setting": "exterior",
+      "style": "painted",
+      "visual_kind": "illustration",
+      "subjects": [
+        "rural farmhouse",
+        "historical mystery"
+      ],
+      "case_specific": true,
+      "project_use_authorized": true,
+      "general_reuse_approved": false,
+      "license_status": "owner_supplied_for_episode_only",
+      "rights": "user_provided",
+      "source": "owner_upload",
+      "source_url": "",
+      "provenance": {
+        "source_upload": "image(20261025-170627).png",
+        "supplied_filename": "snow_footprint_trail.png",
+        "supplied_kind": "illustration",
+        "note": "Preserved upload metadata; illustration is not documentary evidence. Archival provenance/rights are not independently established."
+      },
+      "media": {
+        "width": 768,
+        "height": 1365
+      }
+    }
+  ],
+  "preview_story": {
+    "title": "The Footprints Led In. Nobody Came Out.",
+    "story_id": "hinterkaifeck_1922_review",
+    "source": "inbox/hinterkaifeck_1922.txt",
+    "mode": "inbox-script",
+    "true_story": true,
+    "setting": "Bavaria, Germany, March 1922",
+    "render_style": "classic",
+    "visual_mode": "classic",
+    "narrator_voice": "am_adam",
+    "hook_text": "FOOTPRINTS IN. NONE OUT.",
+    "scenes": [
+      {
+        "narration": "Someone walked out of the frozen woods and straight toward their farmhouse. But the footprints never led back out.",
+        "image_prompt": "A trail of footprints in the snow leading toward a dark isolated farmhouse at night",
+        "project_asset_ids": [
+          "snow_farmhouse_footprints_concept"
+        ],
+        "asset_frame": "none",
+        "sfx": "footsteps_snow",
+        "image_prompt_2": "A moonlit farmhouse behind a close trail of snow footprints and a tall shadow on the right",
+        "project_asset_ids_a": [
+          "snow_farmhouse_footprints_concept"
+        ],
+        "project_asset_ids_b": [
+          "moonlit_farmhouse_footprints_shadow"
+        ]
+      },
+      {
+        "narration": "That was the story a Bavarian farmer reportedly told in March nineteen twenty-two. Then came more strange warnings.",
+        "image_prompt": "A snowy isolated farmhouse with a single warm window glowing in the night",
+        "project_asset_ids": [
+          "snow_farmhouse_warm_window"
+        ],
+        "asset_frame": "none",
+        "sfx": "winter_wind"
+      },
+      {
+        "narration": "Footsteps supposedly echoed through the attic. A newspaper appeared that nobody recognized. And a house key was missing.",
+        "image_prompt": "A dark human silhouette standing in a wooden attic with light through slats",
+        "project_asset_ids": [
+          "attic_shadow_figure"
+        ],
+        "asset_frame": "documentary",
+        "sfx": "floor_creak"
+      },
+      {
+        "narration": "On March thirty-first, six people were murdered at Hinterkaifeck. Four bodies were found in the barn, and two inside the farmhouse, including the newly arrived maid.",
+        "image_prompt": "Investigators with a lantern examining a wooden barn at a rural farmhouse",
+        "project_asset_ids": [
+          "barn_investigation_lantern_illustration"
+        ],
+        "asset_frame": "documentary",
+        "sfx": "door_creak"
+      },
+      {
+        "narration": "A mattock, later recovered on the property, was identified as the likely weapon. But the strangest detail came afterward.",
+        "image_prompt": "An old mattock tool standing in a dark barn, wooden handle and iron blade",
+        "project_asset_ids": [
+          "barn_mattock_tool"
+        ],
+        "asset_frame": "documentary",
+        "sfx": "clock_ticking"
+      },
+      {
+        "narration": "There were indications somebody had stayed after the killings. The animals had apparently been tended, and smoke was reported from the chimney.",
+        "image_prompt": "A remote snowy farmhouse with smoke rising from the chimney at night",
+        "project_asset_ids": [
+          "farmhouse_chimney_smoke"
+        ],
+        "asset_frame": "none",
+        "sfx": "winter_wind"
+      },
+      {
+        "narration": "Was the murderer hiding nearby before the attack? Or were these clues misunderstood?",
+        "image_prompt": "An imagined hooded intruder crouching in a wooden attic, a speculative illustration",
+        "project_asset_ids": [
+          "hooded_figure_attic"
+        ],
+        "asset_frame": "none",
+        "sfx": "eerie_chime"
+      },
+      {
+        "narration": "Investigators never established who killed the six residents. More than one hundred years later, who was there remains a mystery.",
+        "image_prompt": "A trail of deep footprints through snow and forest toward an isolated farmhouse",
+        "project_asset_ids": [
+          "snow_footprint_trail"
+        ],
+        "asset_frame": "none",
+        "sfx": "winter_wind"
+      }
+    ],
+    "fact_ledger": [
+      "Six people were killed in March 1922. The case remains unsolved.",
+      "Footprints, attic sounds and post-crime occupation are reported details, not proof of a known killer."
+    ],
+    "sources": [
+      {
+        "url": "https://en.wikipedia.org/wiki/Hinterkaifeck_murders",
+        "type": "secondary overview",
+        "reviewed": "2026-10-25"
+      }
+    ]
+  },
+  "publication_status": "not published; review only",
+  "cleanup_policy": "Restricted or unknown-rights assets remain; general reuse requires explicit clearance."
+}

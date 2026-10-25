@@ -126,6 +126,27 @@ NORMALIZE = (f"scale={W}:{H}:force_original_aspect_ratio=increase:flags=lanczos,
              f"fps={FPS},setsar=1,format=yuv420p,settb=AVTB")
 
 
+def _framed_asset_clip(img: Path, seconds: float, out: Path, *, archival: bool = False) -> Path:
+    """A moving evidence frame for an existing image OR video; no source media is modified."""
+    frames=max(1,round(seconds*FPS))
+    clip=img.with_suffix('.mp4')
+    inputs=['-stream_loop','-1','-i',str(clip)] if clip.exists() else ['-loop','1','-framerate',str(FPS),'-i',str(img)]
+    cw,ch=round(W*.83),round(H*.67)
+    x,y=(W-cw)//2,round(H*.14)
+    label='ARCHIVAL PHOTOGRAPH - SOURCE VERIFIED' if archival else 'ILLUSTRATIVE RECONSTRUCTION'
+    vf=(f'[0:v]scale={cw}:{ch}:force_original_aspect_ratio=decrease,'
+        f'pad={cw}:{ch}:(ow-iw)/2:(oh-ih)/2:color=0x142128,fps={FPS},'
+        f"zoompan=z='1+0.025*(3*pow(on/{frames},2)-2*pow(on/{frames},3))':x='iw/2-iw/zoom/2':y='ih/2-ih/zoom/2':d=1:s={cw}x{ch}:fps={FPS}[media];"
+        f'color=c=0x10191f:s={W}x{H}:r={FPS}:d={seconds:.3f},'
+        f'drawbox=x={x-12}:y={y-12}:w={cw+24}:h={ch+24}:color=0xabb4ae:t=3[frame];'
+        f'[frame][media]overlay={x}:{y}:shortest=1,'
+        f"drawtext=text='{label}':fontcolor=0xc4cfc7:fontsize={max(12,W//38)}:x=(w-tw)/2:y={round(H*.105)},"
+        'setsar=1,format=yuv420p[v]')
+    run(['ffmpeg','-y','-loglevel','error',*inputs,'-filter_complex',vf,'-map','[v]','-an',
+         '-t',f'{seconds:.3f}','-c:v','libx264','-preset','veryfast','-crf','18',str(out)])
+    return out
+
+
 def _fit_clip(src: Path, seconds: float, out: Path) -> Path:
     """Fit an AI clip to the shot: fill 1080x1920, stretch up to 1.5x slower if short, then hold the last frame.
     Only the first video stream is used (audio dropped), output is 1080x1920 / 30 fps / yuv420p / SAR 1."""
@@ -404,6 +425,16 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
     for k, (img, s) in enumerate(zip(shot_imgs, seg)):
         length = s + (trans[k + 1][1] if k < len(shot_imgs) - 1 else 0)
         out = workdir / f"clip_{k:02d}.mp4"
+        side=Path(img).with_suffix('.json')
+        project_meta=json.loads(side.read_text()) if side.is_file() else {}
+        frame_style=project_meta.get('frame_style') or story['scenes'][shot_scene[k]].get('asset_frame')
+        if frame_style=='documentary':
+            archival=(project_meta.get('visual_kind')=='historical_photo'
+                      and project_meta.get('license_status')=='cleared'
+                      and project_meta.get('provenance',{}).get('authenticity_verified') is True)
+            clips.append(_framed_asset_clip(Path(img),length,out,archival=archival))
+            log(f'Shot {k}: {length:.1f}s framed project evidence')
+            continue
         spec = cutout.spec_for(img)  # cutout mode: an animated stage (plate + character) or a drawn screen
         if spec:
             try:
@@ -493,6 +524,9 @@ def render(story: dict, images: list[list[Path]], narration: dict, ass_path: Pat
             if name.endswith(v):
                 name, variant = name[: -len(v)], v
         fx = sfx_dir / f"{name}.mp3"
+        if not fx.exists() and name!='none':
+            from project_assets import sound_effect
+            fx=sound_effect(story,name) or fx
         if name == "none" or si == 0 or not fx.exists() or si >= len(starts):
             continue
         vf = {

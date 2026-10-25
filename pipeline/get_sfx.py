@@ -18,6 +18,25 @@ UA = {"User-Agent": "Mozilla/5.0 (NightFilesBot)"}
 FS_KEY = os.environ.get("FREESOUND_API_KEY", "").strip()
 
 
+def check_elevenlabs() -> dict:
+    """Read-only account access probe; never spends credits or returns account/credential data."""
+    key=os.environ.get('ELEVENLABS_API_KEY','').strip()
+    result={'configured':bool(key),'authenticated':False,'generation_tested':False,
+            'credit_consuming_requests_made':False,'fallback':'existing approved assets/sfx files'}
+    if not key:return {**result,'status':'not-configured'}
+    try:
+        response=requests.get('https://api.elevenlabs.io/v1/user/subscription',headers={'xi-api-key':key},timeout=20)
+        result['http_status']=response.status_code
+        result['authenticated']=response.status_code==200
+        if response.status_code==200:
+            data=response.json()
+            result['quota_available']=int(data.get('character_limit',0))>int(data.get('character_count',0))
+        result['status']='read-access-verified-generation-unverified' if result['authenticated'] else 'account-access-blocked'
+    except requests.RequestException:
+        result['status']='network-unavailable'
+    return result
+
+
 def is_mp3(data: bytes) -> bool:
     return data[:3] == b"ID3" or data[:2] in (b"\xff\xfb", b"\xff\xf3", b"\xff\xf2")
 
@@ -85,4 +104,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    if '--check-elevenlabs' in sys.argv:
+        print(json.dumps(check_elevenlabs(),indent=2))
+        sys.exit(0)
     sys.exit(main())
