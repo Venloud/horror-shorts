@@ -213,7 +213,7 @@ def from_tiktok(items):
                 meta.write_text(json.dumps(saved, ensure_ascii=False) + "\n")
                 upload_pair(item["stamp"], mp4, meta)
             print("Recovered", item["stamp"], "from verified owned public TikTok", video_id)
-            return True
+            return item["stamp"]
         except Exception as exc:
             print("Public TikTok recovery failed:", item["stamp"],
                   type(exc).__name__, str(exc)[:150])
@@ -230,7 +230,7 @@ def recover_one(queued):
     for item in eligible:
         try:
             if from_artifact(item):
-                return True
+                return item["stamp"]
         except Exception as exc:
             print("Artifact recovery failed:", item["stamp"], type(exc).__name__, str(exc)[:120])
     return from_tiktok(eligible)
