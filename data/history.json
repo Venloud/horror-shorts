@@ -2665,5 +2665,71 @@
     "music_file": "unsolved_mystery.mp3",
     "buffered": "2026-10-23_2249",
     "tiktok": null
+  },
+  {
+    "date": "2026-10-25_0354",
+    "story_id": "64e19b079582",
+    "title": "Aka Manto The Red Or Blue Bathroom Legend",
+    "premise": "A mysterious spirit in a public bathroom offers a deadly choice between red and blue paper.",
+    "subgenre": "creator script",
+    "mode": "inbox-script",
+    "true_story": false,
+    "case": null,
+    "source": "inbox/aka_manto_finished_script_20261024.txt",
+    "prompt_file": null,
+    "setting": "Public restroom at night",
+    "threat": "A malicious bathroom spirit forcing a fatal choice",
+    "twist": "Refusing to pick a color is the only way to survive",
+    "score": null,
+    "seconds": 55.3,
+    "voice_speed": 1.1,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:6337124"
+    ],
+    "visual_mode": "classic",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": null,
+    "visuals": {
+      "distinct": 22,
+      "longest_s": 3.8,
+      "longest_share": 0.065,
+      "longest_name": "image:scene_09a.png:full"
+    },
+    "yt_title": "Red Or Blue Bathroom Legend... Aka Manto of Japan #shorts",
+    "hashtags": [
+      "akamanto",
+      "japan",
+      "creepy",
+      "horrorstory"
+    ],
+    "yt_tags": [
+      "aka manto",
+      "red or blue bathroom legend",
+      "japan folklore",
+      "aka manto legend",
+      "urban legend",
+      "scary story",
+      "bathroom ghost story",
+      "japanese urban legend",
+      "aka manto red or blue",
+      "creepy bathroom legend",
+      "horror story",
+      "red cloak spirit",
+      "aka manto story",
+      "japan mystery",
+      "creepy story"
+    ],
+    "opening": "Imagine being alone in a bathroom when someone whispers from the next stall, “Red or blue?”",
+    "music_file": "background_music.mp3",
+    "buffered": "2026-10-25_0354",
+    "tiktok": null
   }
 ]
