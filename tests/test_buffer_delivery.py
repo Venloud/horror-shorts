@@ -111,28 +111,30 @@ class BufferDeliveryTests(unittest.TestCase):
         self.assertFalse(recovery.matches({"video_description": "Cinema mystery video"}, record))
         self.assertFalse(recovery.matches({"video_description": "Other account post"}, record))
 
-    def test_public_tiktok_recovery_requires_owner_caption_and_safe_token_rotation(self):
+    def test_public_tiktok_recovery_requires_vetted_unposted_source_and_safe_token_rotation(self):
         post = {
             "id": "7691234567890123456", "create_time": 1,
             "share_url": "https://www.tiktok.com/@nightfiles/video/7691234567890123456",
-            "title": "Water mystery",
-            "video_description": "A night shift worker watches a security monitor showing a woman standing on the surface #horror",
+            "title": "Verified old story",
+            "video_description": "The father of cinema vanished before his biggest premiere. #horror",
         }
+        verified = {"stamp": "old-night-files-video", "tiktok_published": True,
+                    "title": "Verified old story",
+                    "caption": "The father of cinema vanished before his biggest premiere."}
         with patch.dict("os.environ", {"GH_TOKEN": "", "TIKTOK_REFRESH_TOKEN": "secret",
                                        "TIKTOK_CLIENT_KEY": "key", "TIKTOK_CLIENT_SECRET": "secret"}):
             with patch.object(recovery, "owned_public_posts", side_effect=AssertionError("token rotated")):
+                self.assertFalse(recovery.from_tiktok([verified], {}))
+        with patch.dict("os.environ", {"GH_TOKEN": "exists", "TIKTOK_REFRESH_TOKEN": "secret",
+                                       "TIKTOK_CLIENT_KEY": "key", "TIKTOK_CLIENT_SECRET": "secret"}):
+            with patch.object(recovery, "owned_public_posts", side_effect=AssertionError("unmapped scrape")):
                 self.assertFalse(recovery.from_tiktok([], {}))
-        with tempfile.TemporaryDirectory() as tmp:
-            backup = Path(tmp) / "backfill.json"
-            backup.write_text('{"videos": []}')
-            with patch.dict("os.environ", {"GH_TOKEN": "exists", "TIKTOK_REFRESH_TOKEN": "secret",
-                                           "TIKTOK_CLIENT_KEY": "key", "TIKTOK_CLIENT_SECRET": "secret"}), \
-                 patch.object(recovery, "BACKFILL", backup), \
-                 patch.object(recovery, "owned_public_posts", return_value=[post]), \
-                 patch.object(recovery, "release_assets", return_value={}), \
-                 patch.object(recovery, "download_public_post", return_value="tt_7691234567890123456") as download:
-                self.assertEqual(recovery.from_tiktok([], {}), "tt_7691234567890123456")
+            with patch.object(recovery, "owned_public_posts", return_value=[post]), \
+                 patch.object(recovery, "download_public_post", return_value="old-night-files-video") as download:
+                self.assertEqual(recovery.from_tiktok([verified], {}), "old-night-files-video")
                 download.assert_called_once()
+                self.assertFalse(recovery.from_tiktok(
+                    [{"stamp": "wrong", "caption": "some other video"}], {}))
 
     def test_direct_youtube_api_not_called_from_live_publisher(self):
         publisher = (ROOT / "pipeline" / "publish.py").read_text()

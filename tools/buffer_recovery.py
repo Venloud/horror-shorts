@@ -201,6 +201,8 @@ def download_public_post(post, item):
 
 
 def from_tiktok(items, queued):
+    if not items:
+        return False  # no vetted, unqueued Night Files source; never scrape arbitrary posts
     if not os.environ.get("GH_TOKEN"):
         print("GH_PAT unavailable; refusing TikTok refresh that may rotate an unpersistable token")
         return False
@@ -223,36 +225,7 @@ def from_tiktok(items, queued):
         except Exception as exc:
             print("Known TikTok recovery failed:", item["stamp"], type(exc).__name__, str(exc)[:150])
 
-    # Social Backfill fallback: discover the oldest PUBLIC video from this
-    # authorized account, but only if its description matches an owner-recorded
-    # public TikTok caption AND it is not associated with an existing backfill.
-    # Draft-inbox receipts alone never qualify.
-    posted_file = Path(__file__).resolve().parents[1] / "data" / "tiktok_posted.txt"
-    verified = [norm(line) for line in posted_file.read_text().splitlines()
-                if len(norm(line)) >= 28] if posted_file.exists() else []
-    known = json.loads(BACKFILL.read_text()).get("videos", []) if BACKFILL.exists() else []
-    archived = release_assets("youtube-pending")
-    for post in posts:
-        desc = norm(post.get("video_description") or post.get("title"))
-        if not any(v in desc for v in verified):
-            continue
-        if any(matches(post, record) for record in known):
-            continue
-        video_id = str(post.get("id") or "")
-        stamp = "tt_" + video_id
-        if stamp in queued:
-            continue
-        if stamp + ".mp4" in archived and stamp + ".json" in archived:
-            return stamp
-        title = str(post.get("title") or post.get("video_description") or "").strip()[:100]
-        if not title or "mrbeast" in norm(title):
-            continue
-        entry = {"stamp": stamp, "title": title, "yt_title": title,
-                 "caption": str(post.get("video_description") or title)}
-        try:
-            return download_public_post(post, entry)
-        except Exception as exc:
-            print("Public Night Files recovery failed:", video_id, type(exc).__name__, str(exc)[:150])
+    # Unmapped public TikTok posts cannot be proved absent from YouTube: no replay.
     return False
 
 
