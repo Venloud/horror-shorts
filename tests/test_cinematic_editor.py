@@ -109,7 +109,7 @@ class Transitions(unittest.TestCase):
         self.assertEqual(tr[4], "cut")  # impact lands hard
         self.assertEqual([s["transition"] for s in segs], tr)
 
-    def test_no_accent_effect_twice_in_a_row_and_rare_swooshes(self):
+    def test_no_decorative_effects_on_graphics(self):
         segs = self._segs([("image", None, 0)] + [("graphic", "evidence", k) for k in range(1, 12)])
         words = []
         for k in range(1, 12):
@@ -283,10 +283,10 @@ class ContextGraphicsAndSound(unittest.TestCase):
         m = manifest(Path("/tmp/a.mp4"), Path("/tmp/b.mp4"), segs,
                      {"words": [{"word": "a", "start": 0.1, "end": 0.3}, {"word": "blood", "start": 0.4, "end": 0.7}]},
                      24, 48, accents={1})
-        self.assertEqual([s["transition"] for s in m["shots"]], ["cut", "swoosh"])
+        self.assertEqual([s["transition"] for s in m["shots"]], ["cut", "cut"])
         self.assertEqual([w["accent"] for w in m["words"]], [False, True])
         jsx = (ROOT / "remotion" / "src" / "polish.jsx").read_text()
-        self.assertIn('x.transition==="swoosh"', jsx)  # the sweep only on a planned swoosh
+        self.assertNotIn('x.transition==="swoosh"', jsx)  # no decorative sweep layer
         self.assertIn("hit&&w.accent", jsx)  # underline only accented words
         self.assertIn('x.kind==="host"', jsx)  # captions move up while a host bust is on screen
 
