@@ -3,6 +3,10 @@
 Read this first. It sums up the decisions from the long chat where this project was built (Sept 2026),
 so a new session can pick up without starting over.
 
+## Current CLIP integration, merged main 2026-10-24
+
+CLIP image matching is NOW wired into the existing production code via [PR #27](https://github.com/Venloud/horror-shorts/pull/27), merge `ddb7287`. It REUSES the preexisting `pipeline/library.py` local CLIP model (ViT-B/32) and adds no parallel `.py` module: `media.py` ranks fetched/archive candidates, `images.py` gates new AI images, `explainer.py` ranks scene images and selects approved expressions through `sprites.py`; `tests/test_clip_matching.py` is offline. **Do not reimplement CLIP inside `editorial.py` or create another visual matcher.** Merge concurrent Claude changes carefully, retaining these hooks and older editing functionality. P08 cannot be used unless its manifest record and checksum are merged. CI run [40148851610](https://github.com/Venloud/horror-shorts/actions/runs/40148851610) passed. Actual CLIP inference and real-video creative benefit are not yet independently validated.
+
 ## OWNER DIRECTIVE (2026-10-24): ONE UNIVERSAL VIDEO EDITOR, NO STORY-SPECIFIC PYTHON FILES
 
 **Read before making or keeping a new module.** Night Files makes videos about many unrelated subjects. The owner does NOT want a new `.py`, separate renderer, "V2", graphic engine or workaround for each individual story. Do not hardcode Aka Manto, a named case, specific scripted lines, or an individual pose selection into application code. Story-specific details belong in inbox files, story JSON, config/data, prompts or assets, handled by ONE reusable pipeline. "Make it exist first, make it good later"; avoid uncontrolled code proliferation.
