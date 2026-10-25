@@ -10,12 +10,30 @@ from pathlib import Path
 
 import yaml
 
-REF = re.compile(r"steps\.([A-Za-z_][\w-]*)\.")
+REF = re.compile(r"steps\\.([A-Za-z_][\\w-]*)\\.")
+
+
+class _UniqueKeyLoader(yaml.SafeLoader):
+    """Reject duplicate YAML keys instead of silently dropping the first value."""
+
+    def construct_mapping(self, node, deep=False):
+        seen = set()
+        for key_node, _ in node.value:
+            key = self.construct_object(key_node, deep=deep)
+            if key in seen:
+                raise yaml.constructor.ConstructorError(
+                    None, None, f"duplicate YAML key {key!r}", key_node.start_mark
+                )
+            seen.add(key)
+        return super().construct_mapping(node, deep=deep)
 
 
 def problems(path: Path) -> list[str]:
     found = []
-    jobs = (yaml.safe_load(path.read_text()) or {}).get("jobs") or {}
+    try:
+        jobs = (yaml.load(path.read_text(encoding="utf-8"), Loader=_UniqueKeyLoader) or {}).get("jobs") or {}
+    except yaml.YAMLError as exc:
+        return [f"{path}: invalid workflow YAML: {exc}"]
     for job_name, job in jobs.items():
         ids = [step.get("id") for step in job.get("steps") or []]
         for index, step in enumerate(job.get("steps") or []):
