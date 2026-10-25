@@ -24,6 +24,18 @@ class WorkflowOrderTests(unittest.TestCase):
                      "      - if: steps.up.outcome == 'success'\n        run: echo\n")
         self.assertEqual(check.problems(path), [])
 
+    def test_duplicate_yaml_key_is_rejected_before_actions(self):
+        path = write("on:\\n  workflow_dispatch:\\n"
+                     "jobs:\\n  fill:\\n    steps:\\n"
+                     "      - uses: actions/cache@v4\\n"
+                     "        with:\\n"
+                     "          key: model-cache\\n"
+                     "          restore-keys: older-cache\\n"
+                     "          restore-keys: other-cache\\n")
+        problems = check.problems(path)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("duplicate YAML key", problems[0])
+
     def test_repository_workflows_are_ordered(self):
         root = Path(__file__).resolve().parents[1] / ".github" / "workflows"
         errors = [e for p in sorted(root.glob("*.yml")) for e in check.problems(p)]
