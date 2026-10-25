@@ -63,9 +63,10 @@
       "title": "It Is Just Like Flying... Amelia Earhart of the Pacific Ocean #shorts"
     },
     "2026-10-06_0144": {
-      "status": "attempt_started",
-      "title": "Empty Skin Beneath Tree... Lougawou of Caribbean #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-10-06_0144.mp4"
+      "status": "queued",
+      "buffer_post_id": "6ade5eba0b5343d070ec31af",
+      "due_at": "2026-10-27T01:27:00.000Z",
+      "title": "Empty Skin Beneath Tree... Lougawou of Caribbean #shorts"
     }
   }
 }
