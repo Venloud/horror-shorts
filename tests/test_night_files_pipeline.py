@@ -877,8 +877,8 @@ class OwnerQueueAndApprovedSoundtrack(unittest.TestCase):
             meta = {"title": "generic owner-approved test", "story_id": "example", "caption_text": "test"}
             stamp = "2026-10-25_0354"
             with mock.patch.dict(publish.CONFIG, {"publish_music_overrides": {
-                    stamp: "unsolved_mystery.mp3"}}), \\
-                 mock.patch.object(background_music, "add_background_music") as mix, \\
+                    stamp: "unsolved_mystery.mp3"}}), \
+                 mock.patch.object(background_music, "add_background_music") as mix, \
                  mock.patch.object(production_gate, "validate_final_video") as validate:
                 publish._apply_approved_publish_music({"stamp": stamp}, mp4, meta)
             mix.assert_called_once_with(mp4, mp4.parent, meta, approved_track="unsolved_mystery.mp3")
@@ -898,7 +898,7 @@ class OwnerQueueAndApprovedSoundtrack(unittest.TestCase):
         import background_music
         with mock.patch.dict(background_music.CONFIG, {
                 "music_policy": "approved_files", "approved_music": [
-                    "unsolved_mystery.mp3", "bk_grnde.mp3"]}), \\
+                    "unsolved_mystery.mp3", "bk_grnde.mp3"]}), \
              mock.patch.object(background_music, "media_duration", return_value=58.65):
             for invalid in ("../private.mp3", "unauthorized.mp3", "/tmp/unsolved_mystery.mp3"):
                 with self.subTest(invalid=invalid), self.assertRaises(ValueError):
