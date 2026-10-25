@@ -752,7 +752,8 @@ def sequence(story: dict, narration: dict, scene_images: list[list[Path]], graph
         if host_ok:
             import sprites
             expression = _expr_for(narr)
-            asset_id = sprites.select_for_beat(narr, expression)
+            selected = sprites.select_for_beat(narr, expression)
+            asset_id = selected if selected != sprites.face_id(expression) else None
             order.append({"type": "host", "scene": i, "expression": expression, "asset_id": asset_id})
         if len(gs) > 1 and span > 9.0:
             order.append(gs[1])
