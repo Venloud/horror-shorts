@@ -105,7 +105,7 @@ def face_id(mood: str) -> str:
 
 
 
-def select_for_beat(narration: str, mood: str = "neutral") -> str:
+def select_for_beat(narration: str, mood: str = "neutral", allow_poses: bool | None = None) -> str:
     """Choose among existing checksum-verified owner-approved faces/poses for a generic story beat.
 
     CLIP is optional and conservative. New action poses are candidates ONLY once in the approved
@@ -117,7 +117,9 @@ def select_for_beat(narration: str, mood: str = "neutral") -> str:
     approved = approved_registry().get("approved", [])
     choice = bool(re.search(
         r"\b(choos\w*|decid\w*|option|either|which|two choices|left or right)\b",
-        narration, re.I))
+        narration, re.I)) if allow_poses is None else bool(allow_poses)
+    # allow_poses: the editor's grounded choice detection (explainer.choice_options) overrides the keyword match,
+    # so "isn't always an option" never gets the open-palms choice pose
     # A small semantic set keeps the CPU pass bounded. Reuse the approved registry, never guess paths.
     useful_faces = {"F01", "F07", "F09", "F10", "F11", "F12", "F13", "F14", "F15", "F19", "F21"}
     ids = [r["id"] for r in approved if r.get("status") == "approved"

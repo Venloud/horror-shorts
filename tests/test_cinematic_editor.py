@@ -168,6 +168,19 @@ class ViewerSurrogate(unittest.TestCase):
         self.assertEqual(frame.size, (1080, 1920))
         self.assertEqual(used, set())
 
+    def test_choice_pose_only_on_a_real_choice(self):
+        seen = {}
+
+        def fake(intent, ids, fallback):
+            seen["ids"] = ids
+            return fallback
+        import library
+        with mock.patch.object(library, "best_approved_asset", side_effect=fake):
+            sprites.select_for_beat("And running away isn't always an option.", "serious", allow_poses=False)
+            self.assertFalse(any(i.startswith("P") for i in seen["ids"]), seen["ids"])
+            sprites.select_for_beat("Red or blue?", "thinking", allow_poses=True)
+            self.assertIn("P08", seen["ids"])
+
     def test_visual_qa_accepts_p08_as_approved(self):
         self.assertIn("P08", {r["id"] for r in sprites.approved_registry()["approved"]})
 

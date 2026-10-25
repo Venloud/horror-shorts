@@ -1252,7 +1252,7 @@ def sequence(story: dict, narration: dict, scene_images: list[list[Path]], graph
             # the viewer beat (warning -> worried, decision -> serious...) gives the deterministic expression; the
             # shared local CLIP (sprites.select_for_beat) may pick a better APPROVED asset, never new art
             expression = beat[1] if beat else _expr_for(narr)
-            selected = sprites.select_for_beat(narr, expression)
+            selected = sprites.select_for_beat(narr, expression, allow_poses=bool(beat and beat[0] == "choice"))
             asset_id = selected if selected != sprites.face_id(expression) else None
             order.append({"type": "host", "scene": i, "expression": expression, "asset_id": asset_id,
                           "beat": beat[0] if beat else ""})
