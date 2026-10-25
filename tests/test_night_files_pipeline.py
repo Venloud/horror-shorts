@@ -806,3 +806,37 @@ class TestMultiModelWriter(unittest.TestCase):
         self.assertEqual(result["model"], "gemini-3.8-flash")
         call.assert_called_once()
 
+
+
+class VirtualShotProvenanceRegression(unittest.TestCase):
+    """Real generator stores an absolute .origin path; QA must accept it and preserve image identity."""
+
+    def test_absolute_origin_checkpoint_does_not_crash_provenance_or_visual_qa(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            folder = Path(temporary)
+            original = folder / "scene_10b.png"
+            crop = folder / "scene_10a.png"
+            Image.new("RGB", (64, 96), "darkred").save(original)
+            images._virtual_shot(original, crop, "a")
+            self.assertTrue(Path(crop.with_suffix(".origin").read_text().strip()).is_absolute())
+            original.with_name(original.stem + ".ai.json").write_text(
+                json.dumps({"provider": "local_sd", "prompt": "dark hallway"}))
+            meta = explainer.provenance_of(str(crop))
+            self.assertEqual(meta["virtual_crop_of"], "scene_10b.png")
+            self.assertEqual(meta["kind"], "ai_reconstruction")
+            self.assertEqual(meta["provider"], "local_sd")
+
+    def test_stale_absolute_path_resolves_from_current_checkpoint_folder(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            folder = Path(temporary)
+            original = folder / "scene_01b.png"
+            crop = folder / "scene_01a.png"
+            Image.new("RGB", (64, 96), "black").save(original)
+            Image.new("RGB", (64, 96), "gray").save(crop)
+            crop.with_suffix(".origin").write_text("/old-runner/workspace/scene_01b.png")
+            original.with_name(original.stem + ".ai.json").write_text(
+                json.dumps({"provider": "cloudflare", "prompt": "eerie bathroom"}))
+            meta = explainer.provenance_of(str(crop))
+            self.assertEqual(meta["virtual_crop_of"], "scene_01b.png")
+            self.assertEqual(meta["kind"], "ai_reconstruction")
+            self.assertEqual(meta["provider"], "cloudflare")
