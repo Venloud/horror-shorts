@@ -261,11 +261,15 @@ def best_approved_asset(intent: str, candidate_ids: list[str], fallback: str) ->
         by_path = {str(path): aid for aid, path in available}
         winner = ranked[0]
         threshold = float(CONFIG.get("clip_approved_asset_min_similarity", 0.22))
-        selected = by_path.get(winner["path"], fallback) if winner["score"] >= threshold else fallback
+        fallback_path = next((str(p) for aid, p in available if aid == fallback), None)
+        fallback_score = next((row["score"] for row in ranked if row["path"] == fallback_path), None)
+        minimum_gain = float(CONFIG.get("clip_pose_min_gain", 0.015))
+        enough_gain = fallback_score is None or winner["score"] >= fallback_score + minimum_gain
+        selected = (by_path.get(winner["path"], fallback)
+                    if winner["score"] >= threshold and enough_gain else fallback)
+        runner_up = f"{ranked[1]['score']:.3f}" if len(ranked) > 1 else "none"
         log(f"CLIP approved pose: intent={intent[:55]!r}, selected={selected}, "
-            f"score={winner['score']:.3f}, runner_up="
-            f"{ranked[1]['score']:.3f}" if len(ranked) > 1 else
-            f"CLIP approved pose: intent={intent[:55]!r}, selected={selected}, score={winner['score']:.3f}")
+            f"score={winner['score']:.3f}, runner_up={runner_up}, min={threshold:.3f}")
         return selected
     except Exception as exc:
         log(f"CLIP approved pose fallback {fallback}: {str(exc)[:120]}")
