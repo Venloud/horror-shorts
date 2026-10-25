@@ -16,7 +16,10 @@ from common import ROOT
 
 
 def manifest(source: Path, output: Path, segments: list[dict],
-             narration: dict, fps: int, total_frames: int) -> dict[str, Any]:
+             narration: dict, fps: int, total_frames: int, accents: set | None = None) -> dict[str, Any]:
+    """accents: indexes of the narration words the caption track may underline (explainer.caption_accents);
+    every other word is captioned plainly. Each shot carries its planned transition (explainer.plan_transitions):
+    the cut treatment is drawn only on a 'swoosh', never on every cut."""
     if int(fps) not in (24, 25, 30, 50, 60):
         raise ValueError("Unsupported polish FPS")
     if total_frames < 1:
@@ -33,10 +36,12 @@ def manifest(source: Path, output: Path, segments: list[dict],
                       "kind": str(shot.get("type") or "scene")[:24],
                       "template": str(shot.get("template") or "")[:32],
                       "label": str(shot.get("text") or "")[:64],
+                      "transition": str(seg.get("transition") or "cut")[:12],
                       "index": i})
+    accents = accents or set()
     words = [{"word": str(w.get("word") or "")[:32],
-              "start": float(w["start"]), "end": float(w["end"])}
-             for w in narration.get("words", [])
+              "start": float(w["start"]), "end": float(w["end"]), "accent": k in accents}
+             for k, w in enumerate(narration.get("words", []))
              if "start" in w and "end" in w and float(w["end"]) > float(w["start"])]
     return {"source": str(source.resolve()), "output": str(output.resolve()),
             "fps": fps, "totalFrames": int(total_frames),
@@ -44,13 +49,13 @@ def manifest(source: Path, output: Path, segments: list[dict],
 
 
 def polish(source: Path, output: Path, segments: list[dict],
-           narration: dict, fps: int, total_frames: int) -> Path:
+           narration: dict, fps: int, total_frames: int, accents: set | None = None) -> Path:
     source, output = Path(source), Path(output)
     if not source.exists() or source.stat().st_size < 10000:
         raise FileNotFoundError(f"No valid source MP4 for Remotion: {source}")
     if source.resolve() == output.resolve():
         raise ValueError("Remotion output must not overwrite its input")
-    job = manifest(source, output, segments, narration, fps, total_frames)
+    job = manifest(source, output, segments, narration, fps, total_frames, accents)
     input_json = output.with_suffix(".remotion.json")
     input_json.write_text(json.dumps(job, ensure_ascii=False, separators=(",", ":")))
     try:

@@ -265,6 +265,16 @@
       "width": 1374,
       "height": 1145,
       "sha256": "70454399c941f0eda31bd9f2160676790331f6ef33d38d6cbebd0bdd9a14d23b"
+    },
+    {
+      "id": "P08",
+      "name": "shrugging_open_palms",
+      "path": "poses/P08_shrugging.png",
+      "status": "approved",
+      "width": 1024,
+      "height": 1536,
+      "sha256": "cfcc43d52014e32d7a577969fd5f84618e616713e971d366130b2a52cc600dbe",
+      "note": "Owner confirmed 2026-10-25 ('It's already in the library. Use P08. I checked the actual images.'): both palms open, the viewer surrogate for a binary choice. Original PNG bytes unchanged; SHA-256 equals assets/poses/asset_checksums.json."
     }
   ],
   "next_batch": [

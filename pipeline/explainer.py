@@ -267,6 +267,7 @@ def _valid_graphic(s: dict, at, ctx: dict) -> dict | None:
         if k in ("note", "by") and v and not ok(v):
             v = ""
         out[k] = v
+    out["accent"] = _meaningful_accent(out["accent"], [out.get(k, "") for k in GRAPHIC_TEXT.get(tpl, ())])
     if tpl == "map_route":
         stops = [str(x)[:24] for x in f.get("stops") or [] if ok(x)][:4]
         if len(stops) < 2:
@@ -332,6 +333,20 @@ def _valid_graphic(s: dict, at, ctx: dict) -> dict | None:
         ls = str(f.get("last_seen") or "")[:28]
         out["last_seen"] = ls if ls and ok(ls) else ""
     return {"type": "graphic", "at": at, "template": tpl, "fields": out}
+
+
+def _card_text(g: dict) -> str:
+    f = g.get("fields") or {}
+    return re.sub(r"\W+", " ", " ".join(str(f.get(k) or "") for k in ("text", "left", "right", "label"))).strip().lower()
+
+
+def _meaningful_accent(accent: str, texts: list[str]) -> str:
+    """An accent only on a word that is ON the graphic and carries meaning (word_score >= 1): never
+    'mysterious', 'wearing' or a filler verb."""
+    a = str(accent or "").strip()
+    if not a or len(a.split()) != 1 or word_score(a) < 1.0:
+        return ""
+    return a if any(re.search(rf"\b{re.escape(a)}\b", str(t), re.IGNORECASE) for t in texts if t) else ""
 
 
 def _closing(story: dict, narration: dict, scenes: list[dict], ctx: dict) -> None:
@@ -464,6 +479,8 @@ _MONTH = re.compile(r"\b(january|february|march|april|may|june|july|august|septe
 _TRAVEL = re.compile(r"\b(fl[eyi]\w*|flight|cross\w*|travel\w*|journey\w*|sail\w*|drove|drive|route|left for|"
                      r"head\w* (?:to|for)|arriv\w*|board\w*|from)\b", re.IGNORECASE)
 _VANISH = re.compile(r"\b(vanish\w*|disappear\w*|missing|never (?:seen|found|arrived)|no trace|gone)\b", re.IGNORECASE)
+_MESSAGE = re.compile(r"\b(text(?:ed|s)?|messag\w*|notification|dm|sms|phone (?:lit|buzz\w*|screen))\b",
+                      re.IGNORECASE)
 _QUOTE = re.compile(r"(?:^|[\s,:(])[\"“'‘](.{6,120}?)[\"”'’](?=[\s.,!?;:)]|$)")
 _COMMON = set("during born working declared constructing after before when while once then later her his their "
               "you every each this that these those".split())
@@ -527,6 +544,15 @@ def _auto_graphics(story: dict, i: int, sctx: dict) -> list[dict]:
     """Factual graphics built from this scene's own words + the fact ledger, best first. Never a fabricated value."""
     narr = story["scenes"][i].get("narration", "")
     out = []
+    opts = choice_options(narr)
+    if opts:  # a binary choice the narration offers: the approved P08 viewer surrogate holds both options
+        out.append({"type": "graphic", "at": None, "template": "choice", "auto": True,
+                    "fields": {"left": opts[0], "right": opts[1]}})
+    msg = _QUOTE.search(narr)
+    if msg and _MESSAGE.search(narr) and len(msg.group(1).split()) >= 2:  # a stated message on a phone screen
+        sender = re.search(r"\bfrom ([A-Z][a-z]+)\b", narr)
+        out.append({"type": "graphic", "at": None, "template": "phone", "auto": True,
+                    "fields": {"text": msg.group(1).strip(), "from": sender.group(1) if sender else ""}})
     if _VANISH.search(narr):
         word = next((w for w in ("VANISHED", "DISAPPEARED", "MISSING", "GONE") if w.lower()[:6] in narr.lower()), "")
         places = [(l.get("name") or "") for l in story.get("locations") or []]
@@ -536,7 +562,7 @@ def _auto_graphics(story: dict, i: int, sctx: dict) -> list[dict]:
         out.append({"type": "graphic", "at": None, "template": "missing", "auto": True,
                     "fields": {"subject": "", "word": word, "last_seen": (geo.group(1) if geo else place)[:28]}})
     q = _QUOTE.search(narr)
-    if q and len(q.group(1).split()) >= 3:
+    if q and len(q.group(1).split()) >= 3 and not any(g["template"] == "phone" for g in out):
         who = ""
         for c in story.get("characters") or []:  # the part of the name this scene says ("Amelia")
             said_parts = [w for w in (c.get("name") or "").split() if re.search(rf"\b{re.escape(w)}\b", narr)]
@@ -570,16 +596,19 @@ def _auto_graphics(story: dict, i: int, sctx: dict) -> list[dict]:
     return out
 
 
-def _impact_fallback(story: dict, i: int) -> dict:
-    """No factual graphic fits this beat: the scene's own key words as an impact card (reported as an exception)."""
-    narr = story["scenes"][i].get("narration", "")
-    words = [w.strip(".,!?;:'\"") for w in narr.split()]
-    keep = [w for w in words if w and w.lower() not in STOP and len(w) > 3][:40]
-    best = sorted(keep, key=lambda w: (-len(w), keep.index(w)))[:2]
-    text = " ".join(sorted(best, key=keep.index)).upper()
+def _impact_fallback(story: dict, i: int) -> dict | None:
+    """No factual graphic fits this beat: the beat's strongest COMPLETE phrases (key_phrases, at most two,
+    in spoken order) as an impact card, the payoff word accented. None when no phrase would add meaning: a clean
+    story picture beats a card of random words (the old version glued the two longest words: "CHOOSE COVERED")."""
+    phrases = [p for p in key_phrases(story["scenes"][i].get("narration", ""), limit=2, min_score=3.0)
+               if len(p["text"].split()) >= 2 or re.match(r"\d", p["text"]) or p["first"][:1].isupper()
+               and p["first"].lower() not in FUNCTION]  # one generic word ("ENDS", "FATE") is not a card
+    if not phrases or all(len(p["text"].split()) < 2 for p in phrases) and not re.match(r"\d", phrases[0]["text"]):
+        return None
+    payoff = max(phrases, key=lambda p: word_score(p["accent"]))
     return {"type": "graphic", "at": None, "template": "impact", "auto": True,
-            "exception": "no factual graphic fits this beat: key words of the narration",
-            "fields": {"text": text, "accent": best[0] if best else ""}}
+            "fields": {"lines": [p["text"] for p in phrases], "text": " ".join(p["text"] for p in phrases),
+                       "accent": payoff["accent"]}}
 
 
 def plan_graphics(story: dict, narration: dict) -> list[list[dict]]:
@@ -594,6 +623,7 @@ def plan_graphics(story: dict, narration: dict) -> list[list[dict]]:
     raw = data.get("scenes") if isinstance(data.get("scenes"), list) else []
     base = {"cast": {}, "dates": 0}  # date_stamp graphics are checked by _date_graphic / graphic_problem
     out = []
+    used_texts = set()  # the same card text never twice in one video ("AKA MANTO" name card in scenes 2 and 7)
     for i, sc in enumerate(story["scenes"]):
         sctx = _scene_ctx(story, i, base)
         s_words = [w for w in words if w.get("scene") == i]
@@ -612,13 +642,23 @@ def plan_graphics(story: dict, narration: dict) -> list[list[dict]]:
                     v["fields"]["subject"] = ""
                 picks.append(v)
         picks += _auto_graphics(story, i, sctx)
+        if not true:  # a legend / fiction: the beat's own strong phrase beats a generic ledger card
+            imp = _impact_fallback(story, i)
+            if imp and max(word_score(w) for w in imp["fields"]["text"].split()) >= 2.5 \
+                    and not any(g["template"] in ("choice", "phone", "quote") for g in picks):
+                picks = [imp] + [g for g in picks if g["template"] != "evidence" or not g.get("auto")]
         seen, uniq = set(), []
         for g in picks:
             key = (g["template"], json.dumps(g["fields"], sort_keys=True, default=str))
-            if key not in seen and graphic_problem(story, i, g) is None:
+            shown = _card_text(g)
+            if key not in seen and shown not in used_texts and graphic_problem(story, i, g) is None:
                 seen.add(key)
                 uniq.append(g)
-        out.append(uniq or [_impact_fallback(story, i)])
+        if not uniq:
+            imp = _impact_fallback(story, i)
+            uniq = [imp] if imp and graphic_problem(story, i, imp) is None and _card_text(imp) not in used_texts else []
+        used_texts.update(_card_text(g) for g in uniq[:1] if _card_text(g))  # the card this scene will show
+        out.append(uniq)
     closing = {"type": "graphic", "template": "closing"}
     shell = [{"shots": [dict(g) for g in gs]} for gs in out]
     _closing(story, narration, shell, {"cast": {}})
@@ -669,6 +709,14 @@ def graphic_problem(story: dict, i: int, g: dict) -> str | None:
         texts += [f.get("last_seen") or ""]
         if not _VANISH.search(narr):
             return "missing graphic without a disappearance in the narration"
+    elif tpl == "choice":
+        if not (f.get("left") and f.get("right")):
+            return "choice graphic without two options"
+        texts += [f.get("left"), f.get("right")]
+    elif tpl == "impact":
+        texts += list(f.get("lines") or [])
+    if tpl == "phone":
+        texts.append(f.get("from") or "")
     for k in ("text", "note", "by"):
         if f.get(k):
             texts.append(f[k])
@@ -681,6 +729,452 @@ def graphic_problem(story: dict, i: int, g: dict) -> str | None:
         if not _number_ok(txt, said):
             return f"'{txt[:40]}' has a number not said in scene {i + 1}"
     return None
+
+
+# ================================================================ editorial intelligence (owner, Oct 25)
+# The ONE universal editor's judgement, story-agnostic and deterministic (no LLM call, nothing for one legend):
+#   key_phrases      complete meaningful phrases ("CHOOSE RED", "COVERED IN BLOOD"), never two unrelated words glued
+#                    together ("CHOOSE COVERED"); the accent is the payoff word INSIDE its phrase
+#   choice_options   a binary choice the narration really offers ("red or blue?") -> the P08 viewer surrogate
+#   viewer_beat      choice / warning / decision / reaction beats aimed at the viewer (host mood)
+#   plan_transitions cut / dissolve / slide / pop / swoosh per cut by context, with repetition avoidance
+#   plan_motion      push / pan / pull / still for story pictures (stillness allowed)
+#   event_sfx        sounds only for events the narration describes, timed to the word, rationed
+#   caption_accents  the few spoken words the captions (Pillow + Remotion) may accent, never every word
+# Priorities: docs/WALTER_MURCH_RULE_OF_SIX.md (emotion > story > rhythm > eye trace > 2D plane > 3D space).
+
+
+# words that never start or end an on-screen phrase and never carry an accent
+FUNCTION = set("""a an the of in on at to and or but is was were be been being am are it its it's his her hers their
+theirs this that these those you your you'll you're you'd yours he she they them him we us our i me my mine with
+from by for as if then than so because while when where who whom whose which what there here into onto over under
+about up down out off just also too very really quite will would shall should can could may might must do does did
+done has have had having not no nor one ones some any each every all both either neither own same such only own
+says said say tells told goes went comes came gets got like let lets how why ever always being become became
+becomes grow grows grew making make makes made hear hears heard see sees saw watch watches watched witness witnessed
+follow follows listen listens during toward towards offering offer offers try tries trying asking ask asks keep keeps
+another other""".split())
+# generic adjectives / filler verbs: weak on screen ("MYSTERIOUS", "WEARING", "APPEARS")
+WEAK = set("""mysterious strange unsettling eerie creepy scary terrifying frightening unknown certain famous little
+big small old new wearing appears appear appeared seems seem seemed story legend legends version versions people
+someone something somebody thing things way ways time times figure place kind sort lot bit really actually
+especially simply suddenly slowly quickly""".split())
+THREAT = set("""blood bloody bleed bleeding drained drain dead death die dies died dying kill killed kills killer
+murder murdered body bodies corpse grave graves buried bones skull vanish vanished vanishes disappear disappeared
+missing gone trapped cursed curse scream screamed screams drown drowned drowning choke choked strangled poison
+poisoned fire burned burning knife blade shot severed throat neck heart eyes face mask fate end ends ending never
+nobody alone dark darkness monster demon ghost spirit shadow""".split())
+CHOICE = set("""choose chose choice choices pick picked decide decided decision refuse refused refusal answer answered
+answering select option options either whether which""".split())
+CONTRAST = set("but only never nobody nothing none don't doesn't didn't won't can't isn't wasn't".split())
+COLOURS = {"red": (200, 30, 45), "blue": (40, 90, 200), "yellow": (230, 190, 40), "green": (40, 150, 80),
+           "black": (20, 20, 24), "white": (235, 235, 235), "purple": (120, 50, 160), "white's": (235, 235, 235)}
+# attribution / framing that should not be on screen: "the legend says you'll be covered in blood" -> the payoff
+ATTRIBUTION = re.compile(
+    r"^(?:(?:and|but|so|because|then|yet|or)\s+)?(?:(?:the\s+)?(?:legend|story|stories|tale|myth|rumou?r)s?\s+"
+    r"(?:says?|goes|claims?|tells?)(?:\s+that)?\s+|(?:people|they|some|many|locals|villagers)\s+(?:say|said|believe|"
+    r"claim)(?:\s+that)?\s+|it\s+is\s+said(?:\s+that)?\s+|according\s+to\s+\w+(?:\s+\w+)?\s+|in\s+some\s+versions\s+)?"
+    r"(?:you(?:'ll| will| would|'d)\s+be\s+|you(?:'re| are)\s+|you(?:'ll| will)\s+)?", re.IGNORECASE)
+_WORD = re.compile(r"[A-Za-z][A-Za-z'’-]*|\d[\d,.]*")
+
+
+def _bare(w: str) -> str:
+    return re.sub(r"[^a-z0-9']", "", w.lower().replace("’", "'"))
+
+
+def word_score(w: str, prev: str = "") -> float:
+    """How much a single spoken word matters on screen."""
+    b = _bare(w)
+    if not b or b in FUNCTION:
+        return 0.0
+    if b in WEAK:
+        return -1.0
+    s = 0.5
+    if b in THREAT:
+        s = 3.0
+    elif b in CHOICE:
+        s = 2.0
+    elif b in CONTRAST:
+        s = 1.0
+    elif b in COLOURS or _bare(prev) in CHOICE:  # the option itself ("choose RED")
+        s = 2.5
+    elif re.match(r"\d", b):
+        s = 2.0
+    if w[:1].isupper() and prev and not re.search(r"[.!?]$", prev):  # a name mid-sentence
+        s = max(s, 2.0)
+    return s
+
+
+def clauses(text: str) -> list[str]:
+    """Sentence -> clause pieces at punctuation, quotes and dashes (an on-screen phrase never crosses them)."""
+    parts = re.split(r"[.!?;:,—–\"“”…()]+|\s-\s", text)
+    return [p.strip() for p in parts if p and p.strip()]
+
+
+def _trim(clause: str, option: bool = False) -> list[str]:
+    """Attribution / framing and edge function words removed: 'and the legend says you'll be covered in blood'
+    -> ['covered', 'in', 'blood']."""
+    c = ATTRIBUTION.sub("", clause.strip(), count=1)
+    words = _WORD.findall(c)
+    while words and (_bare(words[0]) in FUNCTION or _bare(words[0]) in WEAK) and not _keep_edge(words[0]):
+        words.pop(0)
+    while words and (_bare(words[-1]) in FUNCTION or _bare(words[-1]) in WEAK or
+                     (_keep_edge(words[-1]) and not (option and len(words) == 1))):
+        words.pop()
+    return words
+
+
+def _keep_edge(w: str) -> bool:
+    """A negation may OPEN a phrase ("DON'T PICK A COLOR"), never close one ("MANTO ISN'T")."""
+    return _bare(w) in CONTRAST and _bare(w).endswith("n't")
+
+
+def _candidates(words: list[str]):
+    """Contiguous windows (1-4 words) of one trimmed clause whose edges are content words."""
+    n = len(words)
+    for i in range(n):
+        if word_score(words[i]) <= 0 and not _keep_edge(words[i]):
+            continue
+        for j in range(i, min(n, i + 4)):
+            if word_score(words[j], words[j - 1] if j else "") <= 0 or (j > i and _keep_edge(words[j])):
+                continue
+            yield i, j + 1
+
+
+def key_phrases(text: str, limit: int = 2, min_score: float = 2.5) -> list[dict]:
+    """The strongest complete phrases of a narration beat, in spoken order: [{"text", "accent", "score", "first"}].
+    Each phrase comes from ONE clause (never two distant words glued together); "accent" is its payoff word.
+    Empty when nothing on screen would add meaning (then a clean picture is better than an impact card)."""
+    found = []
+    sent_of = []
+    for si, sentence in enumerate(re.split(r"(?<=[.!?…])\s+", text)):
+        sent_of += [si] * len(clauses(sentence))
+    for k, clause in enumerate(clauses(text)):
+        words = _trim(clause)
+        if not words:
+            continue
+        best = None
+        whole = len(words) <= 4
+        for i, j in _candidates(words):
+            win = words[i:j]
+            sc = [word_score(w, win[m - 1] if m else (words[i - 1] if i else "")) for m, w in enumerate(win)]
+            if min(sc) < 0:
+                continue  # a weak word inside the phrase ("MYSTERIOUS FIGURE") is not an accent-worthy beat
+            # a complete short clause earns a bonus; generic words at the edges ("CENTER OF AKA MANTO") cost
+            edges = 0.8 if len(win) > 1 and 0 < sc[0] <= 0.5 else 0.0  # a generic opening word
+            if _bare(win[-1]) in CONTRAST and j < len(words):  # "...AND NEVER" left hanging before its verb
+                edges += 1.5
+            score = sum(sc) + (1.0 if (i, j) == (0, len(words)) and whole else 0.0) - 0.35 * max(0, len(win) - 3) \
+                - edges
+            if best is None or score > best[0] + 1e-9:
+                best = (score, win, sc)
+        if best and best[0] >= min_score:
+            score, win, sc = best
+            accent = win[max(range(len(win)), key=lambda m: (sc[m], m))]
+            found.append({"text": " ".join(win).upper(), "accent": accent.upper(), "score": round(score, 2),
+                          "first": win[0], "order": k, "sentence": sent_of[k] if k < len(sent_of) else k})
+    if not found:
+        return []
+    best = max(found, key=lambda p: p["score"])
+    # a second line only from the SAME sentence ("CHOOSE RED" / "COVERED IN BLOOD"): phrases of two different
+    # sentences on one card read as one false statement ("FATE / ISN'T ALWAYS AN OPTION")
+    same = sorted((p for p in found if p is not best and p["sentence"] == best["sentence"]),
+                  key=lambda p: -p["score"])[:max(0, limit - 1)]
+    return sorted([best] + same, key=lambda p: p["order"])
+
+
+_OPTION = r"((?:[A-Za-z’'-]+\s+){0,2}?[A-Za-z’'-]+)"
+CHOICE_RX = re.compile(r"(?:^|[\"“,:;]\s*|\b(?:choose|pick|select|between|either|whether|answer)\s+)" + _OPTION +
+                       r"\s*,?\s+or\s+" + _OPTION + r"\s*(?=[?\"”.,!]|$)", re.IGNORECASE)
+
+
+def choice_options(text: str) -> tuple[str, str] | None:
+    """('RED', 'BLUE') when the narration offers a real either/or ('Red or blue?', 'open the door or don't'):
+    both options short, said, and in a question / choice context. Never invented."""
+    for sentence in re.split(r"(?<=[.!?])\s+", text):
+        for m in CHOICE_RX.finditer(sentence):
+            a, b = _trim(m.group(1), option=True), _trim(m.group(2), option=True)
+            if not a or not b or len(a) > 3 or len(b) > 3:
+                continue
+            context = "?" in sentence or re.search(r"\b(choose|pick|choice|decide|either|whether|which)\b",
+                                                   sentence, re.IGNORECASE)
+            if not context:
+                continue
+            return " ".join(a).upper(), " ".join(b).upper()
+    return None
+
+
+_WARNING = re.compile(r"\b(don't|do not|never|if you (?:ever|hear|see)|whatever you do|stay away|run)\b",
+                      re.IGNORECASE)
+_DECISION = re.compile(r"\b(refuse\w*|walk away|decide\w*|chose|choose|pick|only one way|outsmart)\b", re.IGNORECASE)
+_REACTION = re.compile(r"\b(imagine|what if|wonder|why|how could|would you)\b", re.IGNORECASE)
+
+
+def viewer_beat(text: str) -> tuple[str, str] | None:
+    """(kind, mood) when a beat speaks to the viewer: 'choice' (thinking), 'warning' (worried), 'decision'
+    (serious: F19 'determined' grins, wrong for dread) or 'reaction' (curious). The mood names an approved host
+    expression (sprites.FACES)."""
+    if choice_options(text):
+        return "choice", "thinking"
+    if _WARNING.search(text) and re.search(r"\byou\b|^\s*don't|^\s*never", text, re.IGNORECASE):
+        return "warning", "worried"
+    if _DECISION.search(text):
+        return "decision", "serious"
+    if _REACTION.search(text):
+        return "reaction", "curious"
+    return None
+
+
+# ---------------------------------------------------------------- transitions + motion
+
+TIME_CUE = re.compile(r"\b(later|that night|years?|decades?|centur\w+|hours?|morning|dawn|dusk|meanwhile|"
+                      r"long ago|once|since|by the time|slowly|fog|mist|dream\w*|memory|remember\w*|"
+                      r"the story goes|the legend says|in some versions|they say)\b", re.IGNORECASE)
+MOVE_CUE = re.compile(r"\b(ran|run|runs|running|walk\w*|fled|flee\w*|bolt\w*|rush\w*|drove|drive|travel\w*|"
+                      r"cross\w*|chase\w*|toward|towards|follow\w*|route|journey\w*|escape\w*)\b", re.IGNORECASE)
+SUDDEN = re.compile(r"\b(suddenly|burst\w*|slam\w*|snap\w*|strike\w*|struck|lunge\w*|grab\w*)\b", re.IGNORECASE)
+POP_TEMPLATES = {"date_stamp", "evidence", "fact", "missing", "phone", "photo_scan", "clock_stop"}
+SLIDE_TEMPLATES = {"map_route", "connections", "filmstrip"}
+CUT_TEMPLATES = {"impact", "quote", "choice", "closing", "compare", "shadow_reveal"}
+EFFECTS = ("cut", "dissolve", "slide", "pop", "swoosh")
+
+
+def _seg_text(seg: dict, words: list[dict]) -> str:
+    return " ".join(w["word"] for w in words if seg["start"] - 0.05 <= w["start"] < seg["end"])
+
+
+def plan_transitions(segs: list[dict], words: list[dict], max_swoosh: int = 2) -> list[str]:
+    """One transition INTO each segment (index 0 = 'cut'), stored as seg['transition'].
+    Hard cut by default (immediate change, impact); dissolve for time / atmosphere at a scene change; slide only for
+    real movement or a map / progression graphic; pop for small UI-like graphics (dates, evidence, phone); swoosh
+    only for a rare graphic entrance on a sudden beat. No accent effect twice in a row, at most max_swoosh swooshes,
+    dissolves at most a quarter of the cuts."""
+    out = []
+    swoosh_used, last_swoosh_t = 0, -99.0
+    for k, seg in enumerate(segs):
+        shot = seg.get("shot") or {}
+        if k == 0:
+            out.append("cut")
+            continue
+        prev = segs[k - 1]
+        text = _seg_text(seg, words)
+        new_scene = seg.get("scene") != prev.get("scene")
+        kind = shot.get("type")
+        tpl = shot.get("template") or ""
+        want = "cut"
+        if kind == "graphic":
+            if tpl in POP_TEMPLATES:
+                want = "pop"
+            elif tpl in SLIDE_TEMPLATES:
+                want = "slide"
+            elif tpl in CUT_TEMPLATES:
+                want = "cut"
+            if SUDDEN.search(text) and tpl not in CUT_TEMPLATES and swoosh_used < max_swoosh \
+                    and seg["start"] - last_swoosh_t > 12.0:
+                want = "swoosh"
+        elif kind == "image" and new_scene:
+            if TIME_CUE.search(text):
+                want = "dissolve"
+            elif MOVE_CUE.search(text):
+                want = "slide"
+        elif kind in ("opener", "opener_title"):
+            want = "cut"
+        # repetition: an accent effect never twice in a row; dissolves rationed
+        if want != "cut" and out and out[-1] == want:
+            want = "cut"
+        if want == "dissolve" and out.count("dissolve") + 1 > max(1, len(segs) // 4):
+            want = "cut"
+        if want == "swoosh":
+            swoosh_used += 1
+            last_swoosh_t = seg["start"]
+        out.append(want)
+    for seg, tr in zip(segs, out):
+        seg["transition"] = tr
+    return out
+
+
+REVEAL = re.compile(r"\b(reveal\w*|face|mask|eyes|blood|dead|body|grave|still|silence|waiting|watch\w*|stare\w*)\b",
+                    re.IGNORECASE)
+
+
+def plan_motion(segs: list[dict], words: list[dict]) -> list[str]:
+    """Camera motion per story picture (seg['motion']): push / pan / pull, or 'still' on a reveal beat that should
+    land without movement (never two stills in a row, never the same move twice in a row)."""
+    out, last = [], ""
+    cycle = ("push", "pan", "pull")
+    n = 0
+    for seg in segs:
+        if (seg.get("shot") or {}).get("type") != "image":
+            out.append("")
+            continue
+        text = _seg_text(seg, words)
+        if REVEAL.search(text) and last != "still":
+            m = "still"
+        else:
+            m = cycle[n % 3]
+            n += 1
+            if m == last:
+                m = cycle[n % 3]
+                n += 1
+        seg["motion"] = m
+        out.append(m)
+        last = m
+    return out
+
+
+# ---------------------------------------------------------------- event-matched sound
+
+# (event regex, sfx file in assets/sfx, volume) - only literal events; a mood is never a sound
+SFX_EVENTS = [
+    (r"\b(footsteps?|walk(?:ed|ing|s)?|stepp?(?:ed|ing)|ran|running|bolt(?:s|ed)?|fled|chas(?:ed|ing))\b", "footsteps_wood", 0.32),
+    (r"\b(slam(?:s|med)?\s+shut|door\s+slam\w*|slammed)\b", "door_slam", 0.4),
+    (r"\b(door\s+(?:creak\w*|open\w*|swung)|creak(?:s|ed|ing)?\s+open)\b", "door_creak", 0.35),
+    (r"\b(unlock\w*|turned the key)\b", "door_unlock", 0.35),
+    (r"\b(knock(?:s|ed|ing)?)\b", "knocking", 0.35),
+    (r"\b(text(?:ed)?\s+(?:message|from)|a\s+(?:text|message)\s+(?:arrived|came|popped)|notification)\b",
+     "phone_notification", 0.38),
+    (r"\b(phone\s+(?:buzz\w*|vibrat\w*|rang|ring\w*)|buzz(?:ed|ing)\b)", "phone_buzz", 0.35),
+    (r"\b(thunder\w*|lightning)\b", "thunder", 0.35),
+    (r"\b(wind\s+(?:howl\w*|blew|blow\w*|whistl\w*)|gust\w*)\b", "wind", 0.3),
+    (r"\b(clock\s+(?:tick\w*|struck|chimed)|ticking)\b", "clock_ticking", 0.3),
+    (r"\b(whisper(?:s|ed|ing)?)\b", "whispers", 0.3),
+    (r"\b(laugh(?:s|ed|ing)?|giggl\w*)\b", "creepy_laugh", 0.3),
+    (r"\b(glass\s+shatter\w*|shatter(?:s|ed)|smashed the window)\b", "glass_break", 0.35),
+    (r"\b(heart\s+(?:pound\w*|rac\w*|thump\w*)|heartbeat)\b", "heartbeat", 0.35),
+    (r"\b(owl\w*\s+(?:hoot\w*|call\w*)|hoot(?:s|ed|ing))\b", "owl", 0.3),
+    (r"\b(church\s+bells?|bell\s+(?:rang|tolled|toll\w*))\b", "church_bell", 0.3),
+    (r"\b(camera\s+(?:click\w*|flash\w*)|snapped a (?:photo|picture))\b", "camera_shutter", 0.35),
+    (r"\b(static|radio\s+crackl\w*)\b", "radio_static", 0.28),
+]
+# What each licensed SFX file should sound like (CLAP text side). sfx_index() checks the AUDIO against these
+# descriptions once (laion/clap-htsat-unfused, Apache-2.0, local, free) and stores assets/sfx/clap_index.json.
+SFX_LABELS = {
+    "footsteps_wood": "footsteps on a wooden floor", "footsteps_gravel": "footsteps on gravel",
+    "footsteps_grass": "footsteps on grass", "footsteps_leaves": "footsteps on dry leaves",
+    "footsteps_mud": "footsteps in mud", "footsteps_snow": "footsteps in snow", "door_slam": "a door slamming shut",
+    "door_creak": "a creaking door opening", "door_unlock": "a key unlocking a door", "knocking": "knocking on a door",
+    "phone_notification": "a phone message notification chime", "phone_buzz": "a phone vibrating",
+    "thunder": "thunder rumbling", "wind": "wind howling", "clock_ticking": "a clock ticking",
+    "whispers": "people whispering", "creepy_laugh": "a creepy laugh", "glass_break": "glass shattering",
+    "heartbeat": "a heartbeat", "owl": "an owl hooting", "church_bell": "a church bell ringing",
+    "camera_shutter": "a camera shutter click", "radio_static": "radio static", "whoosh": "a fast whoosh",
+    "ui_click": "a soft click", "doorbell": "a doorbell", "keys_jingle": "keys jingling",
+    "twigs_snap": "twigs snapping", "floor_creak": "a wooden floor creaking", "breathing_calm": "calm breathing",
+    "ghost_presence": "an eerie ghostly drone",
+}
+SURFACE = {"gravel": "footsteps_gravel", "grass": "footsteps_grass", "field": "footsteps_grass",
+           "leaves": "footsteps_leaves", "forest": "footsteps_leaves", "woods": "footsteps_leaves",
+           "mud": "footsteps_mud", "swamp": "footsteps_mud", "snow": "footsteps_snow", "ice": "footsteps_snow"}
+SFX_INDEX = ROOT / "assets" / "sfx" / "clap_index.json"
+
+
+def sfx_index(rebuild: bool = False) -> dict:
+    """{file: {"label", "best", "rank", "similarity", "verified"}}: CLAP's check that each licensed SFX recording
+    sounds like its label (verified = its own label is among CLAP's top 3 of all labels). Built once offline:
+    python -c "import explainer; explainer.sfx_index(rebuild=True)"; production only READS the committed json (no
+    model load). A missing index = every known file allowed (the old behaviour)."""
+    if not rebuild:
+        try:
+            return json.loads(SFX_INDEX.read_text())
+        except (OSError, ValueError):
+            return {}
+    import torch
+    from transformers import ClapModel, ClapProcessor
+    model = ClapModel.from_pretrained("laion/clap-htsat-unfused").eval()
+    proc = ClapProcessor.from_pretrained("laion/clap-htsat-unfused")
+    names = [n for n in SFX_LABELS if (ROOT / "assets" / "sfx" / f"{n}.mp3").is_file()]
+    labels = [SFX_LABELS[n] for n in names]
+    with torch.no_grad():
+        t = _emb(model.get_text_features(**proc(text=labels, return_tensors="pt", padding=True)))
+        out = {}
+        for n in names:
+            wav = _load_sfx(n, 48000)
+            if wav is None or not len(wav):
+                continue
+            a = _emb(model.get_audio_features(**proc(audio=[wav[:48000 * 8]], sampling_rate=48000,
+                                                      return_tensors="pt")))
+            sims = (a @ t.T)[0].tolist()
+            order = sorted(range(len(names)), key=lambda k: -sims[k])
+            rank = order.index(names.index(n)) + 1
+            out[n] = {"label": SFX_LABELS[n], "best": names[order[0]], "rank": rank,
+                      "similarity": round(sims[names.index(n)], 3), "verified": rank <= 3}
+    SFX_INDEX.write_text(json.dumps({"model": "laion/clap-htsat-unfused", "files": out}, indent=1))
+    log(f"SFX CLAP index: {sum(v['verified'] for v in out.values())}/{len(out)} recordings match their label")
+    return json.loads(SFX_INDEX.read_text())
+
+
+def _emb(x):
+    """A unit-length embedding from a transformers features call (a tensor, or an output with pooler_output)."""
+    x = getattr(x, "pooler_output", x)
+    return x / x.norm(dim=-1, keepdim=True)
+
+
+def _sfx_ok(name: str) -> bool:
+    files = (sfx_index() or {}).get("files") or {}
+    return name not in files or bool(files[name].get("verified"))
+
+
+HYPOTHETICAL = re.compile(r"\b(if|might|would|could|imagine|don't|do not|never|isn't|try to|whether|without)\b",
+                          re.IGNORECASE)
+
+
+def event_sfx(narration: dict, max_total: int = 4, cooldown: float = 8.0, hook_guard: float = 1.5) -> list[tuple]:
+    """(time, sfx, volume, seconds) for sounds of events the narration DESCRIBES, timed to the word that names them.
+    Hypothetical / negated lines ("walk away without answering", "if you hear knocking") and the first 1.5 s stay
+    silent; one sound per sentence, the same sound not within 8 s, at most 4 per video. Silence is a valid result."""
+    words = narration.get("words") or []
+    if not words:
+        return []
+    sentences, cur = [], []
+    for w in words:
+        cur.append(w)
+        if re.search(r"[.!?]$", w["word"]):
+            sentences.append(cur)
+            cur = []
+    if cur:
+        sentences.append(cur)
+    events, last = [], {}
+    for si, sent in enumerate(sentences):
+        text = " ".join(w["word"] for w in sent)
+        context = " ".join(w["word"] for w in sum(sentences[max(0, si - 1):si + 1], []))
+        if HYPOTHETICAL.search(text):
+            continue
+        for rx, name, vol in SFX_EVENTS:
+            m = re.search(rx, text, re.IGNORECASE)
+            if not m:
+                continue
+            if name == "footsteps_wood":  # the surface the narration names (gravel, snow, leaves...)
+                surf = next((f for w, f in SURFACE.items() if re.search(rf"\b{w}\b", context, re.IGNORECASE)), None)
+                name = surf or name
+            if not _sfx_ok(name):  # CLAP says this recording doesn't sound like its label: silence instead
+                continue
+            first = len(text[:m.start()].split())
+            at = sent[min(first, len(sent) - 1)]["start"]
+            if at < hook_guard or at - last.get(name, -99.0) < cooldown:
+                continue
+            events.append((round(at, 3), name, vol, 1.6))
+            last[name] = at
+            break  # one sound per sentence: never stacked effects
+        if len(events) >= max_total:
+            break
+    return events
+
+
+def caption_accents(story: dict, narration: dict, per_scene: int = 1) -> set[int]:
+    """Indexes (into narration['words']) of the few spoken words the caption track may accent: the payoff word of
+    each scene's strongest phrase, at most per_scene per scene. Everything else is captioned plainly."""
+    words = narration.get("words") or []
+    out = set()
+    for i, sc in enumerate(story.get("scenes") or []):
+        phrases = [p for p in key_phrases(sc.get("narration", ""), limit=per_scene, min_score=3.0)
+                   if len(p["text"].split()) >= 2 or p["first"][:1].isupper() or re.match(r"\d", p["text"])]
+        idx = [k for k, w in enumerate(words) if w.get("scene") == i]
+        for p in phrases:
+            target = _bare(p["accent"])
+            hit = next((k for k in idx if _bare(words[k]["word"]) == target), None)
+            if hit is not None:
+                out.add(hit)
+    return out
 
 
 # ================================================================ planning: the shot sequence
@@ -703,7 +1197,7 @@ def _slot_lengths(n: int, kinds: list[str], span: float) -> list[float]:
     host = float(CONFIG.get("explainer_host_max_seconds", 2.0))
     fixed = [min(host, 1.8) if k == "host" else None for k in kinds]
     rest = span - sum(x for x in fixed if x)
-    weights = [1.15 if k == "graphic" else 1.0 for k in kinds]
+    weights = [0.9 if k == "graphic" else 1.0 for k in kinds]  # a graphic is read in a beat; pictures carry the story
     free = sum(w for w, x in zip(weights, fixed) if x is None) or 1.0
     return [x if x is not None else rest * w / free for w, x in zip(weights, fixed)]
 
@@ -741,9 +1235,13 @@ def sequence(story: dict, narration: dict, scene_images: list[list[Path]], graph
             gs.append(gs.pop(0))
         prev_template = gs[0]["template"] if gs else prev_template
         narr = story["scenes"][i].get("narration", "")
-        host_ok = (i > 0 and i - last_host_scene > 1 and host_used + 1.8 <= budget
-                   and (_EMOTION.search(narr) or len(scene_images[i]) < 2) and span >= 6.0)
-        n = max(2 if gs else 1, min(6, round(span / 4.5)))
+        beat = viewer_beat(narr)  # a warning / decision / reaction aimed at the viewer
+        has_choice = any(g.get("template") == "choice" for g in gs)  # the P08 surrogate already plays this beat
+        host_ok = (i > 0 and i - last_host_scene > 1 and host_used + 1.8 <= budget and not has_choice
+                   and (beat or _EMOTION.search(narr) or len(scene_images[i]) < 2) and span >= 6.0)
+        # room for picture -> graphic -> second picture from ~6 s (cuts stay >= SHOT_MIN): the scene's second
+        # picture is no longer dropped for its graphic (the Aka Manto preview had one picture + one card per scene)
+        n = max(2 if gs else 1, min(6, round(span / 3.0)))
         order = [imgs[0]]
         if gs:
             order.append(gs[0])
@@ -751,10 +1249,13 @@ def sequence(story: dict, narration: dict, scene_images: list[list[Path]], graph
             order.append(imgs[1])
         if host_ok:
             import sprites
-            expression = _expr_for(narr)
-            selected = sprites.select_for_beat(narr, expression)
+            # the viewer beat (warning -> worried, decision -> serious...) gives the deterministic expression; the
+            # shared local CLIP (sprites.select_for_beat) may pick a better APPROVED asset, never new art
+            expression = beat[1] if beat else _expr_for(narr)
+            selected = sprites.select_for_beat(narr, expression, allow_poses=bool(beat and beat[0] == "choice"))
             asset_id = selected if selected != sprites.face_id(expression) else None
-            order.append({"type": "host", "scene": i, "expression": expression, "asset_id": asset_id})
+            order.append({"type": "host", "scene": i, "expression": expression, "asset_id": asset_id,
+                          "beat": beat[0] if beat else ""})
         if len(gs) > 1 and span > 9.0:
             order.append(gs[1])
         # Avoid manufacturing extra cuts by repeating crops of the same image.
@@ -811,6 +1312,8 @@ def sequence(story: dict, narration: dict, scene_images: list[list[Path]], graph
             segs.append({"start": round(s0, 3), "end": round(s1, 3), "shot": item, "scene": i})
     for k in range(1, len(segs)):  # contiguous timeline
         segs[k]["start"] = segs[k - 1]["end"]
+    plan_transitions(segs, words)  # cut / dissolve / slide / pop / swoosh by context, no repeats
+    plan_motion(segs, words)  # push / pan / pull / still per story picture
     return segs
 
 
@@ -1003,7 +1506,8 @@ class Renderer:
         self.acc = accent()
         self.cache: dict = {}
         self.layer_cache: dict = {}
-        self.groups = _caption_groups(narration["words"])
+        self.accents = caption_accents(story, narration)  # the few payoff words captions may accent
+        self.groups = _caption_groups(narration["words"], self.accents)
         self.t_true, self.t_title = opener_length(story)
         self.used_assets: set = set()
         self.frame_log = {"image": 0, "graphic": 0, "host": 0, "opener": 0, "end_card": 0}
@@ -1041,6 +1545,27 @@ class Renderer:
         f = frames[min(len(frames) - 1, int(t * FPS))]
         return self._cover(str(f), 1.0)
 
+    def _foreground(self, path: str) -> Image.Image | None:
+        """The picture's near layer for depth parallax: the cover image with alpha = feathered Depth Anything V2
+        nearness (effects.depth_map, the classic renderer's model, local CPU). None when depth can't run, the flag
+        explainer_depth_parallax is off, or the picture has no clear foreground."""
+        key = ("fg", path)
+        if key in self.cache:
+            return self.cache[key]
+        fg = None
+        if CONFIG.get("explainer_depth_parallax", True):
+            import effects
+            d = effects.depth_map(Path(path))
+            if d is not None:
+                near = np.clip((d - 0.6) / 0.2, 0, 1)
+                if 0.05 < float(near.mean()) < 0.55:  # a real foreground, not the whole frame or nothing
+                    base = self._cover(path, 1.08)
+                    m = Image.fromarray((near * 255).astype("uint8")).resize(base.size, Image.BILINEAR)
+                    fg = base.copy()
+                    fg.putalpha(m.filter(ImageFilter.GaussianBlur(6)))
+        self.cache[key] = fg
+        return fg
+
     def _blurred(self, path: str) -> Image.Image:
         key = ("blur", path)
         if key not in self.cache:
@@ -1057,13 +1582,23 @@ class Renderer:
         cx, cy, z = CROPS.get(s.get("crop", "full"), CROPS["full"])
         clip = self._clip_frame(s["file"], t)
         base = clip if clip is not None else self._cover(s["file"], 1.08)
-        k = self._index(seg) % 3
-        if k == 0:
+        # plan_motion: push toward a clue, pan along the scene, pull back for isolation, or hold still so
+        # a reveal lands (older shot lists without "motion" keep the index rotation)
+        move = seg.get("motion") or ("push", "pan", "pull")[self._index(seg) % 3]
+        if move == "still":
+            frame = self._crop(base, cx, cy, z * 1.03)
+        elif move == "push":
             frame = self._crop(base, cx, cy, z * (1.0 + 0.095 * x))
-        elif k == 1:
+        elif move == "pan":
             frame = self._crop(base, cx + 0.075 * (x - 0.5), cy, z * 1.03)
         else:
             frame = self._crop(base, cx, cy + 0.06 * (0.5 - x), z * (1.09 - 0.075 * x))
+        fg = self._foreground(s["file"]) if clip is None and move in ("push", "pan") else None
+        if fg is not None:  # 2.5D: the near layer (Depth Anything V2) moves a little more than the background
+            if move == "push":
+                frame.alpha_composite(self._crop(fg, cx, cy, z * (1.0 + 0.135 * x)))
+            else:
+                frame.alpha_composite(self._crop(fg, cx + 0.105 * (x - 0.5), cy, z * 1.03))
         frame.alpha_composite(self._vignette())
         return frame
 
@@ -1138,9 +1673,51 @@ class Renderer:
     def frame_at(self, t: float) -> Image.Image:
         """The frame at t: opener graphics, story pictures, graphics or a host reaction. There is no end card: the
         last segment (the closing graphic or the last picture) runs to the end."""
-        import noir
         seg = next((s for s in self.segs if s["start"] <= t < s["end"]), self.segs[-1])
         local = t - seg["start"]
+        frame = self._shot_frame(seg, local)
+        frame = self._transition(seg, frame, local)
+        if not (CONFIG.get("remotion_polish", False) or CONFIG.get("explainer_caption_engine") == "remotion"):
+            self.captions(frame, t, "scene", high=seg["shot"]["type"] == "host")
+        return frame
+
+    # transition lengths (s); plan_transitions chose one per cut ("cut" = none)
+    TRANSITION_S = {"dissolve": 0.45, "slide": 0.28, "swoosh": 0.24, "pop": 0.18}
+
+    def _transition(self, seg: dict, frame: Image.Image, local: float) -> Image.Image:
+        """Into this segment: dissolve (cross-fade from the previous shot's last frame), slide / swoosh (push: the
+        previous frame leaves left as this one enters), pop (a quick scale-up fade, UI-like graphics) or a hard cut."""
+        tr = seg.get("transition", "cut")
+        dur = self.TRANSITION_S.get(tr)
+        k = self._index(seg)
+        if not dur or k == 0 or local >= dur:
+            return frame
+        key = ("prev", k)
+        prev = self.layer_cache.get(key)
+        if prev is None:
+            p = self.segs[k - 1]
+            prev = self._shot_frame(p, max(0.0, p["end"] - p["start"] - 1.0 / FPS))
+            self.layer_cache = {kk: v for kk, v in self.layer_cache.items() if kk[0] != "prev"}
+            self.layer_cache[key] = prev
+        a = _ease(local / dur)
+        if tr == "dissolve":
+            return Image.blend(prev.convert("RGBA"), frame.convert("RGBA"), a)
+        if tr in ("slide", "swoosh"):
+            out = Image.new("RGBA", (W, H), BLACK + (255,))
+            off = int(W * a)
+            out.alpha_composite(prev, (-off, 0))
+            out.alpha_composite(frame, (W - off, 0))
+            return out
+        sc = 0.94 + 0.06 * a  # pop
+        small = frame.resize((int(W * sc), int(H * sc)), Image.BILINEAR)
+        lay = prev.copy()
+        top = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        top.alpha_composite(small, ((W - small.width) // 2, (H - small.height) // 2))
+        return Image.blend(lay, Image.alpha_composite(lay, top), a)
+
+    def _shot_frame(self, seg: dict, local: float) -> Image.Image:
+        """One segment's own frame at local time (no transition, no captions)."""
+        import noir
         sh = seg["shot"]
         kind = sh["type"]
         dur = seg["end"] - seg["start"]
@@ -1151,9 +1728,8 @@ class Renderer:
             frame = noir.render("title", {"text": self.story.get("fixed_title") or self.story.get("title") or ""},
                                 local, dur, self.ctx(seg, bg=self._opener_bg()))
             self.frame_log["opener"] += 1
-        elif kind == "graphic":
-            frame = self._slide_in(noir.render(sh["template"], sh.get("fields") or {}, local, dur, self.ctx(seg)),
-                                   local)
+        elif kind == "graphic":  # its entrance is the planned transition (no automatic wipe on every card)
+            frame = noir.render(sh["template"], sh.get("fields") or {}, local, dur, self.ctx(seg))
             self.frame_log["graphic"] += 1
         elif kind == "host":
             frame = self.host_frame(seg, local)
@@ -1163,8 +1739,6 @@ class Renderer:
             self.frame_log["image"] += 1
             if CONFIG.get("explainer_cinematic_camera", False):
                 frame = noir.cinematic_camera(frame, "subtle_push", local, dur)
-        if not (CONFIG.get("remotion_polish", False) or CONFIG.get("explainer_caption_engine") == "remotion"):
-            self.captions(frame, t, "scene")
         return frame
 
     def _index(self, seg: dict) -> int:
@@ -1184,7 +1758,7 @@ class Renderer:
             bg = self._blurred(own).copy() if own else None
         c = {"accent": self.acc, "tone": __import__("noir").tone_for(k), "seed": k % 7 + 1,
              "words": [{"word": w["word"], "start": w["start"] - seg["start"]} for w in self.narr["words"]
-                       if seg["start"] - 0.05 <= w["start"] < seg["end"]], "bg": bg}
+                       if seg["start"] - 0.05 <= w["start"] < seg["end"]], "bg": bg, "used_assets": self.used_assets}
         if sh.get("template") == "filmstrip":
             files = list(dict.fromkeys(x["shot"]["file"] for x in self.segs if x["shot"].get("type") == "image"))
             c["stills"] = [Image.open(p) for p in files[:4]]
@@ -1233,7 +1807,8 @@ class Renderer:
         y0 = max(0, min(bh - h, cy * bh - h / 2))
         return base.resize((W, H), Image.BILINEAR, box=(x0, y0, x0 + w, y0 + h)).convert("RGBA")
 
-    def captions(self, frame: Image.Image, t: float, kind: str) -> None:
+    def captions(self, frame: Image.Image, t: float, kind: str, high: bool = False) -> None:
+        """high: a host bust fills the lower frame, so the caption sits in the top safe area (never over a face)."""
         g = next((g for g in self.groups if g["start"] <= t < g["end"]), None)
         if not g:
             return
@@ -1243,7 +1818,7 @@ class Renderer:
         if im is None:
             im = self._caption_image(g, active, kind)
             self.layer_cache[key] = im
-        frame.alpha_composite(im, (0, CAP_Y - im.height // 2))
+        frame.alpha_composite(im, (0, (330 if high else CAP_Y) - im.height // 2))
 
     def _caption_image(self, g: dict, active: int, kind: str) -> Image.Image:
         f = font("bold", 78)
@@ -1254,6 +1829,7 @@ class Renderer:
         shadow = Image.new("RGBA", (W, hgt), (0, 0, 0, 0))
         d, ds = ImageDraw.Draw(im), ImageDraw.Draw(shadow)
         k = 0
+        flags = [w.get("accent") for w in g["words"]]
         for li, line in enumerate(lines):
             widths = [d.textlength(w, font=f) for w in line]
             sp = d.textlength(" ", font=f)
@@ -1265,6 +1841,8 @@ class Renderer:
                     col = INK + (255,) if on else (INK[0], INK[1], INK[2], 105)
                 else:
                     col = (255, 255, 255, 255) if on else (255, 255, 255, 120)
+                    if k < len(flags) and flags[k] and on:
+                        col = self.acc + (255,)
                     ds.text((x, y + 6), w, font=f, fill=(0, 0, 0, 200))
                 d.text((x, y), w, font=f, fill=col)
                 x += ww + sp
@@ -1276,10 +1854,13 @@ class Renderer:
         return im
 
 
-def _caption_groups(words: list[dict]) -> list[dict]:
-    """1-3 words per caption, broken at punctuation and pauses; each shown until the next one starts."""
+def _caption_groups(words: list[dict], accents: set | None = None) -> list[dict]:
+    """1-3 words per caption, broken at punctuation and pauses; each shown until the next one starts. Words whose
+    index is in `accents` (caption_accents) are drawn in the accent colour; nothing else is accented."""
     groups, cur = [], []
+    accents = accents or set()
     for k, w in enumerate(words):
+        w = dict(w, accent=k in accents)
         cur.append(w)
         nxt = words[k + 1] if k + 1 < len(words) else None
         end = bool(re.search(r"[.,!?;:…]$", w["word"])) or len(cur) >= 3 or not nxt or nxt["start"] - w["end"] > 0.3
@@ -1290,7 +1871,8 @@ def _caption_groups(words: list[dict]) -> list[dict]:
     for k, g in enumerate(groups):
         nxt = groups[k + 1][0]["start"] if k + 1 < len(groups) else g[-1]["end"] + 0.3
         out.append({"start": g[0]["start"], "end": max(nxt, g[-1]["end"]),
-                    "words": [{"start": w["start"], "text": re.sub(r"[{}\\]", "", w["word"])} for w in g]})
+                    "words": [{"start": w["start"], "text": re.sub(r"[{}\\]", "", w["word"]),
+                               "accent": bool(w.get("accent"))} for w in g]})
     return out
 
 
@@ -1354,27 +1936,41 @@ def _total(narration: dict) -> float:
     return narration["duration"] + tail_for(narration["duration"])
 
 
+def sound_plan(story: dict, narration: dict, segs: list[dict]) -> list[tuple]:
+    """Every SFX event of the video: a whoosh ONLY on a planned swoosh transition, a soft click on a UI-like pop
+    (dates / evidence / missing), the phone notification when a stated message appears, and event sounds the
+    narration describes (event_sfx: footsteps when someone runs, a door when it slams...). Never two
+    effects within 1 s of each other; silence is allowed. Music is added later, under the voice."""
+    events = []
+    last_click, clicks = -100.0, 0
+    for k, seg in enumerate(segs):
+        shot, at = seg["shot"], float(seg["start"])
+        tr = seg.get("transition", "cut")
+        if k and tr == "swoosh":
+            events.append((max(0.0, at - 0.12), "whoosh", 0.18, 0.6))
+        if shot.get("template") == "phone":
+            events.append((at + 0.55, "phone_notification", 0.34, 1.2))  # when the bubble lands
+        elif tr == "pop" and shot.get("template") in ("date_stamp", "evidence", "missing") \
+                and at - last_click >= 10.0 and clicks < 3:  # a click on every card is a loop, not a cue
+            events.append((at + 0.2, "ui_click", 0.3, 0.4))
+            last_click, clicks = at, clicks + 1
+    t_true, _ = opener_length(story)
+    if t_true:
+        events.append((0.18, "ui_click", 0.5))
+    for ev in event_sfx(narration):
+        if all(abs(ev[0] - e[0]) >= 1.0 for e in events):
+            events.append(ev)
+    events.sort(key=lambda e: e[0])
+    story["explainer_sound_plan"] = [{"at": e[0], "sfx": e[1]} for e in events]
+    return events
+
+
 def render(story: dict, narration: dict, segs: list[dict], workdir: Path, img_dir: Path | None = None):
     """PIL frames -> ffmpeg (4.5 Mbps) + narration/SFX mix, then the optional Remotion editorial pass.
     Returns (mp4, renderer): the renderer's frame_log / used_assets feed the visual QA."""
     total = _total(narration)
     r = Renderer(story, narration, segs, img_dir)
-    events = []
-    last_whoosh, last_click = -100.0, -100.0
-    for k, seg in enumerate(segs):
-        shot = seg["shot"]
-        at = float(seg["start"])
-        if k and shot["type"] == "graphic" and segs[k - 1]["shot"]["type"] != "graphic" and at - last_whoosh >= 5.0:
-            events.append((max(0.0, at - 0.12), "whoosh", 0.18, 0.6))
-            last_whoosh = at
-        if shot.get("template") in ("date_stamp", "evidence", "missing") and at - last_click >= 3.5:
-            events.append((at + 0.35, "ui_click", 0.35, 0.4))
-            last_click = at
-    t_true, t_title = opener_length(story)
-    if t_true:
-        events.append((0.18, "ui_click", 0.55))
-    if t_title and t_true - last_whoosh >= 5.0:
-        events.append((max(0.0, t_true - 0.1), "whoosh", 0.2))
+    events = sound_plan(story, narration, segs)
     audio = _mix_audio(narration, total, events, workdir / "explainer_audio.wav")
     out = workdir / "explainer.mp4"
     n = int(round(total * FPS))
@@ -1415,7 +2011,7 @@ def render(story: dict, narration: dict, segs: list[dict], workdir: Path, img_di
         f"{sum(lens) / len(lens):.1f}s), {n} frames in {time.time() - t0:.0f}s")
     if CONFIG.get("remotion_polish", False):
         from remotion_post import polish
-        out = polish(out, workdir / "explainer_polished.mp4", segs, narration, FPS, n)
+        out = polish(out, workdir / "explainer_polished.mp4", segs, narration, FPS, n, accents=r.accents)
         story["explainer_render"]["remotion_polish"] = True
     return out, r
 
@@ -1645,14 +2241,14 @@ def build(story: dict, narration: dict, img_dir: Path, workdir: Path) -> Path:
     graphics = None
     try:
         old = json.loads(saved.read_text())
-        if old.get("key") == key and old.get("version") == 2:
+        if old.get("key") == key and old.get("version") == 3:  # 3 = phrase-aware impact cards, choice, phone
             graphics = old["graphics"]
             log("Explainer graphics: reused from the earlier try (same narration)")
     except (OSError, ValueError, KeyError):
         graphics = None
     if graphics is None:
         graphics = plan_graphics(story, narration)
-        checkpoint.write_atomic(saved, json.dumps({"key": key, "version": 2, "graphics": graphics},
+        checkpoint.write_atomic(saved, json.dumps({"key": key, "version": 3, "graphics": graphics},
                                                   ensure_ascii=False, default=str))
         checkpoint.register_image(saved, stage="shot_list")
     total = _total(narration)
@@ -1660,6 +2256,8 @@ def build(story: dict, narration: dict, img_dir: Path, workdir: Path) -> Path:
     story["render_style"] = "explainer"
     video, ren = render(story, narration, segs, workdir, img_dir)
     report = visual_qa(story, segs, ren, video, total)
+    if CONFIG.get("whisper_narration_check", False):  # report-only: what a listener hears vs the captions
+        report["narration_check"] = story["narration_check"] = verify_narration(video, narration)
     write_reports(workdir, report, segs)
     story["explainer_plan"] = {"shots": report["shots"], "runtime_share": report["runtime_share"],
                                "media_used": report["media_used"]}
@@ -1668,6 +2266,41 @@ def build(story: dict, narration: dict, img_dir: Path, workdir: Path) -> Path:
     if report["failures"]:
         raise VisualQAFailed("; ".join(report["failures"])[:900])
     return video
+
+
+def verify_narration(video: Path, narration: dict, model: str = "openai/whisper-base") -> dict:
+    """What a listener actually hears, checked against the caption words: local Whisper (MIT, free, CPU) transcribes
+    the finished video's audio with word timestamps; the narration words are aligned to it. Returns coverage (share
+    of caption words heard), timing offsets (heard - captioned start, s) and the caption words that were not heard.
+    Report-only (config whisper_narration_check); never blocks a video."""
+    import difflib
+    from transformers import pipeline as hf_pipeline
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-i", str(video), "-ac", "1", "-ar", "16000", "-f", "f32le", "-"],
+                         capture_output=True, check=True).stdout
+    audio = np.frombuffer(raw, dtype=np.float32)
+    asr = hf_pipeline("automatic-speech-recognition", model=model, device="cpu")
+    out = asr({"raw": audio, "sampling_rate": 16000}, return_timestamps="word", chunk_length_s=30, batch_size=4)
+    heard = [(_bare(c["text"]), float((c.get("timestamp") or (0, 0))[0] or 0.0)) for c in out.get("chunks") or []]
+    heard = [h for h in heard if h[0]]
+    said = [(_bare(w["word"]), float(w["start"])) for w in narration.get("words") or [] if _bare(w["word"])]
+    sm = difflib.SequenceMatcher(a=[w for w, _ in said], b=[w for w, _ in heard], autojunk=False)
+    matched, offsets = set(), []
+    for blk in sm.get_matching_blocks():
+        for k in range(blk.size):
+            matched.add(blk.a + k)
+            offsets.append(heard[blk.b + k][1] - said[blk.a + k][1])
+    offsets.sort()
+    med = offsets[len(offsets) // 2] if offsets else None
+    rep_ = {"model": model, "caption_words": len(said), "heard_words": len(heard),
+            "coverage": round(len(matched) / max(1, len(said)), 3),
+            "median_offset_s": round(med, 3) if med is not None else None,
+            "max_abs_offset_s": round(max(abs(o) for o in offsets), 3) if offsets else None,
+            "late_or_early_over_0_3s": sum(1 for o in offsets if abs(o) > 0.3),
+            "not_heard": [said[k][0] for k in range(len(said)) if k not in matched][:40],
+            "transcript": " ".join(c["text"].strip() for c in out.get("chunks") or [])[:2000]}
+    log(f"Narration check (Whisper): {rep_['coverage']:.0%} of caption words heard, median offset "
+        f"{rep_['median_offset_s']}s, {rep_['late_or_early_over_0_3s']} word(s) off by > 0.3 s")
+    return rep_
 
 
 def frame_sheet(video: Path, dest: Path, n: int = 8) -> Path | None:

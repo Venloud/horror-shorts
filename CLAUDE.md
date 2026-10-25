@@ -729,6 +729,34 @@ Keep user-approved editing standards in `docs/NIGHT_FILES_EDITING_QUALITY_CHECKL
   pictures follow shots_per_scene + cf_budget like classic and go into the asset library via library.record_video.
 - PIL gotcha: ImageDraw with translucent fills REPLACES pixels on RGBA images; draw on a transparent layer and
   alpha_composite (noir templates and overlays do).
+- **Universal editor: editorial intelligence (Oct 25, owner: "ONE universal video editor that adapts to any story";
+  no per-story files, renderers or pipelines)**. It lives IN explainer.py ("editorial intelligence" section) and is
+  used by plan_graphics / sequence / Renderer / sound_plan and the Remotion pass. Root causes it fixed (Aka Manto
+  preview): `_impact_fallback` glued the scene's two LONGEST words ("CHOOSE COVERED"); Remotion's caption track
+  underlined EVERY spoken word; Remotion's CutTreatment swept magenta over EVERY cut and every graphic slid in with a
+  whoosh. Now: `key_phrases` = complete phrases from ONE clause (attribution "the legend says / you'll be" trimmed,
+  content words at the edges, weak words "mysterious / wearing / appears" never accented): "CHOOSE RED" +
+  "COVERED IN BLOOD" (accent BLOOD); no meaningful phrase = no impact card (a clean picture). `_meaningful_accent`
+  drops LLM accents that are filler or not on the graphic. `plan_transitions`: hard cut by default, dissolve for
+  time / atmosphere at a scene change, slide (push) for real movement / map / progression, pop for UI-like graphics
+  (date, evidence, phone), swoosh only on a sudden beat (max 2, never twice in a row); `plan_motion`: push / pan /
+  pull / still (stillness on reveal beats). `caption_accents`: at most one payoff word per scene is underlined
+  (Remotion) / coloured (Pillow). Graphics: `choice` (narration offers "X or Y?": the owner-approved P08 open-palms
+  pose, `sprites.pose` with SHA-256 from assets/poses/asset_checksums.json, unchanged art, one option over each
+  palm; MissingAsset = options only, never substitute art; only P08 may be picked automatically: POSE_RENDER_STANDARD),
+  `phone` (a stated message on a phone screen + phone_notification), impact `lines`. `viewer_beat`: warning ->
+  worried, decision -> determined, reaction -> curious (approved F faces). Sound (`sound_plan`): whoosh only on a
+  planned swoosh, clicks only on pops, `event_sfx` = sounds for events the narration DESCRIBES (footsteps with the
+  named surface, door slam, knocking, thunder...), never hypothetical / negated lines or the first 1.5 s, one per
+  sentence, max 4, silence allowed. Local free HF models only (no paid inference): CLAP laion/clap-htsat-unfused
+  (Apache-2.0) checked every licensed SFX once -> assets/sfx/clap_index.json (27/31 match their label; wind,
+  radio_static, ghost_presence, ui_click do not: event SFX never use an unverified file; rebuild with
+  `python -c "import explainer; explainer.sfx_index(rebuild=True)"`); CLIP scene-picture order and approved-asset choice
+  are PR #27's shared `library.rank_images` / `sprites.select_for_beat` (no second matcher); Depth Anything V2
+  (effects.depth_map) gives stills a near layer that moves more (flag explainer_depth_parallax); Whisper
+  openai/whisper-base (MIT) `verify_narration` = report-only check of what a listener hears vs the captions (flag
+  whisper_narration_check, default off in production). Storyboard cache version 3 (old plans are not reused).
+  Tests: tests/test_cinematic_editor.py; preview fixtures tests/fixtures/editor/ (legend, fiction) + Amelia (true).
 
 ## EXPERIMENTAL: cutout render style (`cutout.py`, off by default)
 - Switch: config `render_style` (classic | cutout), build.yml input `render_style` (env RENDER_STYLE),

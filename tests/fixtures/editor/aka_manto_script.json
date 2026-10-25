@@ -1,0 +1,121 @@
+{
+ "story_id": "preview_aka_manto",
+ "title": "Aka Manto: Red or Blue?",
+ "mode": "lore",
+ "true_story": false,
+ "subgenre": "japanese urban legend",
+ "case": "Aka Manto",
+ "twist_scene": 6,
+ "characters": [
+  {
+   "name": "Aka Manto",
+   "look": "a tall figure in a long crimson hooded cloak and a smooth pale mask, face hidden"
+  },
+  {
+   "name": "the student",
+   "look": "a young woman of about twenty in a dark school blazer, short black hair"
+  }
+ ],
+ "locations": [
+  {
+   "name": "Old School Restroom",
+   "look": "an old school restroom with pale green tiles, a row of wooden stall doors and one flickering fluorescent tube"
+  }
+ ],
+ "fact_ledger": [
+  "Aka Manto: Japanese urban legend of a masked figure in a red cloak who haunts school toilets",
+  "the question: red or blue paper",
+  "red: covered in blood; blue: drained of blood"
+ ],
+ "source_note": "owner's exact-words inbox script inbox/aka_manto_finished_script_20261024.txt, split into scenes",
+ "scenes": [
+  {
+   "narration": "Imagine being alone in a bathroom when someone whispers from the next stall, “Red or blue?”",
+   "image_prompt": "the student alone at a sink in a dim tiled restroom, frozen, looking toward the closed stall beside her, rule of thirds",
+   "image_prompt_2": "a closed wooden stall door, a thin line of darkness beneath it, low angle, leading lines of floor tiles toward it",
+   "image_location": "Old School Restroom",
+   "image_location_2": "Old School Restroom",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "sfx": "none",
+   "location": "Old School Restroom"
+  },
+  {
+   "narration": "That's the question at the center of Aka Manto, one of Japan's most unsettling urban legends.",
+   "image_prompt": "Aka Manto in a crimson hooded cloak standing at the far end of a long tiled restroom, small and centered under one ceiling light",
+   "image_prompt_2": "a single fluorescent tube flickering over a row of wooden stall doors, circular pool of light on the tiles",
+   "image_location": "Old School Restroom",
+   "image_location_2": "Old School Restroom",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "sfx": "none",
+   "location": "Old School Restroom"
+  },
+  {
+   "narration": "The story goes that a mysterious figure wearing a red cloak and mask appears when someone is alone.",
+   "image_prompt": "Aka Manto glimpsed through a half-open stall door, crimson cloak and smooth pale mask, frame within a frame",
+   "image_prompt_2": "the edge of a crimson cloak trailing across wet floor tiles, close-up",
+   "image_location": "Old School Restroom",
+   "image_location_2": "Old School Restroom",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "sfx": "none",
+   "location": "Old School Restroom"
+  },
+  {
+   "narration": "Choose red, and the legend says you'll be covered in blood. Choose blue, and you'll be drained of it.",
+   "image_prompt": "a roll of red paper and a roll of blue paper on a dark tiled ledge, side by side, dramatic lamp light, no text",
+   "image_prompt_2": "the student pressing her back to a stall wall, eyes wide, dark tiles, diagonal shadow across her",
+   "image_location": "Old School Restroom",
+   "image_location_2": "Old School Restroom",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "sfx": "none",
+   "location": "Old School Restroom"
+  },
+  {
+   "narration": "But what if you try to outsmart him? In some versions, asking for yellow or another color brings an equally terrifying fate. And running away isn't always an option.",
+   "image_prompt": "the student whispering toward the stall partition, hand on the cold wall, tense, medium shot",
+   "image_prompt_2": "a restroom exit door at the end of a corridor of stalls, far away, deep shadows, leading lines",
+   "image_location": "Old School Restroom",
+   "image_location_2": "Old School Restroom",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "sfx": "none",
+   "location": "Old School Restroom"
+  },
+  {
+   "narration": "There's only one way the legend says you might survive: refuse both choices and walk away without answering.",
+   "image_prompt": "the student walking away down the tiled restroom toward a dim doorway, seen from behind, calm and silent",
+   "image_prompt_2": "an empty restroom floor reflecting one cold light, footprints of water leading to the door",
+   "image_location": "Old School Restroom",
+   "image_location_2": "Old School Restroom",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "sfx": "none",
+   "location": "Old School Restroom"
+  },
+  {
+   "narration": "Because Aka Manto isn't offering you toilet paper. He's making you choose how your story ends.",
+   "image_prompt": "Aka Manto's smooth pale mask in the shadow of a crimson hood, close-up, eyes not visible",
+   "image_prompt_2": "a gloved hand in a crimson sleeve resting on a stall door frame, close-up, diagonal composition",
+   "image_location": "Old School Restroom",
+   "image_location_2": "Old School Restroom",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "sfx": "none",
+   "location": "Old School Restroom"
+  },
+  {
+   "narration": "So if you're ever alone and hear that question from the next stall... Don't pick a color.",
+   "image_prompt": "a dark tiled restroom at night, every stall door closed, one fluorescent tube still on, wide shot",
+   "image_prompt_2": "the closed stall door from scene one, centered, its gap beneath now completely black",
+   "image_location": "Old School Restroom",
+   "image_location_2": "Old School Restroom",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "sfx": "none",
+   "location": "Old School Restroom"
+  }
+ ]
+}

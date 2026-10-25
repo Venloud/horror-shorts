@@ -75,6 +75,60 @@ At each major cut or graphic decision, rank: **Emotion (51%) > Story (23%) > Rhy
 
 Practical audit questions: What should the viewer feel now? What changes in the story? Why cut at this exact moment? Where does their eye go next? Are captions/graphics legible and shot direction coherent? Does the place still make sense? Keep existing caption coverage, subtle camera motion, selective useful graphics and scene-matched sound. Never add a graphic to satisfy a quota or force one of the five composition patterns into every shot.
 
+## Implemented in the universal editor (2026-10-25)
+
+All of this lives in the ONE editor (`pipeline/explainer.py` "editorial intelligence" section, `pipeline/noir.py`
+templates, `remotion/src/polish.jsx`); there is no per-story code and no second pipeline.
+
+- **Root causes of the Aka Manto preview problems.** `CHOOSE COVERED`: the old impact fallback joined the scene's two
+  LONGEST words. Meaningless underlines: the Remotion caption track underlined every spoken word, and the impact card
+  always underlined its last line. Repeated swooshes: Remotion drew a magenta sweep on every cut, and every graphic
+  wiped in with a whoosh.
+- **Meaning-aware typography.** `key_phrases` returns complete phrases from one clause ("CHOOSE RED", "COVERED IN
+  BLOOD"). It never glues words from different places. Each phrase's accent is its payoff word. With no meaningful
+  phrase, the scene gets no impact card. Captions accent at most one payoff word per scene.
+- **Transitions.** Hard cut by default. Dissolve for time or atmosphere. Push only for movement or progression. Pop for
+  small UI-like graphics. A rare swoosh on a sudden beat. No accent effect twice in a row. Stills may hold still on a
+  reveal.
+- **Viewer surrogate.** For a real either/or in the narration ("Red or blue?"), the `choice` graphic shows the
+  approved P08 open-palms pose with one option over each palm. The pose is SHA-256-checked, and the artwork is never
+  changed. Without P08, the two options appear alone. Other P poses are not picked automatically until the owner
+  approves them.
+- **Contextual graphics and sound.** A stated text message appears as a `phone` insert with one notification chime.
+  Event sounds are timed to the word that describes the event. Hypothetical lines, the hook and moods get no sound;
+  silence is allowed.
+- **Local Hugging Face models only.** CLAP checks that each SFX file sounds like its label (`assets/sfx/clap_index.json`).
+  CLIP picks which picture opens each scene. Depth Anything V2 adds a gentle near-layer parallax. Whisper is a
+  report-only check of heard words against captions.
+
+## Hugging Face Diffusers evaluation (2026-10-25)
+
+Question: can Diffusers image-to-video (I2V) usefully animate selected existing story stills, compared with the
+current Ken Burns, Depth Anything V2 parallax and ZeroGPU Space motion?
+
+| Model (Diffusers) | Licence | Hardware / runtime (published) | Fit for Night Files |
+|---|---|---|---|
+| Stable Video Diffusion img2vid-xt | Stability AI Community License (commercial terms at stability.ai/license) | 25 frames at 576x1024; about 180 s per clip on an A100 80 GB (model card) | Short motion only (about 1-2 s). GPU required; not practical on a CPU runner. |
+| Wan 2.1 I2V 14B (480p) | Apache-2.0 | About 13 GB VRAM even with Diffusers group offloading (Diffusers docs for the 14B models); 24 GB is the common claim | Best licence, heavy. Owner's own GPU only. |
+| LTX-Video / LTX-2.x | LTX-2 Community License (free under USD 10M revenue; check the exact version's LICENSE) | 16 GB+ VRAM published; fp8 / offload variants exist | Fast on GPU; licence must be checked per version. |
+| CogVideoX-2B / 5B I2V | CogVideoX licence (check per model) | GPU, 50 steps | Lower priority. |
+
+**Verdict: not practical in the default production pipeline.** GitHub-hosted runners are CPU-only (4 vCPU, 16 GB RAM).
+Every useful I2V model needs a GPU with about 13-24 GB VRAM, and minutes per short clip even on an A100. On CPU it
+would take hours and break the 2-a-day schedule. AI video models also smear faces, add morphing, and can change
+the approved look (the Oct 6 Lougawou hook-blur lesson). Current motion is free, fast and deterministic: Ken Burns,
+Depth Anything V2 parallax (local, Apache-2.0) and the existing ZeroGPU Spaces route in `ai_motion.py`.
+
+**Practical future option, if wanted:** an opt-in, isolated tool for the owner's own GPU (or a free Colab or Kaggle
+GPU). It would turn 1-3 selected stills per video into 2 s inserts with Wan 2.1 I2V (Apache-2.0), reviewed by a
+person before use, keeping the still and parallax path as the default and the fallback. Nothing is installed or
+enabled in production or CI. A side-by-side comparison with Ken Burns and parallax needs that GPU; it was not run here.
+
+Sources: Diffusers video guide https://huggingface.co/docs/diffusers/using-diffusers/text-img2vid ,
+SVD model card https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt ,
+LTX licence https://huggingface.co/Lightricks/LTX-2.3/blob/main/LICENSE ,
+Wan 2.1 overview https://comfyui-wiki.com/en/tutorial/advanced/wan21-video-model (third-party VRAM figures,
+unverified against Wan-AI's own card).
 
 ## Local CLIP: scene relevance and approved-asset selection (2026-10-24)
 
