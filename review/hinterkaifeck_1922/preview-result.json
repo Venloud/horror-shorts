@@ -1,0 +1,34 @@
+{
+  "scope": "Existing pipeline isolated preview; not published or buffered",
+  "video": "/workspace/work/hinterkaifeck-render-v4/final.mp4",
+  "media": {
+    "width": 1080,
+    "height": 1920,
+    "duration": 64.1
+  },
+  "production_gate": {
+    "passed": true,
+    "problems": []
+  },
+  "asset_lifecycle": {
+    "status": "retained-restricted",
+    "restricted": [
+      "archival_farmhouse_reference",
+      "snow_farmhouse_footprints_concept",
+      "barn_investigation_lantern_illustration",
+      "snow_forest_farmhouse_figure_illustration",
+      "snow_farmhouse_warm_window",
+      "attic_shadow_figure",
+      "barn_mattock_tool",
+      "moonlit_farmhouse_footprints_shadow",
+      "farmhouse_chimney_smoke",
+      "hooded_figure_attic",
+      "snow_footprint_trail"
+    ],
+    "cleanup": false
+  },
+  "project_assets_used": 9,
+  "paid_calls_made": false,
+  "narration_script_sha256": "4cac80bdd02c5f5d2a69ee23ccca1aed3762df63d681832f5e7d59cd40d8f5f5",
+  "source_manifest_sha256": "6c6b6bdac6f4279d7058db6314615b5c15bde3a633629b13aa9a12d2bcbf6a49"
+}
