@@ -12,6 +12,7 @@ The storyboard picks a mood and a view; body_id() / face_id() turn them into ass
 """
 import hashlib
 import json
+import re
 from functools import lru_cache
 from pathlib import Path
 
@@ -114,9 +115,9 @@ def select_for_beat(narration: str, mood: str = "neutral") -> str:
     if not narration.strip():
         return fallback
     approved = approved_registry().get("approved", [])
-    choice = bool(__import__("re").search(
+    choice = bool(re.search(
         r"\b(choos\w*|decid\w*|option|either|which|two choices|left or right)\b",
-        narration, __import__("re").I))
+        narration, re.I))
     # A small semantic set keeps the CPU pass bounded. Reuse the approved registry, never guess paths.
     useful_faces = {"F01", "F07", "F09", "F10", "F11", "F12", "F13", "F14", "F15", "F19", "F21"}
     ids = [r["id"] for r in approved if r.get("status") == "approved"
@@ -138,6 +139,7 @@ def approved_image(asset_id: str) -> Image.Image:
     if not usable(asset_id):
         raise MissingAsset(asset_id, "is not an approved transparent asset")
     return _trimmed(asset_id).copy()
+
 
 def view_for(action: str, view: str) -> str:
     return ACTIONS.get(action) or (view if view in VIEWS else "front")
