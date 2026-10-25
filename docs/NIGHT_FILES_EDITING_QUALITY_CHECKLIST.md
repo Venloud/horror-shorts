@@ -10,6 +10,19 @@ These are permanent creative acceptance guidelines, not four effects that must a
 - Treat animation *inside* a relevant graphic (a phone alert or factual map movement) separately from the transition *between* clips. Keep useful local animation without adding a decorative shot boundary.
 - Reviewer gate: for every non-cut transition, state what changed, where narration establishes it, and what meaning the effect conveys. If that cannot be answered, replace it with a cut. An ordinary style preset cannot override this.
 
+## Nonlinear easing, entry/exit and subtle interface overshoot, owner directive 2026-10-25
+
+**Motion language:** Use natural, intentional motion rather than default linear-looking moves. Applies to explanatory graphics, UI inserts, pop-ups, evidence cards, kinetic text, captions, character/object micro-animations, camera/in-shot motion and transitions **only when that transition already has a narrative reason**.
+
+- **Entry, ease-out when it feels right:** an entering title, UI alert, character/graphic or text phrase moves into its final position with noticeable early motion, then decelerates smoothly to rest. Avoid abrupt stops.
+- **Exit, ease-in when it feels right:** an element leaving intentionally starts gently and accelerates out. Do not force every element to exit; a hold, immediate removal or actual hard cut may be best.
+- **Small out-of-bounds displacement for interfaces:** when appropriate, let a UI element briefly **overshoot its designed resting position** and settle back with a restrained spring/damped curve. This is a tiny tactile movement, **not** a license to fly text out of the 9:16 frame, crop captions, hide evidence or shake continuously.
+- **Nothing mechanically linear by default:** use well-chosen nonlinear keyframe interpolation for authored position, scale, opacity, size or other animated values. Ease-in-out suits continuous motions that both start and finish at rest. Continuous constant-speed motion is still acceptable when physically or informationally necessary (such as a clock sweep or grounded map travel). Never distort facts to force an effect.
+- **No automatic motion quota:** only animate when the beat benefits, with restrained distance/overshoot and a clean final settle. Horror can need silence, tension and stillness rather than bounce. Test timing and safe-zone legibility at phone scale. Avoid repetitive effects, jitter, elastic rubber-banding and eye-trace disruption.
+- **Respect the previous transition punctuation rule:** a hard cut is *not* animated and remains the default clip boundary. Dissolve only for narrated passage of time, black fade only at the ending; don't reintroduce slides, swooshes, zoom transitions or wipes by calling them easing.
+
+**QA evidence:** For each deliberate entrance/exit/overshoot, verify what is moving, the meaning of that gesture, start/end positions, readability, timing, easing curve, whether a subtle settle is warranted, and whether a simple hold/cut is stronger. These rules govern future edits; adding them to documentation **does not claim renderer code has implemented every curve**.
+
 ## 1. Captions, always
 - Every spoken word should be captioned and in sync with narration. Use engaging, polished animated text with readable contrast and safe placement.
 - Vary emphasis, phrase grouping and entry motion when meaningful; avoid frantic animation for every word. Missing captions are a repair issue.

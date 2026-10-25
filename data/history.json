@@ -2599,7 +2599,15 @@
     "opening": "Victims found themselves completely paralyzed in bed while a strange, sweet odor filled the air.",
     "music_file": "unsolved_mystery.mp3",
     "buffered": "2026-10-23_2133",
-    "tiktok": null
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7700657234652874783",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    },
+    "draft_sent": "2026-10-25_1724"
   },
   {
     "date": "2026-10-23_2249",
