@@ -1172,6 +1172,7 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
     done_shots: list[str] = []
 
     import cf_budget
+    import library  # existing free local CLIP matcher; no paid/hosted inference
 
     def cf_usable() -> bool:  # test builds: only with fresh_images (TEST_FRESH), and within their 35% daily share
         if testing and has_cf and not _STATE["cf_out"] and not cf_budget.test_allowed():
@@ -1274,6 +1275,12 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
             draws += 1
             last, last_kind = provider, kind
             tokens = clip_tokens(p)
+            # Image generated; use local CLIP to catch obviously unrelated compositions before costly vision QA.
+            # The source-specific QA is still authoritative: similarity does NOT prove truth or identity.
+            clip_rank = library.rank_images(raw_prompt, [path], source=name)
+            clip_score = clip_rank[0]["score"] if clip_rank else None
+            clip_min = float(CONFIG.get("clip_generated_min_similarity", 0.18))
+            story.setdefault("_shot_clip", {})[tag] = round(clip_score, 4) if clip_score is not None else None
             if provider is _cloudflare:
                 count["cloudflare"] += 1
                 if not qa_cf:
@@ -1282,6 +1289,14 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
                     verdict, why = check_image(path, request, wait=False)
             else:
                 count[name] += 1
+                clip_rank = library.rank_images(raw, [path], source=name)
+            clip_score = clip_rank[0]["score"] if clip_rank else None
+            story.setdefault("_shot_clip", {})[f"{i:02d}a"] = (
+                round(clip_score, 4) if clip_score is not None else None)
+            clip_min = float(CONFIG.get("clip_generated_min_similarity", 0.18))
+            if clip_score is not None and clip_score < clip_min:
+                verdict, why = False, f"CLIP semantic mismatch {clip_score:.3f} < {clip_min:.3f}"
+            else:
                 verdict, why = check_image(path, request)
             qa = "PASS" if verdict else ("FAIL" if verdict is False else "SKIPPED")
             story.setdefault("_shot_qa", {})[tag] = qa  # the asset library keeps only clear passes
@@ -1290,6 +1305,12 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
             log(f"Image {tag}: provider={name}, tokens={tokens}, qa={qa}"
                 + (f", reason={why}" if why else "") + f', subject="{subject[:60]}", location="{place or "-"}"'
                 + extra_log + (f", hook retry {retry}" if retry else "") + f" | prompt: {p}")
+            if clip_score is not None:
+                log(f"CLIP image {tag}: source={name}, score={clip_score:.3f}, min={clip_min:.3f}, "
+                    f"accepted={clip_score >= clip_min}")
+            if clip_score is not None and clip_score < clip_min:
+                verdict, why = False, f"CLIP semantic mismatch {clip_score:.3f} < {clip_min:.3f}"
+                story["_shot_qa"][tag] = "FAIL"
             if verdict is False:  # clearly wrong: never used; the next source tries (once) with a simpler prompt
                 count["rejected"] += 1
                 bad = path.with_name(f"{path.stem}.rejected{draws}.png")
