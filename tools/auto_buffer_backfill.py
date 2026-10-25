@@ -184,12 +184,17 @@ def candidates(queued, only_stamp=None):
 
 
 def historical_candidates(queued):
-    """Known TikTok-posted Night Files backfill, never requeue known YouTube uploads."""
+    """Oldest valid originals, including October YouTube-pending and September backfill."""
+    out = []
+    # Earlier YouTube-pending MP4s were retained when Google uploads stopped.
+    # They are first-party accepted Night Files content, not arbitrary TikTok clips.
+    for stamp, mp4, meta in pairs(release_assets("youtube-pending"), queued):
+        if stamp[:10] < "2026-10-19" and not already_youtube(stamp):
+            out.append((stamp, mp4, meta))
     if not BACKFILL.exists():
-        return []
+        return sorted(out)
     assets = release_assets("backfill")
     records = json.loads(BACKFILL.read_text()).get("videos", [])
-    out = []
     for v in sorted(records, key=lambda x: x["stamp"]):
         stamp = v["stamp"]
         if (stamp in queued or not v.get("tiktok_published")
@@ -198,7 +203,7 @@ def historical_candidates(queued):
             continue
         if stamp + ".mp4" in assets and stamp + ".json" in assets:
             out.append((stamp, assets[stamp + ".mp4"], assets[stamp + ".json"]))
-    return out
+    return sorted(out)
 
 
 def queue_one(stamp, mp4, json_asset, record, sha, remote_posts):
