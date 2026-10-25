@@ -429,7 +429,8 @@ class ShotLists(unittest.TestCase):
                 for i in range(len(story["scenes"])):
                     mine = [s for s in body if s["scene"] == i]
                     self.assertTrue(any(s["shot"]["type"] == "image" for s in mine), f"scene {i} no picture")
-                    self.assertTrue(any(s["shot"]["type"] == "graphic" for s in mine), f"scene {i} no graphic")
+                    if g[i]:  # a planned meaningful graphic is shown; no meaningful phrase = picture only (Oct 25)
+                        self.assertTrue(any(s["shot"]["type"] == "graphic" for s in mine), f"scene {i} no graphic")
                     self.assertLessEqual(sum(1 for s in mine if s["shot"]["type"] == "host"), 1)
                     for s in mine:
                         if s["shot"]["type"] == "image":

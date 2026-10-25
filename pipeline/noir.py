@@ -566,7 +566,6 @@ def _t_choice(fields, t, dur, ctx):
     """A binary choice the narration offers: the approved P08 pose (both palms open, placement only) in a circular
     pool of light, one option above each open hand, each revealed when it is spoken. Without the pose (missing /
     changed file) the two options stand alone: never a substitute drawing."""
-    acc = ctx["accent"]
     frame = ctx.get("bg") or _base(ctx)
     left, right = str(fields.get("left") or "").upper(), str(fields.get("right") or "").upper()
     ov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
@@ -603,23 +602,19 @@ def _t_choice(fields, t, dur, ctx):
         f, lines = fit(opt, "cond", 360, 2, 120, 60)
         tw = max(d.textlength(l, font=f) for l in lines)
         lh = int(f.size * 1.02)
-        bx = int(max(SAFE_X0 + tw / 2 + 30, min(SAFE_X1 - tw / 2 - 30, hx)))
-        by = hy - 70 - len(lines) * lh
         col = COLOURS.get(opt)
-        if col:  # a glowing orb of that colour resting on the open palm
-            r = int(46 * min(1, a))
-            d.ellipse((hx - r, hy - 40 - r, hx + r, hy - 40 + r), fill=col + (235,))
+        orb_y = hy - 34  # resting in the open palm
+        if col:  # a glowing orb of that colour on the palm
+            r = int(40 * min(1, a))
+            d.ellipse((hx - r - 10, orb_y - r - 10, hx + r + 10, orb_y + r + 10), fill=col + (70,))
+            d.ellipse((hx - r, orb_y - r, hx + r, orb_y + r), fill=col + (240,))
+        bx = int(max(SAFE_X0 + tw / 2 + 10, min(SAFE_X1 - tw / 2 - 10, hx)))
+        by = orb_y - (70 if col else 30) - len(lines) * lh  # the label floats above its hand, clear of the orb
         for li, line in enumerate(lines):
             lw = d.textlength(line, font=f)
             yy = by + li * lh + int(24 * (1 - min(1, a)))
             d.text((bx - lw / 2 + 4, yy + 5), line, font=f, fill=(0, 0, 0, int(170 * min(1, a))))
             d.text((bx - lw / 2, yy), line, font=f, fill=(col or BONE) + (int(255 * min(1, a)),))
-    if left and right:  # the decision between them
-        a = ease((t - spoken_at(right.split()[0], ctx, 0.7) - 0.1) / 0.3)
-        if a > 0:
-            fo = font("cond", 64)
-            ow = d.textlength("OR", font=fo)
-            d.text(((W - ow) / 2, 360), "OR", font=fo, fill=acc + (int(220 * a),))
     frame.alpha_composite(ov)
     return frame
 

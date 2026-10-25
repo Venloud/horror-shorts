@@ -335,6 +335,11 @@ def _valid_graphic(s: dict, at, ctx: dict) -> dict | None:
     return {"type": "graphic", "at": at, "template": tpl, "fields": out}
 
 
+def _card_text(g: dict) -> str:
+    f = g.get("fields") or {}
+    return re.sub(r"\W+", " ", " ".join(str(f.get(k) or "") for k in ("text", "left", "right", "label"))).strip().lower()
+
+
 def _meaningful_accent(accent: str, texts: list[str]) -> str:
     """An accent only on a word that is ON the graphic and carries meaning (word_score >= 1): never
     'mysterious', 'wearing' or a filler verb."""
@@ -595,8 +600,10 @@ def _impact_fallback(story: dict, i: int) -> dict | None:
     """No factual graphic fits this beat: the beat's strongest COMPLETE phrases (key_phrases, at most two,
     in spoken order) as an impact card, the payoff word accented. None when no phrase would add meaning: a clean
     story picture beats a card of random words (the old version glued the two longest words: "CHOOSE COVERED")."""
-    phrases = key_phrases(story["scenes"][i].get("narration", ""), limit=2)
-    if not phrases:
+    phrases = [p for p in key_phrases(story["scenes"][i].get("narration", ""), limit=2)
+               if len(p["text"].split()) >= 2 or re.match(r"\d", p["text"]) or p["first"][:1].isupper()
+               and p["first"].lower() not in FUNCTION]  # one generic word ("ENDS", "FATE") is not a card
+    if not phrases or all(len(p["text"].split()) < 2 for p in phrases) and not re.match(r"\d", phrases[0]["text"]):
         return None
     payoff = max(phrases, key=lambda p: word_score(p["accent"]))
     return {"type": "graphic", "at": None, "template": "impact", "auto": True,
@@ -616,6 +623,7 @@ def plan_graphics(story: dict, narration: dict) -> list[list[dict]]:
     raw = data.get("scenes") if isinstance(data.get("scenes"), list) else []
     base = {"cast": {}, "dates": 0}  # date_stamp graphics are checked by _date_graphic / graphic_problem
     out = []
+    used_texts = set()  # the same card text never twice in one video ("AKA MANTO" name card in scenes 2 and 7)
     for i, sc in enumerate(story["scenes"]):
         sctx = _scene_ctx(story, i, base)
         s_words = [w for w in words if w.get("scene") == i]
@@ -634,15 +642,22 @@ def plan_graphics(story: dict, narration: dict) -> list[list[dict]]:
                     v["fields"]["subject"] = ""
                 picks.append(v)
         picks += _auto_graphics(story, i, sctx)
+        if not true:  # a legend / fiction: the beat's own strong phrase beats a generic ledger card
+            imp = _impact_fallback(story, i)
+            if imp and max(word_score(w) for w in imp["fields"]["text"].split()) >= 2.5 \
+                    and not any(g["template"] in ("choice", "phone", "quote") for g in picks):
+                picks = [imp] + [g for g in picks if g["template"] != "evidence" or not g.get("auto")]
         seen, uniq = set(), []
         for g in picks:
             key = (g["template"], json.dumps(g["fields"], sort_keys=True, default=str))
-            if key not in seen and graphic_problem(story, i, g) is None:
+            shown = _card_text(g)
+            if key not in seen and shown not in used_texts and graphic_problem(story, i, g) is None:
                 seen.add(key)
                 uniq.append(g)
         if not uniq:
             imp = _impact_fallback(story, i)
-            uniq = [imp] if imp and graphic_problem(story, i, imp) is None else []
+            uniq = [imp] if imp and graphic_problem(story, i, imp) is None and _card_text(imp) not in used_texts else []
+        used_texts.update(_card_text(g) for g in uniq[:1] if _card_text(g))  # the card this scene will show
         out.append(uniq)
     closing = {"type": "graphic", "template": "closing"}
     shell = [{"shots": [dict(g) for g in gs]} for gs in out]
@@ -831,6 +846,9 @@ def key_phrases(text: str, limit: int = 2, min_score: float = 2.5) -> list[dict]
     Each phrase comes from ONE clause (never two distant words glued together); "accent" is its payoff word.
     Empty when nothing on screen would add meaning (then a clean picture is better than an impact card)."""
     found = []
+    sent_of = []
+    for si, sentence in enumerate(re.split(r"(?<=[.!?…])\s+", text)):
+        sent_of += [si] * len(clauses(sentence))
     for k, clause in enumerate(clauses(text)):
         words = _trim(clause)
         if not words:
@@ -854,9 +872,15 @@ def key_phrases(text: str, limit: int = 2, min_score: float = 2.5) -> list[dict]
             score, win, sc = best
             accent = win[max(range(len(win)), key=lambda m: (sc[m], m))]
             found.append({"text": " ".join(win).upper(), "accent": accent.upper(), "score": round(score, 2),
-                          "first": win[0], "order": k})
-    top = sorted(found, key=lambda p: -p["score"])[:limit]
-    return sorted(top, key=lambda p: p["order"])
+                          "first": win[0], "order": k, "sentence": sent_of[k] if k < len(sent_of) else k})
+    if not found:
+        return []
+    best = max(found, key=lambda p: p["score"])
+    # a second line only from the SAME sentence ("CHOOSE RED" / "COVERED IN BLOOD"): phrases of two different
+    # sentences on one card read as one false statement ("FATE / ISN'T ALWAYS AN OPTION")
+    same = sorted((p for p in found if p is not best and p["sentence"] == best["sentence"]),
+                  key=lambda p: -p["score"])[:max(0, limit - 1)]
+    return sorted([best] + same, key=lambda p: p["order"])
 
 
 _OPTION = r"((?:[A-Za-z’'-]+\s+){0,2}?[A-Za-z’'-]+)"
@@ -903,7 +927,8 @@ def viewer_beat(text: str) -> tuple[str, str] | None:
 # ---------------------------------------------------------------- transitions + motion
 
 TIME_CUE = re.compile(r"\b(later|that night|years?|decades?|centur\w+|hours?|morning|dawn|dusk|meanwhile|"
-                      r"long ago|once|since|by the time|slowly|fog|mist|dream\w*|memory|remember\w*)\b", re.IGNORECASE)
+                      r"long ago|once|since|by the time|slowly|fog|mist|dream\w*|memory|remember\w*|"
+                      r"the story goes|the legend says|in some versions|they say)\b", re.IGNORECASE)
 MOVE_CUE = re.compile(r"\b(ran|run|runs|running|walk\w*|fled|flee\w*|bolt\w*|rush\w*|drove|drive|travel\w*|"
                       r"cross\w*|chase\w*|toward|towards|follow\w*|route|journey\w*|escape\w*)\b", re.IGNORECASE)
 SUDDEN = re.compile(r"\b(suddenly|burst\w*|slam\w*|snap\w*|strike\w*|struck|lunge\w*|grab\w*)\b", re.IGNORECASE)
@@ -1170,7 +1195,7 @@ def _slot_lengths(n: int, kinds: list[str], span: float) -> list[float]:
     host = float(CONFIG.get("explainer_host_max_seconds", 2.0))
     fixed = [min(host, 1.8) if k == "host" else None for k in kinds]
     rest = span - sum(x for x in fixed if x)
-    weights = [1.15 if k == "graphic" else 1.0 for k in kinds]
+    weights = [0.9 if k == "graphic" else 1.0 for k in kinds]  # a graphic is read in a beat; pictures carry the story
     free = sum(w for w, x in zip(weights, fixed) if x is None) or 1.0
     return [x if x is not None else rest * w / free for w, x in zip(weights, fixed)]
 
@@ -1212,7 +1237,9 @@ def sequence(story: dict, narration: dict, scene_images: list[list[Path]], graph
         has_choice = any(g.get("template") == "choice" for g in gs)  # the P08 surrogate already plays this beat
         host_ok = (i > 0 and i - last_host_scene > 1 and host_used + 1.8 <= budget and not has_choice
                    and (beat or _EMOTION.search(narr) or len(scene_images[i]) < 2) and span >= 6.0)
-        n = max(2 if gs else 1, min(6, round(span / 4.5)))
+        # room for picture -> graphic -> second picture from ~6 s (cuts stay >= SHOT_MIN): the scene's second
+        # picture is no longer dropped for its graphic (the Aka Manto preview had one picture + one card per scene)
+        n = max(2 if gs else 1, min(6, round(span / 3.0)))
         order = [imgs[0]]
         if gs:
             order.append(gs[0])
@@ -2190,8 +2217,8 @@ def build(story: dict, narration: dict, img_dir: Path, workdir: Path) -> Path:
     if CONFIG.get("explainer_clip_picture_order", True):
         sims = picture_match(story, scene_images)
         story["explainer_picture_match"] = sims
-        for i, sc in enumerate(sims):  # the picture that best matches the words opens the scene
-            if len(sc) == len(scene_images[i]) > 1 and sc[1] > sc[0] + 0.02:
+        for i, sc in enumerate(sims):  # the picture that best matches the words opens the scene (never the hook)
+            if i > 0 and len(sc) == len(scene_images[i]) > 1 and sc[1] > sc[0] + 0.02:
                 scene_images[i] = [scene_images[i][1], scene_images[i][0]] + scene_images[i][2:]
     segs = sequence(story, narration, scene_images, graphics, total)
     story["render_style"] = "explainer"
