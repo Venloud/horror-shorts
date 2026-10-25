@@ -10,7 +10,7 @@ from pathlib import Path
 
 import yaml
 
-REF = re.compile(r"steps\\.([A-Za-z_][\\w-]*)\\.")
+REF = re.compile(r"steps\.([A-Za-z_][\w-]*)\.")
 
 
 class _UniqueKeyLoader(yaml.SafeLoader):
