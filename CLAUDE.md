@@ -15,6 +15,12 @@ The owner listened to the finished Aka Manto explainer and said **"I like that v
 
 **Current implementation reality when this rule was recorded:** `pipeline/main.py` already uses production-only `testing = False`, puts complete validated MP4s into the buffer, and `daily.yml` runs `publish.py` on its configured slots; manual `buffer_fill.yml` fills the queue without immediate posting. `config.json` currently sets `tiktok_mode="draft"` and `youtube_paused=true`, so neither a draft handoff nor a paused YouTube upload is evidence of public posting. Preserve actual supported credentials/capabilities; report any delivery blockers truthfully rather than silently declaring videos "published". This is a POLICY update, not evidence that the social-platform restrictions were lifted.
 
+## Owner next action implemented: Whisper diagnostics on in production (2026-10-25)
+
+The already-existing universal editor `pipeline/explainer.py` now enables `whisper_narration_check=true` for NEW finished explainer renders. The free local CPU `openai/whisper-base` measures how well what is actually heard matches the caption word timeline; results go into `visual_qa.json` and story metadata, `status=checked` or `status=unavailable` (with reason). **Never block a complete, otherwise quality-gated publishable video for unavailable Whisper weights or ASR errors.** No paid hosted inference or new renderer. Test cases cover a legend, original fiction, and a true mystery using mocked offline inference; actual inference needs a future real render. Existing production Actions use `hf-models-v5-whisper` cache (with v4 restore) to retain downloaded free model weights.
+
+Aka Manto `64e19b079582` **DID reach TikTok's creator inbox** on 2026-10-25 in [daily run 40165042582](https://github.com/Venloud/horror-shorts/actions/runs/40165042582), complete with approved `unsolved_mystery.mp3` overlay and second successful production gate. It was `SEND_TO_USER_INBOX`, **NOT publicly posted**. YouTube copy was saved pending paused uploads. The two older videos remain queued. Do not create a duplicate Aka Manto video just to activate Whisper.
+
 ## Current CLIP integration, merged main 2026-10-24
 
 CLIP image matching is NOW wired into the existing production code via [PR #27](https://github.com/Venloud/horror-shorts/pull/27), merge `ddb7287`. It REUSES the preexisting `pipeline/library.py` local CLIP model (ViT-B/32) and adds no parallel `.py` module: `media.py` ranks fetched/archive candidates, `images.py` gates new AI images, `explainer.py` ranks scene images and selects approved expressions through `sprites.py`; `tests/test_clip_matching.py` is offline. **Do not reimplement CLIP inside `editorial.py` or create another visual matcher.** Merge concurrent Claude changes carefully, retaining these hooks and older editing functionality. P08 cannot be used unless its manifest record and checksum are merged. CI run [40148851610](https://github.com/Venloud/horror-shorts/actions/runs/40148851610) passed. Actual CLIP inference and real-video creative benefit are not yet independently validated.
@@ -759,7 +765,8 @@ Keep user-approved editing standards in `docs/NIGHT_FILES_EDITING_QUALITY_CHECKL
   are PR #27's shared `library.rank_images` / `sprites.select_for_beat` (no second matcher); Depth Anything V2
   (effects.depth_map) gives stills a near layer that moves more (flag explainer_depth_parallax); Whisper
   openai/whisper-base (MIT) `verify_narration` = report-only check of what a listener hears vs the captions (flag
-  whisper_narration_check, default off in production). Storyboard cache version 3 (old plans are not reused).
+  whisper_narration_check, ENABLED as report-only, never blocks an otherwise publishable MP4; local model errors
+  are recorded as `status=unavailable` in `visual_qa.json`). Storyboard cache version 3 (old plans are not reused).
   Tests: tests/test_cinematic_editor.py; preview fixtures tests/fixtures/editor/ (legend, fiction) + Amelia (true).
 
 ## EXPERIMENTAL: cutout render style (`cutout.py`, off by default)
