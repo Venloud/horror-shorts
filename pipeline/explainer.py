@@ -2049,9 +2049,14 @@ def provenance_of(path: str) -> dict:
     out = {"file": p.name, "sha256": hashlib.sha256(p.read_bytes()).hexdigest() if p.exists() else ""}
     origin = p.with_suffix(".origin")
     if origin.exists():
-        src = p.with_name(origin.read_text().strip())
-        out["virtual_crop_of"] = src.name
-        p = src if src.exists() else p
+        # images._virtual_shot stores an absolute origin, not just a filename.
+        # Crops and their source are always in the same checkpoint image directory.
+        # Resolve by basename to survive checkpoint cache moves between runner workspaces.
+        source_name = Path(origin.read_text().strip()).name
+        if source_name:
+            src = p.with_name(source_name)
+            out["virtual_crop_of"] = src.name
+            p = src if src.exists() else p
     if p.with_suffix(".json").exists():
         meta = json.loads(p.with_suffix(".json").read_text())
         kind = {"real_photo": "archival", "archive_print": "archival", "stock_video": "stock"}.get(meta.get("type"),
