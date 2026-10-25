@@ -67,7 +67,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface
-          key: hf-models-v4
+          key: hf-models-v5-whisper
+          restore-keys: |
+            hf-models-v4
           restore-keys: hf-models-
 
       - name: Install Python packages
