@@ -130,6 +130,12 @@ LTX licence https://huggingface.co/Lightricks/LTX-2.3/blob/main/LICENSE ,
 Wan 2.1 overview https://comfyui-wiki.com/en/tutorial/advanced/wan21-video-model (third-party VRAM figures,
 unverified against Wan-AI's own card).
 
+## Whisper narration diagnostics enabled (2026-10-25)
+
+The existing `pipeline/explainer.py` local CPU `openai/whisper-base` transcription check is now enabled with `config.json: whisper_narration_check=true` for future complete explainer renders. It checks the real audio against the caption words (coverage, missing words, median timing offset), writes `narration_check` to the existing `visual_qa.json` report and story metadata, and never gates or blocks an otherwise acceptable publishable video. If model download, local inference, transcription, or audio decoding fail, record `status: unavailable` and the exception in the SAME existing QA report and proceed through the original full technical/visual/provenance gate. Successful checks record `status: checked`; these are diagnostic measurements, not factual validation. No new editor, story-specific source, paid inference API, upload mode or separate workflow.
+
+Offline tests use a fake Whisper pipeline and normal shared-editor mocks across a folklore legend, fictional haunted house, and a historical mystery, plus error fallback and matched spoken-word timing. They do not generate or publish complete videos. Test logs do not certify real-world caption accuracy; review the next real rendered video report when model weights are available locally.
+
 ## Local CLIP: scene relevance and approved-asset selection (2026-10-24)
 
 The already-present image-reuse library (`pipeline/library.py`) uses local `openai/clip-vit-base-patch32`. Night Files PR #27 extends that SAME model to the existing media and renderer without a second model or a story-specific editor.
