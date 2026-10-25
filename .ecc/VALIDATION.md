@@ -17,3 +17,5 @@ Installed project adapters: `ecc-remotion-video-creation`, `ecc-video-editing`, 
 **Readiness:** reviewable isolated repository integration; keep draft pending independent review and target-environment acceptance. No automatic merge, deployment, publishing, trading or paid model calls. Application source, runtime configuration, workflows, secrets and approved assets are preserved.
 
 Detailed evidence, commands, attempts and sanitized logs: `claudevandam/integrations/ecc/evidence/verification.json`, `discovery.json` and `logs/` on the same integration branch. Commit and PR identifiers are recorded in Vandam's dated integration handoff. Reproduce with the commands in the shared integration README.
+
+Concurrent-main reconciliation: original main advanced to 98ae439f112f96881781a0547f9d7353ba37be20. It was merged into this feature branch without force-push or application rewrites. On that integrated source, 30 cinematic-editor, 3 Remotion and 4 workflow-order unittest cases passed (37 total). The PR delta against current main remains only the ECC guidance/activation files.
