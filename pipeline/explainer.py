@@ -1644,7 +1644,7 @@ class Renderer:
         frame = self._shot_frame(seg, local)
         frame = self._transition(seg, frame, local)
         if not (CONFIG.get("remotion_polish", False) or CONFIG.get("explainer_caption_engine") == "remotion"):
-            self.captions(frame, t, "scene")
+            self.captions(frame, t, "scene", high=seg["shot"]["type"] == "host")
         return frame
 
     # transition lengths (s); plan_transitions chose one per cut ("cut" = none)
@@ -1773,7 +1773,8 @@ class Renderer:
         y0 = max(0, min(bh - h, cy * bh - h / 2))
         return base.resize((W, H), Image.BILINEAR, box=(x0, y0, x0 + w, y0 + h)).convert("RGBA")
 
-    def captions(self, frame: Image.Image, t: float, kind: str) -> None:
+    def captions(self, frame: Image.Image, t: float, kind: str, high: bool = False) -> None:
+        """high: a host bust fills the lower frame, so the caption sits in the top safe area (never over a face)."""
         g = next((g for g in self.groups if g["start"] <= t < g["end"]), None)
         if not g:
             return
@@ -1783,7 +1784,7 @@ class Renderer:
         if im is None:
             im = self._caption_image(g, active, kind)
             self.layer_cache[key] = im
-        frame.alpha_composite(im, (0, CAP_Y - im.height // 2))
+        frame.alpha_composite(im, (0, (330 if high else CAP_Y) - im.height // 2))
 
     def _caption_image(self, g: dict, active: int, kind: str) -> Image.Image:
         f = font("bold", 78)

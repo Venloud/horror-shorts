@@ -32,8 +32,10 @@ export const groupSpokenWords = (words=[]) => {
     end:Number(items[items.length-1].end),words:items}));
 };
 
-const CaptionTrack=({words=[]})=>{
+const CaptionTrack=({words=[],shots=[]})=>{
   const frame=useCurrentFrame();
+  // During a host reaction the bust fills the lower frame: captions move to the top safe area (never over a face).
+  const high=shots.some(x=>x.kind==="host" && frame>=x.startFrame && frame<x.endFrame);
   const {fps}=useVideoConfig();
   const t=frame/fps;
   const groups=useMemo(()=>groupSpokenWords(words),[words]);
@@ -44,7 +46,7 @@ const CaptionTrack=({words=[]})=>{
   const exit=interpolate(t,[g.end-0.08,g.end+0.14],[1,0],clamp);
   const total=1-Math.pow(1-reveal,2);
   return <div style={{
-    position:"absolute",left:73,right:185,top:1370,height:171,
+    position:"absolute",left:73,right:185,top:high?250:1370,height:171,
     display:"flex",alignItems:"center",justifyContent:"center",
     opacity:Math.min(1,Math.max(0,exit)),
     transform:`translateY(${(1-total)*26}px) scale(${0.95+0.05*total})`,
@@ -113,6 +115,6 @@ export const NightFilesPolish=({video="",words=[],shots=[],totalFrames=1})=>{
       style={{height:"100%",width:"100%",objectFit:"cover"}}/>:null}
     <GrainAndSafeArea/>
     <CutTreatment shots={shots}/>
-    <CaptionTrack words={words}/>
+    <CaptionTrack words={words} shots={shots}/>
   </AbsoluteFill>;
 };

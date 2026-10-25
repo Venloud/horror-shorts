@@ -243,6 +243,7 @@ class ContextGraphicsAndSound(unittest.TestCase):
         jsx = (ROOT / "remotion" / "src" / "polish.jsx").read_text()
         self.assertIn('x.transition==="swoosh"', jsx)  # the sweep only on a planned swoosh
         self.assertIn("hit&&w.accent", jsx)  # underline only accented words
+        self.assertIn('x.kind==="host"', jsx)  # captions move up while a host bust is on screen
 
 
 if __name__ == "__main__":
