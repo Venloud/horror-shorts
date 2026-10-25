@@ -1,0 +1,428 @@
+{
+ "title": "Whitey Bulger and the FBI",
+ "premise": "Notorious Boston gangster Whitey Bulger secretly worked as an FBI informant for two decades while corrupt agents protected him from prosecution.",
+ "hook_overlay": "The FBI's biggest mob secret",
+ "scenes": [
+  {
+   "narration": "Cell blocks couldn't protect James Whitey Bulger after his transfer to a federal prison, where he was beaten to death in less than twelve hours. This is a true story.",
+   "image_prompt": "the strategist standing inside a prison cell block with gray concrete walls and iron bars.",
+   "image_prompt_2": "the strategist walking through a high security federal penitentiary cell block with gray concrete walls and iron bars.",
+   "image_prompt_3": "An empty concrete prison hallway lit by a single overhead bulb.",
+   "image_prompt_4": "A close-up of iron prison bars casting long shadows.",
+   "sfx": "none",
+   "image_location": "prison",
+   "image_location_2": "prison",
+   "image_location_3": "prison",
+   "image_location_4": "prison",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "image_query": "prison cell block corridor",
+   "image_query_2": "metal prison door",
+   "image_query_3": "concrete prison hallway",
+   "image_query_4": "iron prison bars"
+  },
+  {
+   "narration": "In the fall of nineteen seventy-five, FBI agent John Connolly approached Bulger in South Boston to gather intelligence on the Italian mob.",
+   "image_prompt": "An old parked car on a foggy Boston street at dusk.",
+   "image_prompt_2": "A quiet residential street in a South Boston neighborhood with triple-decker houses.",
+   "image_prompt_3": "A vintage sedan parked under a glowing streetlamp at night.",
+   "image_prompt_4": "Brick apartment buildings shrouded in heavy evening fog.",
+   "sfx": "none",
+   "image_location": "boston_street",
+   "image_location_2": "boston_street",
+   "image_location_3": "boston_street",
+   "image_location_4": "boston_street",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "image_query": "parked car foggy street",
+   "image_query_2": "boston neighborhood street",
+   "image_query_3": "vintage sedan streetlamp",
+   "image_query_4": "brick apartments fog"
+  },
+  {
+   "narration": "Bulger agreed to help on one strict condition. I will not be called an informant, he demanded. I will be your strategist.",
+   "image_prompt": "the strategist: man in his 40s with platinum blond hair sitting inside a parked car at night.",
+   "image_prompt_2": "The steering wheel and dashboard of a 1970s sedan in dim street lighting.",
+   "image_prompt_3": "The side profile of a man looking intently through a car window.",
+   "image_prompt_4": "A dark car interior illuminated by faint dashboard lights.",
+   "sfx": "none",
+   "image_location": "car_interior",
+   "image_location_2": "car_interior",
+   "image_location_3": "car_interior",
+   "image_location_4": "car_interior",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "image_query": "man in car at night",
+   "image_query_2": "vintage car dashboard interior",
+   "image_query_3": "profile man car window",
+   "image_query_4": "dark car interior dashboard"
+  },
+  {
+   "narration": "Information from Bulger and his sidekick Stephen Flemmi allowed the FBI to eliminate rival gangs, leaving a vacuum that Bulger filled.",
+   "image_prompt": "A dimly lit Boston tavern interior with empty wooden booths and a long bar.",
+   "image_prompt_2": "the strategist standing in a narrow brick alley between old city buildings under nighttime shadows.",
+   "image_prompt_3": "An empty wooden bar counter under warm, low-hanging lights.",
+   "image_prompt_4": "Shadowy brick walls in a narrow city alley at night.",
+   "sfx": "none",
+   "image_location": "boston_bar",
+   "image_location_2": "alleyway",
+   "image_location_3": "boston_bar",
+   "image_location_4": "alleyway",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "image_query": "dimly lit bar interior",
+   "image_query_2": "dark brick alleyway",
+   "image_query_3": "wooden bar counter lights",
+   "image_query_4": "brick walls alley night"
+  },
+  {
+   "narration": "Over two decades, Bulger and Flemmi handed Connolly two hundred thirty-five thousand dollars while plying supervisors with gifts.",
+   "image_prompt": "A stack of old paper currency sitting on a dark wooden desktop.",
+   "image_prompt_2": "An open leather briefcase resting on a wooden office desk.",
+   "image_prompt_3": "Bundles of vintage banknotes tied together on a table.",
+   "image_prompt_4": "An expensive bottle of wine resting next to travel documents on a desk.",
+   "sfx": "none",
+   "image_location": "office",
+   "image_location_2": "office",
+   "image_location_3": "office",
+   "image_location_4": "office",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "image_query": "cash money stack",
+   "image_query_2": "vintage leather briefcase",
+   "image_query_3": "vintage banknotes bundles",
+   "image_query_4": "wine bottle travel documents"
+  },
+  {
+   "narration": "Corrupt agents guaranteed total protection. In nineteen ninety-five, Connolly tipped off Bulger that an arrest was imminent.",
+   "image_prompt": "the strategist sitting inside a vintage 1970s government office with wood paneling and a metal desk.",
+   "image_prompt_2": "the strategist standing inside a vintage 1970s government office with wood paneling and a metal desk.",
+   "image_prompt_3": "A close-up of a rotary dial on an old black telephone.",
+   "image_prompt_4": "A frosted glass office door with a vintage plaque.",
+   "sfx": "none",
+   "image_location": "office",
+   "image_location_2": "office",
+   "image_location_3": "office",
+   "image_location_4": "office",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "image_query": "vintage rotary telephone",
+   "image_query_2": "wooden office door",
+   "image_query_3": "rotary dial phone",
+   "image_query_4": "frosted glass office door"
+  },
+  {
+   "narration": "Bulger fled before a January nineteen ninety-five racketeering indictment, sparking decades of questions about his whereabouts.",
+   "image_prompt": "A coastal highway sign near the Pacific Ocean under an overcast gray sky.",
+   "image_prompt_2": "The open ocean horizon seen from a rugged rocky shoreline.",
+   "image_prompt_3": "A deserted highway stretching toward a foggy horizon.",
+   "image_prompt_4": "Crashing ocean waves against gray coastal rocks.",
+   "sfx": "none",
+   "image_location": "coastline",
+   "image_location_2": "coastline",
+   "image_location_3": "coastline",
+   "image_location_4": "coastline",
+   "image_source": "ai",
+   "image_source_2": "stock_video",
+   "image_query": "coastal highway sign",
+   "image_query_2": "ocean horizon shoreline",
+   "image_query_3": "deserted highway fog",
+   "image_query_4": "ocean waves coastal rocks"
+  },
+  {
+   "narration": "Authorities caught him in twenty eleven in Santa Monica. A jury convicted Bulger for eleven murders.",
+   "image_prompt": "An apartment building exterior near the coast with a palm tree under bright daylight.",
+   "image_prompt_2": "A set of heavy iron jail cell bars under stark overhead light.",
+   "image_prompt_3": "A sunny California apartment balcony overlooking a quiet street.",
+   "image_prompt_4": "A dark jail cell corridor with heavy metal doors.",
+   "sfx": "none",
+   "image_location": "apartment",
+   "image_location_2": "prison",
+   "image_location_3": "apartment",
+   "image_location_4": "prison",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "image_query": "apartment building palm tree",
+   "image_query_2": "iron jail cell bars",
+   "image_query_3": "apartment balcony sunny street",
+   "image_query_4": "jail cell corridor metal doors"
+  },
+  {
+   "narration": "Other inmates targeted him as a rat, destroying the very label he fought to avoid. What would you check first in an informant file?",
+   "image_prompt": "the strategist standing near a grand granite courthouse exterior with massive stone columns.",
+   "image_prompt_2": "the strategist walking near a grand granite courthouse exterior with massive stone columns.",
+   "image_prompt_3": "Grand stone columns supporting a heavy building facade.",
+   "image_prompt_4": "A dark, empty courtroom under dim overhead lighting.",
+   "sfx": "none",
+   "image_location": "courthouse",
+   "image_location_2": "courthouse",
+   "image_location_3": "courthouse",
+   "image_location_4": "courthouse",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "image_query": "courthouse stone pillars",
+   "image_query_2": "government building steps",
+   "image_query_3": "stone columns building facade",
+   "image_query_4": "empty courtroom dim lighting"
+  }
+ ],
+ "twist_scene": 5,
+ "caption": "How Whitey Bulger manipulated the FBI 🔍\nWould you trust a mob boss over the law?",
+ "hashtags": [
+  "whiteybulger",
+  "fbi",
+  "boston",
+  "truecrime",
+  "mobster"
+ ],
+ "pinned_comment": "Do you think the FBI agents knew how far Bulger would go?",
+ "characters": [
+  {
+   "name": "the strategist",
+   "look": "man in his 40s with platinum blond hair, wearing a dark wool jacket, 1970s style"
+  }
+ ],
+ "fact_ledger": [
+  "victim: James Whitey Bulger",
+  "death date: October 30, 2018",
+  "death location: federal prison in West Virginia",
+  "age at death: 89",
+  "gang name: Winter Hill Gang",
+  "location: South Boston",
+  "agent name: John Connolly",
+  "meeting year: fall of 1975",
+  "sidekick name: Stephen The Rifleman Flemmi",
+  "bribe amount: $235,000",
+  "supervisor name: John Morris",
+  "indictment date: January 1995",
+  "capture year: 2011",
+  "capture location: Santa Monica California",
+  "murder count: 11 murders"
+ ],
+ "hook_candidates": [
+  "Less than twelve hours after his transfer to a federal prison, notorious Boston gangster James Whitey Bulger was beaten to death in his cell.",
+  "For two decades as he ruled Boston's underworld, Whitey Bulger secretly led a double life as an FBI informant.",
+  "The notorious gangster was recruited as an informant, but corrupt FBI agents were the ones who ended up working for him."
+ ],
+ "hook_scores": [
+  "9 | Less than twelve hours after his transfer to a federal prison, notorious Boston gangster James Whitey Bulger was beaten to death in his cell.",
+  "8 | For two decades as he ruled Boston's underworld, Whitey Bulger secretly led a double life as an FBI informant.",
+  "8 | The notorious gangster was recruited as an informant, but corrupt FBI agents were the ones who ended up working for him."
+ ],
+ "locations": [
+  {
+   "name": "prison",
+   "look": "a high security federal penitentiary cell block with gray concrete walls and iron bars"
+  },
+  {
+   "name": "boston_street",
+   "look": "a narrow urban street in South Boston lined with brick triple-decker apartment buildings"
+  },
+  {
+   "name": "car_interior",
+   "look": "the dark interior of a 1970s sedan parked on a quiet street at night"
+  },
+  {
+   "name": "boston_bar",
+   "look": "a dark wooden tavern interior with vintage booths and dim lighting"
+  },
+  {
+   "name": "alleyway",
+   "look": "a narrow brick alley between old city buildings under nighttime shadows"
+  },
+  {
+   "name": "office",
+   "look": "a vintage 1970s government office with wood paneling and a metal desk"
+  },
+  {
+   "name": "coastline",
+   "look": "a rugged ocean shoreline with crashing waves under an overcast sky"
+  },
+  {
+   "name": "apartment",
+   "look": "a modest apartment exterior near the coast with a balcony and palm trees"
+  },
+  {
+   "name": "courthouse",
+   "look": "a grand granite courthouse exterior with massive stone columns"
+  }
+ ],
+ "setting": "Boston, Massachusetts and Santa Monica, California, 1975 to 2018",
+ "threat": "A brutal mob boss who corrupted law enforcement to eliminate his rivals",
+ "twist": "Bulger's FBI handlers became his actual informers, protecting him while he committed murders.",
+ "model": "gemini-3.5-flash-lite",
+ "writer": "gemini (gemini-3.5-flash-lite)",
+ "writing": {
+  "llm_calls": 2,
+  "revisions": 0,
+  "kind": "true",
+  "primary": "gemini-3.5-flash-lite",
+  "checks_primary": [
+   {
+    "code": "unsupported_fact",
+    "severity": "serious",
+    "detail": "not in the source: 20"
+   }
+  ],
+  "challenger": "failed: nvidia:deepseek-ai/deepseek-v4.1-flash: ReadTimeout: HTTPSConnectionPool(host='integrate.api.nvidia.com', port=443): Read timed out. (read timeout=30.0)",
+  "critic": {
+   "available": true,
+   "score": 96,
+   "bar": 75,
+   "notes": [
+    "hook: Strong opening featuring his violent prison death just hours after transfer, though ensure the very first clause avoids temporal setup words. Fix: Keep the immediate impact on Bulger's death as the absolute first clause.",
+    "clarity: The narrative arc is extremely straightforward and allows the viewer to summarize the case in one single sentence.",
+    "pacing: New verified facts, dates, and amounts ($235,000, 1995 indictment, 2011 Santa Monica capture) are introduced rapidly every few seconds without filler.",
+    "name_early: James Whitey Bulger is explicitly named in the first scene.",
+    "payoff: The ending directly circles back to the opening premise by explaining how his informant status ultimately led to his prison murder."
+   ]
+  }
+ },
+ "critic_score": 96,
+ "_fact_source": "How Whitey Bulger Manipulated the FBI Into Locking Up His Enemies\nThe notorious gangster was recruited as an FBI informant. It turned it out that corrupt FBI agents were the ones informing him.\nLess than 12 hours after his transfer to a federal prison in West Virginia, notorious Boston gangster James “Whitey” Bulger was found beaten to death in his cell on October 30, 2018. Authorities believe Bulger’s attackers included a Mafia hitman serving a life sentence who thought the 89-year-old mob boss guilty of an unforgivable crime—being a rat.\nFor two decades as he ruled Boston’s underworld as its brutal kingpin, Bulger secretly led a double life as an informer for the Federal Bureau of Investigation . In the Irish enclave of South Boston that served as his turf, Bulger let it be known how much he despised snitches and turned down repeated FBI offers to become a confidential informant. That all changed, however, when agent John Connolly approached him in the fall of 1975.\n“Bulger knew that he could manipulate Connolly and have Connolly working for him, and that is indeed what happened,” says Dick Lehr, co-author of Black Mass: Whitey Bulger, the FBI, and a Devil's Deal , which became the basis of a 2015 movie with the same name that saw Johnny Depp play Bulger.\nJames \"Whitey’\" Bulger’s mugshot upon his arrival at the Federal Penitentiary at Alcatraz on November 16, 1959.\nJames \"Whitey’\" Bulger’s mugshot upon his arrival at the Federal Penitentiary at Alcatraz on November 16, 1959.\nWhitey Bulger Became an FBI “Strategist” in the 1970s\nConnolly had grown up in the same South Boston housing project as the gangland boss. As an 8-year-old in the 1940s, he met the charismatic 19-year-old Bulger at the corner drugstore. Bulger, called “Whitey” because of his platinum blond hair, offered to buy him an ice cream, which he accepted. A short time later, Bulger saved Connolly as he was being beaten up by an older boy. “Go fight somebody your own size,” the gangster growled, as his young charge stared in awe.\nThe next time Connolly’s path converged with Bulger’s was after he joined the FBI, in 1968. By this time Whitey had served time in Alcatraz for a bank-robbing spree and ran an illegal gambling and loansharking ring with the local Winter Hill Gang.\nAlcatraz is one of the most notorious prisons in American history, but did it really live up to its feared reputation?\nIn a secret 1975 meeting inside Connolly’s Plymouth parked at a local beach, the agent asked Bulger to pass along information to help the FBI crack down on the local Italian mob. The agent told the gangster that the Mafia was already giving the FBI information about Bulger’s gang. “Why don’t you use us to do what they’re doing to you?” he asked. “Fight fire with fire.”\nOn that night inside Connolly’s car, Bulger agreed to moonlight for the FBI—under one condition. “I will not be called an informant. I will be your strategist,” the gangster insisted. After all, there was nothing worse in the underworld than being a rat.\nBecoming an informant was a great business move for Bulger. Based on information given by him and his sidekick, Stephen “The Rifleman” Flemmi, the FBI eliminated the competition, the Angiulo crime family, creating a vacuum in the Boston underworld. Bulger quickly filled the void by assuming the racketeering and drug-dealing operations and became New England’s most powerful crime boss.\nBulger’s connection with the FBI also made him less of a target of law enforcement, particularly as he quickly co-opted agents such as Connolly. In addition to giving agents secrets, he gave them gifts and cash as well. According to the Boston Globe , Bulger and Flemmi gave Connolly $235,000 over two decades. Bulger also lavished John Morris, Connolly’s supervisor and the head of the FBI’s organized-crime squad in Boston, with airline tickets and cases of expensive wine. At Christmas , corrupt agents and police officers received envelopes bulging with cash.\n“Once he compromised the supervisor, then Whitey was in charge. Instead of doing the right thing, what took hold was a pattern of cover-up,” Lehr says. “By the early 1980s, it became about agents covering up their own criminal activity and sustaining their own careers at the bureau.”\nGetting tips—which he often embellished the value of— from Bulger was a boon for Connolly’s career. “Connolly was the star agent in the Boston office,” Lehr says. But as “the stakes kept getting higher,” he looked the other way when it came to Bulger’s crimes.\nWhitey’s Informant Status Protected Him for Decades\nDespite his known involvement in serious crimes, Bulger received protection from the corrupt FBI agents. He was excluded from indictments against members of the Winter Hill Gang, and he engaged in criminal activity with greater impunity.\nMore and more, Connolly became the actual informer and even told Bulger about people expected to testify against him. Acting on a tip from the FBI agent, Bulger lured suspected informers to a house in South Boston, chained them to a chair for interrogation, shot them in the head and buried them in the basement.\nIn 1994, Connolly gave Bulger advance warning that state and federal law enforcement officers were poised to arrest him. The crime boss fled Boston in advance of a January 1995 racketeering indictment and became Public Enemy Number One after the killing of Osama bin Laden .\nWhile his informer was on the run, Connolly was sentenced to 40 years in prison. “We got 42 stone criminals by giving up two stone criminals,” Connolly told the Boston Globe in defense of his relationship with Bulger. “What’s your return on investment there? Show me a businessman who wouldn’t do that.”\nFormer FBI agent John Connolly surrounded by photographers as he leaves Boston Federal Court, facing charges in his involvement with mobsters Whitey Bulger.\nFormer FBI agent John Connolly surrounded by photographers as he leaves Boston Federal Court, facing charges in his involvement with mobsters Whitey Bulger.\nFor nearly two decades, “Where’s Whitey?” was a commonly asked question around Boston. Reported sightings came in from around the world until his 2011 capture in a rent-controlled apartment blocks from the Pacific Ocean in Santa Monica, California, where he lived with his longtime girlfriend.\nTwo years later, a jury found Bulger guilty of participating in 11 murders, and he was imprisoned with two life sentences. During the trial, Bulger acknowledged his involvement with racketeering, gambling, loansharking and drug dealing—but never of being an informer.\n“I was the guy that did the directing. They didn’t direct me,” he said in a CNN documentary after his trial.\nLehr disputes this. “There’s no question that Bulger provided information, but I do believe in his own mind to rationalize it he talked about it as a business decision.”\nBulger might have convinced himself he wasn’t an informer, but many in the underworld saw it differently, apparently including the men who killed him. According to some news reports , the attackers gouged out Bulger’s eyes and attempted to cut out his tongue—a retribution often delivered by mob killers to suspected rats.\nWhen a Mob Boss Out for a Steak Dinner Was Murdered in Cold Blood\nGambino family crime boss Frank Cali’s murder is the first Mafia don assassination in New York City since John Gotti had “Big Paul” Castellano killed in 1985.\nGambino family crime boss Frank Cali’s murder is the first Mafia don assassination in New York City since John Gotti had “Big Paul” Castellano killed in 1985.\nWhat the FBI’s First Unabomber Sketch Got Wrong\nThe FBI released two sketches of the Unabomber suspect: the first in 1987 and a second, which became iconic, in 1994.\n9 Things You May Not Know About Billy the Kid\nOrphaned at 14, Billy the Kid became one of the Wild West’s most legendary outlaws. But how much of his reputation matches the real man?\nWhat Did Bridget Sullivan Know About the Borden Murders?\nShe was a key witness in Lizzie Borden's murder trial.\nChristopher Klein is the author of four books, including When the Irish Invaded Canada: The Incredible True Story of the Civil War Veterans Who Fought for Ireland’s Freedom and Strong Boy: The Life and Times of John L. Sullivan . His work has appeared in numerous publications, including The Boston Globe , The New York Times , and National Geographic Traveler. Follow Chris at @historyauthor .\nWe strive for accuracy and fairness. But if you see something that doesn't look right, click here to contact us! HISTORY reviews and updates its content regularly to ensure it is complete and accurate.",
+ "sources": [],
+ "mode": "case",
+ "case": "Whitey Bulger and the FBI",
+ "subgenre": "true crime case file",
+ "true_story": true,
+ "_skipped": [],
+ "story_id": "f856e8a00d93",
+ "explainer_adapted": true,
+ "explainer_before": [
+  "Less than twelve hours after his transfer to a federal prison, notorious Boston gangster James Whitey Bulger was beaten to death in his cell. This is a true story.",
+  "In the fall of nineteen seventy-five, FBI agent John Connolly approached Bulger in South Boston, asking him to pass along information to help crack down on the Italian mob.",
+  "Bulger agreed to moonlight for the Bureau under one condition. I will not be called an informant, he insisted. I will be your strategist.",
+  "Based on information given by Bulger and his sidekick Stephen Flemmi, the FBI eliminated the competition, creating a vacuum that Bulger quickly filled.",
+  "Over two decades, Bulger and Flemmi gave Connolly two hundred thirty-five thousand dollars. Bulger also lavished the head of the organized-crime squad with airline tickets and expensive wine.",
+  "Protected by corrupt agents, Bulger engaged in criminal activity with total impunity. In nineteen ninety-five, Connolly gave him advance warning that law enforcement was poised to arrest him.",
+  "Bulger fled Boston before a January nineteen ninety-five racketeering indictment. For nearly two decades, where is Whitey was a commonly asked question around the city.",
+  "He was finally captured in twenty eleven in a Santa Monica apartment. A jury found him guilty of participating in eleven murders, and he spent his final days behind bars.",
+  "The man who manipulated the FBI for decades ultimately died in his cell because other inmates considered him a rat, proving his deadliest enemy was the label he spent a lifetime fighting."
+ ],
+ "_story_bible": {
+  "title": "Whitey Bulger and the FBI",
+  "premise": "Notorious Boston gangster Whitey Bulger secretly worked as an FBI informant for two decades while corrupt agents protected him from prosecution.",
+  "setting": "Boston, Massachusetts and Santa Monica, California, 1975 to 2018",
+  "threat": "A brutal mob boss who corrupted law enforcement to eliminate his rivals",
+  "twist": "Bulger's FBI handlers became his actual informers, protecting him while he committed murders.",
+  "twist_scene": 5,
+  "characters": [
+   {
+    "name": "the strategist",
+    "look": "man in his 40s with platinum blond hair, wearing a dark wool jacket, 1970s style"
+   }
+  ],
+  "locations": [
+   {
+    "name": "prison",
+    "look": "a high security federal penitentiary cell block with gray concrete walls and iron bars"
+   },
+   {
+    "name": "boston_street",
+    "look": "a narrow urban street in South Boston lined with brick triple-decker apartment buildings"
+   },
+   {
+    "name": "car_interior",
+    "look": "the dark interior of a 1970s sedan parked on a quiet street at night"
+   },
+   {
+    "name": "boston_bar",
+    "look": "a dark wooden tavern interior with vintage booths and dim lighting"
+   },
+   {
+    "name": "alleyway",
+    "look": "a narrow brick alley between old city buildings under nighttime shadows"
+   },
+   {
+    "name": "office",
+    "look": "a vintage 1970s government office with wood paneling and a metal desk"
+   },
+   {
+    "name": "coastline",
+    "look": "a rugged ocean shoreline with crashing waves under an overcast sky"
+   },
+   {
+    "name": "apartment",
+    "look": "a modest apartment exterior near the coast with a balcony and palm trees"
+   },
+   {
+    "name": "courthouse",
+    "look": "a grand granite courthouse exterior with massive stone columns"
+   }
+  ],
+  "timeline": [
+   {
+    "scene": 1,
+    "event": "Cell blocks couldn't protect James Whitey Bulger after his transfer to a federal prison, where he was beaten to death in less than twelve hours. This is a true story.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 2,
+    "event": "In the fall of nineteen seventy-five, FBI agent John Connolly approached Bulger in South Boston to gather intelligence on the Italian mob.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 3,
+    "event": "Bulger agreed to help on one strict condition. I will not be called an informant, he demanded. I will be your strategist.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 4,
+    "event": "Information from Bulger and his sidekick Stephen Flemmi allowed the FBI to eliminate rival gangs, leaving a vacuum that Bulger filled.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 5,
+    "event": "Over two decades, Bulger and Flemmi handed Connolly two hundred thirty-five thousand dollars while plying supervisors with gifts.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 6,
+    "event": "Corrupt agents guaranteed total protection. In nineteen ninety-five, Connolly tipped off Bulger that an arrest was imminent.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 7,
+    "event": "Bulger fled before a January nineteen ninety-five racketeering indictment, sparking decades of questions about his whereabouts.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 8,
+    "event": "Authorities caught him in twenty eleven in Santa Monica. A jury convicted Bulger for eleven murders.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 9,
+    "event": "Other inmates targeted him as a rat, destroying the very label he fought to avoid. What would you check first in an informant file?",
+    "location": "",
+    "characters": []
+   }
+  ],
+  "continuity_rules": [
+   "Use the exact character names and keep each character's fixed look unchanged.",
+   "Keep each shot in the scene's stated location unless the narration explicitly moves.",
+   "Do not introduce a new person, creature, object, or location that the story does not establish.",
+   "The twist scene must visually support the documented twist, not invent a different reveal."
+  ]
+ },
+ "_ai_only": [
+  "00a",
+  "00b",
+  "03b",
+  "05a",
+  "05b",
+  "08a",
+  "08b"
+ ],
+ "_shot_rules_done": true,
+ "visual_mode": "fast",
+ "_previous_narrator_voice": "am_adam"
+}

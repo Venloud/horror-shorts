@@ -2672,7 +2672,15 @@
     "opening": "Constructing a homemade ramp on her family tool shed, Amelia emerged from her first flight shouting, 'Oh, Pidge, it's just like flying!' This is a true story.",
     "music_file": "unsolved_mystery.mp3",
     "buffered": "2026-10-23_2249",
-    "tiktok": null
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7700675322282444830",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    },
+    "draft_sent": "2026-10-25_1834"
   },
   {
     "date": "2026-10-25_0354",

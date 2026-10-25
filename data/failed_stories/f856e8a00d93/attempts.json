@@ -1,0 +1,17 @@
+[
+ {
+  "at": "2026-10-25T05:23:12+00:00",
+  "stage": "narration",
+  "error": "OverflowError: Python int too large to convert to C ssize_t"
+ },
+ {
+  "at": "2026-10-25T17:23:34+00:00",
+  "stage": "narration",
+  "error": "OverflowError: Python int too large to convert to C ssize_t"
+ },
+ {
+  "at": "2026-10-25T18:34:10+00:00",
+  "stage": "narration",
+  "error": "OverflowError: Python int too large to convert to C ssize_t"
+ }
+]

@@ -1,0 +1,9 @@
+{
+ "story_id": "f856e8a00d93",
+ "title": "Whitey Bulger and the FBI",
+ "status": "parked",
+ "reason": "3 failed attempts",
+ "at": "2026-10-25T18:34:10+00:00",
+ "last_stage": "narration",
+ "last_error": "OverflowError: Python int too large to convert to C ssize_t"
+}
