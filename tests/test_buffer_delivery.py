@@ -77,6 +77,17 @@ class BufferDeliveryTests(unittest.TestCase):
         self.assertFalse(done)
         self.assertEqual(sha, "sha")
 
+    def test_older_youtube_pending_release_is_backfilled_before_tiktok_download(self):
+        assets = {
+            "2026-10-08_1100.mp4": {"name": "old-video"},
+            "2026-10-08_1100.json": {"name": "old-metadata"},
+        }
+        with patch.object(queue, "release_assets", side_effect=lambda tag: assets if tag == "youtube-pending" else {}), \
+             patch.object(queue, "already_youtube", return_value=False), \
+             patch.object(queue, "BACKFILL", Path("/nonexistent-night-files-history.json")):
+            older = queue.historical_candidates({})
+        self.assertEqual([v[0] for v in older], ["2026-10-08_1100"])
+
     def test_only_verified_owner_backfill_is_recovered(self):
         records = [
             {"stamp": "older", "title": "night", "tiktok_published": True, "status": "queued"},
