@@ -1,6 +1,6 @@
 # horror-shorts (Night Files)
 
-A free, fully automated, faceless illustrated horror / true-crime / folklore channel: **2 videos a day** to TikTok and YouTube Shorts, built and posted by GitHub Actions.
+An automated illustrated horror / true-crime / folklore video pipeline: twice-daily TikTok inbox delivery, with YouTube scheduling handled by Buffer.com.
 
 ## TikTok delivery mode
 
@@ -11,8 +11,8 @@ public posting. A confirmed inbox delivery is recorded as `draft_sent` and
 removed from the production buffer to avoid sending duplicate drafts. Failed
 or unconfirmed deliveries remain queued. The copy-ready caption is included
 in the run artifact and phone notification, as TikTok inbox uploads do not
-automatically populate the caption. YouTube's API uploader remains paused,
-and its pending media is retained separately.
+automatically populate the caption. The direct Google YouTube upload API is retired;
+the video is retained in the `youtube-pending` GitHub Release and queued on Buffer.com.
 
 ## Current production flow
 
@@ -27,16 +27,20 @@ Buffer fill / media test
         ↓
  scheduled daily workflow
         ↓
- publish oldest buffered item
+ send oldest buffered item to TikTok inbox
         ↓
- TikTok + YouTube independently
+ preserve its MP4 in `youtube-pending` Release
+        ↓
+ same Daily run queues it on Buffer.com
+        ↓
+ 15-minute Buffer recovery worker catches missing/older inventory
 ```
 
 The scheduled workflow checks the production buffer first. If content is already waiting, it skips generation and publishes the oldest complete item. If the buffer is empty, it generates one video into the buffer and then publishes the next buffered item.
 
 The separate `.github/workflows/buffer_fill.yml` producer can build inventory without publishing. The media-production test lane can also queue finished test output without immediately posting it.
 
-A failed platform post does not delete the buffered item. A successful publish is removed by `pipeline/publish.py` so the same buffered item is not intentionally posted again.
+A failed TikTok delivery retains the original GitHub buffer item for later retry. Accepted TikTok drafts leave the GitHub buffer but retain their original MP4 in the `youtube-pending` Release. Buffer.com queue receipts are recorded in `data/buffer_backfill_queue.json`; queueing is not proof of a public YouTube post. The 15-minute worker queues one unqueued video per run, checking new inventory first and then surviving original historical artifacts / verified public TikTok posts. It does not use Google's YouTube upload API or replay already recorded YouTube uploads.
 
 ## Pipeline
 

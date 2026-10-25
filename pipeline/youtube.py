@@ -1,4 +1,4 @@
-"""YouTube Shorts upload (YouTube Data API v3, scope youtube.upload). Same final mp4 and caption as TikTok.
+"""Legacy YouTube metadata formatting helpers. Direct Google uploads disabled.
 
 Secrets: YT_CLIENT_ID, YT_CLIENT_SECRET, YT_REFRESH_TOKEN (get the token once with connect_youtube.py).
 Note: videos uploaded by an UNVERIFIED Google Cloud project are forced to private until the project passes
@@ -51,38 +51,10 @@ def make_tags(hashtags: list[str], caption_text: str = "") -> list[str]:
     return out
 
 
-def upload(mp4: Path, title: str, caption_text: str, hashtags: list[str] | None = None,
-           credits: str = "", tags: list[str] | None = None) -> dict:
-    """caption_text = the description (yt_packaging.youtube_description for new videos); tags = search phrases
-    (yt_packaging yt_tags) for snippet.tags, else the hashtags."""
-    from google.oauth2.credentials import Credentials
-    from googleapiclient.discovery import build
-    from googleapiclient.http import MediaFileUpload
+def upload(*args, **kwargs) -> dict:
+    """Retired, fail closed for any old workflow or manual caller.
 
-    creds = Credentials(None, refresh_token=env("YT_REFRESH_TOKEN"), client_id=env("YT_CLIENT_ID"),
-                        client_secret=env("YT_CLIENT_SECRET"), token_uri="https://oauth2.googleapis.com/token",
-                        scopes=SCOPES)
-    yt = build("youtube", "v3", credentials=creds, cache_discovery=False)
-    wanted = CONFIG.get("youtube_privacy", "public")
-    body = {
-        "snippet": {"title": make_title(title),
-                    "description": make_description(caption_text + (f"\n\nVisual credits:\n{credits}" if credits else "")),
-                    "tags": [_clean(x) for x in tags] if tags else make_tags(hashtags or [], caption_text),
-                    "categoryId": "24"},
-        "status": {"privacyStatus": wanted, "selfDeclaredMadeForKids": False, "containsSyntheticMedia": True},
-    }
-    media = MediaFileUpload(str(mp4), mimetype="video/mp4", chunksize=8 * 1024 * 1024, resumable=True)
-    req = yt.videos().insert(part="snippet,status", body=body, media_body=media)
-    resp = None
-    while resp is None:
-        status, resp = req.next_chunk()
-        if status:
-            log(f"YouTube upload {int(status.progress() * 100)}%")
-    vid = resp["id"]
-    got = (resp.get("status") or {}).get("privacyStatus", "?")
-    url = f"https://youtube.com/shorts/{vid}"
-    log(f"YouTube: {url} (privacy: {got})")
-    if got != wanted:
-        log(f"YouTube set it to '{got}', not '{wanted}': an unverified API project's uploads stay private until "
-            "the project passes YouTube's API audit. Make it public by hand in YouTube Studio meanwhile.")
-    return {"id": vid, "url": url, "privacy": got, "wanted": wanted}
+    Night Files now sends YouTube Shorts exclusively through Buffer.com.
+    This function no longer reads Google credentials or invokes videos.insert.
+    """
+    raise RuntimeError("Direct YouTube API uploads retired: use Buffer.com")

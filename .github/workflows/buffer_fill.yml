@@ -151,9 +151,6 @@ jobs:
           TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
           TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
           TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
-          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
-          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
-          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
           MAKEUP_POSTS: "0"  # generate and buffer only, never publish during manual fill
           RENDER_STYLE: "explainer"  # fail instead of silently using classic style
           FRESH_IMAGES: ${{ inputs.fresh_images }}  # the checkbox (was never passed on, so it did nothing)
