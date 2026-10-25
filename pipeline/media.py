@@ -913,7 +913,8 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
                    "shop full of coins is NOT 'a coin placed in a dead man's mouth', a list of names is NOT a grave. "
                    "An old print, engraving or illustration of it is fine. FAIL if it depicts something else, or if "
                    f"a colour calibration chart, ruler, grey scale or scan border is visible{_setting_note(story, i, l)}")
-            if cands and _try_candidates(cands, i, l, "archive_print", aq, req, png, side, assets, used, n, images):
+            if cands and _try_candidates(cands, i, l, "archive_print", aq, req, png, side, assets, used, n, images,
+                                         clip_text=sc[PROMPT_KEYS[l]]):
                 tried += len(cands)
                 return
             tried += len(cands)
@@ -962,7 +963,8 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
             if not take:
                 break
             budget -= len(take)
-            done = _try_candidates(take, i, l, kind, query, request, png, side, assets, used, n, images)
+            done = _try_candidates(take, i, l, kind, query, request, png, side, assets, used, n, images,
+                                   clip_text=sc[PROMPT_KEYS[l]])
             tried += len(take)
             if done:
                 break
@@ -981,43 +983,78 @@ def _fill(story: dict, outdir: Path, history: list[dict]) -> list[dict]:
     return assets
 
 
-def _try_candidates(cands, i, l, kind, query, request, png, side, assets, used, n, images) -> bool:
-    """QA fail -> next result (max 3). True = one was accepted."""
-    for c in cands:
-        try:
-            (_video if c["kind"] == "video" else _photo)(c, png)
-        except Exception as e:  # noqa: BLE001
-            log(f"Shot {i:02d}{l}: {c['source']} {c['id']} unusable ({str(e)[:120]})")
-            _remove(png)
-            continue
-        # real-media QA: one frame, judged on subject / setting / text / real faces / panels, never on colour
-        frames = [f for f in (_qa_frame(png), _qa_frame(png, 2)) if f.exists()] or [png]
-        verdict, why = None, ""
-        for f in frames:  # each one is a single frame; the first NO rejects the clip
-            verdict, why = images.check_image(f, request, kind="real")
+def _try_candidates(cands, i, l, kind, query, request, png, side, assets, used, n, images,
+                    clip_text: str = "") -> bool:
+    """Stage up to three fetched candidates, rank locally with CLIP, then apply original strict image QA.
+
+    Archive/stock licensing and title/place filtering already happened upstream. CLIP is a similarity
+    prioritizer, NOT a substitute for hard authenticity or rights filters. No hosted inference.
+    """
+    import library
+    prepared = []
+    try:
+        for idx, c in enumerate(cands):
+            # Dot-prefixed temporary paths cannot accidentally enter scene_*.png asset/checkpoint scans.
+            candidate_png = png.with_name(f".{png.stem}_clip_candidate{idx}.png")
+            _remove(candidate_png)
+            try:
+                (_video if c["kind"] == "video" else _photo)(c, candidate_png)
+            except Exception as e:  # noqa: BLE001
+                log(f"Shot {i:02d}{l}: {c['source']} {c['id']} unusable ({str(e)[:120]})")
+                _remove(candidate_png)
+                continue
+            prepared.append((c, candidate_png))
+        if not prepared:
+            return False
+
+        ranked = library.rank_images(clip_text or query, [p for _, p in prepared], source=kind)
+        scores = {r["path"]: r["score"] for r in ranked} if ranked is not None else {}
+        if ranked is not None:
+            prepared.sort(key=lambda entry: -scores.get(str(entry[1]), -1))
+        min_score = float(CONFIG.get("clip_real_media_min_similarity", 0.18))
+        for c, candidate_png in prepared:
+            similarity = scores.get(str(candidate_png))
+            if similarity is not None and similarity < min_score:
+                log(f"CLIP shot {i:02d}{l}: rejected {c['source']} {c['id']} "
+                    f"score={similarity:.3f} below {min_score:.3f}; trying next candidate or AI")
+                used.add(c["id"])
+                continue
+            # Existing real-media QA: examine the ungraded middle and early frames, do not trust CLIP alone.
+            frames = [p for p in (_qa_frame(candidate_png), _qa_frame(candidate_png, 2)) if p.exists()] or [candidate_png]
+            verdict, why = None, ""
+            for frame in frames:
+                verdict, why = images.check_image(frame, request, kind="real")
+                if verdict is False:
+                    break
+            qa = "PASS" if verdict else ("FAIL" if verdict is False else "SKIPPED")
+            log(f"Image {i:02d}{l}: provider={c['source']} ({c['kind']}), qa={qa}"
+                + (f", reason={why}" if why else "")
+                + (f", CLIP={similarity:.3f}, threshold={min_score:.3f}" if similarity is not None else
+                   ", CLIP=unavailable")
+                + f', query="{query}", url={c["url"]}')
             if verdict is False:
-                break
-        for f in (_qa_frame(png), _qa_frame(png, 2)):
-            f.unlink(missing_ok=True)
-        qa = "PASS" if verdict else ("FAIL" if verdict is False else "SKIPPED")
-        log(f"Image {i:02d}{l}: provider={c['source']} ({c['kind']}), qa={qa}" + (f", reason={why}" if why else "")
-            + f', query="{query}", url={c["url"]}')
-        if verdict is False:
+                used.add(c["id"])
+                continue
             _remove(png)
-            used.add(c["id"])  # never retried by the second, broader query
-            continue
-        meta = {"scene": i, "shot": l, "type": kind, "kind": c["kind"], "source": c["source"], "id": c["id"],
-                "url": c["url"], "author": c.get("author", ""), "license": c.get("license", ""),
-                "license_url": c.get("license_url", ""), "attribution": c.get("attribution", ""),
-                "rights": c.get("rights", ""), "provider": c.get("provider", ""),
-                "archive_kind": c.get("archive_kind", ""), "date": c.get("date", ""), "title": c.get("title", ""),
-                "query": query, "qa": qa}
-        side.write_text(json.dumps(meta, ensure_ascii=False))
-        assets.append(meta)
-        used.add(c["id"])
-        n[kind] += 1
-        return True
-    return False
+            candidate_png.replace(png)
+            if candidate_png.with_suffix(".mp4").exists():
+                candidate_png.with_suffix(".mp4").replace(png.with_suffix(".mp4"))
+            meta = {"scene": i, "shot": l, "type": kind, "kind": c["kind"], "source": c["source"],
+                    "id": c["id"], "url": c["url"], "author": c.get("author", ""),
+                    "license": c.get("license", ""), "license_url": c.get("license_url", ""),
+                    "attribution": c.get("attribution", ""), "rights": c.get("rights", ""),
+                    "provider": c.get("provider", ""), "archive_kind": c.get("archive_kind", ""),
+                    "date": c.get("date", ""), "title": c.get("title", ""), "query": query,
+                    "qa": qa, "clip_score": round(similarity, 4) if similarity is not None else None}
+            side.write_text(json.dumps(meta, ensure_ascii=False))
+            assets.append(meta)
+            used.add(c["id"])
+            n[kind] += 1
+            return True
+        return False
+    finally:
+        for _candidate, candidate_png in prepared:
+            _remove(candidate_png)
 
 
 def credits(assets: list[dict]) -> tuple[str, str]:
