@@ -253,6 +253,12 @@
   "caption_words_per_group": 1,
   "music_volume": 0.14,
   "music_policy": "approved_files",
+  "publish_priority_stamps": [
+    "2026-10-25_0354"
+  ],
+  "publish_music_overrides": {
+    "2026-10-25_0354": "unsolved_mystery.mp3"
+  },
   "approved_music": [
     "unsolved_mystery.mp3",
     "bk_grnde.mp3"
