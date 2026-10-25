@@ -2261,8 +2261,16 @@ def build(story: dict, narration: dict, img_dir: Path, workdir: Path) -> Path:
     story["render_style"] = "explainer"
     video, ren = render(story, narration, segs, workdir, img_dir)
     report = visual_qa(story, segs, ren, video, total)
-    if CONFIG.get("whisper_narration_check", False):  # report-only: what a listener hears vs the captions
-        report["narration_check"] = story["narration_check"] = verify_narration(video, narration)
+    if CONFIG.get("whisper_narration_check", False):  # diagnostics only; do not block a complete valid video
+        try:
+            result = verify_narration(video, narration)
+            result["status"] = "checked"
+        except Exception as exc:  # missing local model, network, unavailable CPU, FFmpeg/ASR error
+            log(f"WHISPER narration check unavailable ({type(exc).__name__}: {str(exc)[:220]}); "
+                "continuing the normal production QA and publication")
+            result = {"status": "unavailable", "model": "openai/whisper-base",
+                      "reason": f"{type(exc).__name__}: {str(exc)[:220]}"}
+        report["narration_check"] = story["narration_check"] = result
     write_reports(workdir, report, segs)
     story["explainer_plan"] = {"shots": report["shots"], "runtime_share": report["runtime_share"],
                                "media_used": report["media_used"]}

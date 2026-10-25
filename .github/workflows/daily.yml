@@ -59,7 +59,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface
-          key: hf-models-v4  # v4: + CLIP ViT-B/32 (asset library embeddings)
+          key: hf-models-v5-whisper  # + local Whisper-base, without repeated model downloads
+          restore-keys: |
+            hf-models-v4
 
       - name: Real media search cache (24 h, Pexels / Pixabay / Wikimedia / Smithsonian)
         uses: actions/cache@v4

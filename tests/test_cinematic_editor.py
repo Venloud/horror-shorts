@@ -261,3 +261,97 @@ class ContextGraphicsAndSound(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+
+class WhisperNarrationDiagnostics(unittest.TestCase):
+    """Mock model/renderer only: exercise real shared-editor routing for folklore, fiction and true mystery."""
+
+    @staticmethod
+    def _story_and_words(text: str):
+        return {"scenes": [{"narration": text}]}, {"words": _words(text), "duration": 3.5}
+
+    def _build_without_rendering(self, text: str, *, whisper_error: bool):
+        from contextlib import ExitStack
+        story, narration = self._story_and_words(text)
+        image_dir = ROOT / "test-whisper-offline-no-files"
+        video = image_dir / "mocked.mp4"
+        base_report = {
+            "shots": {"image": 1, "graphic": 0, "host": 0},
+            "runtime_share": {"image": 1.0, "graphic": 0.0, "host": 0.0},
+            "media_used": {"stock": 0, "ai_reconstruction": 1},
+            "ai_images": {"successful": 0}, "exceptions": [], "failures": []
+        }
+        result = {"model": "openai/whisper-base", "coverage": 0.93,
+                  "median_offset_s": 0.04, "not_heard": []}
+        with ExitStack() as patches:
+            patches.enter_context(mock.patch.dict(explainer.CONFIG, {"whisper_narration_check": True}))
+            patches.enter_context(mock.patch.object(sprites, "require_all"))
+            patches.enter_context(mock.patch.object(explainer, "story_images", return_value=[[]]))
+            patches.enter_context(mock.patch.object(explainer, "plan_graphics", return_value=[]))
+            patches.enter_context(mock.patch("checkpoint.write_atomic"))
+            patches.enter_context(mock.patch("checkpoint.register_image"))
+            patches.enter_context(mock.patch.object(explainer, "_total", return_value=3.5))
+            patches.enter_context(mock.patch.object(explainer, "sequence", return_value=[]))
+            patches.enter_context(mock.patch.object(explainer, "render", return_value=(video, object())))
+            patches.enter_context(mock.patch.object(explainer, "visual_qa", return_value=base_report))
+            written = patches.enter_context(mock.patch.object(explainer, "write_reports"))
+            if whisper_error:
+                verify = patches.enter_context(mock.patch.object(
+                    explainer, "verify_narration", side_effect=OSError("local model unavailable")))
+            else:
+                verify = patches.enter_context(mock.patch.object(
+                    explainer, "verify_narration", return_value=result))
+            built = explainer.build(story, narration, image_dir, image_dir)
+        self.assertEqual(built, video)
+        verify.assert_called_once_with(video, narration)
+        written.assert_called_once()
+        return story, base_report
+
+    def test_whisper_report_only_on_three_unrelated_story_types(self):
+        cases = {
+            "legend": "A spirit whispered red or blue through the bathroom stall.",
+            "fiction": "At midnight the locked house gained another room.",
+            "true_mystery": "In 1937 the pilot disappeared during a flight across the Pacific.",
+        }
+        for genre, text in cases.items():
+            with self.subTest(genre=genre):
+                story, rep = self._build_without_rendering(text, whisper_error=False)
+                self.assertEqual(story["narration_check"]["status"], "checked")
+                self.assertAlmostEqual(rep["narration_check"]["coverage"], 0.93)
+                self.assertEqual(rep["failures"], [])
+
+    def test_whisper_download_failure_never_blocks_completed_video(self):
+        for text in ("A strange figure waited by the door.",
+                     "The pilot never returned from the island."):
+            story, rep = self._build_without_rendering(text, whisper_error=True)
+            self.assertEqual(story["narration_check"]["status"], "unavailable")
+            self.assertIn("OSError", rep["narration_check"]["reason"])
+            self.assertEqual(rep["failures"], [])
+
+    def test_local_whisper_report_matches_mocked_audio_timestamps(self):
+        import numpy as np
+        narration = {"words": _words("The door creaked open", start=0, step=0.4)}
+        transcript = [
+            {"text": "The", "timestamp": (0.0, 0.2)},
+            {"text": "door", "timestamp": (0.4, 0.65)},
+            {"text": "creaked", "timestamp": (0.8, 1.0)},
+            {"text": "open", "timestamp": (1.2, 1.4)},
+        ]
+        dummy_audio = np.zeros(24000, dtype=np.float32).tobytes()
+        # CI deliberately omits optional inference packages; mock the module itself without installing weights.
+        fake_transformers = mock.Mock(
+            pipeline=mock.Mock(return_value=lambda *args, **kwargs: {
+                "chunks": transcript, "text": "The door creaked open"}))
+        with mock.patch.object(explainer.subprocess, "run",
+                               return_value=mock.Mock(stdout=dummy_audio)), \
+             mock.patch.dict(sys.modules, {"transformers": fake_transformers}):
+            report = explainer.verify_narration(Path("not-read.mp4"), narration)
+        fake_transformers.pipeline.assert_called_once_with(
+            "automatic-speech-recognition", model="openai/whisper-base", device="cpu")
+        self.assertEqual(report["coverage"], 1.0)
+        self.assertEqual(report["not_heard"], [])
+        self.assertEqual(report["late_or_early_over_0_3s"], 0)
+
+    def test_whisper_flag_is_enabled_but_never_blocks_video(self):
+        self.assertTrue(explainer.CONFIG.get("whisper_narration_check", False))

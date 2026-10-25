@@ -81,7 +81,7 @@
   "explainer_host_max_share": 0.15,
   "explainer_host_max_seconds": 2.0,
   "explainer_depth_parallax": true,
-  "whisper_narration_check": false,
+  "whisper_narration_check": true,
   "archive_person_photos": true,
   "real_photo_max_historic": 6,
   "visual_ab": true,
