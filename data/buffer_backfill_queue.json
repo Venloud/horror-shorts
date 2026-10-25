@@ -57,9 +57,10 @@
       "title": "Paralyzed In Bed By Gas... The Mad Gasser of Mattoon #shorts"
     },
     "2026-10-23_2249": {
-      "status": "attempt_started",
-      "title": "It Is Just Like Flying... Amelia Earhart of the Pacific Ocean #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/buffer/2026-10-23_2249.mp4"
+      "status": "queued",
+      "buffer_post_id": "6ade3c99e4be8a4d86bb0ac4",
+      "due_at": "2026-10-26T10:04:00.000Z",
+      "title": "It Is Just Like Flying... Amelia Earhart of the Pacific Ocean #shorts"
     }
   }
 }
