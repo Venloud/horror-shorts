@@ -339,11 +339,16 @@ class WhisperNarrationDiagnostics(unittest.TestCase):
             {"text": "open", "timestamp": (1.2, 1.4)},
         ]
         dummy_audio = np.zeros(24000, dtype=np.float32).tobytes()
+        # CI deliberately omits optional inference packages; mock the module itself without installing weights.
+        fake_transformers = mock.Mock(
+            pipeline=mock.Mock(return_value=lambda *args, **kwargs: {
+                "chunks": transcript, "text": "The door creaked open"}))
         with mock.patch.object(explainer.subprocess, "run",
                                return_value=mock.Mock(stdout=dummy_audio)), \
-             mock.patch("transformers.pipeline", return_value=lambda *args, **kwargs: {
-                 "chunks": transcript, "text": "The door creaked open"}):
+             mock.patch.dict(sys.modules, {"transformers": fake_transformers}):
             report = explainer.verify_narration(Path("not-read.mp4"), narration)
+        fake_transformers.pipeline.assert_called_once_with(
+            "automatic-speech-recognition", model="openai/whisper-base", device="cpu")
         self.assertEqual(report["coverage"], 1.0)
         self.assertEqual(report["not_heard"], [])
         self.assertEqual(report["late_or_early_over_0_3s"], 0)
