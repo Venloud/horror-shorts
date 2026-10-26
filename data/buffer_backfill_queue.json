@@ -99,9 +99,10 @@
       "title": "Never Watch Alone... The Last Viewer #shorts"
     },
     "2026-10-26_2125": {
-      "status": "attempt_started",
-      "title": "Footnotes Before The Storms... The 1884 Maritime Records #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-10-26_2125.mp4"
+      "status": "queued",
+      "buffer_post_id": "6adfcb5bc26d8b40cc7879e8",
+      "due_at": "2026-10-30T00:44:00.000Z",
+      "title": "Footnotes Before The Storms... The 1884 Maritime Records #shorts"
     }
   }
 }
