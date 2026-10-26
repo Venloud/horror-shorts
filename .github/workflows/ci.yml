@@ -57,6 +57,8 @@ jobs:
           python -m pip install -q "Pillow>=10" "numpy>=1.24" soundfile
           python -m unittest discover -s tests -p test_free_motion_toolkit.py -v
           python -m unittest discover -s tests -p test_remotion_post.py -v
+          python -m unittest discover -s tests -p test_visual_treatment.py -v
+          python -m unittest discover -s tests -p test_semantic_graphics_render.py -v
           node --check remotion/render_polish.mjs
 
       - name: Validate approved character assets, checkpoints and the production shot list (mocks, 0 API calls)
@@ -72,6 +74,7 @@ jobs:
       - name: Verify Buffer.com delivery and historic TikTok recovery (offline)
         run: |
           python -m unittest discover -s tests -p test_buffer_delivery.py -v
+          python -m unittest discover -s tests -p test_public_buffer_media.py -v
 
       - name: Validate JSON configuration
         run: |

@@ -197,8 +197,15 @@ jobs:
         env:
           BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
           BUFFER_YOUTUBE_CHANNEL_ID: "6ad2d7d2778b240e2f331d8e"
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_PUBLIC_BASE_URL: ${{ secrets.R2_PUBLIC_BASE_URL }}
           GITHUB_TOKEN: ${{ github.token }}
-        run: python tools/auto_buffer_backfill.py --stamp-file .posted --production-only
+        run: |
+          python -m pip install -q boto3
+          python tools/auto_buffer_backfill.py --stamp-file .posted --production-only
 
       - name: Check history has every buffered/posted video
         if: always()

@@ -54,7 +54,8 @@ class BufferDeliveryTests(unittest.TestCase):
             def json(self):
                 return {"title": "Original Night Files story", "caption_text": "Description"}
 
-        with patch.object(queue, "public_asset"), \
+        with patch("public_buffer_media.ensure_public_video", return_value="https://media.example.test/night-files/2026-10-23_0001.mp4"), \
+             patch.object(queue, "public_asset"), \
              patch.object(queue.requests, "get", return_value=Response()), \
              patch.object(queue, "persist", side_effect=persist), \
              patch.object(queue, "graph", side_effect=send):
