@@ -93,9 +93,10 @@
       "title": "There Were Forty One Guests | Scary Story #shorts"
     },
     "2026-10-07_2304": {
-      "status": "attempt_started",
-      "title": "Never Watch Alone... The Last Viewer #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-10-07_2304.mp4"
+      "status": "queued",
+      "buffer_post_id": "6adf8f0b5ca6f4864145eef2",
+      "due_at": "2026-10-29T23:57:00.000Z",
+      "title": "Never Watch Alone... The Last Viewer #shorts"
     }
   }
 }
