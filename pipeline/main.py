@@ -337,10 +337,24 @@ def main() -> int:
         from background_music import add_background_music
         manifest.stage("background_music", "started")
         video = add_background_music(video, workdir, story)
-        manifest.artifact(video, "final-video")
         manifest.stage("background_music", "complete",
                        music_source=story.get("music_source"),
                        music_file=story.get("music_file"))
+        # Night Files only: a real one-second grayscale cover is the very first
+        # video image, with the original audio and overall runtime unchanged.
+        # Place it AFTER all render styles and music, BEFORE QA and buffering.
+        stage = "opening_cover"
+        from cover_frame import make_cover, insert_cover
+        manifest.stage("opening_cover", "started")
+        cover = make_cover(story, workdir, img_dir, video)
+        video = insert_cover(video, workdir, workdir / cover["cover_image"])
+        story["opening_cover"] = cover
+        manifest.artifact(workdir / cover["cover_image"], "opening-cover-image")
+        manifest.artifact(workdir / cover["thumbnail_candidate"], "thumbnail-candidate")
+        manifest.artifact(workdir / "cover_meta.json", "cover-metadata")
+        manifest.stage("opening_cover", "complete", source=cover["source"],
+                       thumbnail=cover["thumbnail_candidate"], duration_s=1.0)
+        manifest.artifact(video, "final-video")
         if story.get("render_style") == "cutout":  # review sheet for the owner (artifact)
             try:
                 cutout.contact_sheet(video, workdir / "contact_sheet.png")
@@ -405,6 +419,12 @@ def main() -> int:
             "narrator_voice": story.get("narrator_voice") or narration.get("voice"),
             "visual_credits": visual_credits, "visual_mode": story.get("visual_mode"),
             "render_style": story.get("render_style", "classic"),
+            "opening_cover": {
+                "duration_seconds": 1.0, "source": story.get("opening_cover", {}).get("source"),
+                "cover_image": "cover_main.png", "thumbnail_candidate": "cover_thumb.jpg",
+                "monochrome": True, "illustration_not_archival_evidence":
+                    bool(story.get("true_story")),
+            },
             "provenance": {
                 "media_assets": story.get("media_assets") or [],
                 "visual_sources": story.get("_visual_sources") or {},

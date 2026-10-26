@@ -57,6 +57,7 @@ jobs:
           python -m pip install -q "Pillow>=10" "numpy>=1.24" soundfile
           python -m unittest discover -s tests -p test_free_motion_toolkit.py -v
           python -m unittest discover -s tests -p test_remotion_post.py -v
+          python -m unittest discover -s tests -p test_cover_frame.py -v
           node --check remotion/render_polish.mjs
 
       - name: Validate approved character assets, checkpoints and the production shot list (mocks, 0 API calls)
