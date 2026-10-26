@@ -70,9 +70,9 @@ class CoverTests(unittest.TestCase):
             story = {"story_id": "generated", "title": "The Hidden Barn",
                      "scenes": [{"narration": "Someone approached the barn at night.",
                                  "image_prompt": "An isolated rural barn"}]}
-            with mock.patch.dict(os.environ, {"CLOUDFLARE_API_TOKEN": "test-only",
-                                              "CLOUDFLARE_ACCOUNT_ID": "test-only"}), \\
-                 mock.patch.dict(sys.modules, {"images": fake}):
+            with (mock.patch.dict(os.environ, {"CLOUDFLARE_API_TOKEN": "test-only",
+                                               "CLOUDFLARE_ACCOUNT_ID": "test-only"}),
+                  mock.patch.dict(sys.modules, {"images": fake})):
                 meta = cover_frame.make_cover(story, work, work / "empty", work / "unused.mp4")
             self.assertEqual(meta["source"], "cloudflare_workers_ai")
             self.assertEqual(len(calls), 1)
