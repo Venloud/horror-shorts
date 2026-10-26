@@ -210,9 +210,12 @@ def queue_one(stamp, mp4, json_asset, record, sha, remote_posts):
     queued = record["queued"]
     if stamp in queued:
         return False, sha
-    media = mp4["browser_download_url"]
+    from public_buffer_media import ensure_public_video
+    # The GitHub Release remains the durable private workflow source, not Buffer's
+    # scheduled delivery URL. Mirror to a verified, stable public host before the
+    # write-ahead receipt; failing this check must NOT create a Buffer post.
+    media = ensure_public_video(mp4["browser_download_url"], stamp)
     meta_url = json_asset["browser_download_url"]
-    public_asset(media, "video")
     public_asset(meta_url, "json")
     response = requests.get(meta_url, timeout=45)
     response.raise_for_status()
