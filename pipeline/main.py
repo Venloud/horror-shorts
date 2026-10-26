@@ -337,6 +337,9 @@ def main() -> int:
         from background_music import add_background_music
         manifest.stage("background_music", "started")
         video = add_background_music(video, workdir, story)
+        manifest.stage("background_music", "complete",
+                       music_source=story.get("music_source"),
+                       music_file=story.get("music_file"))
         # Night Files only: a real one-second grayscale cover is the very first
         # video image, with the original audio and overall runtime unchanged.
         # Place it AFTER all render styles and music, BEFORE QA and buffering.
@@ -352,9 +355,6 @@ def main() -> int:
         manifest.stage("opening_cover", "complete", source=cover["source"],
                        thumbnail=cover["thumbnail_candidate"], duration_s=1.0)
         manifest.artifact(video, "final-video")
-        manifest.stage("background_music", "complete",
-                       music_source=story.get("music_source"),
-                       music_file=story.get("music_file"))
         if story.get("render_style") == "cutout":  # review sheet for the owner (artifact)
             try:
                 cutout.contact_sheet(video, workdir / "contact_sheet.png")
