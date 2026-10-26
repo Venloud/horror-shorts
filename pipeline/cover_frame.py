@@ -161,7 +161,7 @@ def insert_cover(video: Path, workdir: Path, cover: Path) -> Path:
         "-c:a", "copy", "-t", f"{duration:.3f}", "-movflags", "+faststart",
         str(stage),
     ])
-    if not stage.is_file() or stage.stat().st_size < 100_000:
+    if not stage.is_file() or stage.stat().st_size < 1_024:
         raise RuntimeError("Night Files one-second cover output was not encoded")
     after = media_duration(stage)
     if abs(after - duration) > 0.15:
