@@ -29,7 +29,7 @@ FONT_DIR = ROOT / "assets" / "fonts" / "explainer"
 SAFE_X0, SAFE_X1, SAFE_Y0, SAFE_Y1 = 70, 960, 200, 1300
 TEMPLATES = ("true_story", "title", "evidence", "map_route", "fact", "filmstrip", "quote", "impact", "connections",
              "compare", "missing", "closing", "photo_scan", "clock_stop", "shadow_reveal", "date_stamp", "choice",
-             "phone")
+             "phone", "clue_object", "location_tag", "footprint_route")
 
 
 def accent() -> tuple:
@@ -238,6 +238,98 @@ def _base(ctx: dict) -> Image.Image:
     if ctx.get("bg") is not None:
         return ctx["bg"].copy()
     return ground(ctx.get("tone", "midnight"), ctx.get("seed", 1)).copy()
+
+
+
+def _t_clue_object(fields, t, dur, ctx):
+    """Draw a recognizable clue, not a fabricated document or another stock image."""
+    frame = Image.new("RGBA", (W, H), (13, 17, 24, 255))
+    d = ImageDraw.Draw(frame, "RGBA")
+    kind = str(fields.get("object") or "")
+    a = max(0.0, min(1.0, ease(t / 0.42)))
+    rise = int(70 * (1 - a))
+    ink = BONE + (int(255 * a),)
+    accent_col = ctx["accent"] + (int(255 * a),)
+    d.text((108, 270), "THE WEAPON" if kind == "weapon" else "MISSING" if fields.get("missing") else "EVIDENCE",
+           font=font("mono", 38), fill=PARCHMENT + (int(255 * a),))
+    if kind in ("newspaper", "letter", "photograph"):
+        x0, y0, x1, y1 = 215, 425 + rise, 865, 1075 + rise
+        d.rounded_rectangle((x0, y0, x1, y1), radius=10, fill=(219, 211, 194, int(255 * a)))
+        d.rectangle((x0 + 35, y0 + 46, x1 - 35, y0 + 60), fill=(48, 49, 52, int(255 * a)))
+        if kind == "newspaper":
+            d.rectangle((x0 + 35, y0 + 92, x1 - 35, y0 + 108), fill=(65, 65, 68, int(255 * a)))
+        if kind == "photograph":
+            d.rectangle((x0 + 55, y0 + 140, x1 - 55, y0 + 440), fill=(125, 128, 128, int(255 * a)))
+        else:
+            for k in range(9):
+                y = y0 + 154 + k * 45
+                d.line((x0 + 45, y, x1 - (120 if k % 3 == 0 else 45), y),
+                       fill=(92, 94, 96, int(215 * a)), width=8)
+    elif kind == "key":
+        cy = 665 + rise
+        d.ellipse((325, cy - 126, 505, cy + 54), outline=ink, width=26)
+        d.line((480, cy + 25, 760, cy + 300), fill=ink, width=38)
+        d.line((660, cy + 202, 724, cy + 138), fill=ink, width=31)
+        if fields.get("missing"):
+            g = ease((t - 0.55) / 0.36)
+            col = ctx["accent"] + (int(255 * g),)
+            d.line((310, 470, 800, 1070), fill=col, width=25)
+            d.line((800, 470, 310, 1070), fill=col, width=25)
+    elif kind == "weapon":
+        d.line((390, 1020 + rise, 715, 490 + rise), fill=(152, 106, 70, int(255 * a)), width=40)
+        d.line((445, 590 + rise, 790, 740 + rise), fill=ink, width=42)
+    else:
+        d.rounded_rectangle((305, 510 + rise, 775, 925 + rise), radius=20, outline=ink, width=22)
+    label = str(fields.get("label") or "").upper()
+    f, lines = fit(label, "cond", 850, 2, 110, 62)
+    for k, line in enumerate(lines):
+        w = d.textlength(line, font=f)
+        d.text(((W - w) / 2, 1130 + k * int(f.size * 1.04)), line, font=f, fill=accent_col)
+    return frame
+
+
+def _t_location_tag(fields, t, dur, ctx):
+    """A destination tag and pin, not an invented geographic map or route."""
+    frame = Image.new("RGBA", (W, H), (13, 17, 24, 255))
+    d = ImageDraw.Draw(frame, "RGBA")
+    a = ease(t / 0.38)
+    cy = int(640 + 100 * (1 - a))
+    color = ctx["accent"] + (int(255 * a),)
+    d.ellipse((400, cy - 230, 680, cy + 50), outline=color, width=22)
+    d.ellipse((500, cy - 130, 580, cy - 50), fill=color)
+    d.polygon([(430, cy - 5), (650, cy - 5), (540, cy + 280)], fill=color)
+    d.ellipse((460, cy - 160, 620, cy), fill=(13, 17, 24, 255))
+    d.text((112, 330), "LOCATION", font=font("mono", 40), fill=PARCHMENT + (int(255 * a),))
+    label = str(fields.get("place") or "").upper()[:36]
+    f, lines = fit(label, "cond", 850, 2, 135, 64)
+    for k, line in enumerate(lines):
+        w = d.textlength(line, font=f)
+        d.text(((W - w) / 2, 1100 + k * int(f.size * 1.1)), line, font=f, fill=BONE + (int(255 * a),))
+    return frame
+
+
+def _t_footprint_route(fields, t, dur, ctx):
+    """Directional footprints and a crossed-out exit, only for a narrated no-return clue."""
+    frame = Image.new("RGBA", (W, H), (13, 17, 24, 255))
+    d = ImageDraw.Draw(frame, "RGBA")
+    a = ease(t / max(0.45, min(1.5, dur * 0.42)))
+    d.line((355, 530, 725, 530, 725, 690), fill=PARCHMENT + (255,), width=20)
+    d.line((355, 530, 540, 340, 725, 530), fill=PARCHMENT + (255,), width=20)
+    d.rectangle((440, 530, 640, 690), outline=PARCHMENT + (255,), width=12)
+    for i in range(6):
+        if i / 6.0 > a:
+            continue
+        y = 1120 - i * 74
+        x = 480 + (i % 2) * 135
+        d.ellipse((x, y, x + 64, y + 38), fill=BONE + (225,))
+    if t > 0.42:
+        g = ease((t - 0.42) / 0.4)
+        col = ctx["accent"] + (int(255 * g),)
+        d.line((230, 775, 360, 905), fill=col, width=25)
+        d.line((360, 775, 230, 905), fill=col, width=25)
+        d.line((820, 865, 820, 1040), fill=col, width=16)
+        d.polygon(((772, 1012), (868, 1012), (820, 1075)), fill=col)
+    return frame
 
 
 def _t_date_stamp(fields, t, dur, ctx):
