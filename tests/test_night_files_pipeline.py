@@ -428,7 +428,13 @@ class ShotLists(unittest.TestCase):
                 self.assertLessEqual(secs["host"] / total, 0.15 + 1e-6)
                 for i in range(len(story["scenes"])):
                     mine = [s for s in body if s["scene"] == i]
-                    self.assertTrue(any(s["shot"]["type"] == "image" for s in mine), f"scene {i} no picture")
+                    pictures = [s for s in mine if s["shot"]["type"] == "image"]
+                    graphics = [s for s in mine if s["shot"]["type"] == "graphic"]
+                    if not pictures:
+                        # A planned graphic-first beat deliberately needs no filler illustration.
+                        self.assertEqual(story.get("visual_treatments", {}).get(str(i), {}).get("method"),
+                                         "graphic_first", f"scene {i} has neither a picture nor an approved graphic-first plan")
+                        self.assertTrue(graphics, f"scene {i} has no visual explanation")
                     if g[i]:  # a planned meaningful graphic is shown; no meaningful phrase = picture only (Oct 25)
                         self.assertTrue(any(s["shot"]["type"] == "graphic" for s in mine), f"scene {i} no graphic")
                     self.assertLessEqual(sum(1 for s in mine if s["shot"]["type"] == "host"), 1)
