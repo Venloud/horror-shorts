@@ -447,7 +447,7 @@ RULES
 """
 
 PLAN_TEMPLATES = ("date_stamp", "evidence", "map_route", "fact", "quote", "connections", "compare", "missing",
-                  "photo_scan", "clock_stop", "shadow_reveal", "closing")
+                  "photo_scan", "clock_stop", "shadow_reveal", "closing", "clue_object", "location_tag", "footprint_route")
 
 
 def _ledger_pairs(story: dict) -> list[tuple[str, str]]:
@@ -641,6 +641,17 @@ def plan_graphics(story: dict, narration: dict) -> list[list[dict]]:
                 if v["template"] == "missing":  # nobody is drawn: the host never stands in for a real person
                     v["fields"]["subject"] = ""
                 picks.append(v)
+        import visual_treatment
+        locs = [loc.get("name", "") for loc in story.get("locations") or [] if isinstance(loc, dict)]
+        locs += [w for w in ("Bavaria", "Bavarian", "Germany") if re.search(r"\\b" + w + r"\\b", sc.get("narration", ""), re.I)]
+        treatment = visual_treatment.select(sc.get("narration", ""), first_scene=i == 0, places=locs)
+        story.setdefault("visual_treatments", {})[str(i)] = {
+            "method": treatment["method"], "reason": treatment["reason"]}
+        for option in treatment["graphics"]:
+            at = _anchor(option["at"], s_words)
+            if at is not None:
+                picks.append({"type": "graphic", "at": at, "template": option["template"],
+                              "fields": option["fields"], "auto": True})
         picks += _auto_graphics(story, i, sctx)
         if not true:  # a legend / fiction: the beat's own strong phrase beats a generic ledger card
             imp = _impact_fallback(story, i)
@@ -705,6 +716,19 @@ def graphic_problem(story: dict, i: int, g: dict) -> str | None:
         if not (v <= 3 or v in said):
             return f"number {f.get('value')} is not said in scene {i + 1}"
         texts.append(f.get("label") or "")
+    elif tpl == "clue_object":
+        import visual_treatment
+        if f.get("object") not in visual_treatment.OBJECTS:
+            return "unsupported visual clue"
+        if not _words_said(str(f.get("label") or ""), low):
+            return "clue label not narrated"
+    elif tpl == "location_tag":
+        if not _words_said(str(f.get("place") or ""), low):
+            return "location not narrated"
+    elif tpl == "footprint_route":
+        import visual_treatment
+        if not (visual_treatment.FOOTPRINTS.search(narr) and visual_treatment.NO_RETURN.search(narr)):
+            return "return path not established"
     elif tpl == "missing":
         texts += [f.get("last_seen") or ""]
         if not _VANISH.search(narr):
@@ -1208,7 +1232,8 @@ def sequence(story: dict, narration: dict, scene_images: list[list[Path]], graph
             raise ExplainerUnavailable(f"scene {i + 1} has no image of its own (never another scene's picture)")
         gs = [dict(g, scene=i) for g in graphics[i]]
         closing = gs.pop() if i == n_sc - 1 and gs and gs[-1].get("template") == "closing" else None
-        if len(gs) > 1 and gs[0]["template"] == prev_template:  # never the same template two scenes in a row
+        gs.sort(key=lambda g: (g.get("at") is None, float(g.get("at") or 0)))
+        if len(gs) > 1 and gs[0]["template"] == prev_template:
             gs.append(gs.pop(0))
         prev_template = gs[0]["template"] if gs else prev_template
         narr = story["scenes"][i].get("narration", "")
@@ -1219,10 +1244,17 @@ def sequence(story: dict, narration: dict, scene_images: list[list[Path]], graph
         # room for picture -> graphic -> second picture from ~6 s (cuts stay >= SHOT_MIN): the scene's second
         # picture is no longer dropped for its graphic (the Aka Manto preview had one picture + one card per scene)
         n = max(2 if gs else 1, min(6, round(span / 3.0)))
-        order = [imgs[0]]
-        if gs:
+        treatment = (story.get("visual_treatments") or {}).get(str(i), {})
+        graphic_first = treatment.get("method") == "graphic_first" and bool(gs) and i > 0
+        # The narration can be better served by a clean graphic instead of a forced picture.
+        order = [gs[0]] if graphic_first else [imgs[0]]
+        if graphic_first and len(gs) > 1:
+            order.append(gs[1])
+        elif graphic_first and span >= 7.0:
+            order.append(imgs[0])
+        elif gs:
             order.append(gs[0])
-        if len(scene_images[i]) > 1:
+        if not graphic_first and len(scene_images[i]) > 1:
             order.append(imgs[1])
         if host_ok:
             import sprites
@@ -1233,7 +1265,7 @@ def sequence(story: dict, narration: dict, scene_images: list[list[Path]], graph
             asset_id = selected if selected != sprites.face_id(expression) else None
             order.append({"type": "host", "scene": i, "expression": expression, "asset_id": asset_id,
                           "beat": beat[0] if beat else ""})
-        if len(gs) > 1 and span > 9.0:
+        if not graphic_first and len(gs) > 1 and span > 9.0:
             order.append(gs[1])
         # Avoid manufacturing extra cuts by repeating crops of the same image.
         if closing:
@@ -1272,8 +1304,12 @@ def sequence(story: dict, narration: dict, scene_images: list[list[Path]], graph
             lens = _slot_lengths(len(order), [x["type"] for x in order], span)
         t = a
         cuts = [a]
-        for ln in lens[:-1]:
+        for k, ln in enumerate(lens[:-1]):
             t += ln
+            upcoming = order[k + 1]
+            spoken_at_time = upcoming.get("at") if upcoming.get("type") == "graphic" else None
+            if spoken_at_time is not None and cuts[-1] + SHOT_MIN <= float(spoken_at_time) <= b - SHOT_MIN * (len(order) - k - 1):
+                t = float(spoken_at_time)
             near = [w["start"] for w in words if abs(w["start"] - t) < 0.35 and cuts[-1] + SHOT_MIN <= w["start"]
                     <= cuts[-1] + SHOT_MAX - 0.05]
             cuts.append(min(near, key=lambda x: abs(x - t)) if near else t)
@@ -1729,7 +1765,9 @@ class Renderer:
         darkened blur of the scene's own picture (the graphic stays in the story's world)."""
         k = self._index(seg)
         sh = seg["shot"]
-        if bg is None:
+        if sh.get("template") in ("clue_object", "location_tag", "footprint_route"):
+            bg = None  # clean designed background; no arbitrary blurred or cropped illustration
+        if bg is None and sh.get("template") not in ("clue_object", "location_tag", "footprint_route"):
             own = next((x["shot"]["file"] for x in self.segs if x["shot"].get("type") == "image"
                         and x["scene"] == seg["scene"]), self.first_image)
             bg = self._blurred(own).copy() if own else None
@@ -2118,8 +2156,9 @@ def visual_qa(story: dict, segs: list[dict], ren: "Renderer", video: Path | None
         imgs = [s for s in mine if s["shot"]["type"] == "image"]
         own = [s for s in imgs if Path(s["shot"]["file"]).name.startswith(f"scene_{i:02d}")]
         grs = [s for s in mine if s["shot"]["type"] == "graphic"]
-        if mine and not own:
-            fails.append(f"scene {i + 1}: no narration-matched picture of its own")
+        method = (story.get("visual_treatments") or {}).get(str(i), {}).get("method")
+        if mine and not own and not (method == "graphic_first" and len(grs) >= 1):
+            fails.append(f"scene {i + 1}: no narration-matched picture or explanatory graphic")
         if any(not Path(s["shot"]["file"]).name.startswith(f"scene_{i:02d}") for s in imgs):
             fails.append(f"scene {i + 1}: shows another scene's picture (generic fallback)")
         for s in imgs:
@@ -2223,14 +2262,14 @@ def build(story: dict, narration: dict, img_dir: Path, workdir: Path) -> Path:
     graphics = None
     try:
         old = json.loads(saved.read_text())
-        if old.get("key") == key and old.get("version") == 3:  # 3 = phrase-aware impact cards, choice, phone
+        if old.get("key") == key and old.get("version") == 4:  # 4 = semantic objects and visual method selection
             graphics = old["graphics"]
             log("Explainer graphics: reused from the earlier try (same narration)")
     except (OSError, ValueError, KeyError):
         graphics = None
     if graphics is None:
         graphics = plan_graphics(story, narration)
-        checkpoint.write_atomic(saved, json.dumps({"key": key, "version": 3, "graphics": graphics},
+        checkpoint.write_atomic(saved, json.dumps({"key": key, "version": 4, "graphics": graphics},
                                                   ensure_ascii=False, default=str))
         checkpoint.register_image(saved, stage="shot_list")
     total = _total(narration)
