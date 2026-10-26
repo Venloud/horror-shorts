@@ -643,7 +643,7 @@ def plan_graphics(story: dict, narration: dict) -> list[list[dict]]:
                 picks.append(v)
         import visual_treatment
         locs = [loc.get("name", "") for loc in story.get("locations") or [] if isinstance(loc, dict)]
-        locs += [w for w in ("Bavaria", "Bavarian", "Germany") if re.search(r"\\b" + w + r"\\b", sc.get("narration", ""), re.I)]
+        locs += [w for w in ("Bavaria", "Bavarian", "Germany") if re.search(r"\b" + w + r"\b", sc.get("narration", ""), re.I)]
         treatment = visual_treatment.select(sc.get("narration", ""), first_scene=i == 0, places=locs)
         story.setdefault("visual_treatments", {})[str(i)] = {
             "method": treatment["method"], "reason": treatment["reason"]}
@@ -2256,6 +2256,17 @@ def build(story: dict, narration: dict, img_dir: Path, workdir: Path) -> Path:
     import checkpoint
     import sprites
     sprites.require_all()  # missing / changed approved art: fail by asset ID, never substitute
+    # Determine what each narration beat needs BEFORE the image-selection chain.
+    # Existing renderers keep image fallbacks until all visual types are proved safe.
+    import visual_treatment
+    for i, sc in enumerate(story.get("scenes") or []):
+        spoken = sc.get("narration", "")
+        places = [(p.get("name") or "") for p in story.get("locations") or [] if isinstance(p, dict)]
+        places += [w for w in ("Bavaria", "Bavarian", "Germany")
+                   if re.search(r"\b" + w + r"\b", spoken, re.I)]
+        choice = visual_treatment.select(spoken, first_scene=i == 0, places=places)
+        story.setdefault("visual_treatments", {})[str(i)] = {
+            "method": choice["method"], "reason": choice["reason"]}
     scene_images = story_images(story, img_dir)
     key = hashlib.sha1(json.dumps([w["word"] for w in narration["words"]]).encode()).hexdigest()[:16]
     saved = img_dir / "explainer_storyboard.json"
