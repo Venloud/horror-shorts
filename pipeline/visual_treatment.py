@@ -33,7 +33,8 @@ def select(narration: str, *, first_scene: bool = False, places: list[str] | Non
         m = re.search(rx, narration, re.I)
         if m:
             found.append({"at": m.group(0), "template": "clue_object",
-                          "fields": {"object": obj, "label": m.group(0)}})
+                          "fields": {"object": obj, "label": m.group(0),
+                                     "missing": bool(obj == "key" and re.search(r"\b(?:missing|vanish\w*|lost|disappear\w*)\b", narration, re.I))}})
     place = None
     for item in places or []:
         if not isinstance(item, str):
