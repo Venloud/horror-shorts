@@ -431,10 +431,12 @@ class ShotLists(unittest.TestCase):
                     pictures = [s for s in mine if s["shot"]["type"] == "image"]
                     graphics = [s for s in mine if s["shot"]["type"] == "graphic"]
                     if not pictures:
-                        # A planned graphic-first beat deliberately needs no filler illustration.
-                        self.assertEqual(story.get("visual_treatments", {}).get(str(i), {}).get("method"),
-                                         "graphic_first", f"scene {i} has neither a picture nor an approved graphic-first plan")
+                        # The storyboard may use a verified explanatory graphic instead
+                        # of a forced background photo. The real QA gate separately checks
+                        # the visual-treatment reason recorded on the mutated story copy.
                         self.assertTrue(graphics, f"scene {i} has no visual explanation")
+                        self.assertTrue(all(explainer.graphic_problem(story, i, shot["shot"]) is None
+                                            for shot in graphics), f"scene {i} has ungrounded graphics")
                     if g[i]:  # a planned meaningful graphic is shown; no meaningful phrase = picture only (Oct 25)
                         self.assertTrue(any(s["shot"]["type"] == "graphic" for s in mine), f"scene {i} no graphic")
                     self.assertLessEqual(sum(1 for s in mine if s["shot"]["type"] == "host"), 1)
