@@ -2829,5 +2829,79 @@
       "pending": "buffer_queue_pending"
     },
     "draft_sent": "2026-10-26_0546"
+  },
+  {
+    "date": "2026-10-26_2125",
+    "story_id": "957f968ded54",
+    "title": "The 1884 Maritime Records",
+    "premise": "An archivist discovers nineteenth-century maritime ledgers predicting shipwrecks three days before storms form, ending with his own shift.",
+    "subgenre": "cold case file (fiction)",
+    "mode": "coldcase",
+    "true_story": false,
+    "case": null,
+    "source": null,
+    "prompt_file": "fiction_cold_case.txt",
+    "setting": "Oakhaven basement archives night shift",
+    "threat": "A supernatural force recording future tragedies and logging the archivist's time before it occurs",
+    "twist": "The ledger already contains the exact hour of the archivist's current shift, written before he arrived.",
+    "score": 89,
+    "seconds": 66.9,
+    "voice_speed": 1.2,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:7829485"
+    ],
+    "visual_mode": "analog",
+    "render_style": "explainer",
+    "story_shape": "investigation",
+    "research_sources": [],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": null,
+    "visuals": {
+      "distinct": 23,
+      "longest_s": 4.2,
+      "longest_share": 0.06,
+      "longest_name": "image:scene_07a.png:full"
+    },
+    "yt_title": "Footnotes Before The Storms... The 1884 Maritime Records #shorts",
+    "hashtags": [
+      "maritimerecords",
+      "oakhaven",
+      "scarystories",
+      "creepypasta"
+    ],
+    "yt_tags": [
+      "the 1884 maritime records",
+      "oakhaven archives",
+      "nineteenth century ledgers",
+      "maritime disaster records",
+      "archivist mystery story",
+      "scary archive story",
+      "horror short story",
+      "shipwreck ledgers",
+      "oakhaven maritime history",
+      "creepy 1884 records",
+      "night shift horror",
+      "unexplained archive mystery",
+      "1884 maritime records",
+      "1884 maritime records story",
+      "oakhaven mystery"
+    ],
+    "opening": "Every single ship lost in the winter of eighteen eighty-four was logged with a hand-drawn footnote dated three days before the storms actually formed.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-10-26_2125",
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7701097066277292063",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    },
+    "draft_sent": "2026-10-26_2151"
   }
 ]
