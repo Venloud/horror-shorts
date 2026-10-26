@@ -75,9 +75,10 @@
       "title": "Someone Handed Him A Note... Chalino Sánchez of Mexico #shorts"
     },
     "2026-10-06_0332": {
-      "status": "attempt_started",
-      "title": "The Louvre Security Password Heist of Paris | True Heist #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-10-06_0332.mp4"
+      "status": "queued",
+      "buffer_post_id": "6adea08c3d5b27036bfeaec8",
+      "due_at": "2026-10-28T01:56:00.000Z",
+      "title": "The Louvre Security Password Heist of Paris | True Heist #shorts"
     }
   }
 }
