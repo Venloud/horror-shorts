@@ -8,7 +8,7 @@ The *existing* `main` workflows are:
 - `.github/workflows/tiktok_clipper_preview.yml`, manual preview, never posts.
 - `.github/workflows/tiktok_clipper_scheduled.yml`, scheduled **TikTok inbox drafts only**, never direct posting or YouTube.
 
-These currently checkout `feature/mrbeast-split-tiktok` to load the clipper code. **Do not switch their checkout ref to `main` before that code is fully integrated, tested and approved.** The old `split_clipper.yml` and `split_clipper_test.yml` were removed from this PR because they would create duplicate/unsafe workflows.
+**Both workflows now check out `main`.** The former `feature/mrbeast-split-tiktok` PR was merged and its branch safely removed on 2026-10-27. The existing `clipper/` modules on `main` were verified byte-for-byte identical to the former branch tip, and the CI workflow-order test checks both checkout refs and the draft-only publishing boundary. Never reintroduce the deleted checkout ref or create duplicate clipper workflows. The old `split_clipper.yml` and `split_clipper_test.yml` remain retired.
 
 The scheduled flow loads source/background video assets, makes subtitles and a vertical render, checks size, then uses `clipper/post.py --mode draft`. TikTok inbox uploads do not prefill captions: copy the saved caption from the workflow artifacts. Video sources must be reused only with appropriate rights and platform permission.
 
