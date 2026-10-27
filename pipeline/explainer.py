@@ -1732,7 +1732,12 @@ class Renderer:
         if bg is None:
             own = next((x["shot"]["file"] for x in self.segs if x["shot"].get("type") == "image"
                         and x["scene"] == seg["scene"]), self.first_image)
-            bg = self._blurred(own).copy() if own else None
+            # Date timelines sit ON the actual photograph, not on a blurred
+            # filler panel. All other templates retain their approved ground.
+            if own and sh.get("template") == "date_stamp":
+                bg = self._crop(self._cover(own, 1.0), 0.5, 0.5, 1.0)
+            else:
+                bg = self._blurred(own).copy() if own else None
         c = {"accent": self.acc, "tone": __import__("noir").tone_for(k), "seed": k % 7 + 1,
              "words": [{"word": w["word"], "start": w["start"] - seg["start"]} for w in self.narr["words"]
                        if seg["start"] - 0.05 <= w["start"] < seg["end"]], "bg": bg, "used_assets": self.used_assets}
