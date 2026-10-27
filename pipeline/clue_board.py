@@ -42,11 +42,25 @@ def _label(words: list[dict], ordinal_at: int) -> str:
         # negated finding (e.g., "no barometric drop") where it is contiguous.
         if pos >= 3:
             items = items[pos:]
-    limit = 4 if len(items) >= 4 else len(items)
-    chosen = items[:limit]
+    # Use a meaningful complete spoken phrase, not the first four words.
+    # "handwriting matched no harbor" loses the clue: the CLERK must remain.
+    # Stop before an explanatory subordinate clause, if one follows.
+    for ix, word in enumerate(items):
+        if ix >= 3 and word in ("who", "whose", "which", "because", "although", "while"):
+            items = items[:ix]
+            break
+        if ix >= 4 and word == "long" and items[ix + 1:ix + 2] == ["before"]:
+            items = items[:ix]
+            break
+    chosen = []
+    for word in items:
+        candidate = " ".join(chosen + [word])
+        if chosen and len(candidate) > 48 and len(chosen) >= 3:
+            break
+        chosen.append(word)
     while len(chosen) > 2 and chosen[-1] in TRAIL:
         chosen.pop()
-    return " ".join(chosen).upper()[:42]
+    return " ".join(chosen).upper()
 
 
 def plan(narration: dict) -> dict | None:
