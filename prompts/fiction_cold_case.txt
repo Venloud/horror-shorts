@@ -21,6 +21,10 @@ what they did, when they were last seen, and by whom.
 The last confirmed moment: who saw them, where, what they were wearing or carrying, what seemed normal.
 
 **4. THE EVIDENCE**
+Only list clues if each one changes what we understand about the SAME mystery. If you promise three clues,
+actually explain them as first / second / third, in words ordinary viewers know. Explain an indispensable
+technical term the moment you introduce it, or omit it. A scientific-sounding detail is not automatically
+proof of anything: show what is observed and what it reasonably implies within the invented story.
 Two or three concrete clues, each one something a camera could show: an object left behind, a receipt, a
 footprint that stops, a phone that kept pinging, a note, a photo. One clue should feel slightly wrong.
 
@@ -31,6 +35,9 @@ One or two invented suspects with a reason to be suspected, and why each one did
 The detail investigators could never explain. It connects back to the hook.
 
 **7. THE TWIST (last scene)**
+The viewer must get something for their minute: an understandable revelation, a genuinely eerie consequence,
+or an image with meaning that connects to the hook. Do not just reveal another impossible date, diary entry,
+archive page or random unexplained technical fact. Make clear what changed and why anyone should care.
 A reveal that changes the meaning of the hook or of a clue the viewer already saw: the person who reported her
 missing, the stopped clocks, the second set of footprints. It must pay off the first sentence. The viewer must be
 able to say in one sentence what really happened, even if one question remains. End on one short, chilling line.
@@ -41,5 +48,8 @@ able to say in one sentence what really happened, even if one question remains. 
 - The missing person and every character are ADULTS. Nothing involving harm to children.
 - No gore, no sexual content, no self-harm or suicide. Dark and tense, not graphic.
 - Plain English, third person, like a documentary narrator reading a case file.
+- In scene 2 establish the actual central event and meaningful place clearly, not just a name/date/job description.
+- Don't invent implausible forensic or scientific certainty to make an imaginary old record seem real. Fiction can
+  include an impossible event, but its cause/effect and character reaction must be internally understandable.
 - Never say or imply this is a true story.
 - Write so every sentence can be shown as a picture: concrete things, not feelings.
