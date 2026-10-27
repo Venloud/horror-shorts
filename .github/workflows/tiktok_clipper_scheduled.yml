@@ -16,10 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
-      - name: Checkout clipper feature branch
+      - name: Checkout maintained MrBeast clipper on main
         uses: actions/checkout@v4
         with:
-          ref: feature/mrbeast-split-tiktok
+          ref: main
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
