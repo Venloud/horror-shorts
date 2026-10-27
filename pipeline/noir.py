@@ -241,32 +241,64 @@ def _base(ctx: dict) -> Image.Image:
 
 
 def _t_date_stamp(fields, t, dur, ctx):
-    """WHEN: the year (a year said in the narration) slams in big, digit by digit, a magenta rule wipes under it,
-    the spoken day / month label and the kicker (a fact-ledger key such as DISAPPEARANCE DATE) type in."""
-    acc = ctx["accent"]
+    """Documentary timeline on the CURRENT story photograph; stop on the narrated year.
+
+    The four earlier tick labels establish a scale, not factual claims that
+    anything happened on those dates. No fabricated events, sound or scene wipes.
+    """
     frame = _base(ctx)
+    try:
+        year = int(fields.get("year"))
+    except (TypeError, ValueError):
+        return frame
+    if not 1000 <= year <= 2100:
+        return frame
     ov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    d = ImageDraw.Draw(ov)
-    kicker(d, str(fields.get("kicker") or "WHEN")[:26], 110, 520, t, acc)
-    year = str(fields.get("year") or "")
-    f = font("cond", 330)
-    x = 104
-    for k, ch in enumerate(year):
-        g = back((t - 0.12 - 0.09 * k) / 0.28)
-        if g <= 0:
-            break
-        y = 590 + int(70 * (1 - min(1.0, g)))
-        d.text((x, y), ch, font=f, fill=BONE + (int(255 * min(1.0, g)),))
-        x += int(d.textlength(ch, font=f)) + 6
-    g = ease((t - 0.55) / 0.35)
-    d.rectangle((110, 975, 110 + int(760 * g), 985), fill=acc + (255,))
-    label = str(fields.get("label") or "").upper()
+    d = ImageDraw.Draw(ov, "RGBA")
+    red = (219, 43, 51)
+    progress = ease(t / min(1.2, max(0.5, dur * 0.52)))
+    intro = ease(t / 0.27)
+    # Subtle translucent vignette only under the readable timeline; the
+    # picture remains present in full frame, never becomes a title-card panel.
+    for yy in range(705, 1120, 12):
+        f = max(0.0, 1.0 - abs(yy - 900) / 230.0)
+        alpha = int(100 * f * intro)
+        if alpha:
+            d.rectangle((68, yy, 964, yy + 12), fill=(9, 12, 17, alpha))
+    title = str(fields.get("kicker") or "WHEN").upper()[:24]
+    d.text((118, 736), title, font=font("mono", 31),
+           fill=BONE + (int(222 * intro),))
+    xs = (165, 340, 515, 690, 865)
+    line_y = 921
+    d.line((xs[0], line_y, xs[-1], line_y),
+           fill=(225, 220, 212, int(115 * intro)), width=5)
+    # The indicator travels across the earlier years and settles on the
+    # correct year, then that one year alone is highlighted in red.
+    current_x = xs[0] + (xs[-1] - xs[0]) * progress
+    if intro:
+        d.line((xs[0], line_y, int(current_x), line_y),
+               fill=red + (int(250 * intro),), width=10)
+        d.ellipse((current_x - 11, line_y - 11, current_x + 11, line_y + 11),
+                  fill=red + (int(255 * intro),))
+    for i, x in enumerate(xs):
+        targeted = i == len(xs) - 1
+        reached = targeted and progress >= 0.97
+        number_color = red if reached else BONE if targeted else PARCHMENT
+        opacity = int((255 if targeted else 190) * intro)
+        d.line((x, line_y - 17, x, line_y + 18),
+               fill=(red if reached else BONE) + (opacity,), width=5)
+        tick = str(year - 4 + i)
+        tick_font = font("cond", 72 if targeted else 47)
+        text_width = d.textlength(tick, font=tick_font)
+        d.text((x - text_width / 2, 967 if targeted else 982), tick,
+               font=tick_font, fill=number_color + (opacity,))
+    label = str(fields.get("label") or "").strip().upper()[:35]
     if label:
-        n = int(len(label) * min(1.0, max(0.0, t - 0.75) / 0.45))
-        d.text((112, 1010), label[:n], font=font("cond", 96), fill=acc + (255,))
+        reveal = ease((t - 0.66) / 0.30)
+        d.text((120, 1080), label, font=font("cond", 63),
+               fill=BONE + (int(235 * reveal),))
     frame.alpha_composite(ov)
     return frame
-
 
 def _t_true_story(fields, t, dur, ctx):
     """TRUE STORY opener: slab slams in (overshoot, shake, flash), film edges and sweep lines, then wipes up."""
