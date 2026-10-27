@@ -75,6 +75,11 @@ jobs:
         run: |
           python -m unittest discover -s tests -p test_buffer_delivery.py -v
 
+      - name: Verify R9 writing contract and disabled-by-default trilogy rules (offline)
+        run: |
+          python -m unittest discover -s tests -p test_retention_r9.py -v
+          python -m unittest discover -s tests -p test_series_rotation.py -v
+
       - name: Validate JSON configuration
         run: |
           python - <<'PY'
