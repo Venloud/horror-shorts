@@ -521,6 +521,11 @@ def _date_graphic(story: dict, i: int, sctx: dict) -> dict | None:
         loc = min((spoken.find(t) for t in tokens if spoken.find(t) >= 0), default=len(spoken))
         year_positions.append((loc, y))
     year_positions.sort()
+    # A calendar day in an earlier clause is the first date, even if a
+    # different year is mentioned later in the same narration scene.
+    # "March 31st, 1922" is one date, so allow a short year suffix.
+    if md and year_positions and year_positions[0][0] > md.end() + 12:
+        year_positions = []
     ledger = _ledger_text(story)
     for pos, y in year_positions:
         if story.get("true_story") and ledger and str(y) not in ledger:
