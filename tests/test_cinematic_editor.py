@@ -413,6 +413,48 @@ class NarratedYearTimelineOnPhoto(unittest.TestCase):
         self.assertGreater(red[0], red[1] + 95)  # terminal marker is red
         self.assertGreater(red[0], red[2] + 80)
 
+
+    def test_only_first_grounded_date_has_timeline(self):
+        story = {"true_story": True,
+                 "fact_ledger": ["Event date: March 31st", "Report: 1922", "Other event: 1930"],
+                 "scenes": [
+                     {"narration": "On March 31st, someone approached the farmhouse."},
+                     {"narration": "In 1922 investigators arrived at the property."},
+                     {"narration": "In 1930, nothing was left in the building."},
+                 ]}
+        n = {"words": [], "duration": 20.0}
+        for i, scene in enumerate(story["scenes"]):
+            n["words"] += _words(scene["narration"], scene=i, start=i * 6.0)
+        with mock.patch.object(explainer, "_plan_call", return_value=None):
+            graphics = explainer.plan_graphics(story, n)
+        dates = [(i, g) for i, cards in enumerate(graphics) for g in cards
+                 if g["template"] == "date_stamp"]
+        self.assertEqual(len(dates), 1, dates)
+        self.assertEqual(dates[0][0], 0)
+        self.assertEqual(dates[0][1]["fields"]["day"], 31)
+        self.assertEqual(dates[0][1]["fields"]["month"], "March")
+
+    def test_spoken_first_year_wins_even_if_later_year_smaller(self):
+        story = {"true_story": True, "fact_ledger": ["1930", "1922"],
+                 "scenes": [{"narration": "In 1930, archivists discovered a record from 1922."}]}
+        g = explainer._date_graphic(story, 0, explainer._scene_ctx(story, 0, {"cast": {}, "dates": 0}))
+        self.assertEqual(g["fields"]["year"], "1930")
+
+    def test_month_day_card_renders_over_story_image(self):
+        from PIL import Image, ImageChops
+        fields = {"month": "March", "day": 31, "label": "March 31st", "kicker": "WHEN"}
+        img = Image.new("RGBA", (1080, 1920), (28, 61, 82, 255))
+        first = noir.render("date_stamp", fields, 0.02, 2.4, {"bg": img, "accent": (240, 23, 103)})
+        last = noir.render("date_stamp", fields, 1.8, 2.4, {"bg": img, "accent": (240, 23, 103)})
+        self.assertTrue(ImageChops.difference(first.convert("RGB"), last.convert("RGB")).getbbox())
+        self.assertEqual(last.getpixel((30, 1300)), img.getpixel((30, 1300)))
+        self.assertGreater(last.getpixel((865, 921))[0], last.getpixel((865, 921))[1] + 95)
+        sc = {"scenes": [{"narration": "On March 31st, the farmhouse was empty."}],
+              "true_story": True, "fact_ledger": ["Report: March 31st"]}
+        self.assertIsNone(explainer.graphic_problem(sc, 0, {"template": "date_stamp", "fields": fields}))
+        sc["fact_ledger"] = ["Report: March 30th"]
+        self.assertIn("ledger", explainer.graphic_problem(sc, 0, {"template": "date_stamp", "fields": fields}))
+
     def test_unsourced_year_cannot_trigger_true_story_date(self):
         sc = {"scenes": [{"narration": "In 1922, the family moved."}], "true_story": True,
               "fact_ledger": ["Date: 1931"]}
