@@ -36,6 +36,29 @@ class WorkflowOrderTests(unittest.TestCase):
         self.assertEqual(len(problems), 1)
         self.assertIn("duplicate YAML key", problems[0])
 
+    def test_mrbeast_clipper_workflows_checkout_main_after_branch_cleanup(self):
+        """The clipper lives on main: merged feature branches may be deleted.
+
+        This must run in standard CI so an old checkout ref cannot silently
+        break the next scheduled MrBeast TikTok inbox draft.
+        """
+        root = Path(__file__).resolve().parents[1]
+        for name in ("tiktok_clipper_scheduled.yml", "tiktok_clipper_preview.yml"):
+            path = root / ".github" / "workflows" / name
+            source = path.read_text(encoding="utf-8")
+            self.assertIn("ref: main", source, name)
+            self.assertNotIn("ref: feature/mrbeast-split-tiktok", source, name)
+            self.assertIn("clipper/", source, name)
+
+    def test_mrbeast_posting_remains_drafts_only(self):
+        root = Path(__file__).resolve().parents[1]
+        scheduled = (root / ".github" / "workflows" / "tiktok_clipper_scheduled.yml").read_text()
+        preview = (root / ".github" / "workflows" / "tiktok_clipper_preview.yml").read_text()
+        poster = (root / "clipper" / "post.py").read_text()
+        self.assertIn("clipper/post.py --video clipper/output/tiktok.mp4 --mode draft", scheduled)
+        self.assertNotIn("clipper/post.py", preview)
+        self.assertIn('choices=["draft"]', poster)
+
     def test_repository_workflows_are_ordered(self):
         root = Path(__file__).resolve().parents[1] / ".github" / "workflows"
         errors = [e for p in sorted(root.glob("*.yml")) for e in check.problems(p)]
