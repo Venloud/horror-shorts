@@ -123,9 +123,10 @@
       "title": "Silent Golden Disc Descended | Scary Story #shorts"
     },
     "2026-10-08_0641": {
-      "status": "attempt_started",
-      "title": "Staring At Your Own Face... Bloody Mary #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-10-08_0641.mp4"
+      "status": "queued",
+      "buffer_post_id": "6ae09c3855e456f4b3c2d530",
+      "due_at": "2026-10-31T23:56:00.000Z",
+      "title": "Staring At Your Own Face... Bloody Mary #shorts"
     }
   }
 }
