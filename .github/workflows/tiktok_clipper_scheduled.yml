@@ -134,10 +134,41 @@ jobs:
             clipper/output/captions.ass
             clipper/output/caption.txt
           retention-days: 7
-      - name: Send to TikTok inbox notification
+      - name: Reserve clip part in durable ledger before TikTok upload
+        id: reserve
         env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ github.token }}
+          CLIP_PART: ${{ steps.part.outputs.number }}
+          CLIP_SLOT: ${{ steps.rotation.outputs.slot }}
+        run: |
+          python - <<'PY'
+          import os
+          from clipper.delivery_guard import update
+          reserved = update(int(os.environ["CLIP_PART"]), int(os.environ["CLIP_SLOT"]), "reserved")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write("new=" + ("true" if reserved else "false") + "\n")
+          PY
+      - name: Send reserved part to TikTok inbox and record receipt
+        if: steps.reserve.outputs.new == 'true'
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ github.token }}
           TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
           TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
           TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
+          CLIP_PART: ${{ steps.part.outputs.number }}
+          CLIP_SLOT: ${{ steps.rotation.outputs.slot }}
         run: |
-          python clipper/post.py --video clipper/output/tiktok.mp4 --mode draft
+          python - <<'PY'
+          import os
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, str(Path.cwd() / "pipeline"))
+          from tiktok import send_to_drafts
+          from clipper.delivery_guard import update
+          result = send_to_drafts(Path("clipper/output/tiktok.mp4"))
+          update(int(os.environ["CLIP_PART"]), int(os.environ["CLIP_SLOT"]),
+                 "delivered", result["publish_id"])
+          print("Saved confirmed inbox receipt for part", os.environ["CLIP_PART"])
+          PY
