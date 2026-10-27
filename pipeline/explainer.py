@@ -430,6 +430,7 @@ graphics each. GRAPHIC = {{"at": "<first 2-4 words where it appears, copied exac
 RULES
 - Every word and number on a graphic must be said in that scene's narration{true_rule}. Never invent dates, places,
   distances, coordinates, statistics or conclusions.
+- Only ONE date_stamp in the entire video, on the FIRST grounded date spoken. No repeated year/timeline graphics. Keep the same story photo visible behind the overlay.
 - Pick the graphic that EXPLAINS the beat: date_stamp for when, map_route only when the scene names 2+ places
   someone travels between, evidence for a clue / object / record / name, quote for words someone said, missing when
   someone vanishes, fact for a number said, compare for two explanations, closing only for the final question.
