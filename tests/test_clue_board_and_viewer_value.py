@@ -35,7 +35,7 @@ class ClueBoardTests(unittest.TestCase):
         self.assertEqual(p["count"], 3)
         self.assertEqual(p["noun"], "CLUES")
         self.assertEqual([x["label"] for x in p["cues"]],
-                         ["INK HAD OXIDIZED", "NO BAROMETRIC DROP EXISTED",
+                         ["INK HAD OXIDIZED INTO RAG PAPER", "NO BAROMETRIC DROP EXISTED ON THOSE DATES",
                           "HANDWRITING MATCHED NO CLERK"])
         self.assertLess(p["start"], p["cues"][0]["at"])
         self.assertLess(p["cues"][0]["at"], p["cues"][1]["at"])
