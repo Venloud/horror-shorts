@@ -111,7 +111,7 @@ def _state_image(labels: tuple[str, ...], noun: str, accent: tuple[int, int, int
     """Cache each stable board state. Unspoken future clues remain unreadable."""
     import noir
     count = len(labels)
-    w, h = 880, 120 + count * 119
+    w, h = 840, 120 + count * 119  # x=120..960, clear of the social-app button column
     layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     d = ImageDraw.Draw(layer, "RGBA")
     d.rounded_rectangle((0, 0, w - 1, h - 1), radius=30, fill=(13, 17, 24, 221),
@@ -129,7 +129,7 @@ def _state_image(labels: tuple[str, ...], noun: str, accent: tuple[int, int, int
                fill=accent + (255,) if active else (151, 145, 141, 145))
         d.line((151, top + 19, 151, top + 84), fill=accent + (255,) if active else (96, 96, 98, 130), width=4)
         if active:
-            f, lines = noir.fit(label, "cond", 645, 2, 54, 34)
+            f, lines = noir.fit(label, "cond", 605, 2, 45, 30)
             for row, text in enumerate(lines):
                 d.text((180, top + 13 + row * (f.size + 1)), text, font=f, fill=(246, 239, 232, 250))
         else:
