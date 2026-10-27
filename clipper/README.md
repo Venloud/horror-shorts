@@ -21,3 +21,7 @@ The offline synthetic render test is `python clipper/test_smoke.py`. It requires
 ## Integration gate
 
 Review code and source rights, run the offline smoke test and inspect the real MP4, then validate an authorized test TikTok inbox draft. Only after acceptance may the source join `main` and existing workflows have their checkout refs updated. Do not create another scheduled/preview workflow or publish directly.
+
+## Duplicate delivery guard, October 27 2026
+
+The scheduled workflow now reserves a unique source part in `data/clipper_delivery_ledger.json` through GitHub's Contents API BEFORE TikTok inbox upload. A known part is never automatically sent again, even on same-slot reruns, after a success, or if an upload status cannot be confirmed. Confirmation attaches TikTok `publish_id` to the reservation; an interrupted delivery stays `reserved` and requires manual reconciliation. GitHub Contents blob SHA compare-and-swap guards concurrent reservations. Because this guard blocks reused parts, exhaustively using the 57 available full-minute segments is intentionally terminal until the owner authorizes new footage or explicitly reconciles the ledger. `GH_PAT` must permit contents write; if not, delivery fails closed. The built-in GitHub token is read-only for this workflow. Existing historical inbox drafts were not automatically imported into the new ledger, and older sends can be duplicated unless their part IDs are reconciled first. The scheduled workflow remains inbox-draft-only and does not publish publicly.
