@@ -241,62 +241,67 @@ def _base(ctx: dict) -> Image.Image:
 
 
 def _t_date_stamp(fields, t, dur, ctx):
-    """Documentary timeline on the CURRENT story photograph; stop on the narrated year.
+    """One documentary timeline over the current story image, never a full-screen date card.
 
-    The four earlier tick labels establish a scale, not factual claims that
-    anything happened on those dates. No fabricated events, sound or scene wipes.
+    Show nearby *scale ticks* only, not invented events. The first supported
+    date in a story is selected upstream and this treatment is not repeated.
     """
     frame = _base(ctx)
-    try:
-        year = int(fields.get("year"))
-    except (TypeError, ValueError):
-        return frame
-    if not 1000 <= year <= 2100:
-        return frame
+    if fields.get("year"):
+        try:
+            year = int(fields["year"])
+        except (ValueError, TypeError):
+            return frame
+        if not 1000 <= year <= 2100:
+            return frame
+        ticks = [str(y) for y in range(year - 4, year + 1)]
+    else:
+        try:
+            day = int(fields["day"])
+        except (ValueError, TypeError, KeyError):
+            return frame
+        month = str(fields.get("month") or "").upper()
+        if not 1 <= day <= 31 or month not in (
+                "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY",
+                "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"):
+            return frame
+        # Keep early-month labels valid without inventing a previous month/year.
+        ticks = [str(d) for d in range(max(1, day - 4), day + 1)]
+        if len(ticks) == 1:
+            ticks.insert(0, month[:3])
     ov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(ov, "RGBA")
-    red = (219, 43, 51)
+    red = (219, 43, 51)  # narrator's target, not a second color chosen at random
     progress = ease(t / min(1.2, max(0.5, dur * 0.52)))
     intro = ease(t / 0.27)
-    # Subtle translucent vignette only under the readable timeline; the
-    # picture remains present in full frame, never becomes a title-card panel.
     for yy in range(705, 1120, 12):
-        f = max(0.0, 1.0 - abs(yy - 900) / 230.0)
-        alpha = int(100 * f * intro)
+        fade = max(0.0, 1.0 - abs(yy - 900) / 230.0)
+        alpha = int(100 * fade * intro)
         if alpha:
             d.rectangle((68, yy, 964, yy + 12), fill=(9, 12, 17, alpha))
     title = str(fields.get("kicker") or "WHEN").upper()[:24]
-    d.text((118, 736), title, font=font("mono", 31),
-           fill=BONE + (int(222 * intro),))
-    xs = (165, 340, 515, 690, 865)
+    d.text((118, 736), title, font=font("mono", 31), fill=BONE + (int(222 * intro),))
+    xs = [165 + (865 - 165) * i / (len(ticks) - 1) for i in range(len(ticks))]
     line_y = 921
-    d.line((xs[0], line_y, xs[-1], line_y),
-           fill=(225, 220, 212, int(115 * intro)), width=5)
-    # The indicator travels across the earlier years and settles on the
-    # correct year, then that one year alone is highlighted in red.
-    current_x = xs[0] + (xs[-1] - xs[0]) * progress
+    d.line((xs[0], line_y, xs[-1], line_y), fill=(225, 220, 212, int(115 * intro)), width=5)
+    indicator = xs[0] + (xs[-1] - xs[0]) * progress
     if intro:
-        d.line((xs[0], line_y, int(current_x), line_y),
-               fill=red + (int(250 * intro),), width=10)
-        d.ellipse((current_x - 11, line_y - 11, current_x + 11, line_y + 11),
+        d.line((xs[0], line_y, indicator, line_y), fill=red + (int(250 * intro),), width=10)
+        d.ellipse((indicator - 11, line_y - 11, indicator + 11, line_y + 11),
                   fill=red + (int(255 * intro),))
-    for i, x in enumerate(xs):
-        targeted = i == len(xs) - 1
+    for i, (x, tick) in enumerate(zip(xs, ticks)):
+        targeted = i == len(ticks) - 1
         reached = targeted and progress >= 0.97
-        number_color = red if reached else BONE if targeted else PARCHMENT
+        c = red if reached else BONE if targeted else PARCHMENT
         opacity = int((255 if targeted else 190) * intro)
-        d.line((x, line_y - 17, x, line_y + 18),
-               fill=(red if reached else BONE) + (opacity,), width=5)
-        tick = str(year - 4 + i)
-        tick_font = font("cond", 72 if targeted else 47)
-        text_width = d.textlength(tick, font=tick_font)
-        d.text((x - text_width / 2, 967 if targeted else 982), tick,
-               font=tick_font, fill=number_color + (opacity,))
+        d.line((x, line_y - 17, x, line_y + 18), fill=(red if reached else BONE) + (opacity,), width=5)
+        f = font("cond", 72 if targeted else 47)
+        d.text((x - d.textlength(tick, font=f) / 2, 967 if targeted else 982),
+               tick, font=f, fill=c + (opacity,))
     label = str(fields.get("label") or "").strip().upper()[:35]
     if label:
         reveal = ease((t - 0.66) / 0.30)
-        d.text((120, 1080), label, font=font("cond", 63),
-               fill=BONE + (int(235 * reveal),))
+        d.text((120, 1080), label, font=font("cond", 63), fill=BONE + (int(235 * reveal),))
     frame.alpha_composite(ov)
     return frame
 
