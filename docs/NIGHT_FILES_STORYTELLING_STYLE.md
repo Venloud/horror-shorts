@@ -2,34 +2,6 @@
 
 This guide is shared across the primary writer, alternate writers, script editor, explainer adaptation, and critics. Follow it regardless of model/provider.
 
-## Retention writing contract, October 27, 2026 (R1–R8)
-
-This supplements the established five-part arc and **does not require identical structure or fabricated tension in each genre**. No competitor stories, series names, art styles or dialogue are reusable.
-
-- **R1: Specific problem immediately.** Open inside the concrete event, risk, contradiction or real decision. The first imagery confirms the question; avoid generic atmosphere, long biography, unsupported shock and branding before the hook.
-- **R2: Connected mini-loops, not empty suspense.** A question/problem → real attempt, investigation or choice → new information/consequence → partial or full answer. Answers advance the main story; no repeated delays for engagement.
-- **R3: Stakes must genuinely change.** New developments change a character's options/knowledge, the audience's evidence, the risk, a meaningful choice, or an earlier clue's interpretation.
-- **R4: Intellectual participation where suitable.** Second-person perspective and meaningful two-option choices are **optional for original fiction**; do not force them into true cases or repeatedly say “you watch” or “imagine this.”
-- **R5: Reward attention.** Deliver consequences, grounded answers or honest uncertainty in every story. Each occasional serialized episode must have its own real payoff; never hold the *entire* answer hostage to “Part 2.”
-- **R6: Keep continuity.** Objects, injuries, appearances, fictional rules, locations, what characters know and timeline consequences persist across scenes and episodes. The existing story bible and unchanged approved assets are the authority.
-- **R7: Tension drives the edit.** Use hard cuts by default, justified time-passage dissolves, a black fade only at the actual ending, restrained nonlinear on-screen easing, meaningful licensed sounds, exact narration-aligned captions and cinematic imagery over overlays. Keep the approved one-second cover. An in-story date timeline appears **at most once** per video.
-- **R8: Show the narrated action.** If the radio is tested, show the radio and response; if a door changes, show its before and after condition; if a clue alters a decision, show the clue. The existing CLIP/library, FFmpeg, Remotion and approved art must support the actual scene, not generic dark placeholders.
-
-## Rule R9: Give the viewer a question they can track (owner, October 27, 2026)
-
-**For every Night Files script**, identify privately during writing and review:
-1. **Central question:** What specific question, problem or promise can a viewer follow from the hook to the ending?
-2. **Changed understanding:** Which real event, observed action, verified clue, counterexample, decision or consequence actually changes what the viewer understands while watching?
-3. **Payoff:** What answer, consequence, revelation or honest uncertainty does the ending deliver in response to the original question?
-
-Make progression intelligible **through the primary cinematic footage and narration first**. When the particular story benefits, allow **one understated, story-grounded recurring visual motif or evidence indicator** (for example, a single familiar key, radio signal indicator or documented progress label) to help track meaningful changes. A motif is optional, not an instruction to put a counter on every video or repeat a card at every beat.
-
-**Source and state discipline:** Every displayed number, charge, status, clue, metric, comparison, counter, verdict and conclusion must be supported by what the narration establishes, and in nonfiction, reliable documentary evidence. Fictional UI must be clearly part of the fictional story, not presented as factual reporting or a proven forensic conclusion. No fabricated charges, invented verdicts, manufactured scoreboard, arbitrary percent progress, unexplained numerals, or unsupported red/green status boxes.
-
-**Editing discipline:** Preserve Night Files' cinematic primary imagery, semantic shot matching, meaningful hard cuts, minimal evidence-based graphics, nonlinear easing only for justified motion, accurate one-time documentary date timeline, synchronized readable captions, approved one-second cover, and existing FFmpeg/Remotion editor. R9 requires **clear narrative cause and effect**, not a new animation engine, overlay quota, or separate narrator.
-
-**Review gate:** Can a viewer say the question, the fact/choice that changed their understanding and the answer or justified uncertainty at the end? If not, fix the story and visual match rather than inventing a tracking graphic.
-
 ## Core voice
 - Sound like a skilled person telling a gripping story to a friend, not an encyclopedia, a lecture, or a sales pitch.
 - Open in the middle of the interesting event: the hook must relate directly to the title's central promise.
@@ -62,6 +34,44 @@ honestly unresolved, but the viewer should still be able to retell what happened
 - Fictional cases may feel like case files, but never masquerade as independently documented historical events.
 - Judge edits by what a normal viewer will **understand, remember or feel**, not by the number of facts, unexplained
   jargon, eerie props, visuals or transitions.
+
+## Retention writing rules, owner directive October 27, 2026
+
+These are editorial decisions, **not claims that viewership increased or that a new scheduler exists**. They extend rather than replace the viewer-value contract and the existing five-part tension arc. Use only the techniques that honestly fit the story.
+
+1. **R1, a specific opening problem.** Start inside a concrete event, consequence, contradiction, question or decision that matches the title and the opening picture. No atmospheric preamble, generic "you won't believe," empty shock, biography-first setup or obligatory channel intro.
+2. **R2, connected mini-loops.** Within the main narrative arc, when useful, develop a small question/problem, a meaningful investigation/attempt/progression, and an answer or consequence that alters the situation. Then connect the next question to what was just learned. Do not delay every answer until the end. No arbitrary "twist every N seconds" requirement.
+3. **R3, escalating consequences.** A new fact or complication must change what a character can do, what the audience knows, which explanation is plausible, what is at risk, or what an earlier clue means. Avoid interchangeable scary images and manufactured setbacks.
+4. **R4, give the viewer a legitimate role.** In selected original fictional survival narratives, second person or a meaningful viewer choice can help when stakes and possible actions are understandable. Never force "you watch," audience participation, or choices into nonfiction; don't fabricate votes or have viewer choices determine scripted historical facts.
+5. **R5, honor the hook's promise.** Every short delivers a real payoff, specific consequence, honest answer, or well-framed uncertainty in its own runtime. A cliffhanger may open the next episode, but must not replace the current episode's earned result. No "follow for part two" bait.
+6. **R6, continuity across shots and episodes.** Maintain consistent identities, locations, props, rules, knowledge, injuries, time/order and decisions when they matter. Reuse relevant imagery and source/approved assets; show changed objects/actions instead of unrelated generic horror atmosphere.
+7. **R7, visuals prove narrative progress.** Each beat's principal image, real clip, evidence item or restrained graphic should correspond to the narrated action/claim. Hard cut by default; add motion, captions, sounds, time labels or a progress indicator only when meaningful. Preserve the one-second cover, character approval, rights, caption safe zones and the **at-most-one grounded date timeline per video** rule.
+8. **R8, original repeatable formats.** A stable premise, recognizable visual packaging and consistent question can help viewers know what kind of outcome to expect without repeating a plot. For cultural or horror-character commentary, original comparison/analysis may refer to recognizable works and relevant excerpts when justified; verify source, rights, accurate claims and platform limitations case by case rather than treating all such commentary as automatically forbidden or automatically cleared.
+9. **R9, one trackable central question.** Define the question, what changes the viewer's understanding, and what the final evidence/outcome supports. When relevant, a single minimal in-scene motif, clue progression, or verified counter can make that progress clear. No invented numerical scores, legal verdicts, charges, evidence, milestones, or decorative scoreboards. A sourced mystery may end unresolved.
+
+**Narration-first review check:** Could a first-time viewer state (a) what the problem is, (b) what new information changed it, (c) what was answered, and (d) what remains unknown? Is the second conflict genuinely connected? Does the visual at each consequential line show the object/action/evidence and not merely atmospheric wallpaper? Rewrite only for specific problems, never to meet an artificial twist quota.
+
+### Occasional original three-episode fictional horror
+
+- **Format approved, individual concepts/scripts and their production releases are NOT pre-approved.** Maintain standalone Night Files stories as the default and never silently turn every upload into a series. Keep a coherent common setting, characters, important objects, fictional rules and consequence ledger/series bible. Each of three episodes must stand alone enough for a newcomer, deliver an earned local payoff, and build toward one resolved or honestly unsettling trilogy conclusion. No automatic fourth episode.
+- **Series-start editorial frequency:** begin no more than one new trilogy per seven full days **AND** per 14 *confirmed, actually published* Night Files posts since the prior trilogy began, whichever threshold takes longer. All three trilogy posts count toward the total. Drafts, buffer entries, failed upload attempts, retries, test videos and pending queue items are not confirmed publications. If history is incomplete or a previous trilogy is unfinished, hold eligibility for review.
+- **This is a writing/approval constraint, not an implemented rotation, posting scheduler or proof of live analytics.** Before series generation/publication, inspect the current history and existing queue/checkpoint system, obtain the necessary owner approvals and add a verified fail-closed eligibility guard inside the maintained bot. Do not manually dispatch production workflows, move buffered videos, bypass approvals or create parallel publishing systems merely to test a story.
+- Do not copy other creators' stories, names, art, scenes, series titles, dialogue, characters, or proprietary visual branding. These competitors illustrate storytelling techniques, not reusable assets or proven causes of view counts.
+
+## Rule R9: Give the viewer a question they can track (owner, October 27, 2026)
+
+**For every Night Files script**, identify privately during writing and review:
+1. **Central question:** What specific question, problem or promise can a viewer follow from the hook to the ending?
+2. **Changed understanding:** Which real event, observed action, verified clue, counterexample, decision or consequence actually changes what the viewer understands while watching?
+3. **Payoff:** What answer, consequence, revelation or honest uncertainty does the ending deliver in response to the original question?
+
+Make progression intelligible **through the primary cinematic footage and narration first**. When the particular story benefits, allow **one understated, story-grounded recurring visual motif or evidence indicator** (for example, a single familiar key, radio signal indicator or documented progress label) to help track meaningful changes. A motif is optional, not an instruction to put a counter on every video or repeat a card at every beat.
+
+**Source and state discipline:** Every displayed number, charge, status, clue, metric, comparison, counter, verdict and conclusion must be supported by what the narration establishes, and in nonfiction, reliable documentary evidence. Fictional UI must be clearly part of the fictional story, not presented as factual reporting or a proven forensic conclusion. No fabricated charges, invented verdicts, manufactured scoreboard, arbitrary percent progress, unexplained numerals, or unsupported red/green status boxes.
+
+**Editing discipline:** Preserve Night Files' cinematic primary imagery, semantic shot matching, meaningful hard cuts, minimal evidence-based graphics, nonlinear easing only for justified motion, accurate one-time documentary date timeline, synchronized readable captions, approved one-second cover, and existing FFmpeg/Remotion editor. R9 requires **clear narrative cause and effect**, not a new animation engine, overlay quota, or separate narrator.
+
+**Review gate:** Can a viewer say the question, the fact/choice that changed their understanding and the answer or justified uncertainty at the end? If not, fix the story and visual match rather than inventing a tracking graphic.
 
 ## Occasional trilogy production policy, owner update 2026-10-27
 
