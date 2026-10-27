@@ -387,3 +387,34 @@ class WhisperNarrationDiagnostics(unittest.TestCase):
 
     def test_whisper_flag_is_enabled_but_never_blocks_video(self):
         self.assertTrue(explainer.CONFIG.get("whisper_narration_check", False))
+
+
+class NarratedYearTimelineOnPhoto(unittest.TestCase):
+    """The current Night Files renderer draws a progressing date overlay on a real frame."""
+
+    def test_timeline_reveals_only_real_spoken_year_and_retains_image(self):
+        from PIL import Image, ImageChops
+
+        scene = {"scenes": [{"narration": "In March 1922, they investigated the farmhouse."}],
+                 "true_story": True, "fact_ledger": ["Date: 1922"]}
+        card = explainer._date_graphic(scene, 0, explainer._scene_ctx(scene, 0, {"cast": {}, "dates": 0}))
+        self.assertEqual(card["fields"]["year"], "1922")
+        self.assertEqual(card["fields"]["label"].lower(), "march")
+        base = Image.new("RGBA", (1080, 1920), (30, 45, 67, 255))
+        ctx = {"bg": base, "accent": (240, 23, 103)}
+        before = noir.render("date_stamp", card["fields"], 0.0, 2.6, ctx)
+        arrived = noir.render("date_stamp", card["fields"], 1.6, 2.6, ctx)
+        self.assertEqual(arrived.size, (1080, 1920))
+        self.assertIsNotNone(ImageChops.difference(before.convert("RGB"), arrived.convert("RGB")).getbbox())
+        # The original full-frame photograph remains visible outside the minimal line.
+        self.assertEqual(arrived.getpixel((30, 450)), base.getpixel((30, 450)))
+        self.assertEqual(arrived.getpixel((30, 1300)), base.getpixel((30, 1300)))
+        red = arrived.getpixel((865, 920))
+        self.assertGreater(red[0], red[1] + 95)  # terminal marker is red
+        self.assertGreater(red[0], red[2] + 80)
+
+    def test_unsourced_year_cannot_trigger_true_story_date(self):
+        sc = {"scenes": [{"narration": "In 1922, the family moved."}], "true_story": True,
+              "fact_ledger": ["Date: 1931"]}
+        self.assertIsNone(explainer._date_graphic(sc, 0, explainer._scene_ctx(sc, 0, {"cast": {}, "dates": 0})))
+
