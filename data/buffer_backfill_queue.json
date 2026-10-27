@@ -105,9 +105,10 @@
       "title": "Footnotes Before The Storms... The 1884 Maritime Records #shorts"
     },
     "2026-10-08_0223": {
-      "status": "attempt_started",
-      "title": "Every Portrait Showed My Coat | Scary Story #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-10-08_0223.mp4"
+      "status": "queued",
+      "buffer_post_id": "6adffbadf266a5f7e1090174",
+      "due_at": "2026-10-30T21:01:00.000Z",
+      "title": "Every Portrait Showed My Coat | Scary Story #shorts"
     }
   }
 }
