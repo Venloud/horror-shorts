@@ -1,6 +1,6 @@
 # NO SAFE HARBOR, scripts and production review packet
 Date: 2026-10-27
-Status: SCRIPT DRAFTS FOR OWNER REVIEW. Concept and three-episode outline approved by owner. Scripts, asset appearance, visual acceptance, episode publishing order and live publication have NOT been separately approved. Do not activate the selector, create approved.json, enqueue, render at production expense, or publish.
+Status: CONCEPT, ALL THREE SCRIPT DRAFTS, AND PROPOSED SHOT PLANS APPROVED BY OWNER ON 2026-10-27. Character artwork/actual media assets, rendered visual acceptance, production release and public posting have NOT been approved. Do not activate the selector, create approved.json, enqueue, render at production expense, or publish.
 
 ## Series bible
 Series: no-safe-harbor-01, original fictional zombie apocalypse. Night Files remains standalone by default.
@@ -57,11 +57,14 @@ Cover: NO SAFE LAND, boat outside abandoned port.
 
 ## Verification and approval requirements
 Concept / episode outline: APPROVED by owner October 27.
-Script text and runtime: PENDING separate owner review and actual voiced duration check.
-Characters, shot plan and proposed fictional props: PENDING owner visual-plan approval.
+Script text: APPROVED by owner October 27. Actual voiced duration check: NOT RUN.
+Proposed shot plan and planned continuity: APPROVED by owner October 27. Actual character appearance, licensed/source media, final shots and visual QA: NOT YET ACCEPTED.
 Media provenance/rights, generated frame continuity, 9:16 safe zones, synchronized captions, audio and review render: NOT VERIFIED. Do not state QA passed.
 Production release: NOT APPROVED. No final post metadata or release dates pinned.
 Platform publication records: legacy TikTok inbox drafts and Buffer queue receipts do not establish real public posting; baseline public timestamp/count NOT VERIFIED. Remain fail closed.
 Episode sequence: publish episode 2 only after verified public episode 1, and episode 3 only after verified public episode 2. Normal Night Files publishing schedules only. No manual test posting.
 Series frequency: at least seven full days AND 14 verified public posts since previous trilogy start. First-series start baseline must be explicitly established before enabling.
 Engineering next: owner review of these drafts, offline validations/test script packaging, visual preview and explicit approval; do not equate GitHub commit with rendered QA.
+
+## Latest authorization
+Owner explicitly stated on 2026-10-27: 'I approve the three No Safe Harbor scripts and proposed shot plans. Proceed with nonpublishing visual QA and verification. Do not publish until I approve the final videos.' This authorization is limited to nonpublishing visual QA and verification. The script text and proposed shots are owner-approved; rendered assets and production are not. The operator must never equate static documentation checks with an inspected video. Do not enable occasional_trilogies, write a production-approved manifest or manually dispatch daily.yml.
