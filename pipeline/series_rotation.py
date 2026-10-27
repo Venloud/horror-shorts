@@ -195,7 +195,11 @@ def select_approved_story(history: list[dict], config: dict,
     if number is None:
         return None
     if number == 1:
-        eligible, _ = new_series_eligible(history, now)
+        options = config.get("occasional_trilogies") or {}
+        # Owner's fixed minimums cannot be relaxed by local config.
+        days = max(7, int(options.get("minimum_days_between_starts", 7)))
+        posts = max(14, int(options.get("minimum_verified_public_posts", 14)))
+        eligible, _ = new_series_eligible(history, now, min_days=days, min_posts=posts)
         if not eligible:
             return None
     else:
