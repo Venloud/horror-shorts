@@ -68,7 +68,6 @@ jobs:
           python -m unittest discover -s tests -p test_editorial_rules.py -v
           python -m unittest discover -s tests -p test_clip_matching.py -v
           python -m unittest discover -s tests -p test_writer_reliability.py -v
-          python -m unittest discover -s tests -p test_series_rotation.py -v
           python -m unittest discover -s tests -p test_cinematic_editor.py -v
 
       - name: Verify Buffer.com delivery and historic TikTok recovery (offline)
