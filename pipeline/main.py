@@ -184,7 +184,12 @@ def main() -> int:
         if story is None:
             stage = "story"
             manifest.stage("story", "started")
-            story = write_story(history)
+            from series_rotation import select_approved_story
+            story = select_approved_story(history, CONFIG)
+            if story is None:
+                story = write_story(history)
+            else:
+                log(f"Owner-approved trilogy {story['series_id']} episode {story['series_episode']} selected")
             manifest.stage("story", "complete", writer=story.get("writer") or story.get("model"))
             if not testing:
                 checkpoint.start(story)
