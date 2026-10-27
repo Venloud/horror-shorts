@@ -716,6 +716,26 @@ def plan_graphics(story: dict, narration: dict) -> list[list[dict]]:
     return out
 
 
+def first_date_only(story: dict, graphics: list[list[dict]]) -> list[list[dict]]:
+    """Use the original shot planner's FIRST grounded date, never cached repeats.
+
+    This also sanitizes version-3 saved storyboards without issuing a new model
+    call or resetting existing story media, captions, or publishing history.
+    """
+    base = {"cast": {}, "dates": 0}
+    first = next((i for i in range(len(story["scenes"]))
+                  if _date_graphic(story, i, _scene_ctx(story, i, base)) is not None), None)
+    result = []
+    for i, cards in enumerate(graphics):
+        retained = [g for g in cards if g.get("template") != "date_stamp"]
+        if i == first:
+            chosen = _date_graphic(story, i, _scene_ctx(story, i, base))
+            if chosen and graphic_problem(story, i, chosen) is None:
+                retained.insert(0, chosen)
+        result.append(retained)
+    return result
+
+
 def graphic_problem(story: dict, i: int, g: dict) -> str | None:
     """None if every word / number on this graphic is said in its scene's narration (and, for a true story's date,
     in the fact ledger); else the reason. Used by the planner and again by the visual QA on the final shot list."""
@@ -2298,6 +2318,9 @@ def build(story: dict, narration: dict, img_dir: Path, workdir: Path) -> Path:
         checkpoint.write_atomic(saved, json.dumps({"key": key, "version": 3, "graphics": graphics},
                                                   ensure_ascii=False, default=str))
         checkpoint.register_image(saved, stage="shot_list")
+    # Old checkpoint plans may contain many date cards. Normalize on load
+    # without re-running the planner or consuming extra provider credits.
+    graphics = first_date_only(story, graphics)
     total = _total(narration)
     segs = sequence(story, narration, scene_images, graphics, total)
     story["render_style"] = "explainer"
