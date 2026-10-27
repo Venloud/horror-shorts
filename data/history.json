@@ -2903,5 +2903,84 @@
       "pending": "buffer_queue_pending"
     },
     "draft_sent": "2026-10-26_2151"
+  },
+  {
+    "date": "2026-10-27_0539",
+    "story_id": "82bab3fcd094",
+    "title": "The Legend Of The Slender Man",
+    "premise": "A tall, featureless humanoid in a black suit stalks children and leaves a trail of static and terror.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Slender Man",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Modern internet folklore and dark forests",
+    "threat": "The Slender Man",
+    "twist": "The relentless stalker finally closes in on the victim in the dark woods.",
+    "score": null,
+    "seconds": 58.8,
+    "voice_speed": 1.1,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:16668194",
+      "pexels:6317868",
+      "pexels:6955103",
+      "pexels:35849338",
+      "pexels:6955104"
+    ],
+    "visual_mode": "classic",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 60,
+    "visuals": {
+      "distinct": 21,
+      "longest_s": 3.9,
+      "longest_share": 0.063,
+      "longest_name": "image:scene_03a.png:full"
+    },
+    "yt_title": "When The Television Bursts Into Static... The Slender Man #shorts",
+    "hashtags": [
+      "slenderman",
+      "urbanlegend",
+      "legends"
+    ],
+    "yt_tags": [
+      "the slender man",
+      "slender man legend",
+      "urban legend",
+      "internet folklore",
+      "victor surge myth",
+      "scary legend",
+      "slender sickness",
+      "creepy story",
+      "featureless humanoid",
+      "slender man folklore",
+      "modern myth",
+      "slender man story",
+      "slender man",
+      "folklore",
+      "creepy legend"
+    ],
+    "opening": "When the television in the quiet room suddenly bursts into harsh static, a terrifying presence closes in.",
+    "music_file": "background_music.mp3",
+    "buffered": "2026-10-27_0539",
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7701224998383454239",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    },
+    "draft_sent": "2026-10-27_0607"
   }
 ]
