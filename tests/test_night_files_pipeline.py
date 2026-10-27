@@ -454,7 +454,8 @@ class ShotLists(unittest.TestCase):
         _, g, _, _ = _plan(story)
         flat = {(x["template"], json.dumps(x["fields"], sort_keys=True)) for gs in g for x in gs}
         years = {json.loads(f)["year"] for t, f in flat if t == "date_stamp"}
-        self.assertEqual(years, {"1897", "1928", "1932", "1937", "1939"})  # every one in the narration AND ledger
+        self.assertEqual(years, {"1897"})  # first grounded date only; never five repeated timelines
+        self.assertEqual(sum(g["template"] == "date_stamp" for scene in g for g in scene), 1)
         texts = {json.loads(f).get("text") for t, f in flat}
         self.assertIn("Distinguished Flying Cross", texts)
         self.assertIn("Fred Noonan", texts)
