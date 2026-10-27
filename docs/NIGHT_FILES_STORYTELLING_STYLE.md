@@ -35,6 +35,23 @@ honestly unresolved, but the viewer should still be able to retell what happened
 - Judge edits by what a normal viewer will **understand, remember or feel**, not by the number of facts, unexplained
   jargon, eerie props, visuals or transitions.
 
+## Retention writing standard, owner update 2026-10-27
+
+Use the existing [Vandam five-part narrative arc](https://github.com/Venloud/claudevandam/blob/main/docs/VIDEO_EDITING_MASTER_INSTRUCTIONS_2026-10-24.md) without changing the established Night Files documentary identity. Original standalone videos remain the default. For each new story, build **connected tension loops**: observable specific problem → authentic attempt/investigation/decision → new information or consequence → earned partial answer. A solved local question may reveal a larger problem, but do not endlessly promise answers without providing any.
+
+- **R1 Hook:** begin *inside* a specific unusual event, risk, contradiction or choice. Avoid generic atmosphere, brand intros, fake shock and slow biography. The initial visual must show the event/object that the hook claims.
+- **R2 Connected mini-loops:** resolve or advance questions as the viewer learns, with meaningful intermediate payoffs. No timed twist quota and no withholding all answers until an episode numbered “Part 2.”
+- **R3 Real escalation:** developments must change knowledge, belief, options, stakes, necessary decision or interpretation of a prior clue; otherwise cut them.
+- **R4 Active viewer:** limited **original fictional survival** episodes may use thoughtful second-person choices with two genuinely meaningful options. Never force “you watch,” “you witness,” or POV into nonfiction, biographies or every standalone.
+- **R5 Curiosity pays:** the ending delivers real consequence, revelation or evidence-bounded uncertainty. For serialized fiction, *each* of the three episodes has an independent answer/reward while the overarching problem develops.
+- **R6 Continuity:** carry injuries, keys, rule knowledge, character looks, geography, times and object ownership across beats/episodes. Refer to the owner-approved series bible, never improvise incompatible past events.
+- **R7 Editorial punctuation:** real hard cuts by default, dissolve only when narrated time passes, black fade only at actual end; eased in-scene graphics and subtle UI overshoot only where purposeful. Keep licensed low-mix music/SFX, exact caption timing, approved 1-second cover and source provenance. A documentary date-timeline graphic appears **at most once** on the first relevant sourced narrated date, if useful. In-story clocks may mark action without repeated timeline templates.
+- **R8 Semantic visual proof:** a radio test needs an actual radio and a clear reaction; a changed object should display its before/after; a door warning should show the relevant door state. Choose visual treatment before generating images, use CLIP as relevance support rather than certainty.
+
+**Series frequency/approvals:** occasional *original fictional* trilogy only, never automatic “Part 2” bait. Do not start another until **at least 7 full days** after the previous series began **AND at least 14 unique, verified public Night Files videos** since that start. TikTok creator inbox drafts, Buffer.com queue receipts, rendered MP4s and successful Actions runs are **not verified public posts**. A trilogy needs explicit concept, script, visual and production approval. The current series selector is disabled by default; it must not hijack ordinary standalone rotation or publishing order. No approval means no episode generation/distribution.
+
+**Editor questions:** What does the viewer concretely want answered? What earned answer arrives before the end? What changes on the next obstacle? What exact visual action proves each narrated development? What would become inconsistent if the same character returns next episode? Do not confuse synthetic writing scores, competitor anecdotes or hypothetical retention improvements with measured platform behavior.
+
 ## Adaptation by genre
 - Unsolved mystery: the disappearance/event first, then necessary context, evidence, search, competing sourced interpretations, and what remains unknown.
 - Historical event: defining moment first, then how/why it unfolded and why it mattered.
