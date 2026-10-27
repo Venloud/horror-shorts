@@ -488,22 +488,58 @@ _GEO = re.compile(r"\b(ocean|sea|atlantic|pacific|river|island|lake|bay|gulf|mou
 _PROPER_RX = re.compile(r"\b((?:[A-Z][a-z]+)(?:\s+(?:[A-Z][a-z]+|of|the|de|van))*\s+[A-Z][a-z]+|[A-Z][a-z]{3,})\b")
 
 
+_MONTH_DAY = re.compile(
+    r"\b(?P<month>january|february|march|april|may|june|july|august|september|october|november|december)"
+    r"\s+(?:the\s+)?(?P<day>[1-9]|[12]\d|3[01])(?:st|nd|rd|th)?\b|"
+    r"\b(?P<word_month>january|february|march|april|may|june|july|august|september|october|november|december)"
+    r"\s+(?:the\s+)?(?P<word_day>first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|"
+    r"eleventh|twelfth|thirteenth|fourteenth|fifteenth|sixteenth|seventeenth|eighteenth|nineteenth|"
+    r"twentieth|twenty[- ]first|twenty[- ]second|twenty[- ]third|twenty[- ]fourth|twenty[- ]fifth|"
+    r"twenty[- ]sixth|twenty[- ]seventh|twenty[- ]eighth|twenty[- ]ninth|thirtieth|thirty[- ]first)\b",
+    re.IGNORECASE)
+_SPOKEN_DAYS = dict(zip(
+    ("first second third fourth fifth sixth seventh eighth ninth tenth eleventh twelfth thirteenth "
+     "fourteenth fifteenth sixteenth seventeenth eighteenth nineteenth twentieth").split(), range(1, 21)))
+_SPOKEN_DAYS.update({f"twenty-{w}": 20 + n for w, n in list(_SPOKEN_DAYS.items())[:9]})
+_SPOKEN_DAYS.update({"thirtieth": 30, "thirty-first": 31})
+
+
 def _date_graphic(story: dict, i: int, sctx: dict) -> dict | None:
-    """date_stamp for a year said in this scene (true stories: the year must be in the fact ledger too); the kicker
-    is the ledger key whose value holds that year ("Disappearance date" -> DISAPPEARANCE DATE)."""
+    """Choose a supported calendar marker in spoken order.
+
+    The first valid date across the full story is enforced by plan_graphics.
+    """
+    import spoken_numbers as nums
     narr = story["scenes"][i].get("narration", "")
-    years = sorted(int(v) for v in sctx["said"] if 1000 <= v <= 2100 and float(v).is_integer())
-    if not years:
-        return None
-    y = years[0]
+    spoken = narr.lower().replace("-", " ")
+    md = _MONTH_DAY.search(narr)
+    years = [int(v) for v in sctx["said"] if 1000 <= v <= 2100 and float(v).is_integer()]
+    year_positions = []
+    for y in years:
+        tokens = (str(y), nums.year(y).replace("-", " "))
+        loc = min((spoken.find(t) for t in tokens if spoken.find(t) >= 0), default=len(spoken))
+        year_positions.append((loc, y))
+    year_positions.sort()
     ledger = _ledger_text(story)
-    if story.get("true_story") and ledger and str(y) not in ledger:
+    for pos, y in year_positions:
+        if story.get("true_story") and ledger and str(y) not in ledger:
+            continue
+        kick = next((_kicker(k) for k, v in _ledger_pairs(story) if str(y) in v), "") or "WHEN"
+        month = _MONTH.search(narr)
+        label = md.group(0) if md and md.start() <= pos + 3 else (month.group(0) if month else "")
+        return {"type": "graphic", "at": None, "template": "date_stamp", "auto": True,
+                "fields": {"kicker": kick, "year": str(y), "label": label}}
+    if not md:
         return None
-    kick = next((_kicker(k) for k, v in _ledger_pairs(story) if str(y) in v), "") or "WHEN"
-    m = _MONTH.search(narr)
-    label = m.group(0) if m else ""
+    raw_day = md.group("day") or md.group("word_day") or ""
+    day = int(raw_day) if raw_day.isdigit() else _SPOKEN_DAYS.get(raw_day.lower().replace(" ", "-"))
+    month = md.group("month") or md.group("word_month")
+    if not day or not 1 <= day <= 31 or not month:
+        return None
+    if story.get("true_story") and ledger and md.group(0).lower() not in ledger.lower():
+        return None
     return {"type": "graphic", "at": None, "template": "date_stamp", "auto": True,
-            "fields": {"kicker": kick, "year": str(y), "label": label}}
+            "fields": {"kicker": "WHEN", "month": month.title(), "day": day, "label": md.group(0)}}
 
 
 def _evidence_graphics(story: dict, i: int, sctx: dict) -> list[dict]:
@@ -621,7 +657,10 @@ def plan_graphics(story: dict, narration: dict) -> list[list[dict]]:
         true="yes" if true else "no", scenes=scenes_txt, ledger="; ".join(map(str, story.get("fact_ledger") or []))
         or "none", true_rule=" (TRUE story: never invent a number)" if true else "")) or {}
     raw = data.get("scenes") if isinstance(data.get("scenes"), list) else []
-    base = {"cast": {}, "dates": 0}  # date_stamp graphics are checked by _date_graphic / graphic_problem
+    base = {"cast": {}, "dates": 0}  # dates still validated by graphic_problem
+    # At most one timeline across the whole video, on the first grounded date.
+    first_date_scene = next((j for j in range(len(story["scenes"]))
+                             if _date_graphic(story, j, _scene_ctx(story, j, base)) is not None), None)
     out = []
     used_texts = set()  # the same card text never twice in one video ("AKA MANTO" name card in scenes 2 and 7)
     for i, sc in enumerate(story["scenes"]):
@@ -631,6 +670,8 @@ def plan_graphics(story: dict, narration: dict) -> list[list[dict]]:
         rs = raw[i] if i < len(raw) and isinstance(raw[i], dict) else {}
         for g in (rs.get("graphics") or [])[:3]:
             if not isinstance(g, dict) or g.get("template") not in PLAN_TEMPLATES:
+                continue
+            if g["template"] == "date_stamp" and i != first_date_scene:
                 continue
             if g["template"] == "closing" and i != len(story["scenes"]) - 1:
                 continue
@@ -642,6 +683,12 @@ def plan_graphics(story: dict, narration: dict) -> list[list[dict]]:
                     v["fields"]["subject"] = ""
                 picks.append(v)
         picks += _auto_graphics(story, i, sctx)
+        if i != first_date_scene:
+            picks = [g for g in picks if g["template"] != "date_stamp"]
+        else:
+            first_date = _date_graphic(story, i, sctx)
+            picks = ([first_date] if first_date else []) + [
+                g for g in picks if g["template"] != "date_stamp"]
         if not true:  # a legend / fiction: the beat's own strong phrase beats a generic ledger card
             imp = _impact_fallback(story, i)
             if imp and max(word_score(w) for w in imp["fields"]["text"].split()) >= 2.5 \
@@ -680,14 +727,27 @@ def graphic_problem(story: dict, i: int, g: dict) -> str | None:
     tpl = g.get("template")
     texts = []
     if tpl == "date_stamp":
-        try:
-            y = int(f.get("year"))
-        except (TypeError, ValueError):
-            return "date_stamp without a year"
-        if y not in said:
-            return f"year {y} is not said in scene {i + 1}"
-        if story.get("true_story") and _ledger_text(story) and str(y) not in _ledger_text(story):
-            return f"year {y} is not in the fact ledger"
+        if f.get("year"):
+            try:
+                y = int(f.get("year"))
+            except (TypeError, ValueError):
+                return "invalid date_stamp year"
+            if y not in said:
+                return f"year {y} is not said in scene {i + 1}"
+            if story.get("true_story") and _ledger_text(story) and str(y) not in _ledger_text(story):
+                return f"year {y} is not in the fact ledger"
+        else:
+            candidate = _MONTH_DAY.search(narr)
+            if not candidate or str(f.get("label", "")).lower() != candidate.group(0).lower():
+                return "date_stamp month/day not said in this scene"
+            if story.get("true_story") and _ledger_text(story) and candidate.group(0).lower() not in _ledger_text(story).lower():
+                return "date_stamp month/day not in the fact ledger"
+            if str(f.get("month") or "").lower() != (candidate.group("month") or candidate.group("word_month") or "").lower():
+                return "date_stamp month mismatch"
+            day_words = candidate.group("day") or candidate.group("word_day") or ""
+            expected = int(day_words) if day_words.isdigit() else _SPOKEN_DAYS.get(day_words.lower().replace(" ", "-"))
+            if f.get("day") != expected:
+                return "date_stamp day mismatch"
         texts.append(f.get("label") or "")
     elif tpl == "map_route":
         texts += list(f.get("stops") or [])
