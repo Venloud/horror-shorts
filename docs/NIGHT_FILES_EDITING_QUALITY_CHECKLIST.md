@@ -38,6 +38,15 @@ Make progression intelligible **through the primary cinematic footage and narrat
 
 **QA evidence:** For each deliberate entrance/exit/overshoot, verify what is moving, the meaning of that gesture, start/end positions, readability, timing, easing curve, whether a subtle settle is warranted, and whether a simple hold/cut is stronger. These rules govern future edits; adding them to documentation **does not claim renderer code has implemented every curve**.
 
+## Retention-to-edit synchronization, owner directive 2026-10-27
+
+- Open *in a concrete problem*, danger, contradiction or decision. The first visual validates the hook and cover promise.
+- Show actual effort, investigation and consequences: use narration-matched **B-roll/objects/screens**, not atmospheric filler or unrelated overlays. An earned local answer can reveal a larger question, without empty Part 2 bait.
+- Raise stakes only where a development changes knowledge, option, risk, belief, decision or clue interpretation. Do not insert a new twist every fixed number of seconds.
+- Original occasional trilogy: stable recurring characters, injuries, objects, setting, props, clothing and rules. Each episode gives a payoff; next episode advances the same central question. Never re-create a competitor's characters/plot/art.
+- All existing graphics rules still apply. The documentary date **timeline animation appears at most once per video**, on a useful first source-backed narrated date. Local in-story clock labels are fine when necessary. Keep approved one-second cover, hard-cut boundaries, nonlinear justified graphics, safe captions and accurate SFX.
+- For review, mark beat → promised answer → work/visual proof → earned reveal → changed stakes → ending; compare actual visual/action match, phone-size readability and source rights. Do not treat a scoring heuristic or a mock render as proof of retention.
+
 ## 1. Captions, always
 - Every spoken word should be captioned and in sync with narration. Use engaging, polished animated text with readable contrast and safe placement.
 - Vary emphasis, phrase grouping and entry motion when meaningful; avoid frantic animation for every word. Missing captions are a repair issue.
