@@ -117,9 +117,10 @@
       "title": "When The Television Bursts Into Static... The Slender Man #shorts"
     },
     "2026-10-08_0247": {
-      "status": "attempt_started",
-      "title": "Silent Golden Disc Descended | Scary Story #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-10-08_0247.mp4"
+      "status": "queued",
+      "buffer_post_id": "6ae04757da2ca338b14e0941",
+      "due_at": "2026-10-31T22:41:00.000Z",
+      "title": "Silent Golden Disc Descended | Scary Story #shorts"
     }
   }
 }
