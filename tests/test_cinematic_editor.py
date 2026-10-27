@@ -456,6 +456,13 @@ class NarratedYearTimelineOnPhoto(unittest.TestCase):
         g = explainer._date_graphic(story, 0, explainer._scene_ctx(story, 0, {"cast": {}, "dates": 0}))
         self.assertEqual(g["fields"]["year"], "1930")
 
+    def test_first_calendar_date_beats_later_year_in_same_scene(self):
+        sc = {"true_story": True, "fact_ledger": ["March 31st", "1922"],
+              "scenes": [{"narration": "On March 31st, a record appeared. Investigators opened it in 1922."}]}
+        g = explainer._date_graphic(sc, 0, explainer._scene_ctx(sc, 0, {"cast": {}, "dates": 0}))
+        self.assertEqual(g["fields"]["day"], 31)
+        self.assertEqual(g["fields"]["month"], "March")
+
     def test_month_day_card_renders_over_story_image(self):
         from PIL import Image, ImageChops
         fields = {"month": "March", "day": 31, "label": "March 31st", "kicker": "WHEN"}
