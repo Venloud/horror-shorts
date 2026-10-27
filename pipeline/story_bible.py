@@ -65,6 +65,16 @@ def build(story: dict) -> dict:
 
     bible = {
         "title": _clean(story.get("title"), 120),
+        "retention_contract": {
+            "central_question": _clean(story.get("central_question"), 240),
+            "understanding_shift": _clean(story.get("understanding_shift"), 240),
+            "ending_payoff": _clean(story.get("ending_payoff"), 240),
+            "optional_visual_motif": _clean(story.get("recurring_visual_motif"), 120),
+            "review_status": "writer-planned; verify against narration and nonfiction sources",
+        },
+        "series_id": story.get("series_id"),
+        "series_episode": story.get("series_episode"),
+        "series_continuity": story.get("series_bible"),
         "premise": _clean(story.get("premise"), 300),
         "setting": _clean(story.get("setting"), 220),
         "threat": _clean(story.get("threat"), 220),

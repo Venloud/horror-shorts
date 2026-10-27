@@ -58,6 +58,25 @@ These are editorial decisions, **not claims that viewership increased or that a 
 - **This is a writing/approval constraint, not an implemented rotation, posting scheduler or proof of live analytics.** Before series generation/publication, inspect the current history and existing queue/checkpoint system, obtain the necessary owner approvals and add a verified fail-closed eligibility guard inside the maintained bot. Do not manually dispatch production workflows, move buffered videos, bypass approvals or create parallel publishing systems merely to test a story.
 - Do not copy other creators' stories, names, art, scenes, series titles, dialogue, characters, or proprietary visual branding. These competitors illustrate storytelling techniques, not reusable assets or proven causes of view counts.
 
+## Rule R9: Give the viewer a question they can track (owner, October 27, 2026)
+
+**For every Night Files script**, identify privately during writing and review:
+1. **Central question:** What specific question, problem or promise can a viewer follow from the hook to the ending?
+2. **Changed understanding:** Which real event, observed action, verified clue, counterexample, decision or consequence actually changes what the viewer understands while watching?
+3. **Payoff:** What answer, consequence, revelation or honest uncertainty does the ending deliver in response to the original question?
+
+Make progression intelligible **through the primary cinematic footage and narration first**. When the particular story benefits, allow **one understated, story-grounded recurring visual motif or evidence indicator** (for example, a single familiar key, radio signal indicator or documented progress label) to help track meaningful changes. A motif is optional, not an instruction to put a counter on every video or repeat a card at every beat.
+
+**Source and state discipline:** Every displayed number, charge, status, clue, metric, comparison, counter, verdict and conclusion must be supported by what the narration establishes, and in nonfiction, reliable documentary evidence. Fictional UI must be clearly part of the fictional story, not presented as factual reporting or a proven forensic conclusion. No fabricated charges, invented verdicts, manufactured scoreboard, arbitrary percent progress, unexplained numerals, or unsupported red/green status boxes.
+
+**Editing discipline:** Preserve Night Files' cinematic primary imagery, semantic shot matching, meaningful hard cuts, minimal evidence-based graphics, nonlinear easing only for justified motion, accurate one-time documentary date timeline, synchronized readable captions, approved one-second cover, and existing FFmpeg/Remotion editor. R9 requires **clear narrative cause and effect**, not a new animation engine, overlay quota, or separate narrator.
+
+**Review gate:** Can a viewer say the question, the fact/choice that changed their understanding and the answer or justified uncertainty at the end? If not, fix the story and visual match rather than inventing a tracking graphic.
+
+## Occasional trilogy production policy, owner update 2026-10-27
+
+The R1–R9 writing principles above apply to **all** Night Files stories, not just the occasional original-fiction three-part feature. The ordinary standalone rotation stays the default. Start a new original trilogy only after at least **seven full days and 14 unique verified public Night Files posts** since the last one began. Neither TikTok inbox drafts, Buffer.com queue receipts, generated videos nor successful jobs count as public. Require separate owner approval of concept, scripts, visual continuity and production, preserve the one-second cover and current workflows, and never enable the trilogy selector automatically. See `docs/series_proposals/2026-10-27_trilogy_review.md` for unapproved concept proposals.
+
 ## Adaptation by genre
 - Unsolved mystery: the disappearance/event first, then necessary context, evidence, search, competing sourced interpretations, and what remains unknown.
 - Historical event: defining moment first, then how/why it unfolded and why it mattered.

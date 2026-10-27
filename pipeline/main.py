@@ -184,7 +184,12 @@ def main() -> int:
         if story is None:
             stage = "story"
             manifest.stage("story", "started")
-            story = write_story(history)
+            from series_rotation import select_approved_story
+            story = select_approved_story(history, CONFIG)
+            if story is None:
+                story = write_story(history)
+            else:
+                log(f"Owner-approved trilogy {story['series_id']} episode {story['series_episode']} selected")
             manifest.stage("story", "complete", writer=story.get("writer") or story.get("model"))
             if not testing:
                 checkpoint.start(story)
@@ -409,6 +414,7 @@ def main() -> int:
         meta = workdir / "caption.json"
         meta.write_text(json.dumps({
             "stamp": stamp, "story_id": story["story_id"], "title": story["title"], "caption_text": caption,
+            "series_id": story.get("series_id"), "series_episode": story.get("series_episode"),
             "pinned_comment": story.get("pinned_comment", ""), "mode": story.get("mode", "fiction"),
             "case": story.get("case"), "source": story.get("source"), "subgenre": story.get("subgenre", ""),
             "premise": story.get("premise", ""), "opening": opening_line(story),
@@ -458,6 +464,7 @@ def main() -> int:
         history.append({
             "date": stamp,
             "story_id": story.get("story_id"),
+            "series_id": story.get("series_id"), "series_episode": story.get("series_episode"),
             "title": story["title"],
             "premise": story.get("premise", ""),
             "subgenre": story.get("subgenre", ""),

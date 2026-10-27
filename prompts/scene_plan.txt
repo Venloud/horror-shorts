@@ -14,6 +14,12 @@ SPLIT IT INTO SCENES
 - COPY THE WORDS EXACTLY. Do not rewrite, shorten, add or reorder anything. Only remove markdown symbols, headings and quotation marks around dialogue if they would sound odd read aloud.
 - Scene 1 must be the script's opening hook.
 
+RULE R9: THE QUESTION THE VIEWER CAN TRACK
+- Identify the one central question that the hook opens, the visible clue/action/decision that changes understanding, and the payoff the ending truly provides. Return these as plain, concise JSON string fields: "central_question", "understanding_shift", "ending_payoff". All three must be supported by the supplied SCRIPT. If the ending stays unresolved, state exactly what remains uncertain. Do NOT rewrite or invent narration to satisfy this rule.
+- Optional "recurring_visual_motif" string: name ONE restrained object or evidence indicator already established by the narration if it materially helps the viewer track change. Otherwise return "" (empty). This field is an editorial suggestion, NOT a command to render or animate an overlay.
+- Every number, charge, verdict, status, clue, counter and conclusion must be supported by the SCRIPT and, for nonfiction, reliable source evidence. Do not introduce countdowns, percentage trackers, verdict boards, scoreboards or invented interface evidence to fabricate progression.
+- Prefer the existing cinematic primary shots, meaningful hard cuts, synchronized captions and occasional understated contextual graphics. If a motif would reduce clarity or crowd safe zones, leave it out.
+
 EDITORIAL PRIORITY, WALTER MURCH RULE OF SIX
 - Design the whole visual sequence around this descending priority: Emotion (51%), Story (23%), Rhythm (10%), Eye trace (7%), screen plane (5%), spatial continuity (4%). The percentages express priorities, NOT scores, quotas or mechanical runtime allocation. Prioritize credible emotion and actual story progression over motion-graphic spectacle, flashy transitions and rigid continuity.
 - For each scene, identify the intended feeling and the NEW information/action/choice it conveys. A shot must make the audience feel or understand something, not just look atmospheric. Use pauses and stillness for tension where appropriate.

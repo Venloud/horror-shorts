@@ -2,6 +2,21 @@
 
 These are permanent creative acceptance guidelines, not four effects that must all be maxed on every shot.
 
+## Rule R9: Give the viewer a question they can track (owner, October 27, 2026)
+
+**For every Night Files script**, identify privately during writing and review:
+1. **Central question:** What specific question, problem or promise can a viewer follow from the hook to the ending?
+2. **Changed understanding:** Which real event, observed action, verified clue, counterexample, decision or consequence actually changes what the viewer understands while watching?
+3. **Payoff:** What answer, consequence, revelation or honest uncertainty does the ending deliver in response to the original question?
+
+Make progression intelligible **through the primary cinematic footage and narration first**. When the particular story benefits, allow **one understated, story-grounded recurring visual motif or evidence indicator** (for example, a single familiar key, radio signal indicator or documented progress label) to help track meaningful changes. A motif is optional, not an instruction to put a counter on every video or repeat a card at every beat.
+
+**Source and state discipline:** Every displayed number, charge, status, clue, metric, comparison, counter, verdict and conclusion must be supported by what the narration establishes, and in nonfiction, reliable documentary evidence. Fictional UI must be clearly part of the fictional story, not presented as factual reporting or a proven forensic conclusion. No fabricated charges, invented verdicts, manufactured scoreboard, arbitrary percent progress, unexplained numerals, or unsupported red/green status boxes.
+
+**Editing discipline:** Preserve Night Files' cinematic primary imagery, semantic shot matching, meaningful hard cuts, minimal evidence-based graphics, nonlinear easing only for justified motion, accurate one-time documentary date timeline, synchronized readable captions, approved one-second cover, and existing FFmpeg/Remotion editor. R9 requires **clear narrative cause and effect**, not a new animation engine, overlay quota, or separate narrator.
+
+**Review gate:** Can a viewer say the question, the fact/choice that changed their understanding and the answer or justified uncertainty at the end? If not, fix the story and visual match rather than inventing a tracking graphic.
+
 ## Transition punctuation, owner directive 2026-10-25
 - **Hard cut by default.** A cut or a hold needs no transition effect. Never insert a transition between every clip for decoration.
 - **Dissolve only when time actually passes**, supported by narration or explicit timeline evidence. Mood, fog, a scene boundary, moving to a new place, or an unrelated graphic do not independently justify a dissolve.
@@ -22,6 +37,15 @@ These are permanent creative acceptance guidelines, not four effects that must a
 - **Respect the previous transition punctuation rule:** a hard cut is *not* animated and remains the default clip boundary. Dissolve only for narrated passage of time, black fade only at the ending; don't reintroduce slides, swooshes, zoom transitions or wipes by calling them easing.
 
 **QA evidence:** For each deliberate entrance/exit/overshoot, verify what is moving, the meaning of that gesture, start/end positions, readability, timing, easing curve, whether a subtle settle is warranted, and whether a simple hold/cut is stronger. These rules govern future edits; adding them to documentation **does not claim renderer code has implemented every curve**.
+
+## Retention-to-edit synchronization, owner directive 2026-10-27
+
+- Open *in a concrete problem*, danger, contradiction or decision. The first visual validates the hook and cover promise.
+- Show actual effort, investigation and consequences: use narration-matched **B-roll/objects/screens**, not atmospheric filler or unrelated overlays. An earned local answer can reveal a larger question, without empty Part 2 bait.
+- Raise stakes only where a development changes knowledge, option, risk, belief, decision or clue interpretation. Do not insert a new twist every fixed number of seconds.
+- Original occasional trilogy: stable recurring characters, injuries, objects, setting, props, clothing and rules. Each episode gives a payoff; next episode advances the same central question. Never re-create a competitor's characters/plot/art.
+- All existing graphics rules still apply. The documentary date **timeline animation appears at most once per video**, on a useful first source-backed narrated date. Local in-story clock labels are fine when necessary. Keep approved one-second cover, hard-cut boundaries, nonlinear justified graphics, safe captions and accurate SFX.
+- For review, mark beat → promised answer → work/visual proof → earned reveal → changed stakes → ending; compare actual visual/action match, phone-size readability and source rights. Do not treat a scoring heuristic or a mock render as proof of retention.
 
 ## 1. Captions, always
 - Every spoken word should be captioned and in sync with narration. Use engaging, polished animated text with readable contrast and safe placement.

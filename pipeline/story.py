@@ -27,6 +27,10 @@ SCHEMA = {
     "properties": {
         "title": {"type": "STRING"},
         "premise": {"type": "STRING"},
+        "central_question": {"type": "STRING"},
+        "understanding_shift": {"type": "STRING"},
+        "ending_payoff": {"type": "STRING"},
+        "recurring_visual_motif": {"type": "STRING"},
         "hook_overlay": {"type": "STRING"},
         "scenes": {
             "type": "ARRAY",

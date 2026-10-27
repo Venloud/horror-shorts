@@ -155,6 +155,12 @@
     "case",
     "coldcase"
   ],
+  "occasional_trilogies": {
+    "enabled": false,
+    "approved_manifest": "",
+    "minimum_days_between_starts": 7,
+    "minimum_verified_public_posts": 14
+  },
   "story_upgrade": true,
   "story_bible": true,
   "critic_pass": true,
