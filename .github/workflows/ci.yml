@@ -116,3 +116,23 @@ jobs:
           test -f .github/workflows/buffer_fill.yml
           test -f .github/workflows/connect-tiktok.yml
           echo "Critical Night Files structure: OK"
+
+  cleanup_ci_history:
+    name: Keep latest 10 CI runs
+    needs: validate
+    if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preview eligible completed CI runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python tools/prune_ci_runs.py --keep 10
+      - name: Remove older completed CI runs
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python tools/prune_ci_runs.py --keep 10 --execute
