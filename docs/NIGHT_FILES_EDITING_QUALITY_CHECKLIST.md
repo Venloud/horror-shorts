@@ -2,6 +2,21 @@
 
 These are permanent creative acceptance guidelines, not four effects that must all be maxed on every shot.
 
+## Rule R9: Give the viewer a question they can track (owner, October 27, 2026)
+
+**For every Night Files script**, identify privately during writing and review:
+1. **Central question:** What specific question, problem or promise can a viewer follow from the hook to the ending?
+2. **Changed understanding:** Which real event, observed action, verified clue, counterexample, decision or consequence actually changes what the viewer understands while watching?
+3. **Payoff:** What answer, consequence, revelation or honest uncertainty does the ending deliver in response to the original question?
+
+Make progression intelligible **through the primary cinematic footage and narration first**. When the particular story benefits, allow **one understated, story-grounded recurring visual motif or evidence indicator** (for example, a single familiar key, radio signal indicator or documented progress label) to help track meaningful changes. A motif is optional, not an instruction to put a counter on every video or repeat a card at every beat.
+
+**Source and state discipline:** Every displayed number, charge, status, clue, metric, comparison, counter, verdict and conclusion must be supported by what the narration establishes, and in nonfiction, reliable documentary evidence. Fictional UI must be clearly part of the fictional story, not presented as factual reporting or a proven forensic conclusion. No fabricated charges, invented verdicts, manufactured scoreboard, arbitrary percent progress, unexplained numerals, or unsupported red/green status boxes.
+
+**Editing discipline:** Preserve Night Files' cinematic primary imagery, semantic shot matching, meaningful hard cuts, minimal evidence-based graphics, nonlinear easing only for justified motion, accurate one-time documentary date timeline, synchronized readable captions, approved one-second cover, and existing FFmpeg/Remotion editor. R9 requires **clear narrative cause and effect**, not a new animation engine, overlay quota, or separate narrator.
+
+**Review gate:** Can a viewer say the question, the fact/choice that changed their understanding and the answer or justified uncertainty at the end? If not, fix the story and visual match rather than inventing a tracking graphic.
+
 ## Transition punctuation, owner directive 2026-10-25
 - **Hard cut by default.** A cut or a hold needs no transition effect. Never insert a transition between every clip for decoration.
 - **Dissolve only when time actually passes**, supported by narration or explicit timeline evidence. Mood, fog, a scene boundary, moving to a new place, or an unrelated graphic do not independently justify a dissolve.
