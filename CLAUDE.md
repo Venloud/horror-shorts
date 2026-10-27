@@ -1,5 +1,15 @@
 # Night Files: project notes for Claude
 
+## OWNER WORKFLOW RULE (2026-10-27): IMPROVE THE LIVE BOT, NOT BRANCH PROTOTYPES
+
+Venloud's direction: **modify the existing working Night Files pipeline, on its current maintained branch, rather than creating a fresh feature branch for every small edit**. Start by inspecting current `main`, active PRs/agents, the existing renderer, tested integrations, project media and live workflow safety. Prefer the smallest compatible change **inside existing code**; never build an alternate bot, renderer or detached demo and call it finished. For narrow owner-authorized changes that can be safely committed to `main`, update `main` itself with targeted tests and verify the integrated result. For hazardous, unreviewed or conflicting changes, obey protected branch/review gates; reuse a relevant existing draft PR when possible and clearly identify blockers rather than multiplying branches. No branch or PR should be opened without a clear lifecycle (integrate, retain with reason, archive or remove after verification). Never delete another agent's unmerged work or assume that old branches can be discarded just because CI passed. Preserve completed media, queued/public posts, scripts, approved art and platform credentials. **Do not manually dispatch production workflows or publish merely to test.** Record the integration and cleanup state in Vandam's existing register, then close approved temporary work instead of accumulating competing implementations.
+
+### In-place date motion, 2026-10-27
+
+The active `pipeline/noir.py` `date_stamp` now displays an animated horizontal timeline over the same scene's visible photograph (chosen by `pipeline/explainer.py:Renderer.ctx`). It passes a few earlier **scale tick years**, stops at the narration-supported year and highlights only that target in red. This is in-scene motion, not a decorative clip transition; the narrator's scene and its nonfiction fact ledger remain the authority. Do not reinstate giant disconnected year cards or pretend the neighboring tick years are additional historical events. Use regular hard cuts; no unsourced time/date SFX. Tests belong in the existing `tests/test_cinematic_editor.py`. Existing approved cover, captions, narrator, Buffer.com delivery and queue history must remain intact.
+
+
+
 Read this first. It sums up the decisions from the long chat where this project was built (Sept 2026),
 so a new session can pick up without starting over.
 
