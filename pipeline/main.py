@@ -414,6 +414,7 @@ def main() -> int:
         meta = workdir / "caption.json"
         meta.write_text(json.dumps({
             "stamp": stamp, "story_id": story["story_id"], "title": story["title"], "caption_text": caption,
+            "series_id": story.get("series_id"), "series_episode": story.get("series_episode"),
             "pinned_comment": story.get("pinned_comment", ""), "mode": story.get("mode", "fiction"),
             "case": story.get("case"), "source": story.get("source"), "subgenre": story.get("subgenre", ""),
             "premise": story.get("premise", ""), "opening": opening_line(story),
