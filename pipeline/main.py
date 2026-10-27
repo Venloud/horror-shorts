@@ -464,6 +464,7 @@ def main() -> int:
         history.append({
             "date": stamp,
             "story_id": story.get("story_id"),
+            "series_id": story.get("series_id"), "series_episode": story.get("series_episode"),
             "title": story["title"],
             "premise": story.get("premise", ""),
             "subgenre": story.get("subgenre", ""),
