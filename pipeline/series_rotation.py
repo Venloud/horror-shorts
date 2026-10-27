@@ -79,6 +79,17 @@ def new_series_eligible(history: list[dict], now: datetime, min_days=7, min_post
            not (e.get("public_confirmed_at") and e.get("public_post_url") and
                 e.get("public_confirmation_source")) for e in history):
         return False, "Earlier trilogy episode 1 has no verified public delivery"
+    # An earlier trilogy is not completed until all THREE episodes are
+    # publicly confirmed. Buffered files and drafts cannot satisfy this gate.
+    ids = {str(e["series_id"]) for e in history if e.get("series_id")}
+    for sid in ids:
+        public_nums = {e.get("series_episode") for e in history
+                       if str(e.get("series_id")) == sid and
+                       all(e.get(k) for k in ("public_confirmed_at",
+                                              "public_post_url",
+                                              "public_confirmation_source"))}
+        if public_nums != {1, 2, 3}:
+            return False, "Existing trilogy has unfinished or unconfirmed episodes"
     starts = prior_series_starts(history)
     if not starts:
         return True, "First series, requires explicit approved baseline and owner gates"
