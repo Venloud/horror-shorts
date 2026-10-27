@@ -33,6 +33,10 @@ These are permanent creative acceptance guidelines, not four effects that must a
 - Match movement direction and speed to story tension; use restraint, avoid mechanical repeat zooms, unnecessary shake and aggressive cropping.
 - Respect face, subject and text safe areas; never fake 4K image detail or imply that upscaling proves historical accuracy.
 
+## Night Files date timeline over imagery (2026-10-27)
+
+For a narrated, validated year, use the existing `date_stamp` graphic **over the same scene's visible story image**, not a giant number on a disconnected blurred background. Show a restrained scale of nearby year ticks, animate the line across them using natural easing, stop at the correct year, and highlight that year alone in red. The nearby ticks are a visual time scale, **not evidence of historical events**. Preserve the existing caption safe zone, avoid overlaying the main subject when possible, and retain clean hard cuts and motivated SFX. Any true-story date must still pass the current spoken-number/fact-ledger checks. This is implemented in the current `main` renderer (`pipeline/noir.py` and `pipeline/explainer.py`) rather than a separate branch/editor.
+
 ## 3. Graphics
 - Treat each shot like a blank canvas; a graphic is a deliberate finishing touch, not obligatory clutter.
 - Use typography, key dates, map cues, evidence or a reveal only when they clarify an actual story beat.
