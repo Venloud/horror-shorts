@@ -1486,6 +1486,13 @@ class Renderer:
         self.accents = caption_accents(story, narration)  # the few payoff words captions may accent
         self.groups = _caption_groups(narration["words"], self.accents)
         self.t_true, self.t_title = opener_length(story)
+        import clue_board
+        self.clue_board_plan = clue_board.plan(narration) if CONFIG.get("explainer_clue_board", True) else None
+        if self.clue_board_plan:
+            story["explainer_clue_board"] = {
+                "count": self.clue_board_plan["count"], "noun": self.clue_board_plan["noun"],
+                "start": self.clue_board_plan["start"], "end": self.clue_board_plan["end"],
+                "cues": [{"at": c["at"], "label": c["label"]} for c in self.clue_board_plan["cues"]]}
         self.used_assets: set = set()
         self.frame_log = {"image": 0, "graphic": 0, "host": 0, "opener": 0, "end_card": 0}
         self.first_image = next((s["shot"]["file"] for s in segs if s["shot"].get("type") == "image"), None)
@@ -1654,6 +1661,9 @@ class Renderer:
         local = t - seg["start"]
         frame = self._shot_frame(seg, local)
         frame = self._transition(seg, frame, local)
+        if self.clue_board_plan and seg["shot"]["type"] not in ("opener", "opener_title"):
+            import clue_board
+            frame = clue_board.apply(frame, self.clue_board_plan, t, self.acc)
         if not (CONFIG.get("remotion_polish", False) or CONFIG.get("explainer_caption_engine") == "remotion"):
             self.captions(frame, t, "scene", high=seg["shot"]["type"] == "host")
         return frame
@@ -2181,6 +2191,7 @@ def visual_qa(story: dict, segs: list[dict], ren: "Renderer", video: Path | None
         "character_assets": sorted(ren.used_assets), "per_scene": per_scene,
         "provenance": list(prov.values()), "failures": fails, "exceptions": exceptions,
         "fresh_images": (story.get("explainer_images") or {}).get("fresh_images"),
+        "clue_board": story.get("explainer_clue_board"),
     }
     return report
 

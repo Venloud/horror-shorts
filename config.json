@@ -78,6 +78,7 @@
   "cutout_hard_max_images": 20,
   "explainer_for_modes": [],
   "explainer_accent": "#F01767",
+  "explainer_clue_board": true,
   "explainer_host_max_share": 0.15,
   "explainer_host_max_seconds": 2.0,
   "explainer_depth_parallax": true,

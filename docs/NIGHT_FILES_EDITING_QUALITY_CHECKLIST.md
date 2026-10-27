@@ -183,6 +183,12 @@ Avoid tiny framed photos floating over mismatched filler backgrounds, cropped to
 
 For each beat, plan: narration cue, chosen visual method and reason, data/asset provenance, optional meaningful overlay/title, sound cue or silence, and phone-safe composition. Review the full MP4 for comprehension, alignment, caption placement, SFX relevance and framing. Passing encoder/unit tests alone does not demonstrate editing acceptance. This rule is a specification for future improvements, **not proof it is currently implemented in the renderer**. See Vandam's canonical Rule 0B.
 
+## Night Files viewer payoff and numbered clue overlays, October 26, 2026
+
+For NEW stories, apply the concrete viewer-value standard in [the Night Files writing guide](NIGHT_FILES_STORYTELLING_STYLE.md) and the [owner-review implementation brief](VIEWER_VALUE_AND_NUMBERED_CLUES_2026-10-26.md). An engaging hook is not enough: the minute needs a sourced fact, a coherent plot revelation or an earned consequence/emotion that the viewer can explain or remember. Use plain spoken English, define necessary jargon in context, and make the actual incident and stakes clear. Preserve honest uncertainty and do not present pseudo-forensic details as verified facts.
+
+When a narration genuinely introduces and numbers a 2-4 item list, the `pipeline/clue_board.py` overlay can keep the counter visible across shots and reveal one compact narration-grounded label at each spoken ordinal. Never invent clue labels, expose later items early, force a list into stories without one, obscure normal captions or replace unrelated working media. Natural easing, no gratuitous transitions or sound effects; SFX must be present and justified. The `explainer_clue_board` config flag can turn this off. Until full nonpublishing MP4 approval, the draft PR is NOT evidence of production acceptance.
+
 ## Night Files only, automatic first-second photographic cover, October 26, 2026
 
 Every **new** Night Files MP4 begins with exactly 1.0 second of a story-specific, realistic, high-contrast black-and-white 9:16 hero image. This is a **Night Files exception**, not a universal Vandam video rule. Prefer an original photorealistic cover created with the existing free Cloudflare Workers AI image capability and a prompt grounded in the actual hook; if its quota/provider fails, convert a scene-specific accepted image to monochrome. Do not replace real historical evidence with an invented photo claimed to be authentic, and never label generated reconstructions as archival documents.
