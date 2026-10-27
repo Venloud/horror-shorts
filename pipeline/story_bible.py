@@ -65,6 +65,9 @@ def build(story: dict) -> dict:
 
     bible = {
         "title": _clean(story.get("title"), 120),
+        "series_id": story.get("series_id"),
+        "series_episode": story.get("series_episode"),
+        "series_continuity": story.get("series_bible"),
         "premise": _clean(story.get("premise"), 300),
         "setting": _clean(story.get("setting"), 220),
         "threat": _clean(story.get("threat"), 220),
