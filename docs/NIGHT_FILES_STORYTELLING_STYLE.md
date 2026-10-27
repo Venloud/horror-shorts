@@ -11,6 +11,30 @@ This guide is shared across the primary writer, alternate writers, script editor
 - Each beat advances the story: new evidence, complication, choice, change, consequence, or revelation. Avoid a chronology of loosely related facts.
 - Establish real stakes, maintain clear cause-and-effect, and end with a meaningful payoff or an honest unresolved question, not a generic call for comments.
 
+## The viewer-value contract (Night Files, October 26, 2026)
+Before writing each new script, answer privately: **what does somebody get from this minute of attention?**
+Choose at least one earned outcome: (1) a real, sourced and repeatable fact; (2) a clear story reversal or insight;
+or (3) a specific emotion and consequence worth remembering. No compulsory life lesson, sermon, moral, CTA or fake
+scientific lesson. An unexplained object at the end is not automatically a payoff. The last two scenes should make
+clear **what changed, what the clues mean, and why the hook mattered**. The final line can remain unsettling or
+honestly unresolved, but the viewer should still be able to retell what happened and why it mattered.
+
+### Make it instantly understandable
+- Establish WHAT happened, WHO or WHAT it affects and WHERE the story occurs as soon as those details help
+  comprehension. Never bury the actual storm/disappearance/event beneath an invented agency, a ledger, three
+  dates, a desk lamp or scene-setting.
+- Explain necessary specialized words in their first spoken use *inside the story*, in ordinary language
+  (e.g. say "old sea stories" instead of an unexplained "maritime legends"). If it isn't needed to understand the
+  mystery, delete it. Do not turn the explanation into a lecture.
+- When the narration promises N clues/reasons, make each item distinct, understandable, and causally connected to
+  the same question. Use ordinal cues ("first", "second", "third") if a numbered graphic is warranted.
+- Do not invent scientific proof or pretend a technical claim disproves a hoax. An intact seal, faded ink or missing
+  weather reading is a **clue inside fiction**, not a proven forensic conclusion. In real stories, every evidentiary
+  conclusion requires a source. In fiction, the narrative's own rules must still make cause and effect believable.
+- Fictional cases may feel like case files, but never masquerade as independently documented historical events.
+- Judge edits by what a normal viewer will **understand, remember or feel**, not by the number of facts, unexplained
+  jargon, eerie props, visuals or transitions.
+
 ## Adaptation by genre
 - Unsolved mystery: the disappearance/event first, then necessary context, evidence, search, competing sourced interpretations, and what remains unknown.
 - Historical event: defining moment first, then how/why it unfolded and why it mattered.
