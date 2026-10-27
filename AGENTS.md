@@ -1,4 +1,8 @@
 
+## Night Files retention R1–R9 (owner, October 27, 2026)
+
+For every Night Files script, require an intelligible **central question**, a real change in viewer understanding, and an **honest payoff**. The question can be supported by **one optional understated recurring evidence motif**, not an invented status counter, charge, scorecard or unsupported conclusion. Reference `docs/NIGHT_FILES_STORYTELLING_STYLE.md` and the existing editor checklist before writing or cutting. Respect source verification for nonfiction, cinematic primary imagery, hard cuts, captions, approved cover and continuity. The optional three-episode fiction feature is disabled by default, requires full owner approvals, and must fail closed until **both 7 days and 14 actual verified public posts** pass. Existing publishing jobs and unrelated draft PRs are out of scope.
+
 ## Night Files animation timing, 2026-10-25
 
 Always consult [the editing quality checklist](docs/NIGHT_FILES_EDITING_QUALITY_CHECKLIST.md#nonlinear-easing-entryexit-and-subtle-interface-overshoot-owner-directive-2026-10-25) before altering captions, motion, graphics, UI, transitions or the editor. Ease-out on justified entry, ease-in on justified exit and restrained interface overshoot/settle, not linear-looking default keyframes. Hard cut remains the default between shots. **Do not modify production publishing or claim video acceptance just because the guideline is saved.**
