@@ -434,6 +434,22 @@ class NarratedYearTimelineOnPhoto(unittest.TestCase):
         self.assertEqual(dates[0][1]["fields"]["day"], 31)
         self.assertEqual(dates[0][1]["fields"]["month"], "March")
 
+    def test_cached_old_storyboards_do_not_restore_repeated_date_cards(self):
+        story = {"scenes": [
+                     {"narration": "In 1922, the letters appeared."},
+                     {"narration": "In 1924, they were lost."},
+                     {"narration": "By 1930, nobody remembered them."}],
+                 "fact_ledger": ["1922", "1924", "1930"], "true_story": True}
+        old = [[{"type": "graphic", "template": "date_stamp",
+                 "fields": {"year": y, "label": ""}},
+                {"type": "graphic", "template": "evidence", "fields": {"text": "letters"}}]
+               for y in ("1922", "1924", "1930")]
+        kept = explainer.first_date_only(story, old)
+        year_cards = [(i, g["fields"]["year"]) for i, entries in enumerate(kept)
+                      for g in entries if g["template"] == "date_stamp"]
+        self.assertEqual(year_cards, [(0, "1922")])
+        self.assertEqual(sum(g["template"] == "evidence" for entries in kept for g in entries), 3)
+
     def test_spoken_first_year_wins_even_if_later_year_smaller(self):
         story = {"true_story": True, "fact_ledger": ["1930", "1922"],
                  "scenes": [{"narration": "In 1930, archivists discovered a record from 1922."}]}
