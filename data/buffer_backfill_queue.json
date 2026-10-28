@@ -144,9 +144,10 @@
       "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-10-09_2236.mp4"
     },
     "2026-10-10_0547": {
-      "status": "attempt_started",
-      "title": "He Entered An Empty Office | Scary Story #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-10-10_0547.mp4"
+      "status": "queued",
+      "buffer_post_id": "6ae153b9bc763652ae17c221",
+      "due_at": "2026-11-02T00:45:00.000Z",
+      "title": "He Entered An Empty Office | Scary Story #shorts"
     }
   }
 }
