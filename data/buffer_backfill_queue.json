@@ -150,9 +150,10 @@
       "title": "He Entered An Empty Office | Scary Story #shorts"
     },
     "2026-10-28_0620": {
-      "status": "attempt_started",
-      "title": "Flew So High For Three Days... Lu Ban of Asia and Polynesia #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-10-28_0620.mp4"
+      "status": "queued",
+      "buffer_post_id": "6ae1996b52154ef997511ad6",
+      "due_at": "2026-11-02T01:32:00.000Z",
+      "title": "Flew So High For Three Days... Lu Ban of Asia and Polynesia #shorts"
     }
   }
 }
