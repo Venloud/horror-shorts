@@ -3064,5 +3064,81 @@
       "pending": "buffer_queue_pending"
     },
     "draft_sent": "2026-10-27_2045"
+  },
+  {
+    "date": "2026-10-28_0620",
+    "story_id": "4a0c9f7fd577",
+    "series_id": null,
+    "series_episode": null,
+    "title": "Kites Rise on the Wind",
+    "premise": "A man built a kite so large it carried him into the sky to become a deity.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Kites Rise on the Wind: The Origin of Kites",
+    "source": "https://blogs.loc.gov/folklife/2017/03/kites-rise-on-the-wind/",
+    "prompt_file": null,
+    "setting": "ancient Asia and Pacific islands",
+    "threat": "bad luck and ascending too high",
+    "twist": "the inventor flew for three days before crashing down",
+    "score": null,
+    "seconds": 59.3,
+    "voice_speed": 1.0,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [],
+    "visual_mode": "analog",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "https://blogs.loc.gov/folklife/2017/03/kites-rise-on-the-wind/"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 55,
+    "visuals": {
+      "distinct": 21,
+      "longest_s": 3.6,
+      "longest_share": 0.058,
+      "longest_name": "graphic:5.2"
+    },
+    "yt_title": "Flew So High For Three Days... Lu Ban of Asia and Polynesia #shorts",
+    "hashtags": [
+      "luban",
+      "asia",
+      "folklore",
+      "legends"
+    ],
+    "yt_tags": [
+      "lu ban",
+      "ancient chinese kites",
+      "asia folklore",
+      "polynesian legends",
+      "ancient flying machines",
+      "traditional chinese kites",
+      "master craftsman lu ban",
+      "third century bce",
+      "asia folklore and legends",
+      "ancient kites",
+      "folklore legends",
+      "historical legends",
+      "lu ban legend",
+      "asia and polynesia folklore",
+      "scary legend"
+    ],
+    "opening": "He flew so high for three full days on a giant wooden contraption that the village genuinely believed he had become an immortal deity.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-10-28_0620",
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7701604755487082526",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    },
+    "draft_sent": "2026-10-28_0642"
   }
 ]
