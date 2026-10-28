@@ -3140,5 +3140,80 @@
       "pending": "buffer_queue_pending"
     },
     "draft_sent": "2026-10-28_0642"
+  },
+  {
+    "date": "2026-10-28_2033",
+    "story_id": "a4ee9085d86c",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Hatfields and McCoys",
+    "premise": "The legendary 19th-century feud between the Hatfield and McCoy families inspired pop culture, a Supreme Court case, and a game show.",
+    "subgenre": "true crime case file",
+    "mode": "case",
+    "true_story": true,
+    "case": "The Hatfields and McCoys",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Tug Valley, Kentucky and West Virginia",
+    "threat": "A generational family feud leading to murder and legal battles",
+    "twist": "The Supreme Court became involved in the feud in eighteen eighty eight during Mahon versus Justice.",
+    "score": null,
+    "seconds": 64.0,
+    "voice_speed": 1.1,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:33356816"
+    ],
+    "visual_mode": "classic",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 66,
+    "visuals": {
+      "distinct": 23,
+      "longest_s": 3.7,
+      "longest_share": 0.054,
+      "longest_name": "image:scene_00a.png:full"
+    },
+    "yt_title": "When Family Feud Reached Court... The Hatfields and McCoys #shorts",
+    "hashtags": [
+      "hatfield",
+      "kentucky",
+      "history",
+      "truecrime"
+    ],
+    "yt_tags": [
+      "the hatfields and mccoys",
+      "hatfields and mccoys",
+      "kentucky and west virginia",
+      "tug valley feud",
+      "true crime history",
+      "mahon versus justice",
+      "supreme court case",
+      "history true story",
+      "family feud origin",
+      "generational war",
+      "historical feud",
+      "true history",
+      "hatfields and mccoys story",
+      "true crime story"
+    ],
+    "opening": "In eighteen eighty eight, the conflict between the Hatfield and McCoy families reached the U.S.",
+    "music_file": "background_music.mp3",
+    "buffered": "2026-10-28_2033",
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7701825263457454111",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    },
+    "draft_sent": "2026-10-28_2056"
   }
 ]
