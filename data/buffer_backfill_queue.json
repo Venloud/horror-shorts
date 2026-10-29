@@ -187,9 +187,10 @@
       "title": "A Figure Identical To Yourself | Scary Story #shorts"
     },
     "2026-10-29_0630": {
-      "status": "attempt_started",
-      "title": "Selling Seashells And Mary Anning | Folklore #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-10-29_0630.mp4"
+      "status": "queued",
+      "buffer_post_id": "6ae2ece08d517922b23516aa",
+      "due_at": "2026-11-03T02:27:00.000Z",
+      "title": "Selling Seashells And Mary Anning | Folklore #shorts"
     }
   }
 }
