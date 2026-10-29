@@ -3293,5 +3293,81 @@
       "pending": "buffer_queue_pending"
     },
     "draft_sent": "2026-10-29_0651"
+  },
+  {
+    "date": "2026-10-29_2032",
+    "story_id": "cdb5525358a7",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Legend of Kuchisake Onna",
+    "premise": "A tall woman wearing a surgical mask asks strangers a dangerous question on dark streets.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Kuchisake-onna",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Modern Japanese urban streets and alleys at night.",
+    "threat": "A malevolent vengeful spirit wielding scissors who attacks those who answer her question incorrectly.",
+    "twist": "Answering that she looks average or throwing hard candies can save your life.",
+    "score": null,
+    "seconds": 53.3,
+    "voice_speed": 1.0,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [],
+    "visual_mode": "analog",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 97,
+    "visuals": {
+      "distinct": 18,
+      "longest_s": 5.0,
+      "longest_share": 0.088,
+      "longest_name": "image:scene_02b.png:full"
+    },
+    "yt_title": "Is She Pretty?... Kuchisake Onna of Japan #shorts",
+    "hashtags": [
+      "kuchisakeonna",
+      "japan",
+      "folklore",
+      "urbanlegend"
+    ],
+    "yt_tags": [
+      "kuchisake onna",
+      "slit mouthed woman",
+      "japan folklore",
+      "japanese urban legend",
+      "scary legend",
+      "kuchisake onna legend",
+      "japanese myth",
+      "urban legends",
+      "scary stories",
+      "japanese folklore",
+      "the slit mouthed woman",
+      "ghost legend",
+      "folklore",
+      "creepy legend",
+      "folklore creatures"
+    ],
+    "opening": "Your answer decides whether you live or die the moment she asks if she is pretty.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-10-29_2032",
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7702197932711528478",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    },
+    "draft_sent": "2026-10-29_2103"
   }
 ]
