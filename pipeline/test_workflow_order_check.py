@@ -55,8 +55,15 @@ class WorkflowOrderTests(unittest.TestCase):
         scheduled = (root / ".github" / "workflows" / "tiktok_clipper_scheduled.yml").read_text()
         preview = (root / ".github" / "workflows" / "tiktok_clipper_preview.yml").read_text()
         poster = (root / "clipper" / "post.py").read_text()
-        self.assertIn("clipper/post.py --video clipper/output/tiktok.mp4 --mode draft", scheduled)
+        # Since d21f012 the scheduled workflow calls tiktok.send_to_drafts inline (after reserving the clip in the
+        # durable ledger) instead of clipper/post.py: either route is the drafts-only inbox upload, never direct post.
+        self.assertTrue("clipper/post.py --video clipper/output/tiktok.mp4 --mode draft" in scheduled
+                        or "send_to_drafts(" in scheduled, "scheduled clipper must use the drafts-only upload")
+        for source in (scheduled, preview):
+            self.assertNotIn("post_direct", source)
+            self.assertNotIn("--mode direct", source)
         self.assertNotIn("clipper/post.py", preview)
+        self.assertNotIn("send_to_drafts(", preview)
         self.assertIn('choices=["draft"]', poster)
 
     def test_repository_workflows_are_ordered(self):
