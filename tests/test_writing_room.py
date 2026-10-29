@@ -315,5 +315,36 @@ class Compatibility(unittest.TestCase):
         self.assertEqual(cfg["writer_judge_models"][0], "groq:openai/gpt-oss-120b")
 
 
+class Continuity(unittest.TestCase):
+    def test_contradictions_are_found_and_quoted(self):
+        for text in ("The creature slammed Mara against the wall and her spine snapped. Mara ran for the door.",
+                     "The thing tore her throat open. She fled into the woods.",
+                     "It broke Ana's legs. Ana climbed the ladder to the loft.",
+                     "Tom passed out on the floor. Tom screamed for help."):
+            found = story.continuity_findings(text)
+            self.assertEqual(len(found), 1, text)
+            self.assertEqual(found[0]["severity"], "revise")  # sent to the one targeted revision, never blocks
+            self.assertIn("then '", found[0]["detail"])
+
+    def test_no_false_alarm_when_the_story_explains_it(self):
+        for text in ("He was knocked out cold. Hours later he woke and ran to the road.",
+                     "They tied her to the chair. She broke free and ran.",
+                     "She drowned in the lake. Her ghost walks the shore every winter.",
+                     "The thing killed him. She ran.",
+                     "She cut his throat. She ran from the barn.",
+                     "Her husband died in the winter. She walked to the grave every night.",
+                     "They were declared dead in 1939. One theory says they ran out of fuel and sank.",
+                     "The traveler died that night. In other versions, he walked home at dawn."):
+            self.assertEqual(story.continuity_findings(text), [], text)
+
+    def test_fixtures_have_no_contradiction_and_check_is_in_writing_checks(self):
+        for fixture in (AMELIA, GOOD_AMELIA, LORE, FICTION):
+            self.assertNotIn("contradiction", {c["code"] for c in story.writing_checks(fixture)})
+        bad = _with(["A lantern drifted over the marsh.", "The marsh thing broke Eli's legs.",
+                     "Eli ran home before dawn."], LORE)
+        codes = {c["code"]: c["severity"] for c in story.writing_checks(bad, "lore")}
+        self.assertEqual(codes.get("contradiction"), "revise")
+
+
 if __name__ == "__main__":
     unittest.main()

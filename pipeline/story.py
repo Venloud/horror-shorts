@@ -560,6 +560,135 @@ def title_terms(title: str, case: str = "") -> tuple[list[str], str | None]:
     return list(dict.fromkeys(subject)), event
 
 
+# Continuity: a consequence the story states (death, a broken spine, unconsciousness, ropes, blindness) followed by the
+# SAME character doing what that consequence rules out, with nothing in between that undoes it.
+_REF = r"(?:he|she|they|him|her|his|their|them|[A-Z][a-z]+)"
+INCAPACITY = [  # (state, pattern, what it rules out, what undoes it)
+    ("dead", r"\b(?:killed|kills|dies|died|dead|lifeless|beheaded|decapitated|bled out|bleeds out|drowned|drowns|"
+             r"stopped breathing|stops breathing|heart stopped|crushed to death|torn apart|ripped apart|eaten alive|"
+             r"devoured|throat (?:was |is )?(?:slit|slashed|cut|torn (?:out|open)|ripped (?:out|open))|"
+             r"neck (?:was |is )?(?:snapped|snaps|broken|broke)|"
+             r"(?:tore|tears|ripped|rips|slit|slits|cut|cuts|slashed|slashes) (?:open )?(?:her|his|their|[A-Z][a-z]+'s) "
+             r"throat(?: open| out)?|(?:snapped|snaps|broke|breaks) (?:her|his|their|[A-Z][a-z]+'s) neck)\b",
+     "any", r"\b(?:ghost|spirit|came back|comes back|rose|rises|risen|returned from the dead|undead|revenant|"
+            r"dream\w*|nightmare|vision|survived|survives|somehow|miraculous\w*|versions?|tellings?|"
+            r"(?:legend|story|stories) (?:says?|claims?)|was not dead|wasn't dead|only pretended|faked|theor\w*|believ\w*|"
+            r"some say|may have|might have|perhaps|earlier|before (?:that|this|then|she|he|they)|years before|"
+            r"flashback|had been)\b"),
+    ("paralysed", r"\b(?:paraly[sz]ed|(?:legs?|spine|back|ankles?|knees?) (?:was |were |is |are )?(?:broken|shattered|"
+                  r"snapped|crushed)|(?:broke|breaks|snapped|snaps|shattered|crushed) (?:her|his|their|[A-Z][a-z]+'s) "
+              r"(?:legs?|spine|back|ankles?)|could(?:n't| not) move)\b",
+     "move", r"\b(?:healed|recovered|crawl\w*|drag\w* (?:her|him|them)sel\w+|limp\w*|feeling returned|"
+             r"could move again|was carried|were carried|is carried)\b"),
+    ("unconscious", r"\b(?:knocked (?:out|unconscious)|(?:lost|loses) consciousness|passed out|passes out|"
+                    r"unconscious|blacked out|blacks out|fainted|faints)\b",
+     "any", r"\b(?:woke|wakes|awoke|awakens?|awakened|came to|comes to|regained|opened (?:her|his|their) eyes|"
+            r"hours later|the next (?:morning|day)|later)\b"),
+    ("bound", r"\b(?:chained|shackled|tied (?:up|down|to)|bound (?:hand|to|with)|pinned (?:down|beneath|under|to)|"
+              r"trapped (?:beneath|under)|nailed (?:shut|to))\b",
+     "move", r"\b(?:broke free|breaks free|freed|frees|untied|unties|wriggled|slipped (?:free|out|loose)|pulled free|"
+             r"cut (?:the|her|his|their) (?:ropes?|bonds|chains?)|loosened|let (?:her|him|them) go|released)\b"),
+    ("blinded", r"\b(?:blinded|eyes (?:were |are )?(?:gouged|torn out|burned out|put out)|went blind|goes blind)\b",
+     "see", r"\b(?:sight returned|could see again|healed|recovered)\b"),
+]
+_ACTIONS = {
+    "move": r"\b(?:(?:ran|runs|run)(?! out of| low)|fled|flees|escaped|escapes|bolted|bolts|sprinted|sprints|raced|races|climbed|climbs|"
+            r"walked|walks|jumped|jumps|leapt|leaps|dashed|dashes|got up|gets up|stood up|stands up|drove|drives|"
+            r"stumbled|stumbles|hurried|hurries|chased|chases|made it (?:out|home|back))\b",
+    "see": r"\b(?:saw|sees|see|watched|watches|read|reads|spotted|spots|noticed|notices|looked|looks)\b",
+    "speak": r"\b(?:screamed|screams|shouted|shouts|said|says|whispered|whispers|told|tells|called|calls|spoke|speaks|"
+             r"answered|answers)\b",
+}
+_ACTIONS["any"] = "|".join(_ACTIONS[k] for k in ("move", "see", "speak"))
+_PRONOUN = {"he": "he", "him": "he", "his": "he", "she": "she", "her": "she", "they": "they", "them": "they",
+            "their": "they"}
+_NOT_NAMES = {"The", "A", "An", "This", "That", "Then", "When", "But", "And", "In", "On", "At", "It", "Its", "No",
+              "One", "Every", "Some", "Nobody", "Something", "Someone", "There", "Her", "His", "She", "He", "They",
+              "Their", "Him", "Them", "What", "Who", "Why", "How", "If", "As", "After", "Before", "By", "For", "Only"}
+
+
+def _ref(token: str) -> str | None:
+    if token.lower() in _PRONOUN and token not in ("Her", "His", "Their") or token in ("Her", "His", "Their", "He",
+                                                                                       "She", "They", "Him", "Them"):
+        return _PRONOUN.get(token.lower())
+    return token if token[:1].isupper() and token not in _NOT_NAMES else None
+
+
+def _victim(sentence: str, m: re.Match) -> str | None:
+    """Who the consequence happened to: the word right after an active verb ("killed her"), the owner of the body
+    part ("her neck snapped"), else the nearest person before it ("Mara was knocked out")."""
+    inside = re.search(r"\b(her|his|their|[A-Z][a-z]+(?='s))\b", m.group(0))
+    if inside and inside.start() > 0:
+        return _ref(inside.group(1))
+    after = re.match(r"\s+(" + _REF + r")\b", sentence[m.end():])
+    if after and m.group(0).split()[0].lower() in ("killed", "kills", "beheaded", "decapitated", "drowned", "drowns",
+                                                   "blinded", "paralysed", "paralyzed", "chained", "shackled"):
+        return _ref(after.group(1))
+    before = re.findall(r"\b(" + _REF + r")\b", sentence[:m.start()])
+    owner = re.search(r"\b(her|his|their|[A-Z][a-z]+'s)\s+$", sentence[:m.start()])
+    if owner:
+        return _ref(owner.group(1).removesuffix("'s"))
+    third = re.search(r"\b(?:her|his|their|[A-Z][a-z]+'s)\s+(?:\w+\s+){0,2}?([a-z]+)\s+(?:was |is |were |are )?$",
+                      sentence[:m.start()], re.IGNORECASE)
+    if third:  # "her husband died": the consequence is someone else's
+        return None
+    for tok in reversed(before):
+        r = _ref(tok)
+        if r:
+            return r
+    return None
+
+
+def _actor(sentence: str, verb_at: int) -> str | None:
+    """The subject of an action: the last person named before the verb, within the clause."""
+    clause = re.split(r"[,;:]|\b(?:and|but|while|as|when)\b", sentence[:verb_at])[-1]
+    for tok in reversed(re.findall(r"\b(" + _REF + r")\b", clause)):
+        if tok.lower() in ("him", "her", "them", "his", "their"):  # objects / possessives are not the subject
+            continue
+        r = _ref(tok)
+        if r:
+            return r
+    return None
+
+
+def continuity_findings(text: str) -> list[dict]:
+    """Contradictions inside one story, quoted: e.g. "her spine snapped" ... later "she ran for the door" with no
+    recovery in between. Deterministic and conservative: same character reference only (a name or the same pronoun),
+    a stated consequence only (never a guess about an injury's severity)."""
+    sents = [x.strip() for x in re.split(r"(?<=[.!?])\s+", text) if x.strip()]
+    out, seen = [], set()
+    for i, s in enumerate(sents):
+        for state, rx, rules_out, undo in INCAPACITY:
+            for m in re.finditer(rx, s, re.IGNORECASE):
+                who = _victim(s, m)
+                if not who:
+                    continue
+                names = [t for t in re.findall(r"\b[A-Z][a-z]+\b", " ".join(sents[max(0, i - 1):i]) + " " +
+                                                s[:m.start()]) if _ref(t) == t]
+                alias = {who} | ({names[-1]} if who in ("he", "she") and names else set())
+                for j in range(i, len(sents)):
+                    later = sents[j] if j > i else s[m.end():]
+                    act = None
+                    for a in re.finditer(_ACTIONS[rules_out], later, re.IGNORECASE):
+                        if re.search(undo, later[:a.start()], re.IGNORECASE):
+                            break
+                        if _actor(later, a.start()) in alias:
+                            act = a
+                            break
+                    if re.search(undo, later, re.IGNORECASE) and not act:
+                        break  # undone (woke, broke free, a ghost...) before any contradiction
+                    if act:
+                        key = (state, who, j)
+                        if key not in seen:
+                            seen.add(key)
+                            out.append({"code": "contradiction", "severity": "revise",
+                                        "detail": f"'{s[max(0, m.start() - 30):m.end() + 12].strip()}' ({who}: {state}), "
+                                                  f"then '{later[max(0, act.start() - 30):act.end() + 20].strip()}' "
+                                                  "with nothing that undoes it"})
+                        break
+    return out
+
+
 def writing_checks(story: dict, kind: str | None = None, source: str | None = None) -> list[dict]:
     """Deterministic, evidence-based checks of a script (no LLM). Each: {code, severity, detail} with severity
     serious (demonstrable: blocks if it survives the revision), revise (one targeted revision) or advisory.
@@ -612,6 +741,7 @@ def writing_checks(story: dict, kind: str | None = None, source: str | None = No
     if common:
         out.append({"code": "repetitive", "severity": "advisory",
                     "detail": f"{starts[common[0]]} sentences open with '{common[0]}'"})
+    out += continuity_findings(text)  # revise-level: one targeted revision, never a block
     if text.count("?") > 3:
         out.append({"code": "forced_questions", "severity": "advisory", "detail": f"{text.count('?')} questions"})
     tail = " ".join(sc.get("narration", "") for sc in (story.get("scenes") or [])[-2:])
