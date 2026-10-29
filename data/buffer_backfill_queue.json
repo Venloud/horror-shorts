@@ -181,9 +181,10 @@
       "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-10-11_2156.mp4"
     },
     "2026-10-12_1517": {
-      "status": "attempt_started",
-      "title": "A Figure Identical To Yourself | Scary Story #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-10-12_1517.mp4"
+      "status": "queued",
+      "buffer_post_id": "6ae2d71402cc66e5339a35e0",
+      "due_at": "2026-11-02T11:04:00.000Z",
+      "title": "A Figure Identical To Yourself | Scary Story #shorts"
     }
   }
 }
