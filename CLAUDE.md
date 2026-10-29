@@ -316,6 +316,8 @@ Keep user-approved editing standards in `docs/NIGHT_FILES_EDITING_QUALITY_CHECKL
      (advisory) -> at most `writer_max_revisions` 1 `targeted_revision` (accepted only if it doesn't measure worse).
      `story.writing_checks` = deterministic evidence: off_title / late_subject / late_event / setup_first
      (biography before the event) / unnatural_voice ("you watch / follow / witness") / repetitive / forced_questions
+     / contradiction (`continuity_findings`, Oct 29: a stated death / broken spine / unconsciousness / ropes / blindness,
+     then the same character runs / speaks / sees with nothing that undoes it; quoted, revise-level, never blocks)
      / empty_ending / fiction_as_fact / unsupported_fact (numbers + years not in the source). BLOCKING only:
      off_title, fiction_as_fact, unsupported_fact (in `final_script_gate` on the voiced narration, after one targeted
      revision + re-voice in main.py; the editor LLM there is advisory, an unavailable editor never blocks; a cached
