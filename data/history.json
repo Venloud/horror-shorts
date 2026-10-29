@@ -3215,5 +3215,83 @@
       "pending": "buffer_queue_pending"
     },
     "draft_sent": "2026-10-28_2056"
+  },
+  {
+    "date": "2026-10-29_0630",
+    "story_id": "9e392e0a8c65",
+    "series_id": null,
+    "series_episode": null,
+    "title": "Mary Anning And The Seashell Lie",
+    "premise": "A beloved internet legend claims a famous tongue twister was written about a pioneering fossil hunter, but the historical evidence tells a different story.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "She Sells Seashells and Mary Anning: Metafolklore with a Twist",
+    "source": "https://blogs.loc.gov/folklife/2017/07/she-sells-seashells-and-mary-anning-metafolklore-with-a-twist/",
+    "prompt_file": null,
+    "setting": "19th-century England and modern internet lore",
+    "threat": "Misinformation and false historical legends",
+    "twist": "There is zero documented evidence connecting the songwriter to the fossil hunter.",
+    "score": null,
+    "seconds": 53.8,
+    "voice_speed": 1.0,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:11140626"
+    ],
+    "visual_mode": "fast",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "https://blogs.loc.gov/folklife/2017/07/she-sells-seashells-and-mary-anning-metafolklore-with-a-twist/"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 48,
+    "visuals": {
+      "distinct": 21,
+      "longest_s": 3.6,
+      "longest_share": 0.063,
+      "longest_name": "image:scene_06a.png:full"
+    },
+    "yt_title": "Selling Seashells And Mary Anning | Folklore #shorts",
+    "hashtags": [
+      "maryanning",
+      "england",
+      "folklore",
+      "legends"
+    ],
+    "yt_tags": [
+      "mary anning",
+      "seashell tongue twister",
+      "terry sullivan",
+      "lyme regis fossils",
+      "history folklore",
+      "metafolklore",
+      "seashell rhyme history",
+      "england folklore",
+      "fossil hunter mary anning",
+      "famous tongue twister origin",
+      "historical trivia facts",
+      "internet legends",
+      "mary anning legend",
+      "scary legend",
+      "folklore"
+    ],
+    "opening": "Millions recite the famous line about selling seashells, assuming it honors pioneer fossil hunter Mary Anning.",
+    "music_file": "unsolved_mystery.mp3",
+    "buffered": "2026-10-29_0630",
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7701978105711462430",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    },
+    "draft_sent": "2026-10-29_0651"
   }
 ]
