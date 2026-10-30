@@ -3448,5 +3448,80 @@
       "pending": "buffer_queue_pending"
     },
     "draft_sent": "2026-10-30_0659"
+  },
+  {
+    "date": "2026-10-30_2006",
+    "story_id": "31cbe6b85143",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Horned Devil Of December",
+    "premise": "On the eve of Saint Nicholas Day, a horned beast punishes naughty children with birch rods and chains.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Krampus",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Alpine village in winter",
+    "threat": "Krampus",
+    "twist": "The creature comes to take disobedient children away in a basket.",
+    "score": null,
+    "seconds": 53.9,
+    "voice_speed": 1.0,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [],
+    "visual_mode": "fast",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 82,
+    "visuals": {
+      "distinct": 20,
+      "longest_s": 6.0,
+      "longest_share": 0.104,
+      "longest_name": "image:scene_04a.png:full"
+    },
+    "yt_title": "The Horned Devil Of December... Krampus #shorts",
+    "hashtags": [
+      "krampus",
+      "folklore",
+      "legends"
+    ],
+    "yt_tags": [
+      "krampus",
+      "the horned devil",
+      "alpine folklore",
+      "alpine legends",
+      "saint nicholas companion",
+      "krampus legend",
+      "scary legend",
+      "winter monster",
+      "folklore story",
+      "december legend",
+      "krampus myth",
+      "scary stories",
+      "folklore",
+      "creepy legend",
+      "folklore creatures"
+    ],
+    "opening": "Heavy chains drag across the frozen cobblestones while a silent, horned figure watches quietly from the deep shadows of the night.",
+    "music_file": "unsolved_mystery.mp3",
+    "buffered": "2026-10-30_2006",
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7702560072504723487",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    },
+    "draft_sent": "2026-10-30_2028"
   }
 ]
