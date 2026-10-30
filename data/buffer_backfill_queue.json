@@ -208,9 +208,10 @@
       "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-10-29_2032.mp4"
     },
     "2026-10-30_0629": {
-      "status": "attempt_started",
-      "title": "The Hubbard Street Noises of Milwaukee | True Crime #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-10-30_0629.mp4"
+      "status": "queued",
+      "buffer_post_id": "6ae440544b8768bfb2e4783a",
+      "due_at": "2026-11-04T01:12:00.000Z",
+      "title": "The Hubbard Street Noises of Milwaukee | True Crime #shorts"
     }
   }
 }
