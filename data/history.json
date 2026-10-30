@@ -3369,5 +3369,84 @@
       "pending": "buffer_queue_pending"
     },
     "draft_sent": "2026-10-29_2103"
+  },
+  {
+    "date": "2026-10-30_0629",
+    "story_id": "eaa544499d48",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Haunted House Noises on Hubbard Street",
+    "premise": "A newspaper reported that mysterious three-tap noises at a house on Hubbard Street in Milwaukee baffled police for over two weeks.",
+    "subgenre": "real unsolved mystery",
+    "mode": "mystery",
+    "true_story": true,
+    "case": "The Milwaukee leader (Milwaukee, Wis.), November 17, 1919 (mysterious noises)",
+    "source": "https://www.loc.gov/resource/sn83045293/1919-11-17/ed-1/?sp=4",
+    "prompt_file": null,
+    "setting": "Milwaukee, Wisconsin, November 1919",
+    "threat": "Unexplained mysterious noises and a supposed ghost",
+    "twist": "The detectives sat in the house for a long time but the supposed ghost was not in evidence.",
+    "score": null,
+    "seconds": 52.8,
+    "voice_speed": 1.0,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:7318813",
+      "pexels:9632422"
+    ],
+    "visual_mode": "classic",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "https://www.loc.gov/resource/sn83045293/1919-11-17/ed-1/?sp=4"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 85,
+    "visuals": {
+      "distinct": 20,
+      "longest_s": 3.6,
+      "longest_share": 0.064,
+      "longest_name": "image:scene_00a.png:full"
+    },
+    "yt_title": "The Hubbard Street Noises of Milwaukee | True Crime #shorts",
+    "hashtags": [
+      "hubbardstreet",
+      "milwaukee",
+      "truecrime",
+      "unsolvedmysteries"
+    ],
+    "yt_tags": [
+      "the hubbard street noises",
+      "milwaukee police mystery",
+      "seventy hubbard street",
+      "true crime story",
+      "1919 milwaukee mystery",
+      "unsolved mystery",
+      "hubbard street milwaukee",
+      "mysterious three taps",
+      "milwaukee history",
+      "police investigation 1919",
+      "strange true crime",
+      "ghost investigation milwaukee",
+      "hubbard street noises",
+      "hubbard street noises story",
+      "milwaukee mystery"
+    ],
+    "opening": "Baffling police for more than two weeks, mysterious noises at seventy Hubbard Street in Milwaukee hit the local evening newspapers.",
+    "music_file": "background_music.mp3",
+    "buffered": "2026-10-30_0629",
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7702351562517088286",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    },
+    "draft_sent": "2026-10-30_0659"
   }
 ]
