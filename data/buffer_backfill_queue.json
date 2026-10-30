@@ -214,9 +214,10 @@
       "title": "The Hubbard Street Noises of Milwaukee | True Crime #shorts"
     },
     "2026-10-30_2006": {
-      "status": "attempt_started",
-      "title": "The Horned Devil Of December... Krampus #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-10-30_2006.mp4"
+      "status": "queued",
+      "buffer_post_id": "6ae4fde3a1145743496a19e0",
+      "due_at": "2026-11-04T02:56:00.000Z",
+      "title": "The Horned Devil Of December... Krampus #shorts"
     }
   }
 }
