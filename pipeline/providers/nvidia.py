@@ -28,7 +28,7 @@ def generate_image(prompt: str, seed: int, steps: int = 4) -> bytes:
         "prompt": prompt[:10000],
         "height": 1024,
         "width": 1024,
-        "cfg_scale": 0,
+        "cfg_scale": 1,  # the API rejects 0 (HTTP 422 "greater than or equal to 1")
         "samples": 1,
         "seed": int(seed) % 2_147_483_647,
         "steps": max(1, min(4, int(steps))),
@@ -38,7 +38,7 @@ def generate_image(prompt: str, seed: int, steps: int = 4) -> bytes:
                                            "Content-Type": "application/json"},
                       json=body, timeout=180)
     if r.status_code != 200:
-        raise RuntimeError(f"NVIDIA FLUX.2 HTTP {r.status_code}: {r.text[:240]}")
+        raise RuntimeError(f"NVIDIA FLUX.2 HTTP {r.status_code}: {r.text[:700]}")  # whole validation list
     data = r.json()
     encoded = data.get("image") or data.get("b64_image") or (data.get("data") or [{}])[0].get("b64_json")
     if not encoded:
