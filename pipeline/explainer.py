@@ -2106,7 +2106,9 @@ def _counter_at(words: list[dict], idx: list[int]) -> list[tuple[int, int, str]]
             vals = nums.values(span)
             if len(vals) == 1:
                 v = int(next(iter(vals)))
-                if 2 <= v <= 1_000_000_000 and not (1000 <= v <= 2100 and ln <= 2 and t in ("years",)):
+                before = toks[u - ln - 1] if u - ln >= 1 else ""
+                glued = before[:1].isdigit() or before in nums.WORD_VAL  # "runway two thirteen minutes": ambiguous
+                if 2 <= v <= 1_000_000_000 and not glued and not (1000 <= v <= 2100 and ln <= 2 and t == "years"):
                     out.append((idx[u - ln], v, t))
                 break
     return out
@@ -2184,7 +2186,9 @@ def plan_effects(story: dict, narration: dict, segs: list[dict], cover: float | 
             cands.append({"kind": "stamp", "start": t - 0.2, "dur": 2.2, "anchor": t, "prio": 2, "big": True,
                           "fields": {"text": label, "land": 0.2}})
             break
-        for k, v, unit in _counter_at(words, idx)[:1]:
+        ledger = _ledger_text(story).replace(",", "")
+        for k, v, unit in [c for c in _counter_at(words, idx)
+                           if not (story.get("true_story") and ledger and not re.search(rf"\b{c[1]}\b", ledger))][:1]:
             t = words[k]["start"]
             cands.append({"kind": "counter", "start": max(0.0, t - 1.0), "dur": 1.0 + 1.6, "anchor": t, "prio": 3,
                           "big": True, "fields": {"value": v, "unit": unit, "land": min(1.0, t)}})

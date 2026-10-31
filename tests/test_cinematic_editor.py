@@ -520,6 +520,18 @@ class MotionEffects(unittest.TestCase):
         self.assertTrue(all(x[2] <= 0.1 for x in clicks))          # quiet under the voice
         self.assertTrue(all(x[4].get("duck") for x in clicks))     # and ducked on a word peak
 
+    def test_counter_only_for_a_clear_number_and_in_the_ledger_for_true_stories(self):
+        words = _words("The crew landed on Runway two thirteen minutes later with ninety passengers aboard.")
+        idx = list(range(len(words)))
+        got = [(v, u) for _, v, u in explainer._counter_at(words, idx)]
+        self.assertEqual(got, [(90, "passengers")])  # "two thirteen minutes" is ambiguous: no counter
+        story = {"title": "x", "true_story": True, "fact_ledger": ["Passengers: 90"],
+                 "scenes": [{"narration": "The engines were quiet when the plane finally stopped on the wet runway."},
+                            {"narration": "It carried ninety passengers and twelve dogs that night."}]}
+        n = self._narr(story)
+        eff = explainer.plan_effects(story, n, self._segs(story, n))
+        self.assertEqual([e["fields"]["value"] for e in eff if e["kind"] == "counter"], [90])
+
     def test_stamps_only_from_the_narration(self):
         story = {"title": "x", "scenes": [{"narration": "The boat came back to the harbour with its engine running."},
                                           {"narration": "The case was never solved and the files were sealed."},
