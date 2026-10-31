@@ -1937,7 +1937,8 @@ def _caption_groups(words: list[dict], accents: set | None = None) -> list[dict]
 # effect sounds fetched from Freesound (CC0) on first use; until then (no FREESOUND_API_KEY) the effect uses the
 # library's own CC0 click, re-pitched, or stays silent
 SFX_FALLBACK = {"reel_tick": ("ui_click", 3), "typing_click": ("ui_click", 6), "reel_land": ("ui_click", -7),
-                "stamp_thud": ("knocking", -3)}  # one knock on wood, a semitone-lowered thud (CC0 library file)
+                "stamp_thud": ("knocking", -3),  # a knock on wood, lowered: a thud (CC0 library file)
+                "gunshot": ("door_slam", -5)}  # a short low slam until Freesound fetches a CC0 gunshot
 
 
 def _load_sfx(name: str, sr: int) -> np.ndarray | None:
@@ -2331,7 +2332,7 @@ def effect_sfx(c: dict) -> list[tuple]:
         if f.get("kind") == "shots":  # each burst a short thud, not a tick
             n = max(1, min(8, int(f.get("value") or 1)))
             ticks = [f["land"] * (1 - (1 - (k + 1) / n) ** (1 / 3)) for k in range(n)] + [f["land"]]
-            out += [(s + tt, "stamp_thud", 0.16, 0.2, duck) for tt in ticks[:-1]]
+            out += [(s + tt, "gunshot", 0.22, 0.6, {}) for tt in ticks[:-1]]
         else:
             out += [(s + tt, "reel_tick", 0.12, 0.1, dict(duck, pitch=k)) for k, tt in enumerate(ticks[:-1])]
         out.append((s + f["land"], "reel_land", 0.24, 0.5, duck))
@@ -2342,7 +2343,7 @@ def effect_sfx(c: dict) -> list[tuple]:
     elif c["kind"] == "sticky_note":
         out.append((s + f["land"], "typing_click", 0.12, 0.1, dict(duck, pitch=-5)))
     elif c["kind"] == "hit_profile":
-        out += [(s + tt, "stamp_thud", 0.22, 0.25, duck) for tt in noir.hit_times(f.get("hits", 1), c["dur"])]
+        out += [(s + tt, "gunshot", 0.3, 0.9, {}) for tt in noir.hit_times(f.get("hits", 1), c["dur"])]
     elif c["kind"] == "polaroid":
         out.append((s + f["land"] - 0.05, "camera_shutter", 0.28, 0.7, duck))
     elif c["kind"] == "typewriter":

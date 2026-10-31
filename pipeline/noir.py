@@ -1359,15 +1359,62 @@ def _o_hit_profile(layer, fields, t, dur, ctx):
             continue
         x, y = x0 + icon.width * u, y0 + icon.height * v
         q = t - at
-        if q < 0.1:  # the flash, masked to the silhouette
+        if q < 0.12:  # the hit: a white bloom kept on the profile + a faint frame flash (a little, not much)
             fl = Image.new("RGBA", icon.size, (255, 255, 255, 0))
-            ImageDraw.Draw(fl).ellipse((x - x0 - 90, y - y0 - 90, x - x0 + 90, y - y0 + 90),
-                                       fill=(255, 255, 255, int(220 * (1 - q / 0.1))))
+            ImageDraw.Draw(fl).ellipse((x - x0 - 110, y - y0 - 110, x - x0 + 110, y - y0 + 110),
+                                       fill=(255, 255, 240, int(235 * (1 - q / 0.12))))
             fl.putalpha(Image.fromarray(np.minimum(np.asarray(fl.getchannel("A")), np.asarray(icon.getchannel("A")))))
             layer.alpha_composite(fl, (x0, y0))
-        r = 13 * (back(q / 0.12) if q < 0.12 else 1.0)
-        d.ellipse((x - r - 5, y - r - 5, x + r + 5, y + r + 5), fill=(120, 10, 18, int(230 * alpha)))
-        d.ellipse((x - r, y - r, x + r, y + r), fill=(214, 28, 40, int(255 * alpha)))
+            if q < 0.06:
+                layer.alpha_composite(Image.new("RGBA", (W, H), (255, 250, 235, int(38 * (1 - q / 0.06)))))
+        grow = back(q / 0.14) if q < 0.14 else 1.0
+        splat(layer, x, y, 15 * grow, seed=k * 31 + hits, alpha=alpha)
+
+
+def splat(layer: Image.Image, x: float, y: float, r: float, seed: int = 0, alpha: float = 1.0) -> None:
+    """A blood splatter that is never a perfect circle: a ragged blob, a few sharp spikes thrown outward, small
+    droplets around it, and a dark outline so it pops off a white body. Deterministic per seed; no gore detail."""
+    if r <= 0.5:
+        return
+    rng = random.Random(seed)
+    s = 3  # supersample
+    size = int(r * 7)
+    im = Image.new("RGBA", (size * s, size * s), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    c = size * s / 2
+    R = r * s
+    blob = []
+    for k in range(18):
+        ang = k * 2 * math.pi / 18 + rng.uniform(-0.12, 0.12)
+        rr = R * rng.uniform(0.72, 1.18)
+        blob.append((c + rr * math.cos(ang), c + rr * math.sin(ang)))
+    spikes = []
+    for _ in range(rng.randint(5, 8)):
+        ang = rng.uniform(0, 2 * math.pi)
+        ln = R * rng.uniform(1.5, 2.6)
+        w = rng.uniform(0.16, 0.3)
+        spikes.append([(c + R * 0.7 * math.cos(ang - w), c + R * 0.7 * math.sin(ang - w)),
+                       (c + ln * math.cos(ang), c + ln * math.sin(ang)),
+                       (c + R * 0.7 * math.cos(ang + w), c + R * 0.7 * math.sin(ang + w))])
+    drops = [(c + R * rng.uniform(1.6, 2.9) * math.cos(a), c + R * rng.uniform(1.6, 2.9) * math.sin(a),
+              R * rng.uniform(0.1, 0.22)) for a in (rng.uniform(0, 2 * math.pi) for _ in range(rng.randint(4, 7)))]
+    dark, red = (70, 4, 10, 255), (196, 18, 30, 255)
+    pad = 2.2 * s  # the outline: the same shapes, a little bigger, darker, underneath
+    d.polygon([(c + (px - c) * (1 + pad / R), c + (py - c) * (1 + pad / R)) for px, py in blob], fill=dark)
+    for sp in spikes:
+        d.polygon([(c + (px - c) * 1.08, c + (py - c) * 1.08) for px, py in sp], fill=dark)
+    for dx, dy, dr in drops:
+        d.ellipse((dx - dr - pad, dy - dr - pad, dx + dr + pad, dy + dr + pad), fill=dark)
+    d.polygon(blob, fill=red)
+    for sp in spikes:
+        d.polygon(sp, fill=red)
+    for dx, dy, dr in drops:
+        d.ellipse((dx - dr, dy - dr, dx + dr, dy + dr), fill=red)
+    d.ellipse((c - R * 0.35, c - R * 0.35, c + R * 0.35, c + R * 0.35), fill=(110, 6, 14, 255))  # the hole
+    im = im.resize((size, size), Image.LANCZOS)
+    if alpha < 1:
+        im.putalpha(im.getchannel("A").point(lambda v: int(v * alpha)))
+    layer.alpha_composite(im, (int(x - size / 2), int(y - size / 2)))
 
 
 def hit_times(hits: int, dur: float) -> list[float]:

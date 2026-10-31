@@ -624,7 +624,7 @@ class Hollywood(unittest.TestCase):
         n = self._narr(scenes)
         eff = [e for e in explainer.plan_effects(story, n, self._segs(n, 2)) if e["kind"] == "hit_profile"]
         self.assertEqual(eff[0]["fields"]["hits"], 2)
-        self.assertEqual(len([x for x in eff[0]["sfx"] if x[1] == "stamp_thud"]), 2)
+        self.assertEqual(len([x for x in eff[0]["sfx"] if x[1] == "gunshot"]), 2)  # one gunshot per hit
 
     def test_memory_learns_after_a_video(self):
         import hollywood
