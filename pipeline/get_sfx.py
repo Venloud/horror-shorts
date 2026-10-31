@@ -81,7 +81,17 @@ def ensure(name: str) -> Path | None:
         return None
     try:
         meta: dict = {}
-        data, credit = freesound(info["fs"], info.get("dur", [0.05, 3]), meta)
+        words = info["fs"].split()
+        data = credit = None
+        for q in dict.fromkeys([info["fs"], " ".join(words[:2]), " ".join(words[-2:]), words[0]]):
+            try:  # the full search first, then simpler ones (a 3-word search often has no CC0 result)
+                data, credit = freesound(q, info.get("dur", [0.05, 3]), meta)
+                break
+            except RuntimeError as e:
+                if "no CC0 results" not in str(e):
+                    raise
+        if data is None:
+            raise RuntimeError(f"no CC0 results for '{info['fs']}' or simpler searches")
         if not is_mp3(data) or "creative commons 0" not in str(meta.get("license", "")).lower() \
                 and "publicdomain/zero" not in str(meta.get("license", "")).lower():
             raise RuntimeError(f"not a CC0 mp3 ({meta.get('license')})")

@@ -76,7 +76,7 @@
 
   "ui_click":            {"bsb": "1742", "desc": "mouse click on the end card FOLLOW (not for stories)"},
   "reel_tick":           {"fs": "mechanical click tick short", "dur": [0.03, 0.6], "desc": "one short mechanical tick (year reel / counter passing a value)"},
-  "reel_land":           {"fs": "mechanical clunk lock", "dur": [0.15, 1.5], "desc": "a solid clunk when the year reel locks on the target"},
+  "reel_land":           {"fs": "metal clunk", "dur": [0.15, 1.5], "desc": "a solid clunk when the year reel locks on the target"},
   "typing_click":        {"fs": "typewriter key single", "dur": [0.03, 0.6], "desc": "one typewriter key strike (typed text reveal)"},
   "stamp_thud":          {"fs": "rubber stamp", "dur": [0.1, 1.5], "desc": "a rubber stamp hitting paper (CLASSIFIED / MISSING stamp)"},
   "gunshot":             {"fs": "gunshot pistol single shot", "dur": [0.2, 2.5], "desc": "one pistol gunshot (shot twice / shots fired)"}
