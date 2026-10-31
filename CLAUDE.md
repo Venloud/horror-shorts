@@ -42,6 +42,17 @@ every mode, driven only by the narration's word timings + fact ledger; no per-st
   (knocking, flashlight, reading a letter...) the host B-roll uses that pose (`sprites.owner_pose_for`), still <= 15%.
 - **SFX:** new effect sounds come from Freesound **CC0 only** via `FREESOUND_API_KEY` (`get_sfx.ensure`, licence JSON
   next to each file in assets/sfx); without the key that sound is the library's CC0 click or silent (logged).
+- **Hollywood** (`pipeline/hollywood.py`, owner's name: the editor's context library / director): runs EVERY
+  sentence (never the whole text at once) against `data/hollywood/library.json` (context -> motion graphic, data
+  not code: ocean crossings, night falling -> phone night mode, battery dying, signal lost, cold, stamps MISSING /
+  VANISHED / DISAPPEARED / UNSOLVED / CLASSIFIED / CASE CLOSED, small detail -> sticky note, "shot twice" -> white
+  profile with red bullet holes; counted nouns -> people silhouettes / bullets / bursts) and the offline geo pack
+  `assets/geo` (Natural Earth, public domain; flags from Noto Color Emoji; `tools/build_geo_pack.py`): every 1-4
+  word capitalised combination is a place lookup; globe spins, zooms, pin + flag, and only as deep as the narrator
+  goes (country / state outlined in red / city pin). A crossing goes from the last named place to the next.
+  `hollywood.learn` after each buffered video updates `data/hollywood/memory.json` (shared state on main): entries
+  fired, places resolved, phrases nothing matched (the queue for new library entries). Graphics draw over the
+  picture on screen (no image quota). Title is simple (kicker + Oswald lines). The old auto "THE COUNT" card is gone.
 - **fixing-it branch:** the owner runs the same buffer_fill.yml from `fixing-it`. `common.sync_shared_state()` makes a
   non-main run read history / counters / ledgers / inbox from origin/main and `push_state.sh` merges back to main
   against that commit (`.state_base`); an unfinished branch checkpoint is also saved to data/failed_stories

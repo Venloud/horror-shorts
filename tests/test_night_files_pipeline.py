@@ -424,7 +424,8 @@ class ShotLists(unittest.TestCase):
                 secs = {k: sum(s["end"] - s["start"] for s in body if s["shot"]["type"] == k)
                         for k in ("image", "graphic", "host")}
                 self.assertGreater(secs["image"] / total, 0.4)
-                self.assertGreaterEqual(secs["graphic"] / total, 0.2)
+                # >= 15% cards: since Oct 31 counts / dates / places are overlays ON the pictures (plan_effects)
+                self.assertGreaterEqual(secs["graphic"] / total, 0.15)
                 self.assertLessEqual(secs["host"] / total, 0.15 + 1e-6)
                 for i in range(len(story["scenes"])):
                     mine = [s for s in body if s["scene"] == i]

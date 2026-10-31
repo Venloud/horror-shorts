@@ -638,17 +638,8 @@ def _auto_graphics(story: dict, i: int, sctx: dict) -> list[dict]:
         if len(stops) >= 2:
             out.append({"type": "graphic", "at": None, "template": "map_route", "auto": True,
                         "fields": {"kicker": "THE ROUTE", "stops": stops[:4]}})
-    small = sorted(v for v in sctx["said"] if 2 <= v < 1000 and float(v).is_integer())
-    if small:
-        words = narr.split()
-        import spoken_numbers as nums
-        for k, w in enumerate(words):
-            if nums.values(w) & {small[0]}:
-                label = " ".join(words[k + 1:k + 4]).strip(".,!?;:")
-                out.append({"type": "graphic", "at": None, "template": "fact", "auto": True,
-                            "fields": {"kicker": "THE COUNT", "value": small[0], "prefix": "", "suffix": "",
-                                       "label": label, "accent": ""}})
-                break
+    # (Oct 31) no auto "THE COUNT" card: it took the first small number of the scene ("Flight two forty-three"
+    # -> 2). Counts are Hollywood counters now: a number + a counted noun, showing what is counted.
     return out
 
 
@@ -1945,7 +1936,8 @@ def _caption_groups(words: list[dict], accents: set | None = None) -> list[dict]
 
 # effect sounds fetched from Freesound (CC0) on first use; until then (no FREESOUND_API_KEY) the effect uses the
 # library's own CC0 click, re-pitched, or stays silent
-SFX_FALLBACK = {"reel_tick": ("ui_click", 3), "typing_click": ("ui_click", 6), "reel_land": ("ui_click", -7)}
+SFX_FALLBACK = {"reel_tick": ("ui_click", 3), "typing_click": ("ui_click", 6), "reel_land": ("ui_click", -7),
+                "stamp_thud": ("knocking", -3)}  # one knock on wood, a semitone-lowered thud (CC0 library file)
 
 
 def _load_sfx(name: str, sr: int) -> np.ndarray | None:
@@ -2042,17 +2034,22 @@ def _total(narration: dict) -> float:
 # inside the safe area above the captions. Effect sounds are quiet and ducked under the voice.
 
 EFFECT_GAP = 3.0  # s between two big effects (start to start, and they never overlap)
-STAMP_CUES = (
-    ("UNSOLVED", re.compile(r"\b(unsolved|never (?:been )?solved|never (?:found|identified|caught)|"
-                            r"remains? (?:a )?mystery|no one knows)\b", re.IGNORECASE)),
-    ("CASE CLOSED", re.compile(r"\b(case (?:was )?closed|convicted|confess\w*|(?<!never )(?<!never been )solved)\b",
-                               re.IGNORECASE)),
-    ("CLASSIFIED", re.compile(r"\b(classified|top secret|sealed (?:files?|records?)|redacted)\b", re.IGNORECASE)),
-    ("MISSING", re.compile(r"\b(vanish\w*|disappear\w*|went missing|missing)\b", re.IGNORECASE)),
-)
-COUNT_UNITS = re.compile(r"^(people|persons|men|women|children|kids|victims|bodies|days|nights|weeks|months|years|hours|"
-                         r"minutes|miles|kilometers|kilometres|feet|meters|metres|dollars|pounds|times|letters|calls|"
-                         r"witnesses|passengers|soldiers|sailors|officers|homes|houses|graves|shots|steps)$")
+COUNT_UNITS_BASE = ("days nights weeks months years hours minutes miles kilometers kilometres feet meters metres "
+                    "dollars pounds times letters calls homes houses graves steps").split()
+
+
+def count_kind(unit: str) -> str:
+    """people / bullets / shots / plain for a counted noun, from the Hollywood library's counter lists."""
+    import hollywood
+    for kind, nouns in hollywood.counter_kinds().items():
+        if unit in nouns:
+            return kind
+    return "plain"
+
+
+def _count_unit(tok: str) -> bool:
+    import hollywood
+    return tok in COUNT_UNITS_BASE or any(tok in v for v in hollywood.counter_kinds().values())
 PHOTO_CUE = re.compile(r"\b(photo\w*|snapshot|polaroid|camera|portrait)\b", re.IGNORECASE)
 REVEAL_CUE = re.compile(r"\b(?:real name|true name|identity|known as|name was|named|called)\s+(?:was\s+)?"
                         r"((?:[A-Z][\w'’-]+\s?){1,3})")
@@ -2096,7 +2093,7 @@ def _counter_at(words: list[dict], idx: list[int]) -> list[tuple[int, int, str]]
     out = []
     toks = [_tok(words[k]["word"]) for k in idx]
     for u, t in enumerate(toks):
-        if not COUNT_UNITS.match(t) or u == 0:
+        if not _count_unit(t) or u == 0:
             continue
         for ln in range(min(6, u), 0, -1):
             span = " ".join(words[k]["word"] for k in idx[u - ln:u]).strip(",.")
@@ -2108,7 +2105,10 @@ def _counter_at(words: list[dict], idx: list[int]) -> list[tuple[int, int, str]]
                 v = int(next(iter(vals)))
                 before = toks[u - ln - 1] if u - ln >= 1 else ""
                 glued = before[:1].isdigit() or before in nums.WORD_VAL  # "runway two thirteen minutes": ambiguous
-                if 2 <= v <= 1_000_000_000 and not glued and not (1000 <= v <= 2100 and ln <= 2 and t == "years"):
+                after = toks[u + 1] if u + 1 < len(toks) else ""
+                duration = t in ("days", "nights", "weeks", "months", "years", "hours", "minutes") and after in ("later", "earlier", "ago", "before", "after", "passed")
+                if 2 <= v <= 1_000_000_000 and not glued and not duration \
+                        and not (1000 <= v <= 2100 and ln <= 2 and t == "years"):
                     out.append((idx[u - ln], v, t))
                 break
     return out
@@ -2167,38 +2167,32 @@ def plan_effects(story: dict, narration: dict, segs: list[dict], cover: float | 
     for sg in segs:
         if sg["shot"].get("type") == "graphic":
             graphics_by_scene.setdefault(sg["scene"], set()).add(sg["shot"].get("template"))
-    stamps_used = set()
+    import hollywood  # the context library: places (globe + flag), stamps, crossings, night, battery, signal...
+    for c in hollywood.direct(story, narration, graphics_by_scene,
+                              re.compile(r"\b(if|might|would|could|imagine|whether|try to)\b", re.IGNORECASE),
+                              lambda t: (key_phrases(t, limit=1, min_score=1.5) or [{"text": ""}])[0]["text"]):
+        if c["kind"] == "sticky_note":
+            c["fields"]["text"] = c["fields"]["text"].title()
+        cands.append(c)
     for i, sc in enumerate(story["scenes"]):
         idx, text, offs = _scene_text(narration, i)
         if not idx:
             continue
-        mine = graphics_by_scene.get(i, set())
-        for label, rx in STAMP_CUES:
-            m = rx.search(text)
-            if not m or label in stamps_used or (label == "MISSING" and "missing" in mine) \
-                    or HYPOTHETICAL.search(_sentence_of(text, m.start()).replace("never solved", "")
-                                           .replace("never found", "").replace("never been", "")):
-                continue
-            if label == "CASE CLOSED" and re.search(r"\bnever\b", _sentence_of(text, m.start()), re.IGNORECASE):
-                continue
-            t = words[_word_at(idx, offs, m.start())]["start"]
-            stamps_used.add(label)
-            cands.append({"kind": "stamp", "start": t - 0.2, "dur": 2.2, "anchor": t, "prio": 2, "big": True,
-                          "fields": {"text": label, "land": 0.2}})
-            break
         ledger = _ledger_text(story).replace(",", "")
         for k, v, unit in [c for c in _counter_at(words, idx)
                            if not (story.get("true_story") and ledger and not re.search(rf"\b{c[1]}\b", ledger))][:1]:
             t = words[k]["start"]
-            cands.append({"kind": "counter", "start": max(0.0, t - 1.0), "dur": 1.0 + 1.6, "anchor": t, "prio": 3,
-                          "big": True, "fields": {"value": v, "unit": unit, "land": min(1.0, t)}})
+            cands.append({"kind": "counter", "start": max(0.0, t - 1.0), "dur": 1.0 + 1.6, "anchor": t,
+                          "prio": 3 if count_kind(unit) != "plain" else 5,
+                          "big": True, "source": f"counter_{count_kind(unit)}",
+                          "fields": {"value": v, "unit": unit, "land": min(1.0, t), "kind": count_kind(unit)}})
         m = PHOTO_CUE.search(text)
         if m and not HYPOTHETICAL.search(_sentence_of(text, m.start())):
             t = words[_word_at(idx, offs, m.start())]["start"]
             cands.append({"kind": "polaroid", "start": t - 0.45, "dur": 2.4, "anchor": t, "prio": 4, "big": True,
                           "fields": {"land": 0.45, "caption": ""}})
         q = _QUOTE.search(text)
-        if q and len(q.group(1).split()) >= 2 and not mine & {"quote", "phone"}:
+        if q and len(q.group(1).split()) >= 2 and not graphics_by_scene.get(i, set()) & {"quote", "phone"}:
             t = words[_word_at(idx, offs, q.start(1))]["start"]
             body = q.group(1).strip()[:60]
             dur = 0.15 + len(body) / noir.TYPE_CPS + 1.2
@@ -2302,9 +2296,12 @@ def plan_effects(story: dict, narration: dict, segs: list[dict], cover: float | 
         c["sfx"] = effect_sfx(c)
         c.pop("prio", None)
         c.pop("skip", None)
-    story["explainer_effects"] = [{"kind": c["kind"], "start": round(c["start"], 2), "anchor": round(c["anchor"], 2),
-                                   "dur": round(c["dur"], 2), "fields": {k: v for k, v in c["fields"].items()
-                                                                         if k != "image"}} for c in chosen]
+    story["explainer_effects"] = [{"kind": c["kind"], "source": c.get("source") or c["kind"],
+                                   "scene": (_seg_at(segs, c["anchor"] + 0.05) or {}).get("scene"),
+                                   "start": round(c["start"], 2), "anchor": round(c["anchor"], 2),
+                                   "dur": round(c["dur"], 2),
+                                   "fields": {k: v for k, v in c["fields"].items()
+                                              if k not in ("image", "region_rings")}} for c in chosen]
     return chosen
 
 
@@ -2331,15 +2328,28 @@ def effect_sfx(c: dict) -> list[tuple]:
                 for k, tt in enumerate(noir.type_times(f.get("label") or "", f["land"] + 0.18))]
     elif c["kind"] == "counter":
         ticks = noir.counter_ticks(f["land"])
-        out += [(s + tt, "reel_tick", 0.12, 0.1, dict(duck, pitch=k)) for k, tt in enumerate(ticks[:-1])]
+        if f.get("kind") == "shots":  # each burst a short thud, not a tick
+            n = max(1, min(8, int(f.get("value") or 1)))
+            ticks = [f["land"] * (1 - (1 - (k + 1) / n) ** (1 / 3)) for k in range(n)] + [f["land"]]
+            out += [(s + tt, "stamp_thud", 0.16, 0.2, duck) for tt in ticks[:-1]]
+        else:
+            out += [(s + tt, "reel_tick", 0.12, 0.1, dict(duck, pitch=k)) for k, tt in enumerate(ticks[:-1])]
         out.append((s + f["land"], "reel_land", 0.24, 0.5, duck))
     elif c["kind"] == "stamp":
-        out.append((s + f["land"], "stamp_thud", 0.38, 0.8, duck))
+        out.append((s + f["land"], "stamp_thud", 0.42, 0.6, {}))  # the slam: on the spoken word, not ducked
+    elif c["kind"] == "globe_pin":
+        out.append((s + f["land"] - 0.05, "stamp_thud", 0.2, 0.4, duck))  # the pin lands
+    elif c["kind"] == "sticky_note":
+        out.append((s + f["land"], "typing_click", 0.12, 0.1, dict(duck, pitch=-5)))
+    elif c["kind"] == "hit_profile":
+        out += [(s + tt, "stamp_thud", 0.22, 0.25, duck) for tt in noir.hit_times(f.get("hits", 1), c["dur"])]
     elif c["kind"] == "polaroid":
         out.append((s + f["land"] - 0.05, "camera_shutter", 0.28, 0.7, duck))
     elif c["kind"] == "typewriter":
         out += [(s + tt, "typing_click", 0.09, 0.08, dict(duck, pitch=(k % 3) - 1))
                 for k, tt in enumerate(noir.type_times(f["text"], f.get("start", 0.15)))]
+    out += [(s + float(x[1]), x[0], float(x[2]), float(x[3]) if len(x) > 3 else None, duck)
+            for x in c.get("sfx_extra") or []]
     return out
 
 

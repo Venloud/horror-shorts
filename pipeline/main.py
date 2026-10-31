@@ -517,6 +517,9 @@ def main() -> int:
             images.save_cache(story, imgs)
         checkpoint.finish(story)
         (ROOT / ".built").write_text(stamp)  # tells build.yml to save the image cache
+        if story.get("render_style") == "explainer":  # Hollywood learns from every finished video (never raises)
+            import hollywood
+            hollywood.learn(story, stamp)
         # Optional AutoClip repurposing runs only when explicitly enabled and never blocks production.
         if CONFIG.get("autoclip", {}).get("enabled"):
             try:

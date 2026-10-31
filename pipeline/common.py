@@ -18,7 +18,7 @@ HISTORY_FILE = ROOT / "data" / "history.json"
 STATE_BRANCH = "main"
 SHARED_STATE = ("data/history.json", "data/counter.json", "data/missed_slot.json", "data/youtube_pending.json",
                 "data/buffer_backfill_queue.json", "data/backfill.json", "data/tiktok_posted.txt",
-                "data/failed_stories", "data/series", "inbox")
+                "data/failed_stories", "data/series", "data/hollywood/memory.json", "inbox")
 
 
 def current_branch() -> str:

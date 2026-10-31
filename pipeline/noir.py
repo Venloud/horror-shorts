@@ -980,11 +980,12 @@ def _t_shadow_reveal(fields, t, dur, ctx):
 # caption UI), TikTok's buttons on the right.
 # Entries ease out (small overshoot on UI-like elements), exits ease in; no linear keyframes.
 
-OVERLAYS = ("title", "year_reel", "year_line", "counter", "stamp", "redaction", "polaroid", "typewriter", "phrase", "film_burn")
+OVERLAYS = ("title", "year_reel", "year_line", "globe_pin", "ocean_crossing", "night_mode", "battery_low",
+            "signal_lost", "temperature_drop", "sticky_note", "hit_profile", "counter", "stamp", "redaction", "polaroid", "typewriter", "phrase", "film_burn")
 REEL_TRAVEL = 1.25  # seconds the year reel spins before it lands on the spoken word
 REEL_ROW = 150      # px between two years on the reel
 TYPE_CPS = 18.0     # typewriter characters per second
-STAMPS = ("MISSING", "UNSOLVED", "CLASSIFIED", "CASE CLOSED")
+STAMPS = ("MISSING", "VANISHED", "DISAPPEARED", "UNSOLVED", "CLASSIFIED", "CASE CLOSED")
 
 
 def ease_in(x: float) -> float:
@@ -1057,47 +1058,34 @@ def _band(layer: Image.Image, y0: int, y1: int, alpha: float) -> None:
 
 
 def _o_title(layer, fields, t, dur, ctx):
-    """Kinetic title over the first story picture: words rise in with a staggered ease-out + small overshoot, the
-    accent rule wipes under them, then the block eases up and out. Same family as the graphics (Oswald)."""
+    """The opening title over the first story picture, kept simple (owner): a small accent kicker (TRUE STORY on
+    true stories) and the title in Oswald, rising in line by line with an ease-out, easing up and out at the end.
+    No band, rule or per-letter tricks."""
     acc = ctx.get("accent") or accent()
     text = str(fields.get("text") or "").upper()
     if not text:
         return
     out = _fade_out(t, dur, 0.4)
-    f, lines = fit(text, "cond", 860, 3, 128, 64)
+    f, lines = fit(text, "cond", 860, 3, 120, 64)
     lh = int(f.size * 1.06)
-    block = len(lines) * lh
-    y = int(560 - block / 2 - 26 * ease_in((t - (dur - 0.4)) / 0.4))
-    _band(layer, y - 150, y + block + 90, ease(t / 0.3) * out)
+    y = int(520 - len(lines) * lh / 2 - 20 * ease_in((t - (dur - 0.4)) / 0.4))
     d = ImageDraw.Draw(layer)
     kick = str(fields.get("kicker") or "").upper()
     if kick:
-        k = ease(t / 0.3) * out
-        kw = d.textlength(kick, font=font("mono", 30))
-        d.rectangle((W / 2 - kw / 2 - 22, y - 92, W / 2 + kw / 2 + 22, y - 44), fill=acc + (int(235 * k),))
-        d.text((W / 2, y - 68), kick, font=font("mono", 30), fill=(255, 255, 255, int(255 * k)), anchor="mm")
-    k = 0
-    for line in lines:
-        words = line.split()
-        widths = [d.textlength(w, font=f) for w in words]
-        sp = d.textlength(" ", font=f)
-        x = (W - (sum(widths) + sp * (len(words) - 1))) / 2
-        for w, ww in zip(words, widths):
-            p = (t - 0.08 * k) / 0.42
-            a = ease(p) * out
-            if a > 0.01:
-                lift = int(46 * (1 - back(p)))
-                word = Image.new("RGBA", (int(ww) + 20, lh + 30), (0, 0, 0, 0))
-                ImageDraw.Draw(word).text((10, 0), w, font=f, fill=BONE + (int(255 * a),))
-                sc = 1.12 - 0.12 * back(p)
-                if abs(sc - 1) > 0.004:
-                    word = word.resize((max(1, int(word.width * sc)), max(1, int(word.height * sc))), Image.BILINEAR)
-                paste(layer, word, int(x + ww / 2 - word.width / 2), int(y + lift - (word.height - lh - 30) / 2))
-            x += ww + sp
-            k += 1
-        y += lh
-    g = ease((t - 0.25 - 0.08 * k) / 0.45)
-    d.rectangle((W / 2 - 240 * g, y + 18, W / 2 + 240 * g, y + 28), fill=acc + (int(255 * out),))
+        k = ease(t / 0.35) * out
+        d.text((W / 2, y - 50), kick, font=font("mono", 32), fill=acc + (int(255 * k),), anchor="mm")
+    shadow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ds = ImageDraw.Draw(shadow)
+    for n, line in enumerate(lines):
+        p = ease((t - 0.12 * n) / 0.45) * out
+        if p > 0.01:
+            yy = y + n * lh + int(30 * (1 - p))
+            ds.text((W / 2, yy + 6), line, font=f, fill=(0, 0, 0, int(170 * p)), anchor="ma")
+    layer.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(10)))
+    for n, line in enumerate(lines):  # crisp type above its soft shadow
+        p = ease((t - 0.12 * n) / 0.45) * out
+        if p > 0.01:
+            d.text((W / 2, y + n * lh + int(30 * (1 - p))), line, font=f, fill=BONE + (int(255 * p),), anchor="ma")
 
 
 def _o_year_reel(layer, fields, t, dur, ctx):
@@ -1240,27 +1228,151 @@ def _o_year_line(layer, fields, t, dur, ctx):
         d.text((W / 2 - d.textlength(label, font=f) / 2, cy + 170), txt, font=f, fill=BONE + (int(240 * alpha),))
 
 
+@lru_cache(maxsize=16)
+def profile_icon(h: int, color: tuple = (240, 238, 232)) -> Image.Image:
+    """A plain side-view head-and-shoulders silhouette (drawn, not an asset): head, nose, neck, shoulders."""
+    s = 4  # supersample
+    w, hh = int(h * 0.82) * s, h * s
+    im = Image.new("RGBA", (w, hh), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    c = color + (255,)
+    r = hh * 0.22
+    cx, cy = w * 0.5, hh * 0.3
+    d.ellipse((cx - r, cy - r, cx + r, cy + r * 1.08), fill=c)                       # head
+    d.polygon([(cx + r * 0.85, cy - r * 0.05), (cx + r * 1.22, cy + r * 0.32), (cx + r * 0.8, cy + r * 0.42)],
+              fill=c)                                                                 # nose
+    d.rectangle((cx - r * 0.42, cy + r * 0.7, cx + r * 0.38, cy + r * 1.45), fill=c)  # neck
+    d.pieslice((cx - r * 2.0, cy + r * 1.2, cx + r * 1.9, cy + r * 4.4), 180, 360, fill=c)  # shoulders
+    d.rectangle((cx - r * 2.0, cy + r * 2.78, cx + r * 1.9, hh), fill=c)
+    return im.resize((w // s, hh // s), Image.LANCZOS)
+
+
+def _bullet_icon(h: int) -> Image.Image:
+    im = Image.new("RGBA", (h // 3 + 4, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    w = h // 3
+    d.rounded_rectangle((2, h * 0.38, w + 2, h - 2), radius=3, fill=(196, 160, 72, 255))   # brass case
+    d.rectangle((2, h - h * 0.1, w + 2, h - 2), fill=(150, 120, 52, 255))
+    d.pieslice((2, 0, w + 2, h * 0.76), 180, 360, fill=(176, 104, 64, 255))             # copper tip
+    d.rectangle((2, h * 0.37, w + 2, h * 0.42), fill=(176, 104, 64, 255))
+    return im
+
+
+def _burst(d, x, y, r, a):
+    pts = []
+    for k in range(16):
+        ang = k * math.pi / 8
+        rr = r if k % 2 == 0 else r * 0.45
+        pts.append((x + rr * math.cos(ang), y + rr * math.sin(ang)))
+    d.polygon(pts, fill=(255, 196, 70, int(255 * a)))
+    d.ellipse((x - r * 0.35, y - r * 0.35, x + r * 0.35, y + r * 0.35), fill=(255, 255, 235, int(255 * a)))
+
+
 def _o_counter(layer, fields, t, dur, ctx):
-    """Number roll-up: counts up to the spoken value with an ease-out and lands on the spoken word."""
+    """A count the narration says, showing WHAT is counted: people = white profile silhouettes filling in as the
+    number rolls up, bullets = bullet icons, shots = small bursts, anything else = the number and its noun. It
+    lands on the spoken number (red, small punch). Many icons: each icon stands for a stated share ("EACH = 10")."""
     try:
         value = int(fields.get("value"))
     except (TypeError, ValueError):
         return
     land = float(fields.get("land", 1.0))
+    kind = fields.get("kind") or "plain"
     out = _fade_out(t, dur, 0.3)
     alpha = ease(t / 0.2) * out
-    cy = 760
-    _band(layer, cy - 220, cy + 230, alpha)
+    g = ease(t / land) if t < land else 1.0
+    cur = int(round(value * g))
     d = ImageDraw.Draw(layer)
-    cur = int(round(value * ease(t / land))) if t < land else value
-    prefix = str(fields.get("prefix") or "")
-    txt = prefix + f"{cur:,}"
+    if kind in ("people", "bullets", "shots"):
+        per = 1 if value <= 60 else int(math.ceil(value / 50.0))
+        n_icons = int(math.ceil(value / per))
+        shown = int(math.ceil(cur / per)) if cur else 0
+        cols = min(10, max(3, int(math.ceil(math.sqrt(n_icons * 1.6)))))
+        rows = int(math.ceil(n_icons / cols))
+        cell = int(min(820 / cols, 480 / max(1, rows)))
+        x0 = 540 - cols * cell / 2
+        y0 = 600 - rows * cell / 2
+        _band(layer, int(y0 - 170), int(y0 + rows * cell + 230), alpha)
+        icon = profile_icon(int(cell * 0.86)) if kind == "people" else _bullet_icon(int(cell * 0.86)) \
+            if kind == "bullets" else None
+        for k in range(n_icons):
+            cx = x0 + (k % cols) * cell + cell / 2
+            cy = y0 + (k // cols) * cell + cell / 2
+            if k >= shown:
+                if kind != "shots":
+                    ghost = icon.copy()
+                    ghost.putalpha(ghost.getchannel("A").point(lambda v: int(v * 0.16 * alpha)))
+                    layer.alpha_composite(ghost, (int(cx - ghost.width / 2), int(cy - ghost.height / 2)))
+                continue
+            since = t - land * (1 - (1 - (k + 1) / n_icons) ** (1 / 3)) if n_icons else 0
+            pop = back(since / 0.18) if since < 0.18 else 1.0
+            if kind == "shots":
+                _burst(d, cx, cy, cell * 0.36 * max(0.2, pop), alpha * (0.55 + 0.45 * math.exp(-max(0, since) * 4)))
+                continue
+            im = icon if pop >= 0.99 else icon.resize((max(1, int(icon.width * pop)), max(1, int(icon.height * pop))))
+            im = im.copy()
+            im.putalpha(im.getchannel("A").point(lambda v: int(v * alpha)))
+            layer.alpha_composite(im, (int(cx - im.width / 2), int(cy - im.height / 2)))
+        ny = int(y0 + rows * cell + 90)
+        if per > 1:
+            d.text((540, int(y0 - 120)), f"EACH = {per}", font=font("mono", 30), fill=PARCHMENT + (int(220 * alpha),),
+                   anchor="mm")
+    else:
+        ny = 760
+        _band(layer, ny - 220, ny + 230, alpha)
     punch = 1 + 0.1 * math.sin(math.pi * min(1, max(0, (t - land) / 0.25))) if t >= land else 1.0
     col = (232, 36, 52) if t >= land else BONE
-    d.text((W / 2, cy), txt, font=font("cond", int(170 * punch)), fill=col + (int(255 * alpha),), anchor="mm")
+    txt = str(fields.get("prefix") or "") + f"{cur:,}"
     unit = str(fields.get("unit") or "").upper()[:24]
-    if unit:
-        d.text((W / 2, cy + 130), unit, font=font("mono", 44), fill=PARCHMENT + (int(235 * alpha),), anchor="mm")
+    if kind == "plain":
+        d.text((W / 2, ny), txt, font=font("cond", int(170 * punch)), fill=col + (int(255 * alpha),), anchor="mm")
+        if unit:
+            d.text((W / 2, ny + 130), unit, font=font("mono", 44), fill=PARCHMENT + (int(235 * alpha),), anchor="mm")
+    else:
+        f1, f2 = font("cond", int(110 * punch)), font("cond_med", 64)
+        w1 = d.textlength(txt, font=f1)
+        w2 = d.textlength(" " + unit, font=f2)
+        x = W / 2 - (w1 + w2) / 2
+        d.text((x, ny), txt, font=f1, fill=col + (int(255 * alpha),), anchor="lm")
+        d.text((x + w1, ny + 8), " " + unit, font=f2, fill=BONE + (int(235 * alpha),), anchor="lm")
+
+
+def _o_hit_profile(layer, fields, t, dur, ctx):
+    """'Shot twice': one white profile silhouette; each hit puts a small red bullet hole on it with a tiny white
+    flash that stays on the profile only. No blood, no wound detail."""
+    hits = max(1, min(8, int(fields.get("hits") or 1)))
+    alpha = ease(t / 0.2) * _fade_out(t, dur, 0.3)
+    icon = profile_icon(560)
+    x0, y0 = int(540 - icon.width / 2), 330
+    _band(layer, y0 - 60, y0 + icon.height + 60, alpha)
+    body = icon.copy()
+    body.putalpha(body.getchannel("A").point(lambda v: int(v * alpha)))
+    layer.alpha_composite(body, (x0, y0))
+    spots = [(0.50, 0.74), (0.36, 0.82), (0.62, 0.86), (0.44, 0.92), (0.30, 0.94), (0.68, 0.76), (0.56, 0.95),
+             (0.40, 0.72)][:hits]  # chest / torso, spread so every hit reads
+    first = 0.25
+    gap = max(0.18, min(0.45, (dur - 1.0) / hits))
+    d = ImageDraw.Draw(layer)
+    for k, (u, v) in enumerate(spots):
+        at = first + k * gap
+        if t < at:
+            continue
+        x, y = x0 + icon.width * u, y0 + icon.height * v
+        q = t - at
+        if q < 0.1:  # the flash, masked to the silhouette
+            fl = Image.new("RGBA", icon.size, (255, 255, 255, 0))
+            ImageDraw.Draw(fl).ellipse((x - x0 - 90, y - y0 - 90, x - x0 + 90, y - y0 + 90),
+                                       fill=(255, 255, 255, int(220 * (1 - q / 0.1))))
+            fl.putalpha(Image.fromarray(np.minimum(np.asarray(fl.getchannel("A")), np.asarray(icon.getchannel("A")))))
+            layer.alpha_composite(fl, (x0, y0))
+        r = 13 * (back(q / 0.12) if q < 0.12 else 1.0)
+        d.ellipse((x - r - 5, y - r - 5, x + r + 5, y + r + 5), fill=(120, 10, 18, int(230 * alpha)))
+        d.ellipse((x - r, y - r, x + r, y + r), fill=(214, 28, 40, int(255 * alpha)))
+
+
+def hit_times(hits: int, dur: float) -> list[float]:
+    gap = max(0.18, min(0.45, (dur - 1.0) / max(1, hits)))
+    return [0.25 + k * gap for k in range(max(1, min(8, hits)))]
 
 
 def counter_ticks(land: float, n: int = 10) -> list[float]:
@@ -1487,3 +1599,344 @@ def _o_film_burn(layer, fields, t, dur, ctx):
     rgb[..., 0], rgb[..., 1], rgb[..., 2] = 255, 150 + 90 * glow, 60 + 120 * glow ** 2
     rgb[..., 3] = glow * 210
     layer.alpha_composite(Image.fromarray(rgb.astype("uint8")).resize((W, H), Image.BICUBIC))
+
+
+# ---------------------------------------------------------------- Hollywood context graphics (owner, Oct 31)
+# Drawn over the picture on screen like every overlay (no extra image quota). Picked by pipeline/hollywood.py from
+# the narration line by line; nothing here knows a story.
+GEO_DIR = ROOT / "assets" / "geo"
+PANEL = (80, 250, 1000, 1080)  # map panel: inside the safe area, above the captions
+OCEAN, LAND, LAND_HI = (14, 24, 36), (58, 62, 66), (92, 84, 80)
+
+
+@lru_cache(maxsize=1)
+def geo_countries() -> list:
+    import json
+    p = GEO_DIR / "countries.json"
+    out = json.loads(p.read_text()) if p.is_file() else []
+    for c in out:
+        c["_np"] = [np.radians(np.array(r, dtype=np.float32)) for r in c["rings"]]
+        lons = [x for r in c["rings"] for x, _ in r]
+        lats = [y for r in c["rings"] for _, y in r]
+        c["_box"] = (min(lons), min(lats), max(lons), max(lats)) if lons else (0, 0, 0, 0)
+    return out
+
+
+@lru_cache(maxsize=8)
+def geo_admin1(iso2: str) -> list:
+    """The states / provinces of one country (radians rings), for faint borders when the map zooms in."""
+    import json
+    p = GEO_DIR / "admin1.json"
+    if not p.is_file():
+        return []
+    return [{"name": a["name"], "_np": [np.radians(np.array(r, dtype=np.float32)) for r in a["rings"]]}
+            for a in json.loads(p.read_text()) if a["iso2"] == iso2]
+
+
+@lru_cache(maxsize=64)
+def _flag(iso2: str):
+    p = GEO_DIR / "flags" / f"{str(iso2).upper()}.png"
+    return Image.open(p).convert("RGBA") if p.is_file() else None
+
+
+def _ortho(ring_rad, lon0, lat0, r, cx, cy):
+    """Orthographic projection of a (n, 2) radians ring; returns (points, visible mask)."""
+    lon, lat = ring_rad[:, 0], ring_rad[:, 1]
+    dl = lon - lon0
+    cosc = math.sin(lat0) * np.sin(lat) + math.cos(lat0) * np.cos(lat) * np.cos(dl)
+    x = cx + r * np.cos(lat) * np.sin(dl)
+    y = cy - r * (math.cos(lat0) * np.sin(lat) - math.sin(lat0) * np.cos(lat) * np.cos(dl))
+    return np.stack([x, y], 1), cosc > 0
+
+
+def _extent_deg(rings) -> float:
+    lons = [x for r in rings for x, _ in r]
+    lats = [y for r in rings for _, y in r]
+    if not lons:
+        return 5.0
+    return max(1.5, max(lons) - min(lons), (max(lats) - min(lats)) * 1.3)
+
+
+def _o_globe_pin(layer, fields, t, dur, ctx):
+    """A place the narration names: the globe spins and eases to it, zooms in, a pin with the country's flag drops
+    on the spoken word (fields land). Deeper only when the narration is deeper: a named state / province is zoomed
+    to and outlined in red; a named city gets the pin at the city. Labels are only the words said."""
+    try:
+        lon, lat = float(fields["lon"]), float(fields["lat"])
+    except (KeyError, TypeError, ValueError):
+        return
+    land = float(fields.get("land", 1.6))
+    alpha = ease(t / 0.25) * _fade_out(t, dur, 0.3)
+    x0, y0, x1, y1 = PANEL
+    pw, ph = x1 - x0, y1 - y0
+    cx, cy = pw / 2, ph / 2
+    spin_end, zoom_end = land * 0.55, land * 0.92
+    s = ease(t / spin_end)
+    lon0 = math.radians(lon + 150 * (1 - s))
+    lat0 = math.radians(lat * s)
+    r_globe = 360.0
+    region = fields.get("region_rings") or []
+    country = next((c for c in geo_countries() if c["iso2"] == fields.get("iso2")), None)
+    ext = _extent_deg(region) if region else (_extent_deg(country["rings"]) if country else 12.0)
+    r_target = max(r_globe, min(60000.0, 0.62 * pw / math.radians(ext)))
+    z = ease((t - spin_end) / max(0.05, zoom_end - spin_end))
+    r = r_globe * (r_target / r_globe) ** z  # zoom feels even: geometric
+    panel = Image.new("RGBA", (pw, ph), (0, 0, 0, 0))
+    d = ImageDraw.Draw(panel)
+    d.rounded_rectangle((0, 0, pw - 1, ph - 1), radius=28, fill=(8, 11, 16, 215))
+    if r < 1.2 * max(pw, ph):
+        d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=OCEAN + (255,), outline=(70, 90, 110, 255), width=3)
+    else:
+        d.rounded_rectangle((0, 0, pw - 1, ph - 1), radius=28, fill=OCEAN + (255,))
+    view = math.degrees(min(math.pi, (max(pw, ph) / r))) + 5
+    for c in geo_countries():
+        bx = c["_box"]
+        if r > 2 * r_globe and not (bx[0] - view < lon < bx[2] + view and bx[1] - view < lat < bx[3] + view):
+            continue
+        hi = c["iso2"] == fields.get("iso2") and z > 0.3 and not region
+        for ring in c["_np"]:
+            pts, vis = _ortho(ring, lon0, lat0, r, cx, cy)
+            if vis.sum() < 3:
+                continue
+            pts = pts[vis]
+            d.polygon([tuple(p) for p in pts], fill=(LAND_HI if hi else LAND) + (255,),
+                      outline=(30, 34, 38, 255))
+    if region and z > 0.2:  # the country's other states / provinces as faint borders, the named one filled
+        for a in geo_admin1(fields.get("iso2") or ""):
+            same = a["name"] == fields.get("region_name")
+            for ring in a["_np"]:
+                pts, vis = _ortho(ring, lon0, lat0, r, cx, cy)
+                if vis.sum() >= 3:
+                    d.polygon([tuple(q) for q in pts[vis]], fill=(LAND_HI + (255,)) if same else None,
+                              outline=(96, 100, 106, int(255 * min(1.0, z * 1.5))))
+    if region and z > 0.5:
+        g = ease((z - 0.5) / 0.5)
+        for ring in region:
+            pts, vis = _ortho(np.radians(np.array(ring, dtype=np.float32)), lon0, lat0, r, cx, cy)
+            if vis.sum() >= 3:
+                d.line([tuple(p) for p in pts[vis]] + [tuple(pts[vis][0])], fill=(232, 36, 52, int(255 * g)), width=6)
+    mask = Image.new("L", (pw, ph), 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, pw - 1, ph - 1), radius=28, fill=255)
+    panel.putalpha(Image.fromarray((np.asarray(mask, np.float32) * np.asarray(panel.getchannel("A"), np.float32)
+                                    / 255 * alpha).astype("uint8")))
+    layer.alpha_composite(panel, (x0, y0))
+    d = ImageDraw.Draw(layer)
+    if t >= land - 0.25:
+        p = (t - (land - 0.25)) / 0.25
+        drop = int(-120 * (1 - back(p))) if p < 1 else 0
+        px, py = x0 + cx, y0 + cy + drop
+        red = (232, 36, 52, int(255 * alpha))
+        d.ellipse((px - 26, py - 92, px + 26, py - 40), fill=red)
+        d.polygon([(px - 22, py - 58), (px + 22, py - 58), (px, py)], fill=red)
+        d.ellipse((px - 10, py - 76, px + 10, py - 56), fill=(255, 255, 255, int(255 * alpha)))
+        flag = _flag(fields.get("iso2") or "")
+        label = str(fields.get("label") or "").upper()[:26]
+        f = font("cond", 58)
+        tw = int(d.textlength(label, font=f)) if label else 0
+        fw = 0
+        card_w = tw + 60 + (90 if flag else 0)
+        bx0 = int(max(SAFE_X0, min(SAFE_X1 - card_w, px - card_w / 2)))
+        by0 = int(py + 24)
+        ca = ease((t - land) / 0.25) * alpha
+        if ca > 0.02:
+            d.rounded_rectangle((bx0, by0, bx0 + card_w, by0 + 84), radius=14, fill=(240, 236, 228, int(240 * ca)))
+            if flag:
+                fl = flag.resize((72, max(1, int(flag.height * 72 / flag.width))), Image.LANCZOS)
+                fl.putalpha(fl.getchannel("A").point(lambda v: int(v * ca)))
+                layer.alpha_composite(fl, (bx0 + 20, by0 + 42 - fl.height // 2))
+                fw = 90
+            d.text((bx0 + 30 + fw, by0 + 42), label, font=f, fill=(20, 20, 22, int(255 * ca)), anchor="lm")
+
+
+OCEAN_ENDS = {  # coast-to-coast endpoints used only when the narration names the water and no two places
+    "atlantic": ((-72.0, 40.5), (-6.0, 50.0)), "pacific": ((-122.4, 37.8), (139.7, 35.7)),
+    "indian": ((39.7, -4.0), (100.5, 13.7)), "english channel": ((1.6, 50.7), (1.85, 51.1)),
+    "mediterranean": ((-5.4, 36.1), (32.3, 31.2)), "arctic": ((-150.0, 71.0), (25.0, 70.0)),
+}
+
+
+def _o_ocean_crossing(layer, fields, t, dur, ctx):
+    """Something crosses a named ocean: a flat map of that water, a dashed arc draws from coast to coast and a small
+    plane / ship icon travels it (ease in-out), the water's name as the label."""
+    a, b = fields.get("from"), fields.get("to")
+    if not (a and b):
+        return
+    (lon_a, lat_a), (lon_b, lat_b) = a, b
+    if lon_b - lon_a > 180:
+        lon_b -= 360
+    elif lon_a - lon_b > 180:
+        lon_b += 360
+    alpha = ease(t / 0.25) * _fade_out(t, dur, 0.3)
+    x0, y0, x1, y1 = PANEL
+    pw, ph = x1 - x0, y1 - y0
+    pad = 18.0
+    lo0, lo1 = min(lon_a, lon_b) - pad, max(lon_a, lon_b) + pad
+    span = lo1 - lo0
+    mid_lat = (lat_a + lat_b) / 2
+    la0, la1 = mid_lat - span * ph / pw / 2, mid_lat + span * ph / pw / 2
+    sx = lambda lo: (lo - lo0) / span * pw  # noqa: E731
+    sy = lambda la: (la1 - la) / (la1 - la0) * ph  # noqa: E731
+    panel = Image.new("RGBA", (pw, ph), OCEAN + (235,))
+    d = ImageDraw.Draw(panel)
+    for c in geo_countries():
+        bx = c["_box"]
+        for shift in (0, -360, 360):
+            if bx[2] + shift < lo0 or bx[0] + shift > lo1 or bx[3] < la0 or bx[1] > la1:
+                continue
+            for ring in c["rings"]:
+                d.polygon([(sx(x + shift), sy(y)) for x, y in ring], fill=LAND + (255,), outline=(30, 34, 38, 255))
+    pa, pb = (sx(lon_a), sy(lat_a)), (sx(lon_b), sy(lat_b))
+    bulge = -0.18 * math.hypot(pb[0] - pa[0], pb[1] - pa[1])
+    def arc(u):
+        mx, my = (pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2 + bulge
+        return ((1 - u) ** 2 * pa[0] + 2 * (1 - u) * u * mx + u * u * pb[0],
+                (1 - u) ** 2 * pa[1] + 2 * (1 - u) * u * my + u * u * pb[1])
+    travel = float(fields.get("travel", max(0.8, dur - 0.9)))
+    g = (lambda x: 3 * x * x - 2 * x ** 3)(max(0.0, min(1.0, (t - 0.3) / travel)))
+    red = (232, 36, 52, 255)
+    steps = 40
+    for k in range(int(steps * g)):
+        if k % 2 == 0:
+            d.line([arc(k / steps), arc((k + 1) / steps)], fill=red, width=7)
+    for p in (pa, pb):
+        d.ellipse((p[0] - 11, p[1] - 11, p[0] + 11, p[1] + 11), fill=BONE + (255,))
+    hx, hy = arc(g)
+    tx, ty = arc(min(1.0, g + 0.01))
+    ang = math.atan2(ty - hy, tx - hx)
+    shape = [(34, 0), (-20, -24), (-10, 0), (-20, 24)] if fields.get("vehicle") != "ship" else \
+        [(30, 0), (14, -14), (-26, -14), (-26, 14), (14, 14)]
+    pts = [(hx + x * math.cos(ang) - y * math.sin(ang), hy + x * math.sin(ang) + y * math.cos(ang)) for x, y in shape]
+    d.polygon(pts, fill=(255, 255, 255, 255))
+    label = str(fields.get("label") or "").upper()[:26]
+    if label:
+        d.text((pw / 2, ph - 70), label, font=font("cond", 60), fill=BONE + (255,), anchor="mm")
+    mask = Image.new("L", (pw, ph), 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, pw - 1, ph - 1), radius=28, fill=int(255 * alpha))
+    panel.putalpha(Image.fromarray(np.minimum(np.asarray(mask), np.asarray(panel.getchannel("A")))))
+    layer.alpha_composite(panel, (x0, y0))
+
+
+def _phone_panel(layer, alpha, title):
+    """A phone-style control panel (rounded, frosted dark) centered in the safe area; returns its box."""
+    bx = (300, 380, 780, 1010)
+    d = ImageDraw.Draw(layer)
+    d.rounded_rectangle(bx, radius=56, fill=(22, 24, 30, int(225 * alpha)), outline=(90, 96, 106, int(200 * alpha)),
+                        width=3)
+    d.text(((bx[0] + bx[2]) / 2, bx[1] + 60), title, font=font("mono", 30), fill=BONE + (int(230 * alpha),),
+           anchor="mm")
+    return bx
+
+
+def _o_night_mode(layer, fields, t, dur, ctx):
+    """It gets dark: a phone brightness slider slides down, the night-mode moon switches on and the whole picture
+    dims with it (eases in, settles)."""
+    alpha = ease(t / 0.25) * _fade_out(t, dur, 0.35)
+    g = ease((t - 0.3) / max(0.4, dur * 0.55))
+    dim = Image.new("RGBA", (W, H), (0, 0, 10, int(125 * g * _fade_out(t, dur, 0.35))))
+    layer.alpha_composite(dim)
+    bx = _phone_panel(layer, alpha, str(fields.get("label") or "NIGHT MODE").upper()[:18])
+    d = ImageDraw.Draw(layer)
+    sx0, sy0, sx1, sy1 = bx[0] + 150, bx[1] + 130, bx[2] - 150, bx[3] - 60
+    d.rounded_rectangle((sx0, sy0, sx1, sy1), radius=40, fill=(60, 64, 72, int(255 * alpha)))
+    level = 0.9 - 0.78 * g
+    top = sy1 - (sy1 - sy0) * level
+    d.rounded_rectangle((sx0, top, sx1, sy1), radius=40, fill=(236, 230, 221, int(255 * alpha)))
+    mx, my = (sx0 + sx1) / 2, sy1 - 70
+    sun = 1 - g
+    if sun > 0.05:
+        d.ellipse((mx - 22, my - 22, mx + 22, my + 22), fill=(250, 196, 60, int(255 * alpha * sun)))
+    if g > 0.05:
+        d.ellipse((mx - 26, my - 26, mx + 26, my + 26), fill=(120, 140, 220, int(255 * alpha * g)))
+        d.ellipse((mx - 10, my - 34, mx + 34, my + 10), fill=(60, 64, 72, int(255 * alpha * g)))
+
+
+def _o_battery_low(layer, fields, t, dur, ctx):
+    """A phone battery drains to empty and blinks red."""
+    alpha = ease(t / 0.25) * _fade_out(t, dur, 0.3)
+    bx = _phone_panel(layer, alpha, str(fields.get("label") or "BATTERY").upper()[:18])
+    d = ImageDraw.Draw(layer)
+    x0, y0, x1, y1 = bx[0] + 90, bx[1] + 240, bx[2] - 110, bx[1] + 420
+    d.rounded_rectangle((x0, y0, x1, y1), radius=22, outline=BONE + (int(255 * alpha),), width=8)
+    d.rounded_rectangle((x1 + 4, (y0 + y1) / 2 - 30, x1 + 26, (y0 + y1) / 2 + 30), radius=6,
+                        fill=BONE + (int(255 * alpha),))
+    lvl = max(0.04, 0.8 - 0.76 * ease((t - 0.2) / max(0.5, dur * 0.6)))
+    red = lvl < 0.2
+    on = not red or int(t * 4) % 2 == 0
+    if on:
+        col = (232, 36, 52) if red else (90, 200, 120)
+        d.rounded_rectangle((x0 + 14, y0 + 14, x0 + 14 + (x1 - x0 - 28) * lvl, y1 - 14), radius=12,
+                            fill=col + (int(255 * alpha),))
+    d.text(((bx[0] + bx[2]) / 2, y1 + 90), f"{int(lvl * 100)}%", font=font("cond", 90),
+           fill=((232, 36, 52) if red else BONE) + (int(255 * alpha),), anchor="mm")
+
+
+def _o_signal_lost(layer, fields, t, dur, ctx):
+    """Signal bars drop one by one to none, then NO SIGNAL."""
+    alpha = ease(t / 0.25) * _fade_out(t, dur, 0.3)
+    bx = _phone_panel(layer, alpha, str(fields.get("label") or "SIGNAL").upper()[:18])
+    d = ImageDraw.Draw(layer)
+    g = ease((t - 0.2) / max(0.5, dur * 0.55))
+    bars = 4 - int(round(4 * g))
+    base = bx[1] + 470
+    for k in range(4):
+        x = bx[0] + 120 + k * 70
+        h = 60 + k * 50
+        on = k < bars
+        d.rounded_rectangle((x, base - h, x + 46, base), radius=8,
+                            fill=(BONE if on else (70, 74, 82)) + (int(255 * alpha),))
+    if bars == 0:
+        d.text(((bx[0] + bx[2]) / 2, base + 110), "NO SIGNAL", font=font("cond", 72),
+               fill=(232, 36, 52, int(255 * alpha)), anchor="mm")
+
+
+def _o_temperature_drop(layer, fields, t, dur, ctx):
+    """A thermometer's level falls and frost creeps in at the frame edges."""
+    alpha = ease(t / 0.25) * _fade_out(t, dur, 0.3)
+    g = ease((t - 0.2) / max(0.5, dur * 0.6))
+    frost = Image.new("RGBA", (W // 8, H // 8), (0, 0, 0, 0))
+    yy, xx = np.mgrid[0:H // 8, 0:W // 8].astype(np.float32)
+    edge = np.minimum(np.minimum(xx, W // 8 - xx), np.minimum(yy, H // 8 - yy)) / 30
+    a = np.clip(1 - edge, 0, 1) ** 3 * 90 * g * alpha
+    frost = Image.fromarray(np.dstack([np.full_like(a, 200), np.full_like(a, 225), np.full_like(a, 255), a])
+                            .astype("uint8")).resize((W, H), Image.BICUBIC)
+    layer.alpha_composite(frost)
+    d = ImageDraw.Draw(layer)
+    cx, top, bot = 540, 380, 900
+    d.rounded_rectangle((cx - 34, top, cx + 34, bot), radius=34, fill=(30, 34, 40, int(230 * alpha)),
+                        outline=BONE + (int(255 * alpha),), width=6)
+    d.ellipse((cx - 64, bot - 30, cx + 64, bot + 98), fill=(30, 34, 40, int(230 * alpha)),
+              outline=BONE + (int(255 * alpha),), width=6)
+    lvl = 0.85 - 0.7 * g
+    col = (int(232 - 160 * g), int(36 + 120 * g), int(52 + 190 * g))
+    d.ellipse((cx - 46, bot - 12, cx + 46, bot + 80), fill=col + (int(255 * alpha),))
+    d.rectangle((cx - 16, bot - (bot - top - 30) * lvl, cx + 16, bot), fill=col + (int(255 * alpha),))
+    label = str(fields.get("label") or "").upper()[:20]
+    if label:
+        d.text((cx, bot + 160), label, font=font("cond", 66), fill=BONE + (int(255 * alpha),), anchor="mm")
+
+
+def _o_sticky_note(layer, fields, t, dur, ctx):
+    """A small detail worth remembering: a yellow sticky note slaps on at a slight tilt with the detail written on
+    it (the narration's own words). Used for small details only; bigger beats get bigger graphics."""
+    text = str(fields.get("text") or "")[:60]
+    if not text:
+        return
+    land = float(fields.get("land", 0.25))
+    p = t / land
+    a = _fade_out(t, dur, 0.3) * (ease(p) if t < land else 1.0)
+    note = Image.new("RGBA", (440, 400), (0, 0, 0, 0))
+    dn = ImageDraw.Draw(note)
+    dn.rectangle((10, 10, 430, 390), fill=(0, 0, 0, 70))
+    dn.rectangle((0, 0, 420, 380), fill=(246, 214, 92, 255))
+    dn.rectangle((0, 0, 420, 46), fill=(232, 196, 70, 255))
+    f, lines = fit(text.upper(), "cond_med", 360, 4, 64, 34)
+    y = 80
+    for ln in lines:
+        dn.text((30, y), ln, font=f, fill=(40, 34, 30, 255))
+        y += int(f.size * 1.12)
+    sc = 1.25 - 0.25 * back(p) if t < land else 1.0
+    note = note.rotate(-6 + 3 * (1 - min(1, p)), resample=Image.BICUBIC, expand=True)
+    if abs(sc - 1) > 0.003:
+        note = note.resize((max(1, int(note.width * sc)), max(1, int(note.height * sc))), Image.BILINEAR)
+    note.putalpha(note.getchannel("A").point(lambda v: int(v * a)))
+    paste(layer, note, int(W - 120 - note.width), 420)

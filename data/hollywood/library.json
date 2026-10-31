@@ -1,0 +1,248 @@
+{
+ "_about": "Hollywood context library (owner, Oct 31): every narration sentence is checked against these entries; a match plays the entry's motion graphic (pipeline/noir.py _o_<graphic>) over the picture on screen, timed to the matched words. Add entries here (data, not code). importance 1 = small detail (sticky note), 2 = standard, 3 = big moment. Places (globe + pin + flag) come from the geo pack, not from this file.",
+ "version": 1,
+ "entries": [
+  {
+   "id": "ocean_crossing",
+   "graphic": "ocean_crossing",
+   "importance": 3,
+   "dur": 3.0,
+   "lead": 0.4,
+   "max_per_video": 1,
+   "when": [
+    "\\b(?:cross\\w*|flew|fly|flying|flight|sail\\w*|swam|rowed|drifted)\\b[^.!?]{0,40}?\\b(?:the\\s+)?(?P<water>atlantic|pacific|indian ocean|english channel|mediterranean|arctic)\\b",
+    "\\b(?:trans|cross)[- ]?(?P<water>atlantic|pacific)\\b"
+   ],
+   "fields": {
+    "water": "{water}"
+   },
+   "sfx": [
+    [
+     "whoosh",
+     0.3,
+     0.12,
+     0.8
+    ]
+   ]
+  },
+  {
+   "id": "night_falls",
+   "graphic": "night_mode",
+   "importance": 2,
+   "dur": 2.6,
+   "lead": 0.2,
+   "max_per_video": 1,
+   "when": [
+    "\\b(?:getting|grew|got|growing|became|went) dark\\b",
+    "\\b(?:night|darkness) fell\\b",
+    "\\bthe sun (?:set|went down)\\b",
+    "\\b(?:lights?|power) went out\\b",
+    "\\bat dusk\\b"
+   ],
+   "fields": {
+    "label": "NIGHT MODE"
+   }
+  },
+  {
+   "id": "battery_dying",
+   "graphic": "battery_low",
+   "importance": 2,
+   "dur": 2.4,
+   "lead": 0.2,
+   "max_per_video": 1,
+   "when": [
+    "\\b(?:phone|battery)\\b[^.!?]{0,25}\\b(?:died|dying|dead|low|ran out)\\b",
+    "\\blow battery\\b"
+   ],
+   "fields": {
+    "label": "BATTERY"
+   }
+  },
+  {
+   "id": "signal_lost",
+   "graphic": "signal_lost",
+   "importance": 2,
+   "dur": 2.4,
+   "lead": 0.2,
+   "max_per_video": 1,
+   "when": [
+    "\\b(?:no|lost (?:the |all )?|without) (?:signal|reception|service)\\b",
+    "\\blost (?:radio )?contact\\b",
+    "\\bradio (?:went|fell) silent\\b",
+    "\\bstopped responding\\b",
+    "\\bthe line went dead\\b"
+   ],
+   "fields": {
+    "label": "SIGNAL"
+   }
+  },
+  {
+   "id": "cold",
+   "graphic": "temperature_drop",
+   "importance": 2,
+   "dur": 2.4,
+   "lead": 0.2,
+   "max_per_video": 1,
+   "when": [
+    "\\b(?P<label>freezing|below zero|ice[- ]cold|frostbite)\\b",
+    "\\btemperatures? (?:dropped|plunged|fell)\\b",
+    "\\bfroze to death\\b"
+   ],
+   "fields": {
+    "label": "{label}"
+   }
+  },
+  {
+   "id": "stamp_missing",
+   "graphic": "stamp",
+   "importance": 2,
+   "dur": 2.2,
+   "lead": 0.2,
+   "max_per_video": 1,
+   "when": [
+    "\\b(?P<word>vanished|disappeared|went missing|missing)\\b"
+   ],
+   "fields": {
+    "text": "{word}"
+   },
+   "not_hypothetical": true
+  },
+  {
+   "id": "stamp_unsolved",
+   "graphic": "stamp",
+   "importance": 2,
+   "dur": 2.2,
+   "lead": 0.2,
+   "max_per_video": 1,
+   "when": [
+    "\\b(?:unsolved|never (?:been )?solved|never (?:found|identified|caught)|remains? (?:a )?mystery|no one knows)\\b"
+   ],
+   "fields": {
+    "text": "UNSOLVED"
+   }
+  },
+  {
+   "id": "stamp_closed",
+   "graphic": "stamp",
+   "importance": 2,
+   "dur": 2.2,
+   "lead": 0.2,
+   "max_per_video": 1,
+   "when": [
+    "\\b(?:case (?:was )?closed|convicted|confess\\w*)\\b",
+    "(?<!never )(?<!never been )\\bsolved\\b"
+   ],
+   "fields": {
+    "text": "CASE CLOSED"
+   },
+   "not_hypothetical": true,
+   "not_negated": true
+  },
+  {
+   "id": "stamp_classified",
+   "graphic": "stamp",
+   "importance": 2,
+   "dur": 2.2,
+   "lead": 0.2,
+   "max_per_video": 1,
+   "when": [
+    "\\b(?:classified|top secret|sealed (?:files?|records?)|redacted)\\b"
+   ],
+   "fields": {
+    "text": "CLASSIFIED"
+   }
+  },
+  {
+   "id": "small_detail",
+   "graphic": "sticky_note",
+   "importance": 1,
+   "dur": 2.4,
+   "lead": 0.25,
+   "max_per_video": 1,
+   "when": [
+    "\\b(?:one|a|the) (?:small|tiny|strange|odd|last|only) (?:detail|clue|thing)\\b",
+    "\\bremember\\b",
+    "\\bwritten on\\b",
+    "\\bscribbled\\b",
+    "\\bkeep in mind\\b"
+   ],
+   "fields": {
+    "text": "{phrase}"
+   }
+  },
+  {
+   "id": "shot_hits",
+   "graphic": "hit_profile",
+   "importance": 3,
+   "dur": 2.6,
+   "lead": 0.2,
+   "max_per_video": 1,
+   "when": [
+    "\\bshot\\b[^.!?]{0,25}?\\b(?P<n>twice|three times|four times|five times|six times|\\w+ times|once)\\b",
+    "\\b(?P<n>two|three|four|five|six|seven|eight|nine|ten|\\d+) (?:bullets?|gunshot wounds?) (?:hit|struck|in)\\b"
+   ],
+   "fields": {
+    "n": "{n}"
+   },
+   "not_hypothetical": true
+  }
+ ],
+ "counters": {
+  "_about": "A number said with one of these nouns plays a counter that SHOWS what is counted: people = white profile silhouettes, bullets = bullet icons, shots = small bursts; any other counted noun = the number + the noun.",
+  "people": [
+   "people",
+   "persons",
+   "passengers",
+   "men",
+   "women",
+   "crew",
+   "members",
+   "victims",
+   "bodies",
+   "soldiers",
+   "sailors",
+   "officers",
+   "witnesses",
+   "survivors",
+   "hikers",
+   "students",
+   "workers",
+   "guests",
+   "residents",
+   "villagers",
+   "miners",
+   "climbers",
+   "prisoners",
+   "agents",
+   "guards",
+   "sisters",
+   "brothers",
+   "children",
+   "kids",
+   "boys",
+   "girls",
+   "friends",
+   "teenagers",
+   "campers",
+   "tourists",
+   "patients",
+   "nurses",
+   "doctors",
+   "pilots"
+  ],
+  "bullets": [
+   "bullets",
+   "rounds",
+   "shells",
+   "cartridges",
+   "bullet"
+  ],
+  "shots": [
+   "shots",
+   "gunshots",
+   "blasts",
+   "explosions",
+   "shot"
+  ]
+ }
+}

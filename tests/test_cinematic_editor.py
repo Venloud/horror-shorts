@@ -542,3 +542,113 @@ class MotionEffects(unittest.TestCase):
         self.assertIn("UNSOLVED", stamps)
         self.assertNotIn("CASE CLOSED", stamps)  # "never solved" is not a solved case
 
+
+
+class Hollywood(unittest.TestCase):
+    """The context library: sentence by sentence, data-driven (data/hollywood/library.json + assets/geo)."""
+
+    def _narr(self, scenes):
+        words, t = [], 0.0
+        for i, sc in enumerate(scenes):
+            for w in sc.split():
+                words.append({"word": w, "start": round(t, 3), "end": round(t + 0.3, 3), "scene": i})
+                t += 0.42
+            t += 0.4
+        return {"words": words, "duration": t}
+
+    def _segs(self, n, k):
+        per = n["duration"] / k
+        return [{"start": i * per, "end": (i + 1) * per, "scene": i, "transition": "cut",
+                 "shot": {"type": "image", "file": f"/x/scene_{i:02d}a.png", "scene": i}} for i in range(k)]
+
+    def test_places_go_only_as_deep_as_the_narrator(self):
+        import hollywood
+        scenes = ["Nobody in the quiet harbour expected the call that came that night.",
+                  "The ship had left Ireland two days before.",
+                  "Weeks later the letters reached Fort Lauderdale, Florida, by mail."]
+        story = {"title": "x", "scenes": [{"narration": s} for s in scenes]}
+        places = hollywood.merge_places(hollywood.find_places(story, self._narr(scenes)))
+        got = [(p["level"], p["iso2"]) for p in places]
+        self.assertEqual(got[0], ("country", "IE"))          # a country: pin + flag, no deeper
+        self.assertEqual(got[1], ("city_in_region", "US"))    # city + its state: outline + pin at the city
+        f = hollywood.place_fields(places[1])
+        self.assertTrue(f["region_rings"])
+        self.assertEqual(f["region_name"], "Florida")
+        self.assertNotIn("region_rings", hollywood.place_fields(places[0]))
+
+    def test_a_character_name_or_common_word_is_not_a_place(self):
+        import hollywood
+        scenes = ["Jordan opened the door and Victoria screamed.", "They ran into the woods."]
+        story = {"title": "x", "characters": [{"name": "Jordan Hale"}], "scenes": [{"narration": s} for s in scenes]}
+        self.assertEqual(hollywood.find_places(story, self._narr(scenes)), [])
+
+    def test_crossing_dark_signal_and_stamp_come_from_the_library(self):
+        scenes = ["Nobody expected the radio to crackle like that over the water that afternoon.",
+                  "Five Navy planes flew east over the Atlantic toward the islands.",
+                  "Twenty minutes later the radio went silent over the open water.",
+                  "By the time it was getting dark, the lead pilot's compass had failed.",
+                  "The five planes vanished without a trace that evening."]
+        story = {"title": "Flight", "scenes": [{"narration": s} for s in scenes]}
+        n = self._narr(scenes)
+        kinds = {e["kind"]: e for e in explainer.plan_effects(story, n, self._segs(n, 5))}
+        self.assertEqual(kinds["ocean_crossing"]["fields"]["label"], "THE ATLANTIC")
+        self.assertIn("signal_lost", kinds)
+        self.assertIn("night_mode", kinds)
+        self.assertEqual(kinds["stamp"]["fields"]["text"], "VANISHED")  # the narration's own word
+
+    def test_counters_show_what_they_count(self):
+        self.assertEqual(explainer.count_kind("passengers"), "people")
+        self.assertEqual(explainer.count_kind("bullets"), "bullets")
+        self.assertEqual(explainer.count_kind("shots"), "shots")
+        self.assertEqual(explainer.count_kind("miles"), "plain")
+        words = _words("Flight two forty-three left Hilo carrying ninety passengers and five crew members.")
+        got = [(v, u) for _, v, u in explainer._counter_at(words, list(range(len(words))))]
+        self.assertIn((90, "passengers"), got)
+        self.assertNotIn(2, [v for v, _ in got])  # "Flight two forty-three" is not a count
+
+    def test_the_old_count_card_is_gone(self):
+        story = {"title": "x", "true_story": True, "fact_ledger": ["Flight 243"],
+                 "scenes": [{"narration": "Flight two forty-three left Hilo carrying ninety passengers."}]}
+        n = self._narr([story["scenes"][0]["narration"]])
+        with mock.patch.object(explainer, "_plan_call", return_value=None):
+            g = explainer.plan_graphics(story, n)
+        self.assertFalse([x for gs in g for x in gs if (x.get("fields") or {}).get("kicker") == "THE COUNT"])
+
+    def test_shot_twice_is_a_profile_with_two_hits(self):
+        import hollywood
+        self.assertEqual(hollywood.hits_of("twice"), 2)
+        self.assertEqual(hollywood.hits_of("three times"), 3)
+        scenes = ["Nobody heard a thing on that street until the very last moment.",
+                  "The guard was shot twice before he reached the door."]
+        story = {"title": "x", "scenes": [{"narration": s} for s in scenes]}
+        n = self._narr(scenes)
+        eff = [e for e in explainer.plan_effects(story, n, self._segs(n, 2)) if e["kind"] == "hit_profile"]
+        self.assertEqual(eff[0]["fields"]["hits"], 2)
+        self.assertEqual(len([x for x in eff[0]["sfx"] if x[1] == "stamp_thud"]), 2)
+
+    def test_memory_learns_after_a_video(self):
+        import hollywood
+        import tempfile
+        mem = Path(tempfile.mkdtemp()) / "memory.json"
+        story = {"story_id": "s1", "scenes": [{"narration": "The lighthouse keeper locked the iron door."}],
+                 "explainer_effects": [{"kind": "globe_pin", "source": "place", "scene": 1,
+                                        "fields": {"label": "Ireland", "iso2": "IE", "level": "country"}}]}
+        with mock.patch.object(hollywood, "MEMORY", mem):
+            hollywood.learn(story, "2026-10-31_0000")
+            hollywood.learn(story, "2026-10-31_0100")
+        m = json.loads(mem.read_text())
+        self.assertEqual(m["videos"], 2)
+        self.assertEqual(m["entries"]["place"]["fired"], 2)
+        self.assertEqual(m["places"]["Ireland"]["times"], 2)
+        self.assertTrue(m["unmatched"])  # the scene no entry matched is queued for new library entries
+
+    def test_crossing_runs_from_the_last_place_to_the_next(self):
+        scenes = ["Nobody on board expected anything unusual from that short evening flight.",
+                  "The plane left Shannon, Ireland, with a full cabin.",
+                  "It flew west over the Atlantic toward Gander, Newfoundland, that night."]
+        story = {"title": "x", "scenes": [{"narration": s} for s in scenes]}
+        n = self._narr(scenes)
+        c = next(e for e in explainer.plan_effects(story, n, self._segs(n, 3)) if e["kind"] == "ocean_crossing")
+        self.assertLess(c["fields"]["from"][0], 0)           # Shannon, about -8.9
+        self.assertGreater(c["fields"]["from"][0], -15)
+        self.assertLess(c["fields"]["to"][0], -50)           # Gander, about -54.6
