@@ -6,6 +6,7 @@ hard production gate rejects invalid/corrupt media or missing provenance before 
 import argparse
 import json
 import os
+import shutil
 import sys
 import traceback
 from datetime import datetime, timezone
@@ -139,6 +140,8 @@ def main() -> int:
     from provider_registry import snapshot as provider_snapshot
     manifest = RunManifest(workdir)
     manifest.provider_snapshot(provider_snapshot())
+    from common import sync_shared_state
+    sync_shared_state()  # a run from another branch (fixing-it) still reads + writes main's history / ledgers
     history = load_history()
     story: dict = {"title": "(no story yet)"}
     stage = "preflight"
@@ -345,11 +348,11 @@ def main() -> int:
         manifest.stage("background_music", "complete",
                        music_source=story.get("music_source"),
                        music_file=story.get("music_file"))
-        # Night Files only: a real one-second grayscale cover is the very first
-        # video image, with the original audio and overall runtime unchanged.
+        # Night Files only: the grayscale story cover is the very first video image for cover_seconds (<= 1 s),
+        # then a hard cut into the story; original audio and overall runtime unchanged.
         # Place it AFTER all render styles and music, BEFORE QA and buffering.
         stage = "opening_cover"
-        from cover_frame import make_cover, insert_cover
+        from cover_frame import COVER_SECONDS, make_cover, insert_cover
         manifest.stage("opening_cover", "started")
         cover = make_cover(story, workdir, img_dir, video)
         video = insert_cover(video, workdir, workdir / cover["cover_image"])
@@ -358,7 +361,15 @@ def main() -> int:
         manifest.artifact(workdir / cover["thumbnail_candidate"], "thumbnail-candidate")
         manifest.artifact(workdir / "cover_meta.json", "cover-metadata")
         manifest.stage("opening_cover", "complete", source=cover["source"],
-                       thumbnail=cover["thumbnail_candidate"], duration_s=1.0)
+                       thumbnail=cover["thumbnail_candidate"], duration_s=COVER_SECONDS)
+        try:  # effect sounds fetched from Freesound (CC0) in this run: next to the video, with their licences
+            import get_sfx
+            for name in get_sfx.DOWNLOADED:
+                (workdir / "sfx_new").mkdir(exist_ok=True)
+                for ext in (".mp3", ".license.json"):
+                    shutil.copy(ROOT / "assets" / "sfx" / f"{name}{ext}", workdir / "sfx_new" / f"{name}{ext}")
+        except Exception as e:  # noqa: BLE001
+            log(f"New SFX not copied for review ({e})")
         manifest.artifact(video, "final-video")
         if story.get("render_style") == "cutout":  # review sheet for the owner (artifact)
             try:
@@ -426,7 +437,8 @@ def main() -> int:
             "visual_credits": visual_credits, "visual_mode": story.get("visual_mode"),
             "render_style": story.get("render_style", "classic"),
             "opening_cover": {
-                "duration_seconds": 1.0, "source": story.get("opening_cover", {}).get("source"),
+                "duration_seconds": COVER_SECONDS,
+                "cover_timestamp_ms": int(COVER_SECONDS * 500),  # the middle of the cover frame (TikTok direct post) "source": story.get("opening_cover", {}).get("source"),
                 "cover_image": "cover_main.png", "thumbnail_candidate": "cover_thumb.jpg",
                 "monochrome": True, "illustration_not_archival_evidence":
                     bool(story.get("true_story")),
@@ -564,4 +576,10 @@ def defer_test(workdir: Path, why: str) -> None:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    code = main()
+    try:
+        import checkpoint
+        checkpoint.branch_handoff()  # a branch run's unfinished story stays reachable from main
+    except Exception as e:  # noqa: BLE001
+        log(f"Checkpoint branch handoff skipped ({e})")
+    sys.exit(code)

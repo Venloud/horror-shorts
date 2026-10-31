@@ -11,6 +11,56 @@ CONFIG = json.loads((ROOT / "config.json").read_text())
 HISTORY_FILE = ROOT / "data" / "history.json"
 
 
+# Shared state lives on main, whichever branch a workflow was started from (owner, Oct 31: the fixing-it branch runs
+# the same workflow): history, counters, missed slot, YouTube / Buffer ledgers, parked stories and the inbox are
+# read from origin/main at the start and pushed back to main by push_state.sh (merged entry by entry against the
+# main commit they were read from: .state_base). The buffer / youtube-pending releases are repo-wide already.
+STATE_BRANCH = "main"
+SHARED_STATE = ("data/history.json", "data/counter.json", "data/missed_slot.json", "data/youtube_pending.json",
+                "data/buffer_backfill_queue.json", "data/backfill.json", "data/tiktok_posted.txt",
+                "data/failed_stories", "data/series", "inbox")
+
+
+def current_branch() -> str:
+    ref = os.environ.get("GITHUB_REF_NAME", "").strip()
+    if ref:
+        return ref
+    p = subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=ROOT, capture_output=True, text=True)
+    return p.stdout.strip()
+
+
+def sync_shared_state(force: bool = False) -> str | None:
+    """In Actions on any branch but main: replace this checkout's shared-state files with origin/main's and record
+    that commit in .state_base (push_state.sh merges against it). Returns the main commit, None when not needed
+    (on main, or outside Actions unless force). Never raises: a failed sync stops the build instead of risking a
+    duplicate story from stale history."""
+    if not force and (not os.environ.get("GITHUB_ACTIONS") or current_branch() in ("", STATE_BRANCH)):
+        return None
+    git = lambda *a: subprocess.run(["git", *a], cwd=ROOT, capture_output=True, text=True)  # noqa: E731
+    for _ in range(3):
+        if git("fetch", "-q", "origin", STATE_BRANCH).returncode == 0:
+            break
+        time.sleep(4)
+    sha = git("rev-parse", f"origin/{STATE_BRANCH}").stdout.strip()
+    if not sha:
+        raise RuntimeError(f"shared state: could not read origin/{STATE_BRANCH} (refusing to build on stale history)")
+    import shutil
+    for rel in SHARED_STATE:
+        target = ROOT / rel
+        if target.is_dir():
+            shutil.rmtree(target)
+        elif target.exists():
+            target.unlink()
+        if git("cat-file", "-e", f"{sha}:{rel}").returncode == 0:
+            r = git("restore", f"--source={sha}", "--worktree", "--", rel)
+            if r.returncode:
+                raise RuntimeError(f"shared state: could not restore {rel} from {STATE_BRANCH}: {r.stderr[:200]}")
+    (ROOT / ".state_base").write_text(sha + "\n")
+    log(f"Shared state: branch {current_branch() or '?'} reads history / counters / ledgers / inbox from "
+        f"{STATE_BRANCH} {sha[:8]} and saves back to {STATE_BRANCH}")
+    return sha
+
+
 def blocked_topic(*texts) -> str:
     """The config "blocked_topics" entry (case-insensitive) found in any of the texts, else "". Temporary hard stop
     for a topic that keeps repeating (Oct 5: Lizzie Borden posted 4 times while history.json was frozen)."""

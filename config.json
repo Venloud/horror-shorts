@@ -386,5 +386,8 @@
   ],
   "priority_subgenre_probability": 0.15,
   "priority_subgenre_recent_window": 3,
-  "remotion_polish": true
+  "remotion_polish": true,
+  "cover_seconds": 0.8,
+  "year_reel_max_per_video": 4,
+  "phrase_overlay_max": 3
 }

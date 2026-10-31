@@ -34,6 +34,7 @@ export const groupSpokenWords = (words=[]) => {
 
 const CaptionTrack=({words=[],shots=[]})=>{
   const frame=useCurrentFrame();
+  // Captions sit at y 1120-1291: above the platforms' own caption / username / button UI at the bottom (owner).
   // During a host reaction the bust fills the lower frame: captions move to the top safe area (never over a face).
   const high=shots.some(x=>x.kind==="host" && frame>=x.startFrame && frame<x.endFrame);
   const {fps}=useVideoConfig();
@@ -46,7 +47,7 @@ const CaptionTrack=({words=[],shots=[]})=>{
   const exit=interpolate(t,[g.end-0.08,g.end+0.14],[1,0],clamp);
   const total=1-Math.pow(1-reveal,2);
   return <div style={{
-    position:"absolute",left:73,right:185,top:high?250:1370,height:171,
+    position:"absolute",left:73,right:185,top:high?250:1120,height:171,
     display:"flex",alignItems:"center",justifyContent:"center",
     opacity:Math.min(1,Math.max(0,exit)),
     transform:`translateY(${(1-total)*26}px) scale(${0.95+0.05*total})`,
@@ -84,8 +85,13 @@ const GrainAndSafeArea=()=>{
   const frame=useCurrentFrame();
   // Deterministic subtle grain avoids random per-frame flicker and faces remain legible.
   const shift=frame%3;
-  return <AbsoluteFill style={{pointerEvents:"none",opacity:0.045,
-      backgroundImage:`repeating-linear-gradient(${90+shift}deg, transparent 0px,rgba(210,226,234,.27) 1px,transparent 3px,transparent 14px)`}}/>;
+  // Always on (owner): subtle grain + a soft vignette, never strong enough to hide a face or a caption.
+  return <>
+    <AbsoluteFill style={{pointerEvents:"none",opacity:0.045,
+      backgroundImage:`repeating-linear-gradient(${90+shift}deg, transparent 0px,rgba(210,226,234,.27) 1px,transparent 3px,transparent 14px)`}}/>
+    <AbsoluteFill style={{pointerEvents:"none",
+      background:"radial-gradient(ellipse 78% 62% at 50% 46%, rgba(0,0,0,0) 62%, rgba(0,0,0,0.38) 100%)"}}/>
+  </>;
 };
 
 // No persistent progress rail, decorative cut sweep or corner label: only subtle grain and captions.

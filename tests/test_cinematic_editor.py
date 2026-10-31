@@ -389,97 +389,144 @@ class WhisperNarrationDiagnostics(unittest.TestCase):
         self.assertTrue(explainer.CONFIG.get("whisper_narration_check", False))
 
 
-class NarratedYearTimelineOnPhoto(unittest.TestCase):
-    """The current Night Files renderer draws a progressing date overlay on a real frame."""
+class MotionEffects(unittest.TestCase):
+    """Owner, Oct 31: cover <= 1 s, title overlay (no title card), the first date scrolls in on a year reel and every
+    later date is a timeline line from the previous one, one big effect per 3 s, typing / reel sounds in sync."""
 
-    def test_timeline_reveals_only_real_spoken_year_and_retains_image(self):
-        from PIL import Image, ImageChops
+    TRUE = {"title": "The Lighthouse Keepers", "true_story": True,
+            "fact_ledger": ["Arrival: 1890", "Vanishing date: March 31, 1900", "Report: 1902", "Crew: three men"],
+            "scenes": [
+                {"narration": "The lamp was still burning when the relief boat finally reached the rock."},
+                {"narration": "The keepers had arrived in eighteen ninety and kept the light for ten years."},
+                {"narration": "On March thirty-first, nineteen hundred, all three men vanished from the island."},
+                {"narration": "The board's report in nineteen oh two blamed a wave, but nobody saw it."},
+                {"narration": "Their oilskins were still hanging by the door, untouched."}]}
 
-        scene = {"scenes": [{"narration": "In March 1922, they investigated the farmhouse."}],
-                 "true_story": True, "fact_ledger": ["Date: 1922"]}
-        card = explainer._date_graphic(scene, 0, explainer._scene_ctx(scene, 0, {"cast": {}, "dates": 0}))
-        self.assertEqual(card["fields"]["year"], "1922")
-        self.assertEqual(card["fields"]["label"].lower(), "march")
-        base = Image.new("RGBA", (1080, 1920), (30, 45, 67, 255))
-        ctx = {"bg": base, "accent": (240, 23, 103)}
-        before = noir.render("date_stamp", card["fields"], 0.0, 2.6, ctx)
-        arrived = noir.render("date_stamp", card["fields"], 1.6, 2.6, ctx)
-        self.assertEqual(arrived.size, (1080, 1920))
-        self.assertIsNotNone(ImageChops.difference(before.convert("RGB"), arrived.convert("RGB")).getbbox())
-        # The original full-frame photograph remains visible outside the minimal line.
-        self.assertEqual(arrived.getpixel((30, 450)), base.getpixel((30, 450)))
-        self.assertEqual(arrived.getpixel((30, 1300)), base.getpixel((30, 1300)))
-        red = arrived.getpixel((865, 920))
-        self.assertGreater(red[0], red[1] + 95)  # terminal marker is red
-        self.assertGreater(red[0], red[2] + 80)
+    def _narr(self, story, step=0.42):
+        words, t = [], 0.0
+        for i, sc in enumerate(story["scenes"]):
+            words += _words(sc["narration"], scene=i, start=t, step=step)
+            t = words[-1]["end"] + 0.4
+        return {"words": words, "duration": t, "scene_times": []}
 
+    def _segs(self, story, narr, kinds=None):
+        segs, t = [], 0.0
+        per = narr["duration"] / len(story["scenes"])
+        for i in range(len(story["scenes"])):
+            kind = (kinds or {}).get(i, "image")
+            shot = ({"type": "image", "file": f"/x/scene_{i:02d}a.png", "crop": "full"} if kind == "image"
+                    else {"type": kind, "template": "evidence", "fields": {}})
+            segs.append({"start": round(t, 3), "end": round(t + per, 3), "shot": dict(shot, scene=i), "scene": i,
+                         "transition": "cut"})
+            t += per
+        return segs
 
-    def test_only_first_grounded_date_has_timeline(self):
-        story = {"true_story": True,
-                 "fact_ledger": ["Event date: March 31st", "Report: 1922", "Other event: 1930"],
-                 "scenes": [
-                     {"narration": "On March 31st, someone approached the farmhouse."},
-                     {"narration": "In 1922 investigators arrived at the property."},
-                     {"narration": "In 1930, nothing was left in the building."},
-                 ]}
-        n = {"words": [], "duration": 20.0}
-        for i, scene in enumerate(story["scenes"]):
-            n["words"] += _words(scene["narration"], scene=i, start=i * 6.0)
-        with mock.patch.object(explainer, "_plan_call", return_value=None):
-            graphics = explainer.plan_graphics(story, n)
-        dates = [(i, g) for i, cards in enumerate(graphics) for g in cards
-                 if g["template"] == "date_stamp"]
-        self.assertEqual(len(dates), 1, dates)
-        self.assertEqual(dates[0][0], 0)
-        self.assertEqual(dates[0][1]["fields"]["day"], 31)
-        self.assertEqual(dates[0][1]["fields"]["month"], "March")
+    def test_title_duration_formula(self):
+        self.assertEqual(noir.title_seconds("Bell"), 3.5)                      # never under 3.5 s
+        self.assertEqual(noir.title_seconds("one two three four five six"), 3.6)  # 1.5 + 0.35 x 6
+        self.assertEqual(noir.title_seconds(" ".join(["w"] * 20)), 6.0)       # never over 6 s
 
-    def test_cached_old_storyboards_do_not_restore_repeated_date_cards(self):
-        story = {"scenes": [
-                     {"narration": "In 1922, the letters appeared."},
-                     {"narration": "In 1924, they were lost."},
-                     {"narration": "By 1930, nobody remembered them."}],
-                 "fact_ledger": ["1922", "1924", "1930"], "true_story": True}
-        old = [[{"type": "graphic", "template": "date_stamp",
-                 "fields": {"year": y, "label": ""}},
-                {"type": "graphic", "template": "evidence", "fields": {"text": "letters"}}]
-               for y in ("1922", "1924", "1930")]
-        kept = explainer.first_date_only(story, old)
-        year_cards = [(i, g["fields"]["year"]) for i, entries in enumerate(kept)
-                      for g in entries if g["template"] == "date_stamp"]
-        self.assertEqual(year_cards, [(0, "1922")])
-        self.assertEqual(sum(g["template"] == "evidence" for entries in kept for g in entries), 3)
+    def test_cover_is_at_most_one_second_and_title_starts_after_it(self):
+        cover = float(explainer.CONFIG.get("cover_seconds"))
+        self.assertLessEqual(cover, 1.0)
+        story = json.loads(json.dumps(self.TRUE))
+        n = self._narr(story)
+        eff = explainer.plan_effects(story, n, self._segs(story, n))
+        title = eff[0]
+        self.assertEqual(title["kind"], "title")
+        self.assertAlmostEqual(title["start"], cover)
+        self.assertEqual(title["dur"], noir.title_seconds(story["title"]))
+        self.assertEqual(title["fields"]["kicker"], "TRUE STORY")
+        self.assertNotIn("true_story", noir.TEMPLATES)  # no title / TRUE STORY card in front of the story
+        self.assertNotIn("title", noir.TEMPLATES)
 
-    def test_spoken_first_year_wins_even_if_later_year_smaller(self):
-        story = {"true_story": True, "fact_ledger": ["1930", "1922"],
-                 "scenes": [{"narration": "In 1930, archivists discovered a record from 1922."}]}
-        g = explainer._date_graphic(story, 0, explainer._scene_ctx(story, 0, {"cast": {}, "dates": 0}))
-        self.assertEqual(g["fields"]["year"], "1930")
+    def test_year_reel_timing_lands_on_the_spoken_word(self):
+        vals = noir.reel_values(1898)
+        self.assertEqual(vals[0], 1890)
+        self.assertEqual(vals[-1], 1898)
+        land = noir.REEL_TRAVEL
+        self.assertEqual(noir.reel_position(0.0, len(vals), land), 0.0)
+        self.assertEqual(noir.reel_position(land, len(vals), land), len(vals) - 1)
+        ticks = noir.reel_ticks(len(vals), land)
+        self.assertEqual(len(ticks), len(vals) - 1)              # one tick per passing year
+        self.assertEqual(ticks, sorted(ticks))
+        self.assertAlmostEqual(ticks[-1], land, places=3)       # the last one is the landing
+        for k, tt in enumerate(ticks, start=1):                 # the reel really is on that year at its tick
+            self.assertAlmostEqual(noir.reel_position(tt, len(vals), land), k, places=2)
+        story = json.loads(json.dumps(self.TRUE))
+        n = self._narr(story)
+        eff = explainer.plan_effects(story, n, self._segs(story, n))
+        reel = next(e for e in eff if e["kind"] == "year_reel")
+        spoken = next(w["start"] for w in n["words"] if w["word"] == "eighteen")
+        self.assertAlmostEqual(reel["start"] + reel["fields"]["land"], spoken, places=3)
+        self.assertEqual(reel["fields"]["values"][-1], 1890)
+        land_sfx = [x for x in reel["sfx"] if x[1] == "reel_land"]
+        self.assertAlmostEqual(land_sfx[0][0], spoken, places=3)
+        pitches = [x[4]["pitch"] for x in reel["sfx"] if x[1] == "reel_tick"]
+        self.assertEqual(pitches, sorted(pitches))  # rising
 
-    def test_first_calendar_date_beats_later_year_in_same_scene(self):
-        sc = {"true_story": True, "fact_ledger": ["March 31st", "1922"],
-              "scenes": [{"narration": "On March 31st, a record appeared. Investigators opened it in 1922."}]}
-        g = explainer._date_graphic(sc, 0, explainer._scene_ctx(sc, 0, {"cast": {}, "dates": 0}))
-        self.assertEqual(g["fields"]["day"], 31)
-        self.assertEqual(g["fields"]["month"], "March")
+    def test_landed_year_is_red_and_heavier_before_it_is_not(self):
+        f = {"values": noir.reel_values(1900), "land": noir.REEL_TRAVEL, "label": "MARCH 31", "kicker": "WHEN"}
+        before = noir.overlay("year_reel", f, 0.3, 3.0, {})
+        after = noir.overlay("year_reel", f, noir.REEL_TRAVEL + 0.5, 3.0, {})
+        def reds(im):
+            px = im.crop((300, 680, 780, 840)).getdata()
+            return sum(1 for r, g, b, a in px if a > 200 and r > 200 and g < 80)
+        self.assertEqual(reds(before), 0)
+        self.assertGreater(reds(after), 500)
 
-    def test_month_day_card_renders_over_story_image(self):
-        from PIL import Image, ImageChops
-        fields = {"month": "March", "day": 31, "label": "March 31st", "kicker": "WHEN"}
-        img = Image.new("RGBA", (1080, 1920), (28, 61, 82, 255))
-        first = noir.render("date_stamp", fields, 0.02, 2.4, {"bg": img, "accent": (240, 23, 103)})
-        last = noir.render("date_stamp", fields, 1.8, 2.4, {"bg": img, "accent": (240, 23, 103)})
-        self.assertTrue(ImageChops.difference(first.convert("RGB"), last.convert("RGB")).getbbox())
-        self.assertEqual(last.getpixel((30, 1300)), img.getpixel((30, 1300)))
-        self.assertGreater(last.getpixel((865, 921))[0], last.getpixel((865, 921))[1] + 95)
-        sc = {"scenes": [{"narration": "On March 31st, the farmhouse was empty."}],
-              "true_story": True, "fact_ledger": ["Report: March 31st"]}
-        self.assertIsNone(explainer.graphic_problem(sc, 0, {"template": "date_stamp", "fields": fields}))
-        sc["fact_ledger"] = ["Report: March 30th"]
-        self.assertIn("ledger", explainer.graphic_problem(sc, 0, {"template": "date_stamp", "fields": fields}))
+    def test_first_date_reel_later_dates_lines_from_the_previous_date(self):
+        story = json.loads(json.dumps(self.TRUE))
+        n = self._narr(story)
+        eff = explainer.plan_effects(story, n, self._segs(story, n))
+        dates = [e for e in eff if e["kind"] in ("year_reel", "year_line")]
+        self.assertEqual(dates[0]["kind"], "year_reel")
+        self.assertTrue(all(e["kind"] == "year_line" for e in dates[1:]), dates)
+        line = dates[1]
+        self.assertEqual(line["fields"]["from"], "1890")
+        self.assertEqual(line["fields"]["to"], "1900")
+        self.assertEqual(line["fields"]["bumps"], 9)
+        self.assertEqual(line["fields"]["label"], "MARCH 31")
+        self.assertEqual(noir.line_bumps(99), 12)                 # a century is not 99 bumps
+        ticks = noir.line_ticks(3)
+        self.assertEqual(ticks, sorted(ticks))
+        self.assertLess(ticks[-1], noir.REEL_TRAVEL)
 
-    def test_unsourced_year_cannot_trigger_true_story_date(self):
-        sc = {"scenes": [{"narration": "In 1922, the family moved."}], "true_story": True,
-              "fact_ledger": ["Date: 1931"]}
-        self.assertIsNone(explainer._date_graphic(sc, 0, explainer._scene_ctx(sc, 0, {"cast": {}, "dates": 0})))
+    def test_unsourced_year_never_animates_in_a_true_story(self):
+        story = {"title": "x", "true_story": True, "fact_ledger": ["Date: 1931"],
+                 "scenes": [{"narration": "In 1922, the family moved."}]}
+        self.assertEqual(explainer.date_mentions(story, self._narr(story)), [])
+        story["true_story"] = False  # fiction / legend: the narration itself is the source
+        self.assertEqual([d["target"] for d in explainer.date_mentions(story, self._narr(story))], [1922])
+
+    def test_effect_spacing_faces_and_cards(self):
+        story = json.loads(json.dumps(self.TRUE))
+        n = self._narr(story, step=0.3)
+        segs = self._segs(story, n, kinds={4: "host"})
+        eff = explainer.plan_effects(story, n, segs)
+        big = [e for e in eff if e["big"]]
+        for a, b in zip(big, big[1:]):
+            self.assertGreaterEqual(b["anchor"] - a["anchor"], explainer.EFFECT_GAP - 1e-6, (a["kind"], b["kind"]))
+            self.assertGreaterEqual(b["start"], a["start"] + a["dur"] - 1e-6)
+        host = segs[4]
+        for e in eff:  # never over the host's face
+            self.assertFalse(e["start"] < host["end"] and host["start"] < e["start"] + e["dur"], e["kind"])
+
+    def test_typing_clicks_match_the_typed_characters(self):
+        c = {"kind": "typewriter", "start": 10.0, "dur": 3.0, "anchor": 10.0, "big": True,
+             "fields": {"text": "Don't open it", "start": 0.15}}
+        clicks = [x for x in explainer.effect_sfx(c) if x[1] == "typing_click"]
+        self.assertEqual(len(clicks), len("Don'topenit"))
+        self.assertTrue(all(x[2] <= 0.1 for x in clicks))          # quiet under the voice
+        self.assertTrue(all(x[4].get("duck") for x in clicks))     # and ducked on a word peak
+
+    def test_stamps_only_from_the_narration(self):
+        story = {"title": "x", "scenes": [{"narration": "The boat came back to the harbour with its engine running."},
+                                          {"narration": "The case was never solved and the files were sealed."},
+                                          {"narration": "Nobody went missing that winter, if you believe them."}]}
+        n = self._narr(story)
+        eff = explainer.plan_effects(story, n, self._segs(story, n))
+        stamps = [e["fields"]["text"] for e in eff if e["kind"] == "stamp"]
+        self.assertIn("UNSOLVED", stamps)
+        self.assertNotIn("CASE CLOSED", stamps)  # "never solved" is not a solved case
 

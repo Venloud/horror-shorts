@@ -453,9 +453,8 @@ class ShotLists(unittest.TestCase):
         story = json.loads(AMELIA.read_text())
         _, g, _, _ = _plan(story)
         flat = {(x["template"], json.dumps(x["fields"], sort_keys=True)) for gs in g for x in gs}
-        years = {json.loads(f)["year"] for t, f in flat if t == "date_stamp"}
-        self.assertEqual(years, {"1897"})  # first grounded date only; never five repeated timelines
-        self.assertEqual(sum(g["template"] == "date_stamp" for scene in g for g in scene), 1)
+        # dates are never cards any more: the editor shows them as a year reel / timeline line over the picture
+        self.assertEqual(sum(g["template"] == "date_stamp" for scene in g for g in scene), 0)
         texts = {json.loads(f).get("text") for t, f in flat}
         self.assertIn("Distinguished Flying Cross", texts)
         self.assertIn("Fred Noonan", texts)
@@ -465,7 +464,7 @@ class ShotLists(unittest.TestCase):
     def test_graphic_with_invented_fact_is_rejected(self):
         story = json.loads(AMELIA.read_text())
         bad_year = {"template": "date_stamp", "fields": {"year": "1936", "label": ""}}
-        self.assertIn("not said", explainer.graphic_problem(story, 6, bad_year))
+        self.assertIn("retired", explainer.graphic_problem(story, 6, bad_year))
         bad_text = {"template": "evidence", "fields": {"text": "Howland Island", "kicker": "LAST KNOWN"}}
         self.assertIn("not said", explainer.graphic_problem(story, 6, bad_text))
         ok = {"template": "evidence", "fields": {"text": "Fred Noonan", "kicker": "NAVIGATOR"}}
@@ -912,3 +911,100 @@ class OwnerQueueAndApprovedSoundtrack(unittest.TestCase):
                          "unsolved_mystery.mp3")
         self.assertIn("unsolved_mystery.mp3", common.CONFIG["approved_music"])
         self.assertTrue((ROOT / "assets/music/unsolved_mystery.mp3").is_file())
+
+
+class SharedStateAcrossBranches(unittest.TestCase):
+    """Owner, Oct 31: the same workflow run from the fixing-it branch must read and write history / counters /
+    ledgers on MAIN (no second copy of state on the branch, no duplicate story, no lost checkpoint)."""
+
+    def _git(self, cwd, *args):
+        r = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        return r.stdout.strip()
+
+    def _write(self, repo, rel, data):
+        p = Path(repo) / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(data) if not isinstance(data, str) else data)
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        remote = self.tmp / "remote.git"
+        self._git(self.tmp, "init", "-q", "--bare", "-b", "main", str(remote))
+        self.main = self.tmp / "main"
+        self._git(self.tmp, "clone", "-q", str(remote), str(self.main))
+        for g in (("config", "user.email", "t@t"), ("config", "user.name", "t")):
+            self._git(self.main, *g)
+        self._write(self.main, "data/history.json", [{"date": "a", "title": "A", "story_id": "sa"}])
+        self._write(self.main, "data/counter.json", {"next_video": 10})
+        self._write(self.main, "inbox/old.txt", "TRUE\nold item")
+        for f in ("merge_history.py", "push_state.sh", "youtube_pending.py"):
+            self._write(self.main, f"pipeline/{f}", (ROOT / "pipeline" / f).read_text())
+        self._git(self.main, "add", "-A")
+        self._git(self.main, "commit", "-q", "-m", "base")
+        self._git(self.main, "push", "-q", "origin", "main")
+        self._git(self.main, "push", "-q", "origin", "main:fixing-it")  # the branch starts from main
+        # main moves on: a scheduled run posted story b, and the owner added an inbox item
+        self._write(self.main, "data/history.json", [{"date": "a", "title": "A", "story_id": "sa"},
+                                                     {"date": "b", "title": "B", "story_id": "sb"}])
+        self._write(self.main, "inbox/new.txt", "TRUE\nnew owner item")
+        self._git(self.main, "add", "-A")
+        self._git(self.main, "commit", "-q", "-m", "Posted story b")
+        self._git(self.main, "push", "-q", "origin", "main")
+        self.branch = self.tmp / "branch"
+        self._git(self.tmp, "clone", "-q", "-b", "fixing-it", str(remote), str(self.branch))
+        for g in (("config", "user.email", "t@t"), ("config", "user.name", "t")):
+            self._git(self.branch, *g)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_branch_run_reads_and_writes_main_state(self):
+        env = {"GITHUB_ACTIONS": "true", "GITHUB_REF_NAME": "fixing-it"}
+        with mock.patch.object(common, "ROOT", self.branch), mock.patch.dict(os.environ, env):
+            sha = common.sync_shared_state()
+        self.assertTrue(sha)
+        hist = json.loads((self.branch / "data/history.json").read_text())
+        self.assertEqual([h["date"] for h in hist], ["a", "b"])  # sees main's newest posts: no repeated story
+        self.assertTrue((self.branch / "inbox/new.txt").exists())  # and the owner's new inbox items
+        # meanwhile main records b's TikTok delivery (an entry this run must not overwrite with its stale copy)
+        self._write(self.main, "data/history.json", [{"date": "a", "title": "A", "story_id": "sa"},
+                                                     {"date": "b", "title": "B", "story_id": "sb", "posted": "x"}])
+        self._git(self.main, "commit", "-q", "-am", "draft sent b")
+        self._git(self.main, "push", "-q", "origin", "main")
+        # this branch run buffers story c and saves state with the normal push_state.sh
+        hist.append({"date": "c", "title": "C", "story_id": "sc", "buffered": "c"})
+        self._write(self.branch, "data/history.json", hist)
+        (self.tmp / "rt").mkdir(exist_ok=True)
+        r = subprocess.run(["bash", "pipeline/push_state.sh", "Buffer story"], cwd=self.branch, capture_output=True,
+                           text=True, env={**os.environ, "RUNNER_TEMP": str(self.tmp / "rt")})
+        self.assertEqual(r.returncode, 0, r.stderr + r.stdout)
+        self._git(self.main, "pull", "-q", "origin", "main")
+        main_hist = json.loads((self.main / "data/history.json").read_text())
+        self.assertEqual([h["date"] for h in main_hist], ["a", "b", "c"])
+        self.assertEqual(main_hist[1].get("posted"), "x")  # main's newer field survived the branch's save
+        branch_tip = self._git(self.main, "ls-remote", "origin", "refs/heads/fixing-it").split()[0]
+        self.assertNotIn("c", json.loads(self._git(self.main, "show", f"{branch_tip}:data/history.json"))[-1]["date"])
+
+    def test_not_synced_on_main_or_outside_actions(self):
+        with mock.patch.object(common, "ROOT", self.branch), mock.patch.dict(os.environ, {"GITHUB_ACTIONS": ""}):
+            self.assertIsNone(common.sync_shared_state())
+        with mock.patch.object(common, "ROOT", self.branch), \
+                mock.patch.dict(os.environ, {"GITHUB_ACTIONS": "true", "GITHUB_REF_NAME": "main"}):
+            self.assertIsNone(common.sync_shared_state())
+
+    def test_unfinished_branch_checkpoint_is_handed_to_main(self):
+        ck = self.tmp / "ck"
+        ck.mkdir()
+        (ck / "story.json").write_text(json.dumps({"story_id": "s9", "title": "Nine"}))
+        failed = self.tmp / "failed"
+        env = {"GITHUB_ACTIONS": "true", "GITHUB_REF_NAME": "fixing-it"}
+        with mock.patch.object(checkpoint, "CK", ck), mock.patch.object(checkpoint, "FAILED", failed), \
+                mock.patch.object(checkpoint, "ROOT", self.tmp), mock.patch.dict(os.environ, env):
+            dest = checkpoint.branch_handoff()
+        status = json.loads((dest / "status.json").read_text())
+        self.assertEqual(status["status"], "branch_unfinished")
+        self.assertIn("retry_story_id=s9", status["reason"])
+        (ck / "done.json").write_text("{}")  # a finished story is never handed off
+        with mock.patch.object(checkpoint, "CK", ck), mock.patch.dict(os.environ, env):
+            self.assertIsNone(checkpoint.branch_handoff())

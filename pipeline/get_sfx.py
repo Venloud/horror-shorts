@@ -29,7 +29,7 @@ def bigsoundbank(sid: str) -> tuple[bytes, str]:
     return r.content, f"BigSoundBank #{sid} (CC0) {url}"
 
 
-def freesound(query: str, dur: list[float]) -> tuple[bytes, str]:
+def freesound(query: str, dur: list[float], meta: dict | None = None) -> tuple[bytes, str]:
     if not FS_KEY:
         raise RuntimeError("no FREESOUND_API_KEY secret")
     params = {
@@ -54,8 +54,48 @@ def freesound(query: str, dur: list[float]) -> tuple[bytes, str]:
             continue
         a = requests.get(prev, headers=UA, timeout=60)
         if a.ok and is_mp3(a.content):
+            if meta is not None:
+                meta.update({"source": "freesound", "freesound_id": hit["id"], "title": hit.get("name"),
+                             "author": hit.get("username"), "license": hit.get("license") or "Creative Commons 0",
+                             "url": f"https://freesound.org/s/{hit['id']}/", "query": query,
+                             "duration": hit.get("duration")})
             return a.content, f"Freesound #{hit['id']} '{hit['name']}' by {hit['username']} (CC0)"
     raise RuntimeError(f"could not download any result for '{query}'")
+
+
+DOWNLOADED: list[str] = []  # names fetched by ensure() in this run (main.py copies them next to the video)
+
+
+def ensure(name: str) -> Path | None:
+    """assets/sfx/<name>.mp3 for the editor, fetched once from Freesound (CC0 ONLY, sfx_sources.json query) when it
+    is missing, with assets/sfx/<name>.license.json (id, author, url, licence). None when it can't be had: no
+    FREESOUND_API_KEY (logged loudly, the effect stays silent), no CC0 result, or a network error."""
+    path = OUT / f"{name}.mp3"
+    if path.exists():
+        return path
+    info = SOURCES.get(name) or {}
+    if "fs" not in info:
+        return None
+    if not FS_KEY:
+        print(f"SFX: FREESOUND_API_KEY is not set: '{name}' cannot be fetched (CC0), that effect sound is skipped")
+        return None
+    try:
+        meta: dict = {}
+        data, credit = freesound(info["fs"], info.get("dur", [0.05, 3]), meta)
+        if not is_mp3(data) or "creative commons 0" not in str(meta.get("license", "")).lower() \
+                and "publicdomain/zero" not in str(meta.get("license", "")).lower():
+            raise RuntimeError(f"not a CC0 mp3 ({meta.get('license')})")
+        OUT.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+        meta.update({"name": name, "credit": credit,
+                     "fetched_at": __import__("datetime").datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")})
+        (OUT / f"{name}.license.json").write_text(json.dumps(meta, indent=1, ensure_ascii=False))
+        DOWNLOADED.append(name)
+        print(f"SFX: fetched '{name}' from Freesound: {credit}")
+        return path
+    except Exception as e:  # noqa: BLE001
+        print(f"SFX: could not fetch '{name}' from Freesound ({str(e)[:160]}); that effect sound is skipped")
+        return None
 
 
 def main() -> int:
@@ -70,7 +110,7 @@ def main() -> int:
             if "bsb" in info:
                 data, credit = bigsoundbank(info["bsb"])
             else:
-                data, credit = freesound(info["fs"], info.get("dur", [1, 15]))
+                data, credit = freesound(info["fs"], info.get("dur", [1, 15]))  # noqa: E501
             if not is_mp3(data):
                 raise RuntimeError("not an mp3")
             (OUT / f"{name}.mp3").write_bytes(data)

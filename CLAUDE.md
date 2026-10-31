@@ -2,14 +2,14 @@
 
 ## OWNER RETENTION + OCCASIONAL TRILOGY RULE (2026-10-27)
 
-For **all story modes**, use the shared `docs/NIGHT_FILES_STORYTELLING_STYLE.md`: open in a specific consequential event, reward mini-loops with real answers, show attempts and changing stakes, keep character/object/time continuity and synchronise narration with exact visual action. The universal five-part arc in Vandam still applies. Copy none of the actual setting, rules, art, dialogue or shots of competitor examples. The one-second cover, date-timeline once at most when warranted, semantic graphics, hard cuts, nonlinear in-scene easing, licensed restrained sound and existing approved assets all remain unchanged.
+For **all story modes**, use the shared `docs/NIGHT_FILES_STORYTELLING_STYLE.md`: open in a specific consequential event, reward mini-loops with real answers, show attempts and changing stakes, keep character/object/time continuity and synchronise narration with exact visual action. The universal five-part arc in Vandam still applies. Copy none of the actual setting, rules, art, dialogue or shots of competitor examples. The <= 1 s cover (0.8 s), the first-date reel + later-date timeline lines (2026-10-31), semantic graphics, hard cuts, nonlinear in-scene easing, licensed restrained sound and existing approved assets all remain unchanged.
 
 **Owner approved the original three-episode *format only*.** Ordinary standalone stories remain the default; `config.json.occasional_trilogies.enabled=false` intentionally blocks unapproved serial selection. One trilogy may begin only after 7 full days AND 14 unique confirmed **public** Night Files posts since the previous series started, with no earlier trilogy unfinished. TikTok SEND_TO_USER_INBOX, Buffer.com queued/attempted, builds and successful CI **never** count as public. The first series also needs an explicit owner-reviewed timestamp/count/evidence baseline, an original-fiction series bible, 3 pinned episode JSONs and four distinct owner approvals (concept, script, visuals, production). Previous episode's real public publication must be verified before selecting the next. The disabled selector in `pipeline/series_rotation.py` integrates only with the existing `pipeline/main.py` and standard checkpoint/QA/buffer/publisher. Do not flip the flag or write `data/series/approved.json` on behalf of the owner. The concept review is `docs/series_proposals/2026-10-27_trilogy_review.md` and has **NO approval**. No new workflow, posting schedule, renderer, store or publishing permission. Keep PRs #38/#39/#41 separate.
 
 
 ## OWNER NIGHT FILES RETENTION RULES R1–R9 (2026-10-27)
 
-Read `docs/NIGHT_FILES_STORYTELLING_STYLE.md` for all provider/writer calls and `docs/NIGHT_FILES_EDITING_QUALITY_CHECKLIST.md` for visual review. **R9: Every Night Files script needs a trackable central question, a real piece of information or decision that changes understanding, and a supported payoff at the end.** A single subtle recurring evidence/UI motif is optional only when it clarifies progression. **Never invent numbers, criminal charges, statuses, clues, verdicts, percent meters, or decorative scoreboards**; nonfiction claims require reliable sourcing and narrational support. Preserve original cinematic imagery, meaningful hard cuts, one-second approved cover, readable synchronized captions and the existing editor. R1–R8 additionally require concrete in-situation hook, progressing partial payoffs, meaningful escalation, optional second-person participation only for fitting original fiction, continuity across scenes/episodes and semantic visuals.
+Read `docs/NIGHT_FILES_STORYTELLING_STYLE.md` for all provider/writer calls and `docs/NIGHT_FILES_EDITING_QUALITY_CHECKLIST.md` for visual review. **R9: Every Night Files script needs a trackable central question, a real piece of information or decision that changes understanding, and a supported payoff at the end.** A single subtle recurring evidence/UI motif is optional only when it clarifies progression. **Never invent numbers, criminal charges, statuses, clues, verdicts, percent meters, or decorative scoreboards**; nonfiction claims require reliable sourcing and narrational support. Preserve original cinematic imagery, meaningful hard cuts, ≤1 s approved cover (0.8 s), readable synchronized captions and the existing editor. R1–R8 additionally require concrete in-situation hook, progressing partial payoffs, meaningful escalation, optional second-person participation only for fitting original fiction, continuity across scenes/episodes and semantic visuals.
 
 The three-episode series is an **occasional owner-approved format**, not a wholesale switch to serials. It requires both **7 days and 14 verified PUBLIC Night Files posts** between new trilogy starts, a canonical continuity bible and explicit owner concept/script/visual/production approvals. TikTok inbox drafts and Buffer.com queue receipts **never count as verified public posts**. The feature is disabled by default and must not change the existing daily schedule, buffer, or public channel without approval.
 
@@ -17,11 +17,36 @@ The three-episode series is an **occasional owner-approved format**, not a whole
 
 Venloud's direction: **modify the existing working Night Files pipeline, on its current maintained branch, rather than creating a fresh feature branch for every small edit**. Start by inspecting current `main`, active PRs/agents, the existing renderer, tested integrations, project media and live workflow safety. Prefer the smallest compatible change **inside existing code**; never build an alternate bot, renderer or detached demo and call it finished. For narrow owner-authorized changes that can be safely committed to `main`, update `main` itself with targeted tests and verify the integrated result. For hazardous, unreviewed or conflicting changes, obey protected branch/review gates; reuse a relevant existing draft PR when possible and clearly identify blockers rather than multiplying branches. No branch or PR should be opened without a clear lifecycle (integrate, retain with reason, archive or remove after verification). Never delete another agent's unmerged work or assume that old branches can be discarded just because CI passed. Preserve completed media, queued/public posts, scripts, approved art and platform credentials. **Do not manually dispatch production workflows or publish merely to test.** Record the integration and cleanup state in Vandam's existing register, then close approved temporary work instead of accumulating competing implementations.
 
-### In-place date motion, 2026-10-27
+### Owner editing update, 2026-10-31 (supersedes the Oct 27 "one date timeline only" rule)
 
-The active `pipeline/noir.py` `date_stamp` now displays an animated horizontal timeline over the same scene's visible photograph (chosen by `pipeline/explainer.py:Renderer.ctx`). **Show a date timeline only ONCE per finished video**, at the first source-grounded narrated date. It passes a few earlier nearby **year/day scale ticks**, stops at the supported year or calendar day and highlights only that target in red. Never spam more timeline graphics as later dates are spoken; later dates remain in narration and normal captions. This is in-scene motion, not a decorative clip transition; the narrator's scene and its nonfiction fact ledger remain the authority. Do not reinstate giant disconnected year cards or pretend the neighboring tick years are additional historical events. Use regular hard cuts; no unsourced time/date SFX. Tests belong in the existing `tests/test_cinematic_editor.py`. Existing approved cover, captions, narrator, Buffer.com delivery and queue history must remain intact.
-
-
+All in the ONE universal editor (`pipeline/explainer.py` "motion effects" section + `pipeline/noir.py` overlays), for
+every mode, driven only by the narration's word timings + fact ledger; no per-story code.
+- **Cover:** the grayscale story cover (`cover_frame.py`) is frame 0 for `cover_seconds` (0.8, never > 1 s), then a
+  hard cut into the first story picture. No TRUE STORY slab or title card in front of the story (both deleted).
+- **Title:** a kinetic overlay on the first story pictures from `cover_seconds`, for min(6, 1.5 + 0.35 x words) s,
+  never under 3.5 s (`noir.title_seconds`); TRUE STORY is a small kicker on it for true stories. Oswald like the graphics.
+- **Dates:** every spoken year / calendar date (a true story's must be in the fact ledger) animates, landing on the
+  spoken word: the FIRST date of the video = vertical slot-machine year reel (ticks rising in pitch, clunk on landing,
+  landed year red + heavier + punch, the full date types out); every LATER date = a left-to-right timeline line from
+  the previous date to the new one (right-to-left when the story goes back), small bumps pop as the dot passes
+  (max 12), same landing. Date cards (`date_stamp`) are retired. `year_reel_max_per_video` 4.
+- **Effects by meaning** (`plan_effects`): stamps MISSING / UNSOLVED / CLASSIFIED / CASE CLOSED (slam + thud + shake),
+  counters ("six people", "1,200 miles"), polaroid (photo / camera words, shutter), typewriter for quoted lines
+  (typing clicks per character), redaction for a revealed name, kinetic phrases (highlight / underline / circle / pop
+  / stagger / strike for "debunked", glitch for screens / radio), zoom punch on payoff words, light flicker on light
+  words, film burn on "years later", whip pan only on a narrated place jump (max 2). Max ONE big effect per 3 s
+  (`EFFECT_GAP`), never over the host's face or a graphic card (a title / date may turn a soft card into the scene's
+  picture), all above the captions. Effect sounds are quiet and ducked on voice peaks (`_mix_audio`).
+- **Captions** sit at y 1120-1290 (above the platforms' own caption / button UI). Grain + vignette always on.
+- **Owner pose set** `assets/poses` (SHA-256 in asset_checksums.json): when a line says a tagged action / prop
+  (knocking, flashlight, reading a letter...) the host B-roll uses that pose (`sprites.owner_pose_for`), still <= 15%.
+- **SFX:** new effect sounds come from Freesound **CC0 only** via `FREESOUND_API_KEY` (`get_sfx.ensure`, licence JSON
+  next to each file in assets/sfx); without the key that sound is the library's CC0 click or silent (logged).
+- **fixing-it branch:** the owner runs the same buffer_fill.yml from `fixing-it`. `common.sync_shared_state()` makes a
+  non-main run read history / counters / ledgers / inbox from origin/main and `push_state.sh` merges back to main
+  against that commit (`.state_base`); an unfinished branch checkpoint is also saved to data/failed_stories
+  (status branch_unfinished) so main can resume it with retry_story_id. Merge fixing-it -> main only after the
+  owner approves a video, then delete the branch.
 
 Read this first. It sums up the decisions from the long chat where this project was built (Sept 2026),
 so a new session can pick up without starting over.

@@ -4,7 +4,7 @@ with the approved host as occasional B-roll (owner, Oct 24):
 (a) story pictures: each scene's own image_prompt / image_query shots, through the existing media chain (asset
     library when fresh_images is OFF, licensed archive photos / prints and Pexels / Pixabay photos + clips, then AI
     images: images.generate_images, same budget / QA / fallbacks as classic). Never another scene's picture.
-(b) graphics: noir.py templates (date_stamp, evidence, map_route, fact, quote, missing, closing...), LLM-picked or
+(b) graphics: noir.py templates (evidence, map_route, fact, quote, missing, closing...), LLM-picked or
     built from the narration + fact ledger; every word / number on screen is said in that scene (graphic_problem).
 (c) the host: ONLY the approved M01-M04 / F01-F22 art (sprites.py): max 1 shot per scene, never in two scenes in a
     row, <= 2 s, <= 15% of the runtime, mostly F-face reactions over a blurred crop of the scene's picture.
@@ -14,6 +14,7 @@ Flow (main.py): adapt(story) -> fit_duration -> build(): story_images -> plan_gr
 visual_qa (hard: visual_qa.json, shot_manifest.json, provenance.json in the workdir). Music is added after.
 """
 import json
+import math
 import os
 import re
 import subprocess
@@ -29,7 +30,7 @@ FONT_DIR = ROOT / "assets" / "fonts" / "explainer"
 SHOT_MIN, SHOT_MAX = 2.0, 7.0
 # Dark Editorial Noir (Oct 21): INK = bone text on dark grounds, BLACK = midnight
 INK, BLACK = (236, 230, 221), (16, 20, 25)
-CAP_Y = 1565  # Pillow captions (only when Remotion polish is off) sit in the lower strip
+CAP_Y = 1205  # Pillow captions (only when Remotion polish is off): above the TikTok / Shorts caption + button UI
 
 
 class ExplainerUnavailable(RuntimeError):
@@ -391,16 +392,6 @@ def _scene_spans(story: dict, narration: dict) -> list[tuple[float, float]]:
             for i, (a, b) in enumerate(spans)]
 
 
-def opener_length(story: dict) -> tuple[float, float]:
-    """(TRUE STORY graphic end, title end): true stories open with the TRUE STORY motion graphic, then the title;
-    other stories with the title only (owner, Oct 21). The narration's hook is heard from 0.0 s under both."""
-    t_true = float(CONFIG.get("explainer_true_story_seconds", 1.2)) if story.get("true_story") else 0.0
-    t_title = float(CONFIG.get("explainer_title_seconds", 1.6)) if story.get("title") else 0.0
-    return t_true, t_true + t_title
-
-
-
-
 # ================================================================ planning: graphics
 
 GRAPHICS_PROMPT = """You design the EXPLANATORY GRAPHICS of a vertical Night Files video. The story itself is told
@@ -416,7 +407,6 @@ FACT LEDGER: {ledger}
 Return JSON {{"scenes": [{{"graphics": [GRAPHIC, ...]}}, ...]}}: one entry per narration scene, in order, 1-2
 graphics each. GRAPHIC = {{"at": "<first 2-4 words where it appears, copied exactly from that scene's narration>",
 "template": "<template>", "fields": {{...}}}} where template + fields is one of:
-  date_stamp  {{"kicker": "<what the date is, max 3 words, e.g. DISAPPEARANCE>", "year": <a year said in this scene>, "label": "<a month and day said with it, or empty>"}}
   evidence    {{"kicker": "<max 3 words>", "text": "<the clue / record / name, max 8 words>", "accent": "<one word>", "note": "<max 5 words>"}}
   map_route   {{"kicker": "THE ROUTE", "stops": ["<2-4 place names said in THIS scene, in travel order>"]}}
   fact        {{"kicker": "<max 3 words>", "value": <a number said>, "prefix": "", "suffix": "", "label": "<max 8 words>", "accent": "<one word>"}}
@@ -430,8 +420,8 @@ graphics each. GRAPHIC = {{"at": "<first 2-4 words where it appears, copied exac
 RULES
 - Every word and number on a graphic must be said in that scene's narration{true_rule}. Never invent dates, places,
   distances, coordinates, statistics or conclusions.
-- Only ONE date_stamp in the entire video, on the FIRST grounded date spoken. No repeated year/timeline graphics. Keep the same story photo visible behind the overlay.
-- Pick the graphic that EXPLAINS the beat: date_stamp for when, map_route only when the scene names 2+ places
+- Never a date / year card: spoken dates get their own animated year reel over the picture automatically.
+- Pick the graphic that EXPLAINS the beat: map_route only when the scene names 2+ places
   someone travels between, evidence for a clue / object / record / name, quote for words someone said, missing when
   someone vanishes, fact for a number said, compare for two explanations, closing only for the final question.
 - Follow Walter Murch's Rule of Six priority for editorial decisions: EMOTION first, STORY second,
@@ -447,7 +437,7 @@ RULES
 - No people drawn, nothing occult, no gore.
 """
 
-PLAN_TEMPLATES = ("date_stamp", "evidence", "map_route", "fact", "quote", "connections", "compare", "missing",
+PLAN_TEMPLATES = ("evidence", "map_route", "fact", "quote", "connections", "compare", "missing",
                   "photo_scan", "clock_stop", "shadow_reveal", "closing")
 
 
@@ -505,47 +495,74 @@ _SPOKEN_DAYS.update({f"twenty-{w}": 20 + n for w, n in list(_SPOKEN_DAYS.items()
 _SPOKEN_DAYS.update({"thirtieth": 30, "thirty-first": 31})
 
 
-def _date_graphic(story: dict, i: int, sctx: dict) -> dict | None:
-    """Choose a supported calendar marker in spoken order.
+def _tok(w: str) -> str:
+    return re.sub(r"[^a-z0-9-]", "", str(w).lower())
 
-    The first valid date across the full story is enforced by plan_graphics.
-    """
+
+def _find_tokens(toks: list[str], seq: list[str], frm: int = 0) -> int:
+    for k in range(frm, len(toks) - len(seq) + 1):
+        if toks[k:k + len(seq)] == seq:
+            return k
+    return -1
+
+
+def date_mentions(story: dict, narration: dict) -> list[dict]:
+    """Every spoken year / calendar date, in spoken order, from the narration's word timings: {"word": index of
+    the first spoken word of the date (the reel lands on its start), "kind": "year" | "day", "target", "label"
+    (the full date when a month + day is said with it), "kicker" (its fact-ledger key, else WHEN)}. A true story's
+    date must be in the fact ledger (never a guessed year); each year / date is shown once."""
     import spoken_numbers as nums
-    narr = story["scenes"][i].get("narration", "")
-    spoken = narr.lower().replace("-", " ")
-    md = _MONTH_DAY.search(narr)
-    years = [int(v) for v in sctx["said"] if 1000 <= v <= 2100 and float(v).is_integer()]
-    year_positions = []
-    for y in years:
-        tokens = (str(y), nums.year(y).replace("-", " "))
-        loc = min((spoken.find(t) for t in tokens if spoken.find(t) >= 0), default=len(spoken))
-        year_positions.append((loc, y))
-    year_positions.sort()
-    # A calendar day in an earlier clause is the first date, even if a
-    # different year is mentioned later in the same narration scene.
-    # "March 31st, 1922" is one date, so allow a short year suffix.
-    if md and year_positions and year_positions[0][0] > md.end() + 12:
-        year_positions = []
+    words = narration["words"]
+    toks = [_tok(w["word"]) for w in words]
     ledger = _ledger_text(story)
-    for pos, y in year_positions:
-        if story.get("true_story") and ledger and str(y) not in ledger:
+    true = bool(story.get("true_story"))
+    out, seen = [], set()
+    for i, sc in enumerate(story["scenes"]):
+        idx = [k for k, w in enumerate(words) if w.get("scene") == i]
+        if not idx:
             continue
-        kick = next((_kicker(k) for k, v in _ledger_pairs(story) if str(y) in v), "") or "WHEN"
-        month = _MONTH.search(narr)
-        label = md.group(0) if md and md.start() <= pos + 3 else (month.group(0) if month else "")
-        return {"type": "graphic", "at": None, "template": "date_stamp", "auto": True,
-                "fields": {"kicker": kick, "year": str(y), "label": label}}
-    if not md:
-        return None
-    raw_day = md.group("day") or md.group("word_day") or ""
-    day = int(raw_day) if raw_day.isdigit() else _SPOKEN_DAYS.get(raw_day.lower().replace(" ", "-"))
-    month = md.group("month") or md.group("word_month")
-    if not day or not 1 <= day <= 31 or not month:
-        return None
-    if story.get("true_story") and ledger and md.group(0).lower() not in ledger.lower():
-        return None
-    return {"type": "graphic", "at": None, "template": "date_stamp", "auto": True,
-            "fields": {"kicker": "WHEN", "month": month.title(), "day": day, "label": md.group(0)}}
+        narr = sc.get("narration", "")
+        lo = idx[0]
+        stoks = toks[lo:idx[-1] + 1]
+        for y in sorted(v for v in nums.values(narr) if 1000 <= v <= 2100 and float(v).is_integer()):
+            y = int(y)
+            pos = min((p for p in (_find_tokens(stoks, [str(y)]), _find_tokens(stoks, nums.year(y).split()),
+                                   _find_tokens(stoks, nums.year(y).replace("-", " ").split())) if p >= 0),
+                      default=-1)
+            if pos < 0 or ("year", y) in seen or (true and ledger and str(y) not in ledger):
+                continue
+            label = ""
+            before = " ".join(stoks[max(0, pos - 4):pos])
+            m = _MONTH_DAY.search(before) if before else None
+            if m:
+                raw = m.group("day") or m.group("word_day") or ""
+                day = int(raw) if raw.isdigit() else _SPOKEN_DAYS.get(raw.lower().replace(" ", "-"))
+                month = m.group("month") or m.group("word_month")
+                if day and month:
+                    label = f"{month.upper()} {day}"
+                    pos = max(0, pos - len(m.group(0).split()))  # the reel lands as the date starts
+            seen.add(("year", y))
+            kick = next((_kicker(k) for k, v in _ledger_pairs(story) if str(y) in v), "") or "WHEN"
+            out.append({"word": lo + pos, "kind": "year", "target": y, "label": label, "kicker": kick, "scene": i})
+        for m in _MONTH_DAY.finditer(narr):
+            raw = m.group("day") or m.group("word_day") or ""
+            day = int(raw) if raw.isdigit() else _SPOKEN_DAYS.get(raw.lower().replace(" ", "-"))
+            month = m.group("month") or m.group("word_month")
+            if not day or not month or ("day", month.lower(), day) in seen:
+                continue
+            seq = [_tok(x) for x in m.group(0).split()]
+            pos = _find_tokens(stoks, seq)
+            if pos < 0 or any(o["scene"] == i and o["label"] and lo <= o["word"] <= lo + pos + len(seq)
+                              for o in out):
+                continue  # already part of a year reel ("July second, nineteen thirty-seven")
+            if true and ledger and m.group(0).lower() not in ledger.lower() and \
+                    f"{month} {day}".lower() not in ledger.lower():
+                continue
+            seen.add(("day", month.lower(), day))
+            out.append({"word": lo + pos, "kind": "day", "target": day, "label": month.upper(), "kicker": "WHEN",
+                        "scene": i})
+    out.sort(key=lambda d: d["word"])
+    return out
 
 
 def _evidence_graphics(story: dict, i: int, sctx: dict) -> list[dict]:
@@ -613,9 +630,6 @@ def _auto_graphics(story: dict, i: int, sctx: dict) -> list[dict]:
                 break
         out.append({"type": "graphic", "at": None, "template": "quote", "auto": True,
                     "fields": {"text": q.group(1).strip(), "by": who}})
-    d = _date_graphic(story, i, sctx)
-    if d:
-        out.append(d)
     out += _evidence_graphics(story, i, sctx)
     if _TRAVEL.search(narr):
         stops = [m.group(1) for m in _PROPER_RX.finditer(narr) if not m.group(1).split()[0].lower() in STOP]
@@ -663,10 +677,7 @@ def plan_graphics(story: dict, narration: dict) -> list[list[dict]]:
         true="yes" if true else "no", scenes=scenes_txt, ledger="; ".join(map(str, story.get("fact_ledger") or []))
         or "none", true_rule=" (TRUE story: never invent a number)" if true else "")) or {}
     raw = data.get("scenes") if isinstance(data.get("scenes"), list) else []
-    base = {"cast": {}, "dates": 0}  # dates still validated by graphic_problem
-    # At most one timeline across the whole video, on the first grounded date.
-    first_date_scene = next((j for j in range(len(story["scenes"]))
-                             if _date_graphic(story, j, _scene_ctx(story, j, base)) is not None), None)
+    base = {"cast": {}, "dates": 0}
     out = []
     used_texts = set()  # the same card text never twice in one video ("AKA MANTO" name card in scenes 2 and 7)
     for i, sc in enumerate(story["scenes"]):
@@ -677,24 +688,16 @@ def plan_graphics(story: dict, narration: dict) -> list[list[dict]]:
         for g in (rs.get("graphics") or [])[:3]:
             if not isinstance(g, dict) or g.get("template") not in PLAN_TEMPLATES:
                 continue
-            if g["template"] == "date_stamp" and i != first_date_scene:
-                continue
             if g["template"] == "closing" and i != len(story["scenes"]) - 1:
                 continue
             at = _anchor(str(g.get("at") or ""), s_words)
-            v = _date_graphic(story, i, sctx) if g["template"] == "date_stamp" else _valid_graphic(g, at, sctx)
+            v = _valid_graphic(g, at, sctx)
             if v:
                 v["at"] = at
                 if v["template"] == "missing":  # nobody is drawn: the host never stands in for a real person
                     v["fields"]["subject"] = ""
                 picks.append(v)
         picks += _auto_graphics(story, i, sctx)
-        if i != first_date_scene:
-            picks = [g for g in picks if g["template"] != "date_stamp"]
-        else:
-            first_date = _date_graphic(story, i, sctx)
-            picks = ([first_date] if first_date else []) + [
-                g for g in picks if g["template"] != "date_stamp"]
         if not true:  # a legend / fiction: the beat's own strong phrase beats a generic ledger card
             imp = _impact_fallback(story, i)
             if imp and max(word_score(w) for w in imp["fields"]["text"].split()) >= 2.5 \
@@ -722,25 +725,6 @@ def plan_graphics(story: dict, narration: dict) -> list[list[dict]]:
     return out
 
 
-def first_date_only(story: dict, graphics: list[list[dict]]) -> list[list[dict]]:
-    """Use the original shot planner's FIRST grounded date, never cached repeats.
-
-    This also sanitizes version-3 saved storyboards without issuing a new model
-    call or resetting existing story media, captions, or publishing history.
-    """
-    base = {"cast": {}, "dates": 0}
-    first = next((i for i in range(len(story["scenes"]))
-                  if _date_graphic(story, i, _scene_ctx(story, i, base)) is not None), None)
-    result = []
-    for i, cards in enumerate(graphics):
-        retained = [g for g in cards if g.get("template") != "date_stamp"]
-        if i == first:
-            chosen = _date_graphic(story, i, _scene_ctx(story, i, base))
-            if chosen and graphic_problem(story, i, chosen) is None:
-                retained.insert(0, chosen)
-        result.append(retained)
-    return result
-
 
 def graphic_problem(story: dict, i: int, g: dict) -> str | None:
     """None if every word / number on this graphic is said in its scene's narration (and, for a true story's date,
@@ -752,29 +736,8 @@ def graphic_problem(story: dict, i: int, g: dict) -> str | None:
     f = g.get("fields") or {}
     tpl = g.get("template")
     texts = []
-    if tpl == "date_stamp":
-        if f.get("year"):
-            try:
-                y = int(f.get("year"))
-            except (TypeError, ValueError):
-                return "invalid date_stamp year"
-            if y not in said:
-                return f"year {y} is not said in scene {i + 1}"
-            if story.get("true_story") and _ledger_text(story) and str(y) not in _ledger_text(story):
-                return f"year {y} is not in the fact ledger"
-        else:
-            candidate = _MONTH_DAY.search(narr)
-            if not candidate or str(f.get("label", "")).lower() != candidate.group(0).lower():
-                return "date_stamp month/day not said in this scene"
-            if story.get("true_story") and _ledger_text(story) and candidate.group(0).lower() not in _ledger_text(story).lower():
-                return "date_stamp month/day not in the fact ledger"
-            if str(f.get("month") or "").lower() != (candidate.group("month") or candidate.group("word_month") or "").lower():
-                return "date_stamp month mismatch"
-            day_words = candidate.group("day") or candidate.group("word_day") or ""
-            expected = int(day_words) if day_words.isdigit() else _SPOKEN_DAYS.get(day_words.lower().replace(" ", "-"))
-            if f.get("day") != expected:
-                return "date_stamp day mismatch"
-        texts.append(f.get("label") or "")
+    if tpl == "date_stamp":  # retired: dates are year reels over the picture (plan_effects), never a card
+        return "date cards are retired (year reel overlay)"
     elif tpl == "map_route":
         texts += list(f.get("stops") or [])
     elif tpl == "connections":
@@ -1019,7 +982,7 @@ TIME_CUE = re.compile(r"\b(later|that night|years?|decades?|centur\w+|hours?|mor
 MOVE_CUE = re.compile(r"\b(ran|run|runs|running|walk\w*|fled|flee\w*|bolt\w*|rush\w*|drove|drive|travel\w*|"
                       r"cross\w*|chase\w*|toward|towards|follow\w*|route|journey\w*|escape\w*)\b", re.IGNORECASE)
 SUDDEN = re.compile(r"\b(suddenly|burst\w*|slam\w*|snap\w*|strike\w*|struck|lunge\w*|grab\w*)\b", re.IGNORECASE)
-POP_TEMPLATES = {"date_stamp", "evidence", "fact", "missing", "phone", "photo_scan", "clock_stop"}
+POP_TEMPLATES = {"evidence", "fact", "missing", "phone", "photo_scan", "clock_stop"}
 SLIDE_TEMPLATES = {"map_route", "connections", "filmstrip"}
 CUT_TEMPLATES = {"impact", "quote", "choice", "closing", "compare", "shadow_reveal"}
 EFFECTS = ("cut", "dissolve", "slide", "pop", "swoosh")
@@ -1041,7 +1004,8 @@ def plan_transitions(segs: list[dict], words: list[dict], max_swoosh: int = 2) -
     """Plan purposeful punctuation between shots; preserve max_swoosh only for caller compatibility.
 
     A hard cut is always the default, including graphics, locations, ideas and sudden beats.
-    A short dissolve is allowed only at a NEW scene with explicit narrated passage of time.
+    A short dissolve is allowed only at a NEW scene with explicit narrated passage of time; a whip pan (max 2 per
+    video) only at a new scene whose narration jumps to another place ("meanwhile", "flew to", "miles away").
     Fade to black is reserved for a terminal outro, never a scene boundary.
     """
     out = []
@@ -1052,6 +1016,9 @@ def plan_transitions(segs: list[dict], words: list[dict], max_swoosh: int = 2) -
         want = "dissolve" if kind == "image" and new_scene and TIME_PASSAGE_CUE.search(text) else "cut"
         if want == "dissolve" and out and out[-1] == "dissolve":
             want = "cut"
+        if want == "cut" and kind == "image" and new_scene and WHIP_CUE.search(text) and out.count("whip") < 2 \
+                and (not out or out[-1] != "whip"):
+            want = "whip"
         out.append(want)
         seg["transition"] = want
     return out
@@ -1269,22 +1236,17 @@ def sequence(story: dict, narration: dict, scene_images: list[list[Path]], graph
              total: float) -> list[dict]:
     """The production shot list: per scene  story image -> graphic -> second story image -> (rare host reaction),
     with varied deliberate holds and cuts on word starts. The host: max 1 shot per scene, never in two scenes in a row, never first in a
-    scene, <= explainer_host_max_seconds (2 s), <= explainer_host_max_share (15%) of the runtime. The video opens on
-    the TRUE STORY / title graphics and ends on the closing graphic (no end card)."""
+    scene, <= explainer_host_max_seconds (2 s), <= explainer_host_max_share (15%) of the runtime. The video opens
+    straight on the first story picture (the cover frame is laid over its first cover_seconds; the title is a
+    kinetic overlay, plan_effects) and ends on the closing graphic (no end card)."""
     spans = _scene_spans(story, narration)
-    t_true, t_title = opener_length(story)
     words = narration["words"]
     budget = float(CONFIG.get("explainer_host_max_share", 0.15)) * total
     host_used, last_host_scene = 0.0, -9
     prev_template = ""
     segs = []
-    if t_true:
-        segs.append({"start": 0.0, "end": t_true, "shot": {"type": "opener", "scene": 0}, "scene": 0})
-    if t_title:
-        segs.append({"start": t_true, "end": t_title, "shot": {"type": "opener_title", "scene": 0}, "scene": 0})
     n_sc = len(story["scenes"])
     for i, (a, b) in enumerate(spans):
-        a = max(a, t_title) if i == 0 else a
         b = total if i == n_sc - 1 else b
         span = b - a
         if span <= 0.05:
@@ -1300,8 +1262,10 @@ def sequence(story: dict, narration: dict, scene_images: list[list[Path]], graph
         narr = story["scenes"][i].get("narration", "")
         beat = viewer_beat(narr)  # a warning / decision / reaction aimed at the viewer
         has_choice = any(g.get("template") == "choice" for g in gs)  # the P08 surrogate already plays this beat
+        import sprites
+        owner_pose = sprites.owner_pose_for(narr)  # the owner's own pose set, when the line says its action / prop
         host_ok = (i > 0 and i - last_host_scene > 1 and host_used + 1.8 <= budget and not has_choice
-                   and (beat or _EMOTION.search(narr) or len(scene_images[i]) < 2) and span >= 6.0)
+                   and (owner_pose or beat or _EMOTION.search(narr) or len(scene_images[i]) < 2) and span >= 6.0)
         # room for picture -> graphic -> second picture from ~6 s (cuts stay >= SHOT_MIN): the scene's second
         # picture is no longer dropped for its graphic (the Aka Manto preview had one picture + one card per scene)
         n = max(2 if gs else 1, min(6, round(span / 3.0)))
@@ -1310,8 +1274,12 @@ def sequence(story: dict, narration: dict, scene_images: list[list[Path]], graph
             order.append(gs[0])
         if len(scene_images[i]) > 1:
             order.append(imgs[1])
-        if host_ok:
-            import sprites
+        if host_ok and owner_pose:  # preferred over a second AI / stock picture of the same line
+            order.insert(1, {"type": "host", "scene": i, "expression": "pose", "asset_id": f"pose:{owner_pose}",
+                             "beat": "owner_pose"})
+            if len(order) > 3:
+                order.remove(next(x for x in reversed(order) if x["type"] == "image"))
+        elif host_ok:
             # the viewer beat (warning -> worried, decision -> serious...) gives the deterministic expression; the
             # shared local CLIP (sprites.select_for_beat) may pick a better APPROVED asset, never new art
             expression = beat[1] if beat else _expr_for(narr)
@@ -1325,7 +1293,8 @@ def sequence(story: dict, narration: dict, scene_images: list[list[Path]], graph
         if closing:
             order.append(closing)
         while len(order) > max(1, n) and len(order) > (2 if closing else 1):
-            drop = next((x for x in reversed(order[1:]) if x["type"] == "host"), None) or next((x for x in reversed(order[1:]) if x["type"] == "image"), None) or next((x for x in reversed(order[1:]) if x["type"] == "graphic" and x is not closing), None)
+            drop = next((x for x in reversed(order[1:]) if x["type"] == "host" and x.get("beat") != "owner_pose"), None) \
+                or next((x for x in reversed(order[1:]) if x["type"] == "image"), None) or next((x for x in reversed(order[1:]) if x["type"] == "graphic" and x is not closing), None)
             if drop is None:
                 break
             order.remove(drop)
@@ -1571,9 +1540,9 @@ class Renderer:
         self.layer_cache: dict = {}
         self.accents = caption_accents(story, narration)  # the few payoff words captions may accent
         self.groups = _caption_groups(narration["words"], self.accents)
-        self.t_true, self.t_title = opener_length(story)
         self.used_assets: set = set()
-        self.frame_log = {"image": 0, "graphic": 0, "host": 0, "opener": 0, "end_card": 0}
+        self.frame_log = {"image": 0, "graphic": 0, "host": 0, "end_card": 0}
+        self.effects: list = []  # plan_effects(): overlays + in-shot moves, set by render()
         self.first_image = next((s["shot"]["file"] for s in segs if s["shot"].get("type") == "image"), None)
 
     # ---------------------------------------------------------------- pictures
@@ -1689,7 +1658,14 @@ class Renderer:
         dur = max(0.01, seg["end"] - seg["start"])
         push = 1.0 + 0.025 * _ease(t / dur)
         selected = s.get("asset_id")
-        if selected and selected.startswith("P"):  # optional approved full pose, never a generated replacement
+        if selected and selected.startswith("pose:"):  # the owner's own pose (assets/poses), verified, unchanged
+            im = sprites.owner_pose_image(selected[5:])
+            self.used_assets.add(selected)
+            scale = min(900 / im.width, 1250 / im.height) * push
+            im = im.resize((max(1, int(im.width * scale)), max(1, int(im.height * scale))),
+                           Image.Resampling.LANCZOS)
+            ox, oy = (W - im.width) // 2, 1300 - im.height  # feet above the captions
+        elif selected and selected.startswith("P"):  # optional approved full pose, never a generated replacement
             im = sprites.approved_image(selected)
             self.used_assets.add(selected)
             scale = min(930 / im.width, 1450 / im.height) * push
@@ -1728,24 +1704,20 @@ class Renderer:
         self._paste(frame, layer, ox - 60, oy - 60)
 
     # ---------------------------------------------------------------- frames
-    def _opener_bg(self) -> Image.Image:
-        if self.first_image:
-            return self._blurred(self.first_image).copy()
-        return Image.new("RGBA", (W, H), BLACK + (255,))
-
     def frame_at(self, t: float) -> Image.Image:
-        """The frame at t: opener graphics, story pictures, graphics or a host reaction. There is no end card: the
-        last segment (the closing graphic or the last picture) runs to the end."""
+        """The frame at t: a story picture, a graphic or a host reaction, then the planned motion effects (zoom
+        punch / flicker / stamp shake, overlays). There is no end card: the last segment runs to the end."""
         seg = next((s for s in self.segs if s["start"] <= t < s["end"]), self.segs[-1])
         local = t - seg["start"]
         frame = self._shot_frame(seg, local)
         frame = self._transition(seg, frame, local)
+        frame = self.apply_effects(frame, t)
         if not (CONFIG.get("remotion_polish", False) or CONFIG.get("explainer_caption_engine") == "remotion"):
             self.captions(frame, t, "scene", high=seg["shot"]["type"] == "host")
         return frame
 
     # transition lengths (s); plan_transitions chose one per cut ("cut" = none)
-    TRANSITION_S = {"dissolve": 0.45, "slide": 0.28, "swoosh": 0.24, "pop": 0.18}
+    TRANSITION_S = {"dissolve": 0.45, "slide": 0.28, "swoosh": 0.24, "pop": 0.18, "whip": 0.24}
 
     def _transition(self, seg: dict, frame: Image.Image, local: float) -> Image.Image:
         """Into this segment: dissolve (cross-fade from the previous shot's last frame), slide / swoosh (push: the
@@ -1765,11 +1737,14 @@ class Renderer:
         a = _ease(local / dur)
         if tr == "dissolve":
             return Image.blend(prev.convert("RGBA"), frame.convert("RGBA"), a)
-        if tr in ("slide", "swoosh"):
+        if tr in ("slide", "swoosh", "whip"):
             out = Image.new("RGBA", (W, H), BLACK + (255,))
             off = int(W * a)
             out.alpha_composite(prev, (-off, 0))
             out.alpha_composite(frame, (W - off, 0))
+            if tr == "whip":  # motion blur along the pan, strongest mid-move
+                blur = int(2 + 46 * math.sin(math.pi * a))
+                out = out.resize((max(1, W // blur), H), Image.BILINEAR).resize((W, H), Image.BILINEAR)
             return out
         sc = 0.94 + 0.06 * a  # pop
         small = frame.resize((int(W * sc), int(H * sc)), Image.BILINEAR)
@@ -1784,14 +1759,7 @@ class Renderer:
         sh = seg["shot"]
         kind = sh["type"]
         dur = seg["end"] - seg["start"]
-        if kind == "opener":
-            frame = noir.render("true_story", {}, local, dur, self.ctx(seg, bg=self._opener_bg()))
-            self.frame_log["opener"] += 1
-        elif kind == "opener_title":
-            frame = noir.render("title", {"text": self.story.get("fixed_title") or self.story.get("title") or ""},
-                                local, dur, self.ctx(seg, bg=self._opener_bg()))
-            self.frame_log["opener"] += 1
-        elif kind == "graphic":  # its entrance is the planned transition (no automatic wipe on every card)
+        if kind == "graphic":  # its entrance is the planned transition (no automatic wipe on every card)
             frame = noir.render(sh["template"], sh.get("fields") or {}, local, dur, self.ctx(seg))
             self.frame_log["graphic"] += 1
         elif kind == "host":
@@ -1803,6 +1771,40 @@ class Renderer:
             if CONFIG.get("explainer_cinematic_camera", False):
                 frame = noir.cinematic_camera(frame, "subtle_push", local, dur)
         return frame
+
+    def apply_effects(self, frame: Image.Image, t: float) -> Image.Image:
+        """The plan_effects layer at t: in-shot moves first (zoom punch on a payoff word, light flicker, the short
+        shake after a stamp lands), then the overlay templates (noir.overlay) on top."""
+        import noir
+        for e in self.effects:
+            local = t - e["start"]
+            if not 0 <= local <= e["dur"]:
+                continue
+            k = e["kind"]
+            if k == "zoom_punch":
+                z = 1.0 + 0.06 * (noir.back(local / 0.12) if local < 0.12 else 1 - noir.ease((local - 0.12) / 0.33))
+                if z > 1.002:
+                    frame = self._crop(frame, 0.5, 0.42, z)
+            elif k == "flicker":
+                lvl = (1.0, 0.55, 0.95, 0.4, 1.0, 0.7, 1.0, 0.85)[min(7, int(local / 0.1))]
+                frame = Image.blend(Image.new("RGBA", (W, H), BLACK + (255,)), frame, lvl)
+            else:
+                if k == "stamp":
+                    q = local - e["fields"].get("land", 0.2)
+                    if 0 <= q < 0.16:
+                        dx, dy = int(9 * math.sin(q * 140)), int(6 * math.cos(q * 110))
+                        moved = Image.new("RGBA", (W, H), BLACK + (255,))
+                        moved.alpha_composite(frame, (dx, dy))
+                        frame = moved
+                ctx = self.overlay_ctx
+                frame.alpha_composite(noir.overlay(k, e["fields"], local, e["dur"], ctx))
+        return frame
+
+    @property
+    def overlay_ctx(self) -> dict:
+        if not hasattr(self, "_octx"):
+            self._octx = {"accent": self.acc}
+        return self._octx
 
     def _index(self, seg: dict) -> int:
         try:
@@ -1818,12 +1820,7 @@ class Renderer:
         if bg is None:
             own = next((x["shot"]["file"] for x in self.segs if x["shot"].get("type") == "image"
                         and x["scene"] == seg["scene"]), self.first_image)
-            # Date timelines sit ON the actual photograph, not on a blurred
-            # filler panel. All other templates retain their approved ground.
-            if own and sh.get("template") == "date_stamp":
-                bg = self._crop(self._cover(own, 1.0), 0.5, 0.5, 1.0)
-            else:
-                bg = self._blurred(own).copy() if own else None
+            bg = self._blurred(own).copy() if own else None
         c = {"accent": self.acc, "tone": __import__("noir").tone_for(k), "seed": k % 7 + 1,
              "words": [{"word": w["word"], "start": w["start"] - seg["start"]} for w in self.narr["words"]
                        if seg["start"] - 0.05 <= w["start"] < seg["end"]], "bg": bg, "used_assets": self.used_assets}
@@ -1946,16 +1943,42 @@ def _caption_groups(words: list[dict], accents: set | None = None) -> list[dict]
 
 # ================================================================ audio + encode
 
+# effect sounds fetched from Freesound (CC0) on first use; until then (no FREESOUND_API_KEY) the effect uses the
+# library's own CC0 click, re-pitched, or stays silent
+SFX_FALLBACK = {"reel_tick": ("ui_click", 3), "typing_click": ("ui_click", 6), "reel_land": ("ui_click", -7)}
+
+
 def _load_sfx(name: str, sr: int) -> np.ndarray | None:
     path = ROOT / "assets" / "sfx" / f"{name}.mp3"
     if not path.exists():
+        try:
+            import get_sfx
+            path = get_sfx.ensure(name) or path
+        except Exception as e:  # noqa: BLE001
+            log(f"SFX {name}: not available ({e})")
+    if not path.exists():
+        if name in SFX_FALLBACK:
+            base, semis = SFX_FALLBACK[name]
+            snd = _load_sfx(base, sr)
+            return _pitch(snd, semis) if snd is not None else None
         return None
     try:
         raw = subprocess.run(["ffmpeg", "-v", "error", "-i", str(path), "-ac", "1", "-ar", str(sr), "-f", "f32le", "-"],
                              capture_output=True, check=True).stdout
-        return np.frombuffer(raw, dtype=np.float32)
+        snd = np.frombuffer(raw, dtype=np.float32)
+        loud = np.flatnonzero(np.abs(snd) > 0.02 * (float(np.max(np.abs(snd))) or 1.0))
+        return snd[max(0, int(loud[0]) - int(0.004 * sr)):] if len(loud) else snd  # no leading silence
     except Exception:  # noqa: BLE001
         return None
+
+
+def _pitch(snd: np.ndarray, semis: float) -> np.ndarray:
+    """Re-pitch by resampling (shorter + higher for semis > 0): the year reel's rising ticks."""
+    if not semis or snd is None or not len(snd):
+        return snd
+    rate = 2 ** (semis / 12)
+    x = np.arange(0, len(snd) - 1, rate)
+    return np.interp(x, np.arange(len(snd)), snd).astype(np.float32)
 
 
 def _mix_audio(narration: dict, total: float, events: list, out: Path) -> Path:
@@ -1965,18 +1988,25 @@ def _mix_audio(narration: dict, total: float, events: list, out: Path) -> Path:
         voice = voice.mean(axis=1)
     mix = np.zeros(int(total * sr) + sr, dtype=np.float32)
     mix[:len(voice)] += voice[:len(mix)]
+    win = int(0.03 * sr)  # voice loudness envelope (30 ms RMS) for ducking effect sounds under word peaks
+    env_ = np.sqrt(np.convolve(voice ** 2, np.ones(win) / win, mode="same")) if len(voice) > win else np.zeros(1)
+    peak_v = float(np.percentile(env_, 95)) or 1.0
     cache = {}
     for event in events:
-        # Optional fourth item limits SFX duration to the visual beat.
-        # The existing (time, name, volume) production events remain unchanged.
+        # (time, name, volume[, clip seconds[, opts]]): opts pitch = semitones, duck = softer on a voice peak
         t, name, vol = event[:3]
         clip_seconds = event[3] if len(event) >= 4 else None
+        opts = event[4] if len(event) >= 5 else {}
         if name not in cache:
             cache[name] = _load_sfx(name, sr)
         sound = cache[name]
         if sound is None:
             continue
+        if opts.get("pitch"):
+            sound = _pitch(sound, opts["pitch"])
         at = max(0, int(t * sr))
+        if opts.get("duck") and at < len(env_) and env_[at] > 0.6 * peak_v:
+            vol *= 0.45
         room = max(0, len(mix) - at)
         if clip_seconds is not None:
             room = min(room, max(0, int(float(clip_seconds) * sr)))
@@ -2004,7 +2034,312 @@ def _total(narration: dict) -> float:
     return narration["duration"] + tail_for(narration["duration"])
 
 
-def sound_plan(story: dict, narration: dict, segs: list[dict]) -> list[tuple]:
+# ================================================================ motion effects (overlay templates)
+# One reusable vocabulary for every story (owner, Oct 31): the opening title, a year reel per spoken date, counters,
+# stamps, redaction, a polaroid, typed text, kinetic phrases, zoom punch, light flicker, film burn and whip pans.
+# The planner picks each by MEANING from the narration's own words, times it to the spoken word and keeps at most ONE
+# big effect per 3 s; overlays are drawn only over story pictures (never over the host's face or a graphic card),
+# inside the safe area above the captions. Effect sounds are quiet and ducked under the voice.
+
+EFFECT_GAP = 3.0  # s between two big effects (start to start, and they never overlap)
+STAMP_CUES = (
+    ("UNSOLVED", re.compile(r"\b(unsolved|never (?:been )?solved|never (?:found|identified|caught)|"
+                            r"remains? (?:a )?mystery|no one knows)\b", re.IGNORECASE)),
+    ("CASE CLOSED", re.compile(r"\b(case (?:was )?closed|convicted|confess\w*|(?<!never )(?<!never been )solved)\b",
+                               re.IGNORECASE)),
+    ("CLASSIFIED", re.compile(r"\b(classified|top secret|sealed (?:files?|records?)|redacted)\b", re.IGNORECASE)),
+    ("MISSING", re.compile(r"\b(vanish\w*|disappear\w*|went missing|missing)\b", re.IGNORECASE)),
+)
+COUNT_UNITS = re.compile(r"^(people|persons|men|women|children|kids|victims|bodies|days|nights|weeks|months|years|hours|"
+                         r"minutes|miles|kilometers|kilometres|feet|meters|metres|dollars|pounds|times|letters|calls|"
+                         r"witnesses|passengers|soldiers|sailors|officers|homes|houses|graves|shots|steps)$")
+PHOTO_CUE = re.compile(r"\b(photo\w*|snapshot|polaroid|camera|portrait)\b", re.IGNORECASE)
+REVEAL_CUE = re.compile(r"\b(?:real name|true name|identity|known as|name was|named|called)\s+(?:was\s+)?"
+                        r"((?:[A-Z][\w'’-]+\s?){1,3})")
+STRIKE_CUE = re.compile(r"\b(ruled out|debunked|disproved|a hoax|was false|never happened)\b", re.IGNORECASE)
+GLITCH_CUE = re.compile(r"\b(static|glitch\w*|signal|radio|transmission|broadcast|screen|footage|tape|recording)\b",
+                        re.IGNORECASE)
+LIGHT_CUE = re.compile(r"\b(lights?|lamps?|lanterns?|candles?|bulbs?|flicker\w*|flashlight|torch|power (?:went|cut))\b",
+                       re.IGNORECASE)
+BURN_CUE = re.compile(r"\b(?:years|decades|centur(?:y|ies)|generations?)\s+(?:later|earlier|ago|passed)\b|"
+                      r"\bby the time\b", re.IGNORECASE)
+WHIP_CUE = re.compile(r"\b(?:meanwhile|miles away|across (?:the|town|the country|the ocean)|back in|"
+                      r"(?:flew|drove|sailed|travel(?:l)?ed|headed|went) (?:to|back to|across))\b", re.IGNORECASE)
+CLAIMABLE = {"impact", "evidence", "fact", "missing"}
+PHRASE_MODES = ("highlight", "underline", "circle", "pop", "stagger")
+
+
+def _scene_text(narration: dict, i: int) -> tuple[list[int], str, list[int]]:
+    """(word indexes, the scene's spoken words joined by spaces, each word's character offset) for regex -> word."""
+    idx = [k for k, w in enumerate(narration["words"]) if w.get("scene") == i]
+    text, offs = "", []
+    for k in idx:
+        offs.append(len(text))
+        text += narration["words"][k]["word"] + " "
+    return idx, text, offs
+
+
+def _word_at(idx: list[int], offs: list[int], char: int) -> int:
+    import bisect
+    return idx[max(0, bisect.bisect_right(offs, char) - 1)]
+
+
+def _sentence_of(text: str, char: int) -> str:
+    a = max(text.rfind(c, 0, char) for c in ".!?") + 1
+    b = min([x for x in (text.find(c, char) for c in ".!?") if x >= 0] or [len(text)])
+    return text[a:b]
+
+
+def _counter_at(words: list[dict], idx: list[int]) -> list[tuple[int, int, str]]:
+    """(first word index, value, unit) for every '<number> <unit>' the scene says ("six people", "1,200 miles")."""
+    import spoken_numbers as nums
+    out = []
+    toks = [_tok(words[k]["word"]) for k in idx]
+    for u, t in enumerate(toks):
+        if not COUNT_UNITS.match(t) or u == 0:
+            continue
+        for ln in range(min(6, u), 0, -1):
+            span = " ".join(words[k]["word"] for k in idx[u - ln:u]).strip(",.")
+            first = toks[u - ln]
+            if not (first[:1].isdigit() or first in nums.WORD_VAL or first in nums.SCALE_VAL):
+                continue
+            vals = nums.values(span)
+            if len(vals) == 1:
+                v = int(next(iter(vals)))
+                if 2 <= v <= 1_000_000_000 and not (1000 <= v <= 2100 and ln <= 2 and t in ("years",)):
+                    out.append((idx[u - ln], v, t))
+                break
+    return out
+
+
+def _seg_at(segs: list[dict], t: float) -> dict | None:
+    return next((s for s in segs if s["start"] <= t < s["end"]), None)
+
+
+def _picture_instead(segs: list[dict], seg: dict) -> bool:
+    """Turn a graphic segment into another framing of its scene's own picture (so the title / a year reel sits on
+    the story image, not on a card). False when the scene has no picture or it is the closing card."""
+    if seg["shot"].get("template") == "closing":
+        return False
+    pics = [s["shot"] for s in segs if s["scene"] == seg["scene"] and s["shot"].get("type") == "image"]
+    if not pics:
+        return False
+    k = segs.index(seg)
+    prev = segs[k - 1]["shot"] if k else {}
+    src = next((p for p in pics if p.get("file") != prev.get("file")), pics[0])
+    crop = next(c for c in ("detail_right", "detail_left", "top", "full") if not (
+        prev.get("file") == src.get("file") and prev.get("crop") == c))
+    seg["shot"] = dict(src, crop=crop, replaced_graphic=seg["shot"].get("template"))
+    seg["transition"] = "cut"
+    return True
+
+
+def plan_effects(story: dict, narration: dict, segs: list[dict], cover: float | None = None) -> list[dict]:
+    """The video's overlay effects: [{"kind", "start", "dur", "anchor", "fields", "big", "sfx": [(t, name, vol, clip,
+    opts)]}], start-sorted. Candidates come from the narration's own words (dates, counts, stamps, photos, quotes,
+    name reveals, debunks, screens, lights, time jumps); then, by priority, every big effect must sit >= EFFECT_GAP
+    from the last one, over a story picture (not a graphic card, never during a host shot)."""
+    import noir
+    words = narration["words"]
+    cover = float(CONFIG.get("cover_seconds", 0.8)) if cover is None else cover
+    cands = []
+    title = str(story.get("fixed_title") or story.get("title") or "").strip()
+    if title:
+        cands.append({"kind": "title", "start": cover, "dur": noir.title_seconds(title), "anchor": cover,
+                      "prio": 0, "big": True, "fields": {"text": title,
+                                                         "kicker": "TRUE STORY" if story.get("true_story") else ""}})
+    for n, d in enumerate(date_mentions(story, narration)):
+        if n >= int(CONFIG.get("year_reel_max_per_video", 4)):
+            break
+        land_t = words[d["word"]]["start"]
+        vals = noir.reel_values(d["target"], d["kind"])
+        start = max(0.0, land_t - noir.REEL_TRAVEL)
+        land = land_t - start
+        hold = 1.5 + 0.06 * len(d["label"])
+        show = str(d["target"]) if d["kind"] == "year" else f"{d['label'][:3]} {d['target']}"
+        cands.append({"kind": "year_reel", "start": start, "dur": land + hold, "anchor": land_t, "prio": 1,
+                      "big": True, "date": d, "show": show,
+                      "fields": {"values": vals, "land": land, "label": d["label"] if d["kind"] == "year"
+                                 else d["label"] + f" {d['target']}", "kicker": d["kicker"]}})
+    graphics_by_scene = {}
+    for sg in segs:
+        if sg["shot"].get("type") == "graphic":
+            graphics_by_scene.setdefault(sg["scene"], set()).add(sg["shot"].get("template"))
+    stamps_used = set()
+    for i, sc in enumerate(story["scenes"]):
+        idx, text, offs = _scene_text(narration, i)
+        if not idx:
+            continue
+        mine = graphics_by_scene.get(i, set())
+        for label, rx in STAMP_CUES:
+            m = rx.search(text)
+            if not m or label in stamps_used or (label == "MISSING" and "missing" in mine) \
+                    or HYPOTHETICAL.search(_sentence_of(text, m.start()).replace("never solved", "")
+                                           .replace("never found", "").replace("never been", "")):
+                continue
+            if label == "CASE CLOSED" and re.search(r"\bnever\b", _sentence_of(text, m.start()), re.IGNORECASE):
+                continue
+            t = words[_word_at(idx, offs, m.start())]["start"]
+            stamps_used.add(label)
+            cands.append({"kind": "stamp", "start": t - 0.2, "dur": 2.2, "anchor": t, "prio": 2, "big": True,
+                          "fields": {"text": label, "land": 0.2}})
+            break
+        for k, v, unit in _counter_at(words, idx)[:1]:
+            t = words[k]["start"]
+            cands.append({"kind": "counter", "start": max(0.0, t - 1.0), "dur": 1.0 + 1.6, "anchor": t, "prio": 3,
+                          "big": True, "fields": {"value": v, "unit": unit, "land": min(1.0, t)}})
+        m = PHOTO_CUE.search(text)
+        if m and not HYPOTHETICAL.search(_sentence_of(text, m.start())):
+            t = words[_word_at(idx, offs, m.start())]["start"]
+            cands.append({"kind": "polaroid", "start": t - 0.45, "dur": 2.4, "anchor": t, "prio": 4, "big": True,
+                          "fields": {"land": 0.45, "caption": ""}})
+        q = _QUOTE.search(text)
+        if q and len(q.group(1).split()) >= 2 and not mine & {"quote", "phone"}:
+            t = words[_word_at(idx, offs, q.start(1))]["start"]
+            body = q.group(1).strip()[:60]
+            dur = 0.15 + len(body) / noir.TYPE_CPS + 1.2
+            cands.append({"kind": "typewriter", "start": t, "dur": dur, "anchor": t, "prio": 5, "big": True,
+                          "fields": {"text": body, "start": 0.15, "kicker": ""}})
+        m = REVEAL_CUE.search(text)
+        if m:
+            name = m.group(1).strip(" ,.")
+            t = words[_word_at(idx, offs, m.start(1))]["start"]
+            cands.append({"kind": "redaction", "start": t - 0.7, "dur": 2.3, "anchor": t, "prio": 5, "big": True,
+                          "fields": {"text": name, "land": 0.7, "kicker": "NAME"}})
+        for rx, mode, prio in ((STRIKE_CUE, "strike", 6), (GLITCH_CUE, "glitch", 7)):
+            m = rx.search(text)
+            if not m:
+                continue
+            clause = _sentence_of(text, m.start())
+            ph = key_phrases(clause, limit=1, min_score=2.0)
+            if not ph:
+                continue
+            t = words[_word_at(idx, offs, m.start())]["start"]
+            cands.append({"kind": "phrase", "start": t - 0.3, "dur": 2.0, "anchor": t, "prio": prio, "big": True,
+                          "fields": {"text": ph[0]["text"], "accent": ph[0]["accent"], "mode": mode, "land": 0.3}})
+        m = LIGHT_CUE.search(text)
+        if m and not HYPOTHETICAL.search(_sentence_of(text, m.start())):
+            t = words[_word_at(idx, offs, m.start())]["start"]
+            cands.append({"kind": "flicker", "start": t, "dur": 0.8, "anchor": t, "prio": 9, "big": True,
+                          "fields": {}})
+    accents = sorted(caption_accents(story, narration))
+    phrase_n = 0
+    for n, k in enumerate(accents):  # payoff words: a zoom punch, and a few kinetic key phrases
+        t = words[k]["start"]
+        cands.append({"kind": "zoom_punch", "start": t, "dur": 0.45, "anchor": t, "prio": 10, "big": True,
+                      "fields": {}})
+        sc = words[k].get("scene", 0)
+        ph = key_phrases(story["scenes"][sc].get("narration", ""), limit=1, min_score=3.0)
+        if ph and len(ph[0]["text"].split()) >= 2 and phrase_n < int(CONFIG.get("phrase_overlay_max", 3)):
+            phrase_n += 1
+            cands.append({"kind": "phrase", "start": t - 0.35, "dur": 2.0, "anchor": t, "prio": 8, "big": True,
+                          "fields": {"text": ph[0]["text"], "accent": ph[0]["accent"],
+                                     "mode": PHRASE_MODES[n % len(PHRASE_MODES)], "land": 0.35}})
+    for k, sg in enumerate(segs):  # film burn over a narrated time jump at a scene change
+        if k and sg["scene"] != segs[k - 1]["scene"] and BURN_CUE.search(_seg_text(sg, words)):
+            cands.append({"kind": "film_burn", "start": sg["start"], "dur": 0.55, "anchor": sg["start"],
+                          "prio": 6, "big": True, "fields": {}})
+    chosen, skipped = [], []
+    for c in sorted(cands, key=lambda c: (c["prio"], c["anchor"])):
+        c["start"] = max(0.0, c["start"])
+        c["skip"] = ""
+        end = c["start"] + c["dur"]
+        if c["start"] < cover - 1e-6 or _seg_at(segs, c["anchor"] + 0.05) is None:
+            continue
+        under = [s for s in segs if s["start"] < end and c["start"] < s["end"]]
+        if any(s["shot"].get("type") == "host" for s in under):
+            skipped.append(f"{c['kind']}@{c['anchor']:.1f}s host")
+            continue  # never over the host's face
+        if any(abs(o["anchor"] - c["anchor"]) < EFFECT_GAP or (o["start"] < end and c["start"] < o["start"] + o["dur"])
+               for o in chosen if o["big"]):
+            skipped.append(f"{c['kind']}@{c['anchor']:.1f}s spacing")
+            continue
+        cards = [s for s in under if s["shot"].get("type") == "graphic"]
+        if cards and (c["prio"] > 3 or c["prio"] > 1 and any(s["shot"].get("template") not in CLAIMABLE
+                                                               for s in cards)):
+            skipped.append(f"{c['kind']}@{c['anchor']:.1f}s on a card")
+            continue  # an overlay never sits on a graphic card
+        # the title / a year reel (any card but the closing one), a stamp or a counter (only a card that says the
+        # same thing less well: impact / evidence / fact / missing) claims its window: the card becomes the picture
+        for s in cards:
+            if not _picture_instead(segs, s):
+                break
+        else:
+            cards = []
+        if cards:
+            continue
+        at = _seg_at(segs, c["anchor"] + 0.05)
+        if at is None or at["shot"].get("type") != "image":
+            continue
+        if c["kind"] == "polaroid":
+            c["fields"]["image"] = at["shot"]["file"]
+        chosen.append(c)
+    chosen.sort(key=lambda c: c["start"])
+    prev = None  # the first date of the video scrolls in on the reel; every later one is a line from the last date
+    for c in chosen:
+        if c["kind"] != "year_reel":
+            continue
+        if prev is not None:
+            d, pd = c["date"], prev["date"]
+            years = d["kind"] == pd["kind"] == "year"
+            c["kind"] = "year_line"
+            c["fields"] = {"from": prev["show"], "to": c["show"], "land": c["fields"]["land"],
+                           "label": c["fields"]["label"] if d["label"] and d["kind"] == "year" else "",
+                           "kicker": c["fields"]["kicker"],
+                           "bumps": abs(d["target"] - pd["target"]) - 1 if years else 0,
+                           "backwards": bool(years and d["target"] < pd["target"])}
+        prev = c
+    for c in chosen:
+        c.pop("date", None)
+        c.pop("show", None)
+    if skipped:
+        log("Motion effects skipped: " + ", ".join(skipped))
+    for c in chosen:
+        c["sfx"] = effect_sfx(c)
+        c.pop("prio", None)
+        c.pop("skip", None)
+    story["explainer_effects"] = [{"kind": c["kind"], "start": round(c["start"], 2), "anchor": round(c["anchor"], 2),
+                                   "dur": round(c["dur"], 2), "fields": {k: v for k, v in c["fields"].items()
+                                                                         if k != "image"}} for c in chosen]
+    return chosen
+
+
+def effect_sfx(c: dict) -> list[tuple]:
+    """The effect's own quiet sounds, absolute times: reel ticks rising in pitch + a clunk on the landing, counter
+    ticks, a stamp thud, the polaroid shutter, typing clicks per typed character. opts duck = softened when the
+    voice is loud at that instant (never on a spoken-word peak)."""
+    import noir
+    s, f, out = c["start"], c["fields"], []
+    duck = {"duck": True}
+    if c["kind"] == "year_reel":
+        land = f["land"]
+        ticks = noir.reel_ticks(len(f["values"]), land)
+        for k, tt in enumerate(ticks[:-1]):
+            out.append((s + tt, "reel_tick", 0.16, 0.12, dict(duck, pitch=k)))
+        out.append((s + land, "reel_land", 0.3, 0.6, duck))
+        out += [(s + tt, "typing_click", 0.09, 0.08, dict(duck, pitch=(k % 3) - 1))
+                for k, tt in enumerate(noir.type_times(f.get("label") or "", land + 0.18))]
+    elif c["kind"] == "year_line":
+        ticks = noir.line_ticks(noir.line_bumps(f.get("bumps") or 0), f["land"])
+        out += [(s + tt, "reel_tick", 0.1, 0.1, dict(duck, pitch=k)) for k, tt in enumerate(ticks)]
+        out.append((s + f["land"], "reel_land", 0.26, 0.6, duck))
+        out += [(s + tt, "typing_click", 0.09, 0.08, dict(duck, pitch=(k % 3) - 1))
+                for k, tt in enumerate(noir.type_times(f.get("label") or "", f["land"] + 0.18))]
+    elif c["kind"] == "counter":
+        ticks = noir.counter_ticks(f["land"])
+        out += [(s + tt, "reel_tick", 0.12, 0.1, dict(duck, pitch=k)) for k, tt in enumerate(ticks[:-1])]
+        out.append((s + f["land"], "reel_land", 0.24, 0.5, duck))
+    elif c["kind"] == "stamp":
+        out.append((s + f["land"], "stamp_thud", 0.38, 0.8, duck))
+    elif c["kind"] == "polaroid":
+        out.append((s + f["land"] - 0.05, "camera_shutter", 0.28, 0.7, duck))
+    elif c["kind"] == "typewriter":
+        out += [(s + tt, "typing_click", 0.09, 0.08, dict(duck, pitch=(k % 3) - 1))
+                for k, tt in enumerate(noir.type_times(f["text"], f.get("start", 0.15)))]
+    return out
+
+
+def sound_plan(story: dict, narration: dict, segs: list[dict], effects: list[dict] | None = None) -> list[tuple]:
     """Every SFX event of the video: a whoosh ONLY on a planned swoosh transition, a soft click on a UI-like pop
     (dates / evidence / missing), the phone notification when a stated message appears, and event sounds the
     narration describes (event_sfx: footsteps when someone runs, a door when it slams...). Never two
@@ -2014,20 +2349,19 @@ def sound_plan(story: dict, narration: dict, segs: list[dict]) -> list[tuple]:
     for k, seg in enumerate(segs):
         shot, at = seg["shot"], float(seg["start"])
         tr = seg.get("transition", "cut")
-        if k and tr == "swoosh":
-            events.append((max(0.0, at - 0.12), "whoosh", 0.18, 0.6))
+        if k and tr in ("swoosh", "whip"):
+            events.append((max(0.0, at - 0.12), "whoosh", 0.18 if tr == "swoosh" else 0.14, 0.6, {"duck": True}))
         if shot.get("template") == "phone":
             events.append((at + 0.55, "phone_notification", 0.34, 1.2))  # when the bubble lands
-        elif tr == "pop" and shot.get("template") in ("date_stamp", "evidence", "missing") \
+        elif tr == "pop" and shot.get("template") in ("evidence", "missing") \
                 and at - last_click >= 10.0 and clicks < 3:  # a click on every card is a loop, not a cue
             events.append((at + 0.2, "ui_click", 0.3, 0.4))
             last_click, clicks = at, clicks + 1
-    t_true, _ = opener_length(story)
-    if t_true:
-        events.append((0.18, "ui_click", 0.5))
     for ev in event_sfx(narration):
         if all(abs(ev[0] - e[0]) >= 1.0 for e in events):
             events.append(ev)
+    for e in effects or []:  # the effects' own quiet sounds (ticks, clunk, thud, shutter, typing)
+        events += e.get("sfx") or []
     events.sort(key=lambda e: e[0])
     story["explainer_sound_plan"] = [{"at": e[0], "sfx": e[1]} for e in events]
     return events
@@ -2038,7 +2372,9 @@ def render(story: dict, narration: dict, segs: list[dict], workdir: Path, img_di
     Returns (mp4, renderer): the renderer's frame_log / used_assets feed the visual QA."""
     total = _total(narration)
     r = Renderer(story, narration, segs, img_dir)
-    events = sound_plan(story, narration, segs)
+    r.effects = plan_effects(story, narration, segs)
+    log("Motion effects: " + (", ".join(f"{e['kind']}@{e['anchor']:.1f}s" for e in r.effects) or "none"))
+    events = sound_plan(story, narration, segs, r.effects)
     audio = _mix_audio(narration, total, events, workdir / "explainer_audio.wav")
     out = workdir / "explainer.mp4"
     n = int(round(total * FPS))
@@ -2177,12 +2513,11 @@ def visual_qa(story: dict, segs: list[dict], ren: "Renderer", video: Path | None
     Returns the machine-readable report; report["failures"] empty = pass."""
     import sprites
     fails, exceptions, per_scene = [], [], []
-    body = [s for s in segs if s["shot"]["type"] not in ("opener", "opener_title")]
+    body = segs
     dur = lambda s: s["end"] - s["start"]  # noqa: E731
-    secs = {"image": 0.0, "graphic": 0.0, "host": 0.0, "opener": 0.0}
+    secs = {"image": 0.0, "graphic": 0.0, "host": 0.0}
     for s in segs:
-        k = "opener" if s["shot"]["type"].startswith("opener") else s["shot"]["type"]
-        secs[k] = secs.get(k, 0.0) + dur(s)
+        secs[s["shot"]["type"]] = secs.get(s["shot"]["type"], 0.0) + dur(s)
     share = {k: round(v / total, 3) for k, v in secs.items()}
     max_share = float(CONFIG.get("explainer_host_max_share", 0.15))
     max_host = float(CONFIG.get("explainer_host_max_seconds", 2.0))
@@ -2231,7 +2566,8 @@ def visual_qa(story: dict, segs: list[dict], ren: "Renderer", video: Path | None
                           "source": provenance_of(s["shot"]["file"]).get("kind")} for s in imgs],
             "graphics": [{"template": g["shot"]["template"], "fields": g["shot"].get("fields"),
                           "auto": bool(g["shot"].get("auto"))} for g in grs],
-            "host": [s["shot"].get("expression") for s in mine if s["shot"]["type"] == "host"]})
+            "host": [s["shot"].get("asset_id") or s["shot"].get("expression") for s in mine
+                     if s["shot"]["type"] == "host"]})
     prov = {}
     for s in body:
         if s["shot"]["type"] == "image" and s["shot"]["file"] not in prov:
@@ -2240,7 +2576,8 @@ def visual_qa(story: dict, segs: list[dict], ren: "Renderer", video: Path | None
         if p.get("license_problem"):
             fails.append(f"{p['file']}: {p['license_problem']}")
     approved = {r["id"] for r in sprites.approved_registry().get("approved", [])}
-    bad = sorted(set(ren.used_assets) - approved)
+    bad = sorted(a for a in set(ren.used_assets) - approved
+                 if not (a.startswith("pose:") and sprites.owner_pose_ok(a[5:])))
     if bad:
         fails.append(f"unapproved character assets: {bad}")
     rail = _rail_in_video(video) if video and Path(video).exists() else 0
@@ -2258,8 +2595,8 @@ def visual_qa(story: dict, segs: list[dict], ren: "Renderer", video: Path | None
     report = {
         "story_id": story.get("story_id"), "title": story.get("title"), "mode": story.get("mode"),
         "runtime_s": round(total, 2), "segments": len(segs),
-        "shots": {k: sum(1 for s in segs if (s["shot"]["type"].startswith("opener") and k == "opener")
-                         or s["shot"]["type"] == k) for k in ("image", "graphic", "host", "opener")},
+        "shots": {k: sum(1 for s in segs if s["shot"]["type"] == k) for k in ("image", "graphic", "host")},
+        "effects": story.get("explainer_effects") or [],
         "runtime_share": share, "rendered_frames": ren.frame_log,
         "ai_images": {"requests": ai_ok + rejected, "successful": ai_ok, "rejected": rejected,
                       "by_provider": {p: list(ai_prov.values()).count(p) for p in set(ai_prov.values())},
@@ -2270,6 +2607,7 @@ def visual_qa(story: dict, segs: list[dict], ren: "Renderer", video: Path | None
                        "library_reused": kinds.count("library"), "archival": kinds.count("archival"),
                        "stock": kinds.count("stock"), "ai_reconstruction": kinds.count("ai_reconstruction")},
         "character_assets": sorted(ren.used_assets), "per_scene": per_scene,
+        "owner_assets_used": sorted(a[5:] for a in ren.used_assets if a.startswith("pose:")),
         "provenance": list(prov.values()), "failures": fails, "exceptions": exceptions,
         "fresh_images": (story.get("explainer_images") or {}).get("fresh_images"),
     }
@@ -2324,9 +2662,8 @@ def build(story: dict, narration: dict, img_dir: Path, workdir: Path) -> Path:
         checkpoint.write_atomic(saved, json.dumps({"key": key, "version": 3, "graphics": graphics},
                                                   ensure_ascii=False, default=str))
         checkpoint.register_image(saved, stage="shot_list")
-    # Old checkpoint plans may contain many date cards. Normalize on load
-    # without re-running the planner or consuming extra provider credits.
-    graphics = first_date_only(story, graphics)
+    # Older saved plans may hold date cards: dates are now year reels over the picture (plan_effects)
+    graphics = [[g for g in gs if g.get("template") != "date_stamp"] for gs in graphics]
     total = _total(narration)
     segs = sequence(story, narration, scene_images, graphics, total)
     story["render_style"] = "explainer"

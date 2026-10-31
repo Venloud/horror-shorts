@@ -12,16 +12,24 @@ if [ -z "$(git status --porcelain -- data/history.json data/missed_slot.json dat
   echo "Nothing to save"; exit 0
 fi
 tmp="${RUNNER_TEMP:-$(mktemp -d)}"
-git show HEAD:data/history.json > "$tmp/base.json" 2>/dev/null || echo "[]" > "$tmp/base.json"
+# base = the main commit this run read its state from (common.sync_shared_state on another branch), else HEAD
+base_ref=HEAD; [ -s .state_base ] && base_ref=$(cat .state_base)
+git show "$base_ref":data/history.json > "$tmp/base.json" 2>/dev/null || echo "[]" > "$tmp/base.json"
 cp data/history.json "$tmp/ours.json"
 rm -rf "$tmp/failed_stories"; [ -d data/failed_stories ] && cp -r data/failed_stories "$tmp/failed_stories"  # parked stories
-had_missed=0; git cat-file -e HEAD:data/missed_slot.json 2>/dev/null && had_missed=1
-rm -f "$tmp/missed.json"; [ -f data/missed_slot.json ] && cp data/missed_slot.json "$tmp/missed.json"
+had_missed=0; git cat-file -e "$base_ref":data/missed_slot.json 2>/dev/null && had_missed=1
+rm -f "$tmp/missed.json"
+# only THIS run's change to the missed slot is applied (a copy read from main and left alone never re-adds a slot
+# that main removed meanwhile)
+if [ -f data/missed_slot.json ] && ! git show "$base_ref":data/missed_slot.json 2>/dev/null | cmp -s - data/missed_slot.json; then
+  cp data/missed_slot.json "$tmp/missed.json"
+fi
+missed_gone=0; [ "$had_missed" = 1 ] && [ ! -f data/missed_slot.json ] && missed_gone=1
 counter_changed=0
 pending_changed=0
 if [ -n "$(git status --porcelain -- data/youtube_pending.json)" ]; then   # YouTube paused: videos kept for later
   pending_changed=1; cp data/youtube_pending.json "$tmp/pending_ours.json"
-  git show HEAD:data/youtube_pending.json > "$tmp/pending_base.json" 2>/dev/null || echo "{}" > "$tmp/pending_base.json"
+  git show "$base_ref":data/youtube_pending.json > "$tmp/pending_base.json" 2>/dev/null || echo "{}" > "$tmp/pending_base.json"
 fi
 if [ -n "$(git status --porcelain -- data/counter.json)" ]; then counter_changed=1; cp data/counter.json "$tmp/counter.json"; fi
 for i in 1 2 3; do
@@ -32,7 +40,7 @@ for i in 1 2 3; do
   if [ -f "$tmp/missed.json" ]; then          # publisher found the buffer empty: record the missed slot
     cp "$tmp/missed.json" data/missed_slot.json
     git add data/missed_slot.json
-  elif [ "$had_missed" = 1 ]; then             # builder made up (or expired) the missed slot: remove it
+  elif [ "$missed_gone" = 1 ]; then            # builder made up (or expired) the missed slot: remove it
     git rm -q --cached --ignore-unmatch data/missed_slot.json
     rm -f data/missed_slot.json
   fi
