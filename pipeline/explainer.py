@@ -1652,10 +1652,10 @@ class Renderer:
         if selected and selected.startswith("pose:"):  # the owner's own pose (assets/poses), verified, unchanged
             im = sprites.owner_pose_image(selected[5:])
             self.used_assets.add(selected)
-            scale = min(900 / im.width, 1250 / im.height) * push
+            scale = min(860 / im.width, 960 / im.height) * push
             im = im.resize((max(1, int(im.width * scale)), max(1, int(im.height * scale))),
                            Image.Resampling.LANCZOS)
-            ox, oy = (W - im.width) // 2, 1300 - im.height  # feet above the captions
+            ox, oy = (W - im.width) // 2, max(140, (1110 - im.height) // 2 + 60)  # centred, above captions
         elif selected and selected.startswith("P"):  # optional approved full pose, never a generated replacement
             im = sprites.approved_image(selected)
             self.used_assets.add(selected)

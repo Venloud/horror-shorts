@@ -80,7 +80,7 @@
   "explainer_accent": "#F01767",
   "explainer_host_max_share": 0.15,
   "explainer_host_max_seconds": 2.0,
-  "explainer_depth_parallax": true,
+  "explainer_depth_parallax": false,
   "whisper_narration_check": true,
   "archive_person_photos": true,
   "real_photo_max_historic": 6,
@@ -271,8 +271,7 @@
   ],
   "music_rotation": [
     "unsolved_mystery.mp3",
-    "bk_grnde.mp3",
-    "procedural"
+    "bk_grnde.mp3"
   ],
   "track_volumes": {
     "unsolved_mystery.mp3": 0.14,
