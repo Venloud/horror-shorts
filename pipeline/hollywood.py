@@ -250,6 +250,8 @@ def direct(story: dict, narration: dict, graphics_by_scene: dict, hypothetical: 
                 continue
             phrase = _note_text(text, m, phrase_of)
             fields = {k: _fill(v, m, phrase) if isinstance(v, str) else v for k, v in (e.get("fields") or {}).items()}
+            for flag, rx in (e.get("flag_if") or {}).items():  # e.g. a key the sentence says is missing
+                fields[flag] = bool(re.search(rx, text, re.IGNORECASE))
             if e["graphic"] == "ocean_crossing":
                 ends = _crossing_ends(fields.get("water", ""), places, sent)
                 if not ends:

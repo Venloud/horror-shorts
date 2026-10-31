@@ -981,7 +981,7 @@ def _t_shadow_reveal(fields, t, dur, ctx):
 # Entries ease out (small overshoot on UI-like elements), exits ease in; no linear keyframes.
 
 OVERLAYS = ("title", "year_reel", "year_line", "globe_pin", "ocean_crossing", "night_mode", "battery_low",
-            "signal_lost", "temperature_drop", "sticky_note", "hit_profile", "counter", "stamp", "redaction", "polaroid", "typewriter", "phrase", "film_burn")
+            "signal_lost", "temperature_drop", "sticky_note", "hit_profile", "clue_object", "footprint_route", "counter", "stamp", "redaction", "polaroid", "typewriter", "phrase", "film_burn")
 REEL_TRAVEL = 1.25  # seconds the year reel spins before it lands on the spoken word
 REEL_ROW = 150      # px between two years on the reel
 TYPE_CPS = 18.0     # typewriter characters per second
@@ -1987,3 +1987,111 @@ def _o_sticky_note(layer, fields, t, dur, ctx):
         note = note.resize((max(1, int(note.width * sc)), max(1, int(note.height * sc))), Image.BILINEAR)
     note.putalpha(note.getchannel("A").point(lambda v: int(v * a)))
     paste(layer, note, int(W - 120 - note.width), 420)
+
+
+def _clue_icon(obj: str, size: int) -> Image.Image:
+    """A plain drawn icon of a story object (no text, no real document): newspaper, key, letter."""
+    s = 3
+    S = size * s
+    im = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    ink, paper_c = (36, 32, 30, 255), (226, 218, 202, 255)
+    if obj == "newspaper":
+        d.rectangle((S * .12, S * .2, S * .88, S * .82), fill=paper_c, outline=ink, width=3 * s)
+        d.rectangle((S * .18, S * .26, S * .82, S * .36), fill=ink)                   # masthead bar
+        for k in range(5):                                                         # columns of "text" lines
+            y = S * (.43 + k * .07)
+            d.line((S * .18, y, S * .47, y), fill=(90, 84, 78, 255), width=4 * s)
+            d.line((S * .53, y, S * .82, y), fill=(90, 84, 78, 255), width=4 * s)
+    elif obj == "key":
+        gold = (214, 178, 92, 255)
+        d.ellipse((S * .1, S * .32, S * .42, S * .64), outline=gold, width=14 * s)
+        d.rectangle((S * .4, S * .45, S * .9, S * .52), fill=gold)
+        d.rectangle((S * .74, S * .52, S * .79, S * .64), fill=gold)
+        d.rectangle((S * .84, S * .52, S * .89, S * .6), fill=gold)
+    elif obj == "letter":
+        d.rectangle((S * .12, S * .28, S * .88, S * .74), fill=paper_c, outline=ink, width=3 * s)
+        d.line((S * .12, S * .28, S * .5, S * .54, S * .88, S * .28), fill=ink, width=4 * s)
+        d.ellipse((S * .44, S * .46, S * .56, S * .58), fill=(170, 24, 36, 255))     # wax seal
+    return im.resize((size, size), Image.LANCZOS)
+
+
+def _o_clue_object(layer, fields, t, dur, ctx):
+    """A story object the narration names becomes a clue card on the picture: the object drops in with a small tilt
+    and settles (ease-out + overshoot); a missing object gets a red cross drawn over it on the spoken word. The label
+    is the narration's own word."""
+    obj = fields.get("object")
+    if obj not in ("newspaper", "key", "letter"):
+        return
+    land = float(fields.get("land", 0.3))
+    alpha = ease(t / 0.2) * _fade_out(t, dur, 0.3)
+    p = t / land
+    y = 470 - 260 * (1 - back(p)) if t < land else 470
+    card = Image.new("RGBA", (460, 520), (0, 0, 0, 0))
+    dc = ImageDraw.Draw(card)
+    dc.rounded_rectangle((0, 0, 459, 519), radius=26, fill=(14, 16, 20, 225), outline=(90, 96, 106, 220), width=3)
+    card.alpha_composite(_clue_icon(obj, 380), (40, 20))
+    label = str(fields.get("label") or obj).upper()[:18]
+    dc.text((230, 455), label, font=font("cond", 56), fill=BONE + (255,), anchor="mm")
+    if fields.get("missing") and t >= land + 0.2:
+        g = ease((t - land - 0.2) / 0.3)
+        red = (232, 36, 52, 255)
+        dc.line((60, 60, 60 + 340 * g, 60 + 340 * g), fill=red, width=16)
+        if g > 0.5:
+            g2 = (g - 0.5) * 2
+            dc.line((400, 60, 400 - 340 * g2, 60 + 340 * g2), fill=red, width=16)
+        dc.text((230, 30), "MISSING", font=font("mono", 30), fill=red, anchor="mm")
+    card = card.rotate(-4 * (1 - min(1.0, p)), resample=Image.BICUBIC, expand=True)
+    card.putalpha(card.getchannel("A").point(lambda v: int(v * alpha)))
+    paste(layer, card, int(540 - card.width / 2), int(y))
+
+
+def _foot(d, x, y, ang, a, left):
+    """One footprint: sole + heel, rotated to the walking direction."""
+    def rot(px, py):
+        px, py = px * 2.2, py * 2.2  # print size
+        return (x + px * math.cos(ang) - py * math.sin(ang), y + px * math.sin(ang) + py * math.cos(ang))
+    off = -9 if left else 9
+    sole = [rot(-14 + 28 * math.cos(k * math.pi / 8) * .5 + 6, off + 11 * math.sin(k * math.pi / 8)) for k in range(16)]
+    d.polygon(sole, fill=(236, 230, 221, a))
+    hx, hy = rot(-20, off)
+    d.ellipse((hx - 15, hy - 15, hx + 15, hy + 15), fill=(236, 230, 221, a))
+
+
+def _o_footprint_route(layer, fields, t, dur, ctx):
+    """Tracks that lead in and never come back: footprints step one by one toward a door, then the way back is
+    drawn and crossed out in red (only used when the narration says no tracks / nobody came back)."""
+    alpha = ease(t / 0.2) * _fade_out(t, dur, 0.3)
+    _band(layer, 380, 1060, alpha)
+    d = ImageDraw.Draw(layer)
+    a = int(255 * alpha)
+    door = (820, 520, 940, 760)
+    d.rectangle(door, outline=BONE + (a,), width=6)
+    d.ellipse((door[2] - 30, 640, door[2] - 18, 652), fill=BONE + (a,))
+    steps = 7
+    walk = max(0.6, dur * 0.55)
+    for k in range(steps):
+        if t < walk * k / steps:
+            break
+        x = 150 + k * 95
+        y = 840 - k * 22
+        _foot(d, x, y + (12 if k % 2 else -12), -0.23, a, k % 2 == 0)
+    if t >= walk:
+        g = ease((t - walk) / 0.35)
+        y0 = 940
+        d.line((860, y0, 860 - 640 * g, y0), fill=(236, 230, 221, int(a * 0.6)), width=6)
+        if g > 0.2:
+            d.polygon([(860 - 640 * g - 22, y0), (860 - 640 * g + 6, y0 - 18), (860 - 640 * g + 6, y0 + 18)],
+                      fill=(236, 230, 221, int(a * 0.6)))
+        if g >= 1:
+            h = ease((t - walk - 0.35) / 0.25)
+            d.line((540 - 60 * h, y0 - 60 * h, 540 + 60 * h, y0 + 60 * h), fill=(232, 36, 52, a), width=14)
+            d.line((540 + 60 * h, y0 - 60 * h, 540 - 60 * h, y0 + 60 * h), fill=(232, 36, 52, a), width=14)
+            if h >= 1:
+                d.text((540, y0 + 110), str(fields.get("label") or "NO WAY BACK").upper()[:22], font=font("cond", 60),
+                       fill=(232, 36, 52, a), anchor="mm")
+
+
+def footprint_steps(dur: float, steps: int = 7) -> list[float]:
+    walk = max(0.6, dur * 0.55)
+    return [walk * k / steps for k in range(steps)]

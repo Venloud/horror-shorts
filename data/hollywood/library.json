@@ -185,6 +185,71 @@
     "n": "{n}"
    },
    "not_hypothetical": true
+  },
+  {
+   "id": "clue_newspaper",
+   "graphic": "clue_object",
+   "importance": 2,
+   "dur": 2.4,
+   "lead": 0.3,
+   "max_per_video": 1,
+   "when": [
+    "\\b(?P<word>newspapers?|headlines?|front page)\\b"
+   ],
+   "fields": {
+    "object": "newspaper",
+    "label": "{word}"
+   }
+  },
+  {
+   "id": "clue_key",
+   "graphic": "clue_object",
+   "importance": 2,
+   "dur": 2.6,
+   "lead": 0.3,
+   "max_per_video": 1,
+   "when": [
+    "\\b(?P<word>keys?)\\b"
+   ],
+   "fields": {
+    "object": "key",
+    "label": "{word}"
+   },
+   "flag_if": {
+    "missing": "\\b(?:missing|vanish\\w*|lost|gone|never found|disappear\\w*|taken)\\b"
+   }
+  },
+  {
+   "id": "clue_letter",
+   "graphic": "clue_object",
+   "importance": 2,
+   "dur": 2.4,
+   "lead": 0.3,
+   "max_per_video": 1,
+   "when": [
+    "\\b(?P<word>letters?|envelopes?)\\b"
+   ],
+   "fields": {
+    "object": "letter",
+    "label": "{word}"
+   },
+   "not_hypothetical": true
+  },
+  {
+   "id": "tracks_no_return",
+   "graphic": "footprint_route",
+   "importance": 3,
+   "dur": 2.8,
+   "lead": 0.2,
+   "max_per_video": 1,
+   "when": [
+    "\\b(?:footprints?|tracks?)\\b[^.!?]{0,60}\\b(?:in|into|to|toward)\\b[^.!?]{0,40}\\b(?:none|no|never)\\b[^.!?]{0,30}\\b(?:out|back|return\\w*|leav\\w*)\\b",
+    "\\bno (?:footprints?|tracks?) (?:led|leading|came|coming) (?:out|back|away)\\b",
+    "\\bfootprints?\\b[^.!?]{0,40}\\bnever (?:came|come|led) (?:out|back)\\b"
+   ],
+   "fields": {
+    "label": "NO WAY BACK"
+   }
   }
  ],
  "counters": {

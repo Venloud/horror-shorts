@@ -2344,6 +2344,10 @@ def effect_sfx(c: dict) -> list[tuple]:
         out.append((s + f["land"], "typing_click", 0.12, 0.1, dict(duck, pitch=-5)))
     elif c["kind"] == "hit_profile":
         out += [(s + tt, "gunshot", 0.3, 0.9, {}) for tt in noir.hit_times(f.get("hits", 1), c["dur"])]
+    elif c["kind"] == "footprint_route":
+        out += [(s + tt, "footsteps_wood", 0.14, 0.18, duck) for tt in noir.footprint_steps(c["dur"])[::2]]
+    elif c["kind"] == "clue_object":
+        out.append((s + f.get("land", 0.3), "stamp_thud", 0.16, 0.3, duck))
     elif c["kind"] == "polaroid":
         out.append((s + f["land"] - 0.05, "camera_shutter", 0.28, 0.7, duck))
     elif c["kind"] == "typewriter":

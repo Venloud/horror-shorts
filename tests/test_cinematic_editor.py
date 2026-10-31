@@ -652,3 +652,21 @@ class Hollywood(unittest.TestCase):
         self.assertLess(c["fields"]["from"][0], 0)           # Shannon, about -8.9
         self.assertGreater(c["fields"]["from"][0], -15)
         self.assertLess(c["fields"]["to"][0], -50)           # Gander, about -54.6
+
+    def test_clue_objects_and_tracks_with_no_return(self):
+        scenes = ["Nobody in the village could explain what happened on that winter night.",
+                  "The newspaper said the family had simply moved away without a word.",
+                  "But the key to the farmhouse was missing from its hook by the door.",
+                  "Fresh footprints in the snow led into the barn, and none came back out."]
+        story = {"title": "x", "scenes": [{"narration": s} for s in scenes]}
+        n = self._narr(scenes)
+        eff = explainer.plan_effects(story, n, self._segs(n, 4))
+        clues = {e["fields"]["object"]: e["fields"] for e in eff if e["kind"] == "clue_object"}
+        self.assertIn("newspaper", clues)
+        self.assertTrue(clues["key"]["missing"])  # the sentence says it is missing: crossed out
+        self.assertIn("footprint_route", [e["kind"] for e in eff])
+        quiet = ["Nobody in the village could explain what happened on that winter night.",
+                 "She left her footprints in the snow on the way to the barn."]
+        story2 = {"title": "x", "scenes": [{"narration": s} for s in quiet]}
+        n2 = self._narr(quiet)
+        self.assertNotIn("footprint_route", [e["kind"] for e in explainer.plan_effects(story2, n2, self._segs(n2, 2))])
