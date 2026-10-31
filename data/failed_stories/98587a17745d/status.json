@@ -1,0 +1,9 @@
+{
+ "story_id": "98587a17745d",
+ "title": "The Tokoloshe Water Spirit Legend",
+ "status": "branch_unfinished",
+ "reason": "unfinished on branch fixing-it: main's runs cannot restore that branch's checkpoint cache; resume it with retry_story_id=98587a17745d",
+ "at": "2026-10-31T03:55:11+00:00",
+ "last_stage": null,
+ "last_error": null
+}
