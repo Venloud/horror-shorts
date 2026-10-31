@@ -3,8 +3,10 @@
     {
       "part": 40,
       "slot": 41514,
-      "state": "reserved",
-      "created_at": "2026-10-31T03:57:23.985677+00:00"
+      "state": "delivered",
+      "created_at": "2026-10-31T03:57:23.985677+00:00",
+      "publish_id": "v_inbox_file~v2.7702675900437284895",
+      "updated_at": "2026-10-31T03:59:00.332776+00:00"
     }
   ]
 }
