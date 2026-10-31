@@ -3523,5 +3523,74 @@
       "pending": "buffer_queue_pending"
     },
     "draft_sent": "2026-10-30_2028"
+  },
+  {
+    "date": "2026-10-31_0137",
+    "story_id": "5939e92d2bce",
+    "series_id": null,
+    "series_episode": null,
+    "title": "Aloha Airlines Flight 243",
+    "premise": "An explosive decompression tears the roof off an aging Boeing 737 at twenty-four thousand feet.",
+    "subgenre": "true crime case file",
+    "mode": "case",
+    "true_story": true,
+    "case": "Aloha Airlines Flight 243",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Aloha Airlines Flight 243 flying between Hilo and Honolulu, Hawaii, in 1988",
+    "threat": "Catastrophic structural failure and explosive decompression at high altitude",
+    "twist": "The NTSB found that inadequate maintenance inspections failed to detect severe metal fatigue and corrosion.",
+    "score": null,
+    "seconds": 63.4,
+    "voice_speed": 1.1,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:10419525",
+      "pexels:36370601"
+    ],
+    "visual_mode": "analog",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 96,
+    "visuals": {
+      "distinct": 21,
+      "longest_s": 3.8,
+      "longest_share": 0.057,
+      "longest_name": "image:scene_06a.png:full"
+    },
+    "yt_title": "Blue Sky Replaced The Ceiling... Aloha Airlines Flight 243 #shorts",
+    "hashtags": [
+      "alohaairlines",
+      "hawaii",
+      "history",
+      "darkhistory"
+    ],
+    "yt_tags": [
+      "aloha airlines flight 243",
+      "flight 243",
+      "hawaii plane accident",
+      "boeing 737 decompression",
+      "robert schornstheimer",
+      "mimi tompkins",
+      "kahului airport landing",
+      "1988 aviation incident",
+      "metal fatigue plane",
+      "aloha airlines history",
+      "maui emergency landing",
+      "flight 243 story",
+      "hawaii mystery",
+      "true crime story",
+      "unsolved mystery"
+    ],
+    "opening": "Eighteen feet of aircraft skin tore away mid-flight, and blue sky instantly replaced the first-class ceiling.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-10-31_0137",
+    "tiktok": null
   }
 ]
