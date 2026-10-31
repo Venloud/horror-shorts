@@ -1,0 +1,43 @@
+{
+ "videos": 1,
+ "entries": {
+  "title": {
+   "fired": 1,
+   "last": "2026-10-31_0254"
+  },
+  "year_reel": {
+   "fired": 1,
+   "last": "2026-10-31_0254"
+  },
+  "phrase": {
+   "fired": 2,
+   "last": "2026-10-31_0254"
+  }
+ },
+ "places": {},
+ "unmatched": {
+  "unseen beast": 1,
+  "more ferocious": 1,
+  "much faster": 1,
+  "frightened residents": 1,
+  "residents even": 1,
+  "even believed": 1,
+  "local residents": 1,
+  "residents detailed": 1,
+  "nightly attacks": 1,
+  "ultimately concluded": 1,
+  "simply lion": 1
+ },
+ "log": [
+  {
+   "stamp": "2026-10-31_0254",
+   "story_id": "a8bd94181f97",
+   "effects": [
+    "title",
+    "year_reel",
+    "phrase",
+    "phrase"
+   ]
+  }
+ ]
+}

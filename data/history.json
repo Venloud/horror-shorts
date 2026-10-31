@@ -3592,5 +3592,75 @@
     "music_file": "bk_grnde.mp3",
     "buffered": "2026-10-31_0137",
     "tiktok": null
+  },
+  {
+    "date": "2026-10-31_0254",
+    "story_id": "a8bd94181f97",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Legend of the Mngwa",
+    "premise": "A monstrous big cat stalks Tanzanian villages at night, leaving huge paw prints and terrorizing locals.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Mngwa",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Tanganyika Territory, Tanzania",
+    "threat": "The Mngwa",
+    "twist": "The British administrator dismissed the monstrous sightings as a lion with gigantism.",
+    "score": null,
+    "seconds": 55.3,
+    "voice_speed": 1.0,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:11760744"
+    ],
+    "visual_mode": "classic",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 67,
+    "visuals": {
+      "distinct": 18,
+      "longest_s": 4.6,
+      "longest_share": 0.078,
+      "longest_name": "image:scene_05a.png:full"
+    },
+    "yt_title": "Massive Paw Prints Outside... The Mngwa of Tanzania #shorts",
+    "hashtags": [
+      "mngwa",
+      "tanzania",
+      "folklore",
+      "cryptid"
+    ],
+    "yt_tags": [
+      "the mngwa",
+      "mngwa legend",
+      "tanzania folklore",
+      "mngwa beast",
+      "african cryptids",
+      "william hitchens",
+      "tanganyika legend",
+      "giant lion",
+      "mysterious beast",
+      "cryptozoology",
+      "scary legends",
+      "folklore monsters",
+      "mngwa",
+      "scary legend",
+      "folklore"
+    ],
+    "opening": "Massive paw prints outside the heavy wooden door left the terrified villagers certain that something impossible was prowling.",
+    "music_file": "background_music.mp3",
+    "buffered": "2026-10-31_0254",
+    "tiktok": null
   }
 ]
