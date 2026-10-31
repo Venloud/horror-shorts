@@ -220,9 +220,10 @@
       "title": "The Horned Devil Of December... Krampus #shorts"
     },
     "2026-10-31_0137": {
-      "status": "attempt_started",
-      "title": "Blue Sky Replaced The Ceiling... Aloha Airlines Flight 243 #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/buffer/2026-10-31_0137.mp4"
+      "status": "queued",
+      "buffer_post_id": "6ae57206ceb491e585d96cc3",
+      "due_at": "2026-11-05T02:21:00.000Z",
+      "title": "Blue Sky Replaced The Ceiling... Aloha Airlines Flight 243 #shorts"
     }
   }
 }
