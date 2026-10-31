@@ -25,3 +25,15 @@ Goal: scripts worth saving ("what value does this give me?"), not the same beats
 
 ## Known issue for later
 - A question shown on screen can appear before / after it is spoken (caption vs graphic timing).
+
+## Celebrity "your life as..." (owner, Oct 31)
+9. Same POV format for celebrities, picked by what is trending (the existing Wikipedia-pageviews trend picker,
+   `trends.py`, can choose the person). Facts only from sources (Wikipedia + grounded research); "probably" /
+   "allegedly" wording does NOT make an unsourced claim safe about a living person, so: public, sourced career and
+   life events only, no private / criminal / health allegations unless sourced and central. Hashtags for the
+   person + the current event the sources mention.
+
+## Captions on TikTok drafts (owner, Oct 31)
+- The inbox (draft) upload cannot carry a caption; captions + hashtags need TikTok's direct-post approval (owner
+  is finishing the FinalCog site for the developer review). Until then, the ntfy alert / caption.txt carry the
+  exact caption + hashtags to paste.
