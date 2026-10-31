@@ -6,7 +6,7 @@ on:
     - cron: '10 7,19 * * *'
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: tiktok-clipper-posts
   cancel-in-progress: false
@@ -50,24 +50,32 @@ jobs:
           for name in ['MrBeast_compressed.mp4']+ASSETS:
               download(RELEASE+name,root/name,max_mb=900)
           PY
-      - name: Select original video part
+      - name: Select next unreserved original video part
         id: part
         env:
           SLOT: ${{ steps.rotation.outputs.slot }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           python - <<'PY'
-          import os,subprocess,math
+          import os,subprocess
+          from clipper.delivery_guard import read
           source='clipper/assets/MrBeast_compressed.mp4'
           seconds=float(subprocess.check_output(['ffprobe','-v','error','-show_entries','format=duration','-of','default=noprint_wrappers=1:nokey=1',source],text=True).strip())
           count=int(seconds//60)
           if count<1:raise RuntimeError('Source video is shorter than one minute')
           slot=int(os.environ['SLOT'])
-          # Reverse part order, still uniquely covers all full parts before repeating.
-          part=1+((-slot)%count)
+          ledger,_=read()
+          used={int(e['part']) for e in ledger['entries']}
+          # Keep the owner's reverse ordering, skipping previously reserved/delivered parts.
+          start=1+((-slot)%count)
+          part=next((1+((start-1-offset)%count) for offset in range(count)
+                     if 1+((start-1-offset)%count) not in used), None)
+          if part is None:
+              raise RuntimeError(f'All {count} original parts are reserved/delivered; no duplicate sent')
           with open(os.environ['GITHUB_OUTPUT'],'a') as f:
               f.write(f'number={part}\n')
               f.write(f'count={count}\n')
-          print(f'Original duration: {seconds:.1f}s; Part {part} of {count}; source offset {(part-1)*60}s')
+          print(f'Original duration: {seconds:.1f}s; Next undelivered part {part} of {count}; source offset {(part-1)*60}s')
           PY
       - name: Prepare 60-second background
         env:
@@ -137,7 +145,6 @@ jobs:
       - name: Reserve clip part in durable ledger before TikTok upload
         id: reserve
         env:
-          GH_PAT: ${{ secrets.GH_PAT }}
           GITHUB_TOKEN: ${{ github.token }}
           CLIP_PART: ${{ steps.part.outputs.number }}
           CLIP_SLOT: ${{ steps.rotation.outputs.slot }}
@@ -152,7 +159,6 @@ jobs:
       - name: Send reserved part to TikTok inbox and record receipt
         if: steps.reserve.outputs.new == 'true'
         env:
-          GH_PAT: ${{ secrets.GH_PAT }}
           GITHUB_TOKEN: ${{ github.token }}
           TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
           TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
