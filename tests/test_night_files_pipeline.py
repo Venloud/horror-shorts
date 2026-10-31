@@ -844,8 +844,10 @@ class VirtualShotProvenanceRegression(unittest.TestCase):
 
 
 class PreferredNarratorContract(unittest.TestCase):
-    def test_new_stories_use_owner_approved_aka_manto_voice(self):
-        self.assertEqual(common.CONFIG["voice_test_pool"], ["am_adam"])
+    def test_new_stories_alternate_the_owner_approved_voices(self):
+        # owner, Oct 31: rotate Adam (the Aka Manto voice) and Michael (the original voice); voice.narrate never
+        # repeats the previous video's narrator, so a two-voice pool alternates
+        self.assertEqual(common.CONFIG["voice_test_pool"], ["am_adam", "am_michael"])
         self.assertEqual(common.CONFIG["voice"], "am_adam")
         self.assertAlmostEqual(common.CONFIG["voice_speed"], 1.1)
 

@@ -247,7 +247,8 @@
   ],
   "voice": "am_adam",
   "voice_test_pool": [
-    "am_adam"
+    "am_adam",
+    "am_michael"
   ],
   "voice_speed": 1.1,
   "voice_lang": "a",
