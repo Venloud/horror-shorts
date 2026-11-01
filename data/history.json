@@ -3756,5 +3756,84 @@
       "pending": "buffer_queue_pending"
     },
     "draft_sent": "2026-11-01_0717"
+  },
+  {
+    "date": "2026-11-01_1955",
+    "story_id": "2a662c70c065",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Mothman of Point Pleasant",
+    "premise": "A tall humanoid creature with glowing red eyes and wings was purportedly seen in West Virginia starting in 1966.",
+    "subgenre": "real unsolved mystery",
+    "mode": "mystery",
+    "true_story": true,
+    "case": "Mothman",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Point Pleasant, West Virginia, 1966",
+    "threat": "A tall humanoid creature with glowing red eyes",
+    "twist": "Sightings were linked to the tragic collapse of the Silver Bridge.",
+    "score": null,
+    "seconds": 65.9,
+    "voice_speed": 1.1,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:11340265",
+      "pexels:38225362"
+    ],
+    "visual_mode": "analog",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 85,
+    "visuals": {
+      "distinct": 23,
+      "longest_s": 6.2,
+      "longest_share": 0.089,
+      "longest_name": "image:scene_03a.png:full"
+    },
+    "yt_title": "Glowing Red Eyes Tracked a Car... The Mothman #shorts",
+    "hashtags": [
+      "mothman",
+      "pointpleasant",
+      "mystery",
+      "strangehistory"
+    ],
+    "yt_tags": [
+      "the mothman",
+      "mothman legend",
+      "point pleasant",
+      "point pleasant west virginia",
+      "mothman sightings 1966",
+      "silver bridge collapse",
+      "west virginia creature",
+      "mothman true story",
+      "unexplained mystery",
+      "strange history",
+      "cryptozoology legend",
+      "mothman encounters",
+      "mothman",
+      "mothman story",
+      "true crime story"
+    ],
+    "opening": "Glowing red eyes tracked a speeding car through the dark as a slender seven-foot creature with white wings chased it down.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-11-01_1955",
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7703301557336705054",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    },
+    "draft_sent": "2026-11-01_2026"
   }
 ]
