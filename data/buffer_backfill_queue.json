@@ -238,9 +238,10 @@
       "title": "Crying Near the Dark River... La Llorona of Hispanic America #shorts"
     },
     "2026-11-01_1955": {
-      "status": "attempt_started",
-      "title": "Glowing Red Eyes Tracked a Car... The Mothman #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-11-01_1955.mp4"
+      "status": "queued",
+      "buffer_post_id": "6ae7a0847cb7cec073530a56",
+      "due_at": "2026-11-06T01:44:00.000Z",
+      "title": "Glowing Red Eyes Tracked a Car... The Mothman #shorts"
     }
   }
 }
