@@ -232,9 +232,10 @@
       "title": "Massive Paw Prints Outside... The Mngwa of Tanzania #shorts"
     },
     "2026-11-01_0652": {
-      "status": "attempt_started",
-      "title": "Crying Near the Dark River... La Llorona of Hispanic America #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-11-01_0652.mp4"
+      "status": "queued",
+      "buffer_post_id": "6ae6e7af37c1acd2a0f0ab50",
+      "due_at": "2026-11-06T00:57:00.000Z",
+      "title": "Crying Near the Dark River... La Llorona of Hispanic America #shorts"
     }
   }
 }
