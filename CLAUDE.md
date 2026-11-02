@@ -59,6 +59,17 @@ every mode, driven only by the narration's word timings + fact ledger; no per-st
   (status branch_unfinished) so main can resume it with retry_story_id. Merge fixing-it -> main only after the
   owner approves a video, then delete the branch.
 
+### Owner writing update, 2026-11-02: viewer value (discovery, earned payoff, one CTA)
+Every story: a specific discovery beyond the monster's name and looks (legends: earliest record, culture, versions,
+proposed explanations, each labelled history / folklore / disputed / unknown, never invented), an opening that makes
+the viewer curious about it, no padding, a payoff that answers the hook, then at most ONE relevant call to action
+(e.g. "if your town tells it differently, say where you're from"). The old "end on a question to the viewer" rules
+(mystery.py MYSTERY / TRUE prompts, explainer adapt) are gone. Shared contract: docs/NIGHT_FILES_STORYTELLING_STYLE.md
+(ported from PR #41 commits 6471359 + 986ee21). Code: `story.viewer_value_findings` (generic_ending, stacked_cta,
+no_discovery, padded; quotes the weak line, revise-level, never blocks), the critic/director returns viewer_learns /
+payoff_line / cta_line / weak_lines and its score is labelled editorial (not retention); research.py asks for origin
+lines on legends. Regression scripts: tests/fixtures/writing/regression_{kuchisake_onna,hubbard_street,krampus,mngwa}.json.
+
 Read this first. It sums up the decisions from the long chat where this project was built (Sept 2026),
 so a new session can pick up without starting over.
 

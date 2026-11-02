@@ -19,7 +19,12 @@ STYLE_FILE = Path(__file__).resolve().parent.parent / "docs" / "NIGHT_FILES_STOR
 
 def shared_style(prompt: str) -> str:
     """Use one checked-in voice/style standard across ALL model calls."""
-    return "NIGHT FILES SHARED STYLE:\n" + STYLE_FILE.read_text(encoding="utf-8") + "\n\nTASK:\n" + prompt
+    return ("NIGHT FILES SHARED STYLE:\n" + STYLE_FILE.read_text(encoding="utf-8")
+            + "\n\nTASK:\n" + prompt
+            + "\n\nFINAL EDITORIAL REQUIREMENT: Apply the shared viewer-value contract even "
+              "if an older task prompt makes learning optional or requires an ending question. "
+              "Deliver a specific lesson/discovery, the hook\'s payoff, then exactly one relevant "
+              "call to action. Preserve facts, approved text, and the requested output schema.")
 
 
 SCHEMA = {
@@ -30,6 +35,8 @@ SCHEMA = {
         "central_question": {"type": "STRING"},
         "understanding_shift": {"type": "STRING"},
         "ending_payoff": {"type": "STRING"},
+        "viewer_lesson": {"type": "STRING"},
+        "call_to_action": {"type": "STRING"},
         "recurring_visual_motif": {"type": "STRING"},
         "hook_overlay": {"type": "STRING"},
         "scenes": {
@@ -689,6 +696,72 @@ def continuity_findings(text: str) -> list[dict]:
     return out
 
 
+# ---- viewer value (owner, Nov 2 2026): a discovery, an earned payoff, at most one relevant call to action ----
+# A generic closing question ("what would you check first tonight?") is not a payoff and not a CTA.
+GENERIC_QUESTION = re.compile(
+    r"\b(what (?:\w+ ){0,2}(?:would|will|do) you (?:\w+ )?(?:check|do|choose|say|try|pick|bring|look for|answer)|would you "
+    r"(?:\w+ )?(?:open|answer|run|stay|go|risk|survive|dare|check|look)|what do you think (?:really )?happened|"
+    r"what would you have done|if you were (?:there|alone|in)|could you survive|are you brave enough)\b", re.I)
+CTA_KINDS = {"comment": r"\b(comment|tell (?:me|us)|let (?:me|us) know|say where|drop (?:a|your))\b",
+             "share": r"\b(share this|send this|tag (?:a|someone|your))\b",
+             "follow": r"\b(follow (?:for|night files|the channel)|subscribe)\b", "like": r"\b(like this|hit like)\b"}
+# Where a legend comes from / what the evidence finally showed: the discovery beyond the creature's name and looks.
+DISCOVERY = re.compile(
+    r"\b(earliest|oldest (?:record|account|version|story|written)|first (?:recorded|written|reported|printed|"
+    r"appeared|mentioned|told)|recorded in|written down|dates? back|origins?\b|originat\w+|comes? from|came from|"
+    r"rooted in|grew out of|began as|started as|inspired by|named after|the (?:name|word) \w+ means|means \w+ in|"
+    r"centur(?:y|ies)|versions?\b|variants?|in other (?:regions|villages|countries|tellings)|historians?|scholars?|"
+    r"folklorists?|newspapers? (?:reported|printed)|concluded|turned out|the explanation|explained by|was actually|"
+    r"in reality|the real (?:source|cause|reason)|custom of|tradition of|"
+    r"(?:some|others|many|skeptics) (?:say|think|believe|suggest|blame) (?:it|they|the \w+) (?:was|were|came)|"
+    r"may have (?:been|come|started)|probably (?:was|came|began))\b", re.I)
+PADDING = re.compile(
+    r"\b(very|really|quietly|slowly|carefully|silently|suddenly|finally|firmly|tightly|eagerly|quickly|generously|"
+    r"strictly|safely|terrif\w+|horrif\w+|heavy|massive|dark|deep|cold|frozen|freezing|tense|quiet|silent|"
+    r"precious|single|exact|dreaded|eerie|creepy|mysterious)\b", re.I)
+
+
+def _sentences(text: str) -> list[str]:
+    return [x.strip() for x in re.split(r"(?<=[.!?])\s+", text) if x.strip()]
+
+
+def viewer_value_findings(story: dict, kind: str) -> list[dict]:
+    """Deterministic viewer-value review: every finding QUOTES the weak line and says what to do instead.
+    generic_ending (a stock survival / "what would you check" question at or near the end, revise),
+    stacked_cta (more than one comment/share/follow ask, revise), no_discovery (a legend that never says where it
+    comes from, how versions differ or what explains it: only the creature's name and looks, revise), padded
+    (sentences stacking filler adjectives / adverbs; revise at 3+ sentences, else advisory)."""
+    out = []
+    sents = _sentences(_narr(story))
+    if not sents:
+        return out
+    ending = sents[-2:]
+    for s in ending:
+        if "?" in s and GENERIC_QUESTION.search(s):
+            out.append({"code": "generic_ending", "severity": "revise",
+                        "detail": f"'{s[:160]}' is a stock question, not a payoff: end on what the hook promised "
+                                  "(the answer, the evidence, or the exact unknown), then at most one call to "
+                                  "action tied to the discovery"})
+            break
+    tail = " ".join(ending)
+    asks = [k for k, rx in CTA_KINDS.items() if re.search(rx, tail, re.I)]
+    if len(asks) > 1:
+        out.append({"code": "stacked_cta", "severity": "revise",
+                    "detail": f"'{tail[-160:]}' asks for {' + '.join(asks)}: keep exactly one"})
+    if kind in ("lore", "legend") and not DISCOVERY.search(" ".join(sents)):
+        out.append({"code": "no_discovery", "severity": "revise",
+                    "detail": f"the viewer only learns the creature's look and rules; nothing says where the "
+                              f"legend comes from, how its versions differ or what explains it (ends: "
+                              f"'{sents[-1][:120]}'). Add the sourced origin / earliest record / version "
+                              "difference, labelled as history, folklore, disputed or unknown"})
+    padded = [s for s in sents if len(PADDING.findall(s)) >= 3]
+    if padded:
+        out.append({"code": "padded", "severity": "revise" if len(padded) >= 3 else "advisory",
+                    "detail": "; ".join(f"'{s[:110]}' ({', '.join(m.lower() for m in PADDING.findall(s))})"
+                                        for s in padded[:3]) + ": cut the filler words, add a fact or action"})
+    return out
+
+
 def writing_checks(story: dict, kind: str | None = None, source: str | None = None) -> list[dict]:
     """Deterministic, evidence-based checks of a script (no LLM). Each: {code, severity, detail} with severity
     serious (demonstrable: blocks if it survives the revision), revise (one targeted revision) or advisory.
@@ -742,6 +815,7 @@ def writing_checks(story: dict, kind: str | None = None, source: str | None = No
         out.append({"code": "repetitive", "severity": "advisory",
                     "detail": f"{starts[common[0]]} sentences open with '{common[0]}'"})
     out += continuity_findings(text)  # revise-level: one targeted revision, never a block
+    out += viewer_value_findings(story, kind)
     if text.count("?") > 3:
         out.append({"code": "forced_questions", "severity": "advisory", "detail": f"{text.count('?')} questions"})
     tail = " ".join(sc.get("narration", "") for sc in (story.get("scenes") or [])[-2:])
@@ -824,8 +898,9 @@ JUDGE_PROMPT = """You are an INDEPENDENT script editor for Night Files, a short 
 You wrote neither draft. Compare them for a {kind} story ({genre_rule}).
 Judge each 0-10 on: title_alignment (it is about what the title promises, from the start), hook (the first line is the
 most gripping relevant detail), pacing (every beat adds something new), accuracy (only the supplied facts; theory,
-rumor and fact kept apart), coherence, suspense, clarity (a viewer can say what happened), payoff (a real ending or an
-honest unresolved question), natural_voice (spoken, conversational, no "you watch / you follow" stage directions).
+rumor and fact kept apart), coherence, suspense, clarity (a viewer can say what happened), payoff (a real ending that
+answers the hook and a discovery the viewer can repeat; a generic closing question like "what would you check first?"
+is not a payoff), natural_voice (spoken, conversational, no "you watch / you follow" stage directions).
 Quote the exact words that justify your biggest differences. If the drafts are equally good, choose A.
 OBJECTIVE CHECKS (measured by code, trust them):
 A: {checks_a}
@@ -1199,8 +1274,16 @@ Score (whole numbers): hook (max {m_hook}): the first sentence is the strangest 
 opener; clarity (max {m_clarity}): the viewer can explain what happened in one sentence; pacing (max {m_pacing}):
 something new every 5-8 seconds, no filler; name_early (max 10): the case/legend/place name is said in scene 1 or 2;
 payoff (max 15): the ending answers the hook; integrity (max {m_integrity}): {integrity}.{story_rule}
+These are EDITORIAL scores of the text, not a prediction of audience retention.
+VIEWER VALUE (required): "viewer_learns" = what a viewer can explain afterwards that goes beyond the creature's /
+case's name and looks (an origin, what the evidence showed, what a choice cost), quoting the exact narration line
+that delivers it, or "" if no line does. "payoff_line" = the exact line that answers the hook, or "". "cta_line" =
+the single call to action, or "" (none is allowed; two or more is a problem). A generic closing question ("what
+would you check first tonight?") is NOT a payoff and NOT a discovery. "weak_lines" = up to 4 exact quotes of
+padded, repeated, off-topic or generic lines, each with the problem and a concrete rewrite.
 Return JSON: {{"hook": 0, "clarity": 0, "pacing": 0, "name_early": 0, "payoff": 0, "integrity": 0,{story_key}
-"what_happened": "one sentence", "reasons": ["concrete problem + concrete fix", ...]}}
+"what_happened": "one sentence", "viewer_learns": "...", "payoff_line": "...", "cta_line": "...",
+"weak_lines": [{{"quote": "...", "problem": "...", "fix": "..."}}], "reasons": ["concrete problem + concrete fix", ...]}}
 
 STORY:
 {draft}"""
@@ -1397,15 +1480,30 @@ def critic_pass(story: dict, api_key: str, kind: str, rules: str, source: str | 
         hard.append(f"story {r.get('story')}/20: this reads like a list of facts. Rewrite it as ONE scenario "
                     "with people, a place and rising tension (death, illness, suspicion, the grave opened, the "
                     "reveal, the remedy), weaving every fact into that scene")
+    learns, payoff_line = str(r.get("viewer_learns") or "").strip(), str(r.get("payoff_line") or "").strip()
+    weak = [w for w in (r.get("weak_lines") or []) if isinstance(w, dict) and w.get("quote")][:4]
+    if not learns:
+        hard.append("the director finds no line that teaches the viewer anything beyond the name and looks: add the "
+                    "sourced discovery (origin / earliest record / what the evidence showed) and say it plainly")
+    if not payoff_line:
+        hard.append("no line answers the hook: end on the answer, the evidence, or the exact point where the record "
+                    "stops, before any call to action")
+    hard += [f"weak line '{str(w['quote'])[:140]}': {str(w.get('problem', ''))[:120]} -> {str(w.get('fix', ''))[:140]}"
+             for w in weak[:2]]
     talk = SOURCE_TALK.search(_narr(story))
     if talk:
         hard.append(f"the narration says {talk.group(0)!r}: never talk about sources; just tell the legend")
     checks = writing_checks(story, "true" if kind == "true" else "lore", source)
-    log(f"Critic (advisory): {total}/100 ({', '.join(f'{k} {r.get(k)}' for k in maxes)}). "
+    log(f"Director: viewers learn: {learns[:160] or 'NOTHING FOUND'} | payoff: {payoff_line[:120] or 'none'} | "
+        f"CTA: {str(r.get('cta_line') or 'none')[:100]} | weak lines: "
+        f"{' / '.join(str(w['quote'])[:80] for w in weak) or 'none'}")
+    log(f"Critic (editorial score, not measured retention): {total}/100 ({', '.join(f'{k} {r.get(k)}' for k in maxes)}). "
         f"What happened: {str(r.get('what_happened', ''))[:120]}. Notes: {' | '.join(hard + reasons)[:400]}. "
         f"Measured: {_brief(checks)[:200]}")
     story["critic_score"] = total
-    rec["critic"] = {"available": True, "score": total, "bar": bar, "notes": (hard + reasons)[:6]}
+    rec["critic"] = {"available": True, "score": total, "score_kind": "editorial, not audience retention", "bar": bar,
+                     "notes": (hard + reasons)[:6], "viewer_learns": learns[:300], "payoff_line": payoff_line[:300],
+                     "cta_line": str(r.get("cta_line") or "")[:200], "weak_lines": weak}
     if total >= bar and not hard and not _severity(checks, "serious") and not _severity(checks, "revise"):
         return story
     return targeted_revision(story, api_key, "true" if kind == "true" else "lore", rules,

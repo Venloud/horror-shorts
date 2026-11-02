@@ -12,12 +12,20 @@ This guide is shared across the primary writer, alternate writers, script editor
 - Establish real stakes, maintain clear cause-and-effect, and end with a meaningful payoff or an honest unresolved question, not a generic call for comments.
 
 ## The viewer-value contract (Night Files, October 26, 2026)
-Before writing each new script, answer privately: **what does somebody get from this minute of attention?**
-Choose at least one earned outcome: (1) a real, sourced and repeatable fact; (2) a clear story reversal or insight;
-or (3) a specific emotion and consequence worth remembering. No compulsory life lesson, sermon, moral, CTA or fake
-scientific lesson. An unexplained object at the end is not automatically a payoff. The last two scenes should make
-clear **what changed, what the clues mean, and why the hook mattered**. The final line can remain unsettling or
-honestly unresolved, but the viewer should still be able to retell what happened and why it mattered.
+Before writing each new script, define all three privately:
+1. **Lesson/discovery:** "After watching, the viewer can explain ..." Name one specific new understanding beyond a creature's name, appearance or powers. A scare alone is insufficient.
+2. **Payoff:** Name the supported answer, reveal, consequence or clearly explained uncertainty that rewards the hook within this video.
+3. **Call to action:** Choose exactly one relevant action after delivering the lesson and payoff. Invite a meaningful contribution, sharing with a relevant person, or following for a specific related learning promise. Never stack comment/share/follow requests.
+
+Build the hook around the discovery, then use connected evidence, decisions and consequences to earn it. Cut padded adjectives and repeated atmosphere. Move a useful question to the opening when the story can explore it. Never automatically end with "what would you check tonight?" or an unrelated survival question. A CTA cannot replace the ending.
+
+For folklore, research how the legend came to be: earliest documented accounts, cultural context, spread and changes between versions. Choose the strongest supported discovery; do not force an origin claim when sources cannot establish one. Distinguish earliest recorded appearance from an actual origin, and documented context from a proposed explanation. Mark disputed or unknown origins clearly. Attribute escape rules to versions of the legend, never real safety advice.
+
+For historical mysteries, teach what the evidence supports and what remains unknown. For original fiction, earn an insight through the character's decision and consequence, clearly within fiction; never invent a real-world scientific or historical lesson. No forced moral or sermon.
+
+**Editor/critic review:** Identify the exact narration delivering the lesson and the payoff, and the single CTA. Quote a weak line, explain the specific problem, and propose a concrete revision when any requirement is missing. Do not accept a monster description as discovery or a generic final question as payoff. Recheck changed narration within the existing bounded revision budget, without extra model-call loops. Unavailable review is unverified, never a passing result. Subjective editorial scores do not predict retention and do not discard already completed safe videos.
+
+These November 2, 2026 owner requirements supersede older task prompts that make learning optional or demand a viewer question at every ending. Preserve source integrity, existing JSON schemas, owner-approved text and production safety gates.
 
 ### Make it instantly understandable
 - Establish WHAT happened, WHO or WHAT it affects and WHERE the story occurs as soon as those details help

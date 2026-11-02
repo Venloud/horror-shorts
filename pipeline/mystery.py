@@ -31,7 +31,10 @@ STRUCTURE (follow exactly)
    The first sentence is the most ironic, specific or unbelievable REAL detail in the source (e.g. "The password to the Louvre's security cameras was 'Louvre.'"), NOT a summary of the event. It must be literally true as the source states it, and must never imply a cause, motive or connection the source doesn't state.
 2. SCENE 2 = CONTEXT: when and where it happened, and who was involved, in plain words.
 3. SCENES 3+ = what happened, in order, with the eeriest real details. Then the main theories, clearly framed as theories ("Some believe...", "Investigators suggested...").
-4. LAST SCENE = what remains unexplained, ending with a direct question to the viewer, e.g. "What do you think really happened?"
+4. LAST SCENES = THE PAYOFF: what the evidence finally shows and what remains unexplained, said plainly (the answer
+   to the hook, or the exact point where the record stops). Then at most ONE short, relevant call to action that
+   grows out of what the viewer just learned (e.g. which explanation the evidence favours, someone they'd send this
+   to). NEVER a generic survival / "what would you check first?" question, never a question in place of the ending.
 
 HARD RULES
 - FACT LOCK: before writing, build a fact ledger from the SOURCE in "fact_ledger" (one "label: value" line each: names, numbers, money, dates, years, ages, places, counts, organizations, vehicles/aircraft, quotes). Write the story ONLY from that ledger. Values may be turned into spoken words but NEVER changed, rounded, estimated or slangified ("$200,000" -> "two hundred thousand dollars"; never "twenty-k", "twenty thousand" or "about two hundred thousand"). Before returning, silently compare every value in the narration with the ledger.
@@ -72,6 +75,10 @@ OTHER FIELDS
 - hook_overlay: 2-5 word shocking on-screen text, e.g. "They cut the tent open", "Never found. Still unsolved."
 - hook_candidates: 3 DIFFERENT candidate first sentences for scene 1 (each max 18 words, strangest or most shocking detail first, never a date, year or place name). Scene 1 must start with the best one.
 - twist_scene: 0-based index of the scene with the strangest reveal.
+- viewer_lesson: "After watching, the viewer can explain ..." (the discovery, quoted from your narration; never the
+  subject's name or looks alone).
+- ending_payoff: the exact narration line that answers the hook.
+- call_to_action: the single call to action you used, or "" (never more than one).
 - caption: line 1 = the exact phrase people type into search for this story (e.g. "What happened to D.B. Cooper?", "What is the Wendigo?"); the channel adds "illustrated horror story" itself. Line 2 = a question for comments. Max 150 characters. May use 1 emoji.
 - hashtags: 5 topic hashtags without # (the case, place, legend or subject + its genre, e.g. dbcooper, unsolvedmysteries). The channel adds #illustratedhorror #horrorstory itself. Never fyp, foryou or viral. For true stories, hashtags and caption must match the source: never "unsolved" / #unsolved when the source gives an official ruling (e.g. a coroner's finding) or the case was solved.
 - pinned_comment: a question that invites theories.
@@ -111,8 +118,22 @@ is told, with people, a place, rising tension and an ending. Every fact from the
 6. THE REVEAL (twist_scene): what they find, from the source (e.g. the open mouth, the chewed shroud).
 7. THE REMEDY from the source, done in the scene (the coin or stone placed in the mouth, the head...), and
    whether it worked, as the legend tells it.
-8. LAST SCENE = a chilling closing line that pays off the hook and ends the video cleanly.
+8. LAST SCENE = the payoff: a chilling closing line that answers the hook, then the DISCOVERY said plainly (see
+   below), then at most ONE relevant call to action.
+THE DISCOVERY (required): decide BEFORE writing what the viewer will be able to explain afterwards beyond the
+creature's name, looks and powers: where the legend comes from (its earliest recorded mention, the culture, custom,
+fear or real event it is tied to), how its versions differ between places or eras, or what the remedy / rule
+reveals about the people who told it. Use ONLY what the SOURCE says, and label it honestly: recorded history ("the
+earliest written account is ..."), folklore ("in the old tellings ..."), a disputed explanation ("some historians
+think ..."), or unknown ("nobody knows who first told it; the oldest record is ..."). Never invent an origin, a
+date or a scholar. Weave it into the scenario (scene 2 or the closing scenes); the opening should make the viewer
+curious about it. Escape rules belong to the legend, never real safety advice.
+THE CALL TO ACTION (one, after the payoff): something the viewer can actually contribute, tied to the discovery,
+e.g. "If your town tells a different version, say where you're from and how it goes." Never stack comment / share
+/ follow requests, never "what would you check first tonight?" or another unrelated survival question.
 Include ONE surprising real detail the viewer will want to repeat to a friend.
+Cut padding: no stacked adjectives ("heavy", "dark", "terrifying", "quietly", "very slowly"), no atmosphere repeated
+from an earlier scene; every sentence adds a new fact, action or consequence.
 NEVER write "according to the sources", "from the sources", "the sources say", "folklore held", "according to
 folklore" or any line about where the information comes from: the narrator TELLS the legend ("the story goes",
 "people swore", "villagers believed" are fine).
@@ -161,6 +182,10 @@ OTHER FIELDS
 - hook_overlay: 2-5 word shocking on-screen text, e.g. "It mimics your mother's voice".
 - hook_candidates: 3 DIFFERENT candidate first sentences for scene 1 (each max 18 words, strangest or most shocking detail first, never a date, year or place name). Scene 1 must start with the best one.
 - twist_scene: 0-based index of the creepiest reveal.
+- viewer_lesson: "After watching, the viewer can explain ..." (the discovery, quoted from your narration; never the
+  creature's name or looks alone).
+- ending_payoff: the exact narration line that answers the hook.
+- call_to_action: the single call to action you used, or "" (never more than one).
 - caption: line 1 = the exact phrase people type into search for this story (e.g. "What happened to D.B. Cooper?", "What is the Wendigo?"); the channel adds "illustrated horror story" itself. Line 2 = a question for comments. Max 150 characters. May use 1 emoji.
 - hashtags: 5 topic hashtags without # (the case, place, legend or subject + its genre, e.g. dbcooper, unsolvedmysteries). The channel adds #illustratedhorror #horrorstory itself. Never fyp, foryou or viral. For true stories, hashtags and caption must match the source: never "unsolved" / #unsolved when the source gives an official ruling (e.g. a coroner's finding) or the case was solved.
 - pinned_comment: a question that invites people to share their own local legends.
@@ -191,7 +216,8 @@ STRUCTURE (follow exactly)
 2. SCENE 2 = CONTEXT: when, where, who, in plain words.
 3. WHAT HAPPENED: the key turns in order, with the most vivid real details.
 4. HOW IT ENDED: caught, solved, escaped, or still unknown. This must pay off the hook.
-5. LAST SCENE: one strong closing line, then a short question to the viewer.
+5. LAST SCENE: one strong closing line that states what the case finally taught or revealed, then at most ONE
+   short relevant call to action. Never a generic "what would you do?" question in place of the ending.
 
 HARD RULES
 - FACT LOCK: before writing, build a fact ledger from the SOURCE in "fact_ledger" (one "label: value" line each: names, numbers, money, dates, years, ages, places, counts, organizations, vehicles/aircraft, quotes). Write the story ONLY from that ledger. Values may be turned into spoken words but NEVER changed, rounded, estimated or slangified ("$200,000" -> "two hundred thousand dollars"; never "twenty-k", "twenty thousand" or "about two hundred thousand"). Before returning, silently compare every value in the narration with the ledger.
@@ -232,6 +258,10 @@ OTHER FIELDS
 - hook_overlay: 2-5 word shocking on-screen text, e.g. "The perfect crime. Almost."
 - hook_candidates: 3 DIFFERENT candidate first sentences for scene 1 (each max 18 words, strangest or most shocking detail first, never a date, year or place name). Scene 1 must start with the best one.
 - twist_scene: 0-based index of the biggest turn.
+- viewer_lesson: "After watching, the viewer can explain ..." (the discovery, quoted from your narration; never the
+  subject's name or looks alone).
+- ending_payoff: the exact narration line that answers the hook.
+- call_to_action: the single call to action you used, or "" (never more than one).
 - caption: line 1 = the exact phrase people type into search for this story (e.g. "What happened to D.B. Cooper?", "What is the Wendigo?"); the channel adds "illustrated horror story" itself. Line 2 = a question for comments. Max 150 characters. May use 1 emoji.
 - hashtags: 5 topic hashtags without # (the case, place, legend or subject + its genre, e.g. dbcooper, unsolvedmysteries). The channel adds #illustratedhorror #horrorstory itself. Never fyp, foryou or viral. For true stories, hashtags and caption must match the source: never "unsolved" / #unsolved when the source gives an official ruling (e.g. a coroner's finding) or the case was solved.
 - pinned_comment: a question that starts a discussion.

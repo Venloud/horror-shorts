@@ -69,8 +69,10 @@ STYLE (Van's mid-conversation method)
 - Problem by problem: every scene is one problem or step that escalates the last one (cause -> mechanism ->
   consequence). Concrete numbers and plain logic the viewer could explain back. Short spoken sentences, varied rhythm.
 - No source talk ("according to", "sources say", "records show"), no lecture tone, no list of facts.
-- The ending gives the viewer the floor: an open question that makes them APPLY what they just learned (a concrete
-  choice, a dilemma, "what would you check first?"), never "comment below", "follow for more" or "part 2".
+- The ending pays off the hook and states what the viewer now understands (the discovery: an origin, what the
+  evidence shows, what a choice cost). Then at most ONE relevant call to action tied to that discovery (e.g. "if your
+  town tells it differently, say where you're from"); never a generic "what would you check first?" or survival
+  question, never a question instead of the ending, never "follow for more" or "part 2".
 - {words} words in total, {scenes} scenes.
 FACTS: {facts}
 SAFETY: no gore, no occult symbols or rituals, adults only (never a child in danger), respectful toward real people.
@@ -139,7 +141,7 @@ def adapt(story: dict) -> dict:
         if story.get(k) and not new.get(k):
             new[k] = story[k]
     rules = (f"EXPLAINER style: natural spoken point of view, {WHO[kind]} {FACTS[kind]} "
-             "Problem by problem, concrete numbers, ends on an open question for the viewer.")
+             "Problem by problem, concrete numbers, ends on the payoff and the discovery, then at most one relevant call to action.")
     new = st.fix_hook(new, api_key, st.sfx_names(), rules)
     if kind == "true":  # only facts the verified story already had
         new = st.fact_check(new, verified, api_key)
