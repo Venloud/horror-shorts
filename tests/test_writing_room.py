@@ -422,3 +422,20 @@ class ViewerValue(unittest.TestCase):
         self.assertEqual(crit["score_kind"], "editorial, not audience retention")
         self.assertTrue(any("teaches the viewer" in n for n in crit["notes"]))
         self.assertTrue(any("Every single fifth of December" in n for n in crit["notes"]))
+
+    def test_flight_811_recap_ending_and_spoken_planning_note(self):
+        s = _fixture("flight_811")
+        c = self.codes(s)
+        self.assertIn("restated", c)  # "An electrical system malfunction and latch design flaw led to the disaster."
+        self.assertIn("latch design flaw", c["restated"]["detail"])
+        before = _with(s["explainer_before"], s)
+        self.assertIn("meta_leak", self.codes(before))
+        removed = story.strip_meta(before)
+        self.assertEqual(len(removed), 1)
+        self.assertNotIn("After watching", story._narr(before))
+        self.assertIn("Share this story", story._narr(before))  # the rest of that scene stays
+
+    def test_owner_exact_words_script_never_stripped(self):
+        s = _with(["After watching, the viewer can explain it. The end."], _fixture("mngwa"))
+        s["mode"] = "inbox-script"
+        self.assertEqual(story.strip_meta(s), [])

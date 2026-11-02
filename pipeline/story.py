@@ -721,6 +721,36 @@ PADDING = re.compile(
     r"precious|single|exact|dreaded|eerie|creepy|mysterious)\b", re.I)
 
 
+# The writer's private planning ("After watching, the viewer can explain ...") spoken aloud: run 41425092290.
+META_LEAK = re.compile(r"\b(after watching,? (?:this,? )?(?:the|you|viewers?)\b|the viewer (?:can|will|should|now) "
+                       r"(?:now )?(?:explain|understand|learn|know)|call to action|viewer[_ ]lesson|ending[_ ]payoff)",
+                       re.I)
+STOP = set("a an the and or but of to in on at for with by from as is was were be been it its this that these those "
+           "he she they his her their them then than so into over under after before when while had has have did "
+           "do not no".split())
+
+
+def _content(sentence: str) -> set:
+    return {w for w in re.findall(r"[a-z']+", sentence.lower()) if w not in STOP and len(w) > 2}
+
+
+def strip_meta(story: dict) -> list[str]:
+    """Remove sentences where the writer's planning notes were spoken (never an owner's exact-words script).
+    Deterministic, logged; returns the removed sentences."""
+    if story.get("mode") == "inbox-script" or story.get("exact_words"):
+        return []
+    removed = []
+    for sc in story.get("scenes") or []:
+        sents = _sentences(str(sc.get("narration") or ""))
+        keep = [x for x in sents if not META_LEAK.search(x)]
+        if len(keep) != len(sents) and keep:
+            removed += [x for x in sents if META_LEAK.search(x)]
+            sc["narration"] = " ".join(keep)
+    if removed:
+        log(f"Removed planning text spoken in the narration: {' | '.join(r[:100] for r in removed)}")
+    return removed
+
+
 def _sentences(text: str) -> list[str]:
     return [x.strip() for x in re.split(r"(?<=[.!?])\s+", text) if x.strip()]
 
@@ -743,6 +773,23 @@ def viewer_value_findings(story: dict, kind: str) -> list[dict]:
                                   "(the answer, the evidence, or the exact unknown), then at most one call to "
                                   "action tied to the discovery"})
             break
+    for s in sents:
+        if META_LEAK.search(s):
+            out.append({"code": "meta_leak", "severity": "revise",
+                        "detail": f"'{s[:140]}' is the writer's planning note, not narration: say the discovery itself"})
+    for j in range(max(1, len(sents) - 2), len(sents)):
+        cj = _content(sents[j])
+        for i in range(j):
+            ci = _content(sents[i])
+            shared = cj & ci
+            if len(shared) >= 4 and len(shared) / max(1, min(len(cj), len(ci))) >= 0.5:
+                out.append({"code": "restated", "severity": "revise",
+                            "detail": f"'{sents[j][:120]}' repeats '{sents[i][:120]}': end on something new (the "
+                                      "consequence, what it changed, or the exact open question), not a recap"})
+                break
+        else:
+            continue
+        break
     tail = " ".join(ending)
     asks = [k for k, rx in CTA_KINDS.items() if re.search(rx, tail, re.I)]
     if len(asks) > 1:
@@ -1280,7 +1327,8 @@ case's name and looks (an origin, what the evidence showed, what a choice cost),
 that delivers it, or "" if no line does. "payoff_line" = the exact line that answers the hook, or "". "cta_line" =
 the single call to action, or "" (none is allowed; two or more is a problem). A generic closing question ("what
 would you check first tonight?") is NOT a payoff and NOT a discovery. "weak_lines" = up to 4 exact quotes of
-padded, repeated, off-topic or generic lines, each with the problem and a concrete rewrite.
+padded, repeated, off-topic or generic lines, each with the problem and a concrete rewrite ("This is a true story."
+is a required channel line on true stories: never list it).
 Return JSON: {{"hook": 0, "clarity": 0, "pacing": 0, "name_early": 0, "payoff": 0, "integrity": 0,{story_key}
 "what_happened": "one sentence", "viewer_learns": "...", "payoff_line": "...", "cta_line": "...",
 "weak_lines": [{{"quote": "...", "problem": "...", "fix": "..."}}], "reasons": ["concrete problem + concrete fix", ...]}}
@@ -1481,7 +1529,8 @@ def critic_pass(story: dict, api_key: str, kind: str, rules: str, source: str | 
                     "with people, a place and rising tension (death, illness, suspicion, the grave opened, the "
                     "reveal, the remedy), weaving every fact into that scene")
     learns, payoff_line = str(r.get("viewer_learns") or "").strip(), str(r.get("payoff_line") or "").strip()
-    weak = [w for w in (r.get("weak_lines") or []) if isinstance(w, dict) and w.get("quote")][:4]
+    weak = [w for w in (r.get("weak_lines") or []) if isinstance(w, dict) and w.get("quote")
+            and not re.search(r"this is a true story", str(w["quote"]), re.I)][:4]  # a required channel line
     if not learns:
         hard.append("the director finds no line that teaches the viewer anything beyond the name and looks: add the "
                     "sourced discovery (origin / earliest record / what the evidence showed) and say it plainly")

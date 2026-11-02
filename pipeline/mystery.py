@@ -75,7 +75,8 @@ OTHER FIELDS
 - hook_overlay: 2-5 word shocking on-screen text, e.g. "They cut the tent open", "Never found. Still unsolved."
 - hook_candidates: 3 DIFFERENT candidate first sentences for scene 1 (each max 18 words, strangest or most shocking detail first, never a date, year or place name). Scene 1 must start with the best one.
 - twist_scene: 0-based index of the scene with the strangest reveal.
-- viewer_lesson: "After watching, the viewer can explain ..." (the discovery, quoted from your narration; never the
+- viewer_lesson (a JSON field, NEVER spoken: the narration never says "after watching" or "the viewer"): "After
+  watching, the viewer can explain ..." (the discovery, quoted from your narration; never the
   subject's name or looks alone).
 - ending_payoff: the exact narration line that answers the hook.
 - call_to_action: the single call to action you used, or "" (never more than one).
@@ -182,7 +183,8 @@ OTHER FIELDS
 - hook_overlay: 2-5 word shocking on-screen text, e.g. "It mimics your mother's voice".
 - hook_candidates: 3 DIFFERENT candidate first sentences for scene 1 (each max 18 words, strangest or most shocking detail first, never a date, year or place name). Scene 1 must start with the best one.
 - twist_scene: 0-based index of the creepiest reveal.
-- viewer_lesson: "After watching, the viewer can explain ..." (the discovery, quoted from your narration; never the
+- viewer_lesson (a JSON field, NEVER spoken: the narration never says "after watching" or "the viewer"): "After
+  watching, the viewer can explain ..." (the discovery, quoted from your narration; never the
   creature's name or looks alone).
 - ending_payoff: the exact narration line that answers the hook.
 - call_to_action: the single call to action you used, or "" (never more than one).
@@ -258,7 +260,8 @@ OTHER FIELDS
 - hook_overlay: 2-5 word shocking on-screen text, e.g. "The perfect crime. Almost."
 - hook_candidates: 3 DIFFERENT candidate first sentences for scene 1 (each max 18 words, strangest or most shocking detail first, never a date, year or place name). Scene 1 must start with the best one.
 - twist_scene: 0-based index of the biggest turn.
-- viewer_lesson: "After watching, the viewer can explain ..." (the discovery, quoted from your narration; never the
+- viewer_lesson (a JSON field, NEVER spoken: the narration never says "after watching" or "the viewer"): "After
+  watching, the viewer can explain ..." (the discovery, quoted from your narration; never the
   subject's name or looks alone).
 - ending_payoff: the exact narration line that answers the hook.
 - call_to_action: the single call to action you used, or "" (never more than one).

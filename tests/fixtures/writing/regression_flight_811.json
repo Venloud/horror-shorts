@@ -1,0 +1,42 @@
+{
+ "_note": "Run 41425092290 (Nov 2 2026, first run with the viewer-value rules): the final narration repeats its payoff; explainer_before is the writer draft that SPOKE its planning line ('After watching, the viewer can explain ...').",
+ "title": "United Airlines Flight 811 Cargo Door Failure",
+ "mode": "case",
+ "true_story": true,
+ "scenes": [
+  {
+   "narration": "Ten seats vanished into the dark ocean when a massive hole ripped open in the cabin at twenty-three thousand feet. This is a true story."
+  },
+  {
+   "narration": "On February twenty-fourth, nineteen eighty-nine, United Airlines Flight eight hundred eleven took off from Honolulu International Airport."
+  },
+  {
+   "narration": "Captain David M. Cronin and his crew flew a Boeing seven hundred forty-seven carrying three hundred thirty-seven passengers toward Sydney."
+  },
+  {
+   "narration": "Seventeen minutes into the climb, a loud thump echoed through the cabin as the forward cargo door separated."
+  },
+  {
+   "narration": "The sudden decompression killed nine passengers and wrecked the number three and four engines, forcing the pilots to shut them down."
+  },
+  {
+   "narration": "Captain Cronin executed an emergency turn and guided the damaged aircraft back to Honolulu for a safe landing."
+  },
+  {
+   "narration": "Investigators later determined that an electrical malfunction combined with latch design deficiencies caused the door to open in flight."
+  },
+  {
+   "narration": "An electrical system malfunction and latch design flaw led to the disaster. Share this story with someone interested in aviation history."
+  }
+ ],
+ "explainer_before": [
+  "A massive hole ripped open in the cabin at twenty-three thousand feet, blowing ten seats into the dark ocean. This is a true story.",
+  "On February twenty-fourth, nineteen eighty-nine, United Airlines Flight eight hundred eleven took off from Honolulu International Airport.",
+  "Captain David M. Cronin and his crew were flying a Boeing seven hundred forty-seven carrying three hundred thirty-seven passengers toward Sydney.",
+  "Seventeen minutes into the flight, the crew heard a loud thump as the forward cargo door separated from the aircraft.",
+  "The resulting decompression killed nine passengers and damaged the number three and four engines, forcing the pilots to shut them down.",
+  "Captain Cronin executed an emergency turn and brought the damaged aircraft back to Honolulu for a safe landing.",
+  "Investigators later determined that an electrical malfunction combined with latch design deficiencies caused the door to open in flight.",
+  "After watching, the viewer can explain how an electrical system malfunction and latch design flaw led to the Flight eight hundred eleven disaster. Share this story with someone interested in aviation history."
+ ]
+}

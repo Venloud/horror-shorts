@@ -1611,10 +1611,11 @@ def _o_phrase(layer, fields, t, dur, ctx):
                        fill=acc + (int(255 * alpha),), width=12)
             if hit and mode == "underline":
                 underline(d, bb[0], bb[2], bb[3] + 4, ease((t - land) / 0.35), acc + (int(255 * alpha),), 10)
-            if hit and mode == "circle" and t >= land:
+            if hit and mode == "circle" and t >= land and bb[2] > bb[0] and bb[3] > bb[1]:
                 g = ease((t - land) / 0.45)
-                pts = _focus_ring_points(((bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2, (bb[2] - bb[0]) / 2 + 26,
-                                          (bb[3] - bb[1]) / 2 + 24), seed=len(w))
+                # the ring takes the word's own box (x0, y0, x1, y1); a centre/radius tuple made x1 < x0 on the right
+                # half of the screen and crashed the render (buffer_fill run 41425092290)
+                pts = _focus_ring_points(tuple(bb), seed=len(w), padding=24.0)
                 n = max(2, int(len(pts) * g))
                 d.line(pts[:n], fill=acc + (int(255 * alpha),), width=8, joint="curve")
             x += ww + sp

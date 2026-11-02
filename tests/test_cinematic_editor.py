@@ -390,6 +390,14 @@ class WhisperNarrationDiagnostics(unittest.TestCase):
 
 
 class MotionEffects(unittest.TestCase):
+    def test_phrase_circle_renders_on_any_word(self):
+        """buffer_fill run 41425092290 crashed: the circle mode passed centre/radius to a box-based ring."""
+        for accent in ("DOOR", "CARGO", "BLEW"):
+            for t in (0.2, 0.6, 1.2):
+                layer = noir.overlay("phrase", {"text": "the cargo door blew open", "accent": accent,
+                                                "mode": "circle", "land": 0.4}, t, 2.0, {})
+                self.assertEqual(layer.size, (1080, 1920))
+
     """Owner, Oct 31: cover <= 1 s, title overlay (no title card), the first date scrolls in on a year reel and every
     later date is a timeline line from the previous one, one big effect per 3 s, typing / reel sounds in sync."""
 

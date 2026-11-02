@@ -24,7 +24,6 @@ def generate_image(prompt: str, seed: int, steps: int = 4) -> bytes:
     if not token:
         raise RuntimeError("NVIDIA image provider disabled: NVIDIA_API_KEY missing")
     body = {
-        "mode": "Image Generation",
         "prompt": prompt[:10000],
         "height": 1024,
         "width": 1024,

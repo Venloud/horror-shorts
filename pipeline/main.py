@@ -129,7 +129,7 @@ def main() -> int:
     from captions import build_ass
     from notify import caption_text, notify
     from render import pick_visual_mode, qa_gate, render
-    from story import mark_true_story, write_story
+    from story import mark_true_story, strip_meta, write_story
     from voice import narrate
 
     prefix = ""
@@ -202,6 +202,8 @@ def main() -> int:
             story = explainer.adapt(story)
             if not testing:
                 checkpoint.save_story(story)
+        if strip_meta(story) and not testing:  # planning notes spoken aloud ("After watching, the viewer...")
+            checkpoint.save_story(story)
         if not reused:  # creature on screen (legends), real subjects for the hook + twist, no filler shots
             if CONFIG.get("story_bible", True):
                 import story_bible
