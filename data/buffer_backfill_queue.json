@@ -244,9 +244,10 @@
       "title": "Glowing Red Eyes Tracked a Car... The Mothman #shorts"
     },
     "2026-11-02_0652": {
-      "status": "attempt_started",
-      "title": "Invisible Spirits Hunted Villagers... The Tokoloshe #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-11-02_0652.mp4"
+      "status": "queued",
+      "buffer_post_id": "6ae839c776279ec7eb9bacbe",
+      "due_at": "2026-11-06T22:01:00.000Z",
+      "title": "Invisible Spirits Hunted Villagers... The Tokoloshe #shorts"
     }
   }
 }
