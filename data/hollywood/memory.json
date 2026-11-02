@@ -1,20 +1,43 @@
 {
- "videos": 1,
+ "videos": 2,
  "entries": {
   "title": {
-   "fired": 1,
-   "last": "2026-10-31_0254"
+   "fired": 2,
+   "last": "2026-11-02_1033"
   },
   "year_reel": {
-   "fired": 1,
-   "last": "2026-10-31_0254"
+   "fired": 2,
+   "last": "2026-11-02_1033"
   },
   "phrase": {
+   "fired": 3,
+   "last": "2026-11-02_1033"
+  },
+  "place": {
    "fired": 2,
-   "last": "2026-10-31_0254"
+   "last": "2026-11-02_1033"
+  },
+  "counter_people": {
+   "fired": 1,
+   "last": "2026-11-02_1033"
   }
  },
- "places": {},
+ "places": {
+  "Honolulu": {
+   "times": 1,
+   "iso2": "US",
+   "level": "city",
+   "lon": -157.86,
+   "lat": 21.309
+  },
+  "Sydney": {
+   "times": 1,
+   "iso2": "CA",
+   "level": "city",
+   "lon": -60.18,
+   "lat": 46.066
+  }
+ },
  "unmatched": {
   "unseen beast": 1,
   "more ferocious": 1,
@@ -26,7 +49,17 @@
   "residents detailed": 1,
   "nightly attacks": 1,
   "ultimately concluded": 1,
-  "simply lion": 1
+  "simply lion": 1,
+  "seventeen minutes": 1,
+  "climb loud": 1,
+  "loud thump": 1,
+  "cronin executed an emergency": 1,
+  "investigators later": 1,
+  "later determined": 1,
+  "electrical malfunction": 1,
+  "electrical system": 1,
+  "system malfunction": 1,
+  "latch design": 1
  },
  "log": [
   {
@@ -37,6 +70,18 @@
     "year_reel",
     "phrase",
     "phrase"
+   ]
+  },
+  {
+   "stamp": "2026-11-02_1033",
+   "story_id": "2a1d0651553d",
+   "effects": [
+    "title",
+    "year_reel",
+    "place",
+    "phrase",
+    "place",
+    "counter_people"
    ]
   }
  ]

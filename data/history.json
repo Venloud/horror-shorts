@@ -3913,5 +3913,76 @@
       "pending": "buffer_queue_pending"
     },
     "draft_sent": "2026-11-02_0720"
+  },
+  {
+    "date": "2026-11-02_1033",
+    "story_id": "2a1d0651553d",
+    "series_id": null,
+    "series_episode": null,
+    "title": "United Airlines Flight 811 Cargo Door Failure",
+    "premise": "An international flight from Honolulu suffered explosive decompression when a cargo door failed in mid-flight.",
+    "subgenre": "true crime case file",
+    "mode": "case",
+    "true_story": true,
+    "case": "United Airlines Flight 811",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Pacific Ocean near Honolulu, Hawaii, 1989",
+    "threat": "Explosive decompression and structural failure",
+    "twist": "The NTSB issued a superseding report blaming an electrical system malfunction and door design deficiencies rather than ground crew error.",
+    "score": null,
+    "seconds": 69.2,
+    "voice_speed": 1.17,
+    "narrator_voice": "am_michael",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "wikimedia:158595409",
+      "pexels:35972538",
+      "pexels:11093235",
+      "pexels:24390475",
+      "pexels:28079363"
+    ],
+    "visual_mode": "fast",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 96,
+    "visuals": {
+      "distinct": 21,
+      "longest_s": 6.5,
+      "longest_share": 0.089,
+      "longest_name": "image:scene_07a.png:full"
+    },
+    "yt_title": "United Airlines Flight 811 of Hawaii | Aviation History #shorts",
+    "hashtags": [
+      "hawaii",
+      "history",
+      "darkhistory"
+    ],
+    "yt_tags": [
+      "united airlines flight 811",
+      "flight 811 cargo door failure",
+      "united airlines 811 accident",
+      "hawaii aviation history",
+      "boeing 747 decompression",
+      "flight 811 disaster",
+      "honolulu plane incident",
+      "united airlines history",
+      "cargo door latch failure",
+      "flight 811 captain cronin",
+      "february 24 1989 plane crash",
+      "aviation safety history",
+      "hawaii mystery",
+      "true crime story",
+      "unsolved mystery"
+    ],
+    "opening": "Ten seats vanished into the dark ocean when a massive hole ripped open in the cabin at twenty-three thousand feet.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-11-02_1033",
+    "tiktok": null
   }
 ]
