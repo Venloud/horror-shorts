@@ -1,3 +1,23 @@
+## Usage budget — follow on EVERY task (keeps the user under their plan limit)
+Default to the cheapest path. Only escalate when the user explicitly says it is
+necessary (e.g. "go deep", "this is important", "use agents").
+
+- **Don't read what you don't need.** Never read or search build output,
+  dependencies or generated folders (e.g. `target/`, `node_modules/`, `dist/`,
+  `build/`). Open only the files the task needs; read line ranges, not whole
+  files, when you know where to look. No "explore the codebase".
+- **No subagents, workflows, loops, or scheduled check-ins** unless the user asks.
+- **Keep output short.** Answer directly, no recap of what you did step by step,
+  no restating the question, no long option surveys — one recommendation.
+- **Small diffs.** Change only what the task needs; no unrequested refactors.
+- **Batch tool calls** and avoid re-running commands or re-reading files you
+  already have in context.
+- **Low effort by default.** Simple edits/questions need no deep reasoning.
+- **Suggest the cheaper option when it fits:** `/clear` when the topic changes,
+  `/compact` when a session gets long, `/model sonnet` (or haiku) for routine work.
+- If a task looks expensive (many files, long investigation), say so in one line
+  and ask before starting.
+
 
 ## Night Files retention R1–R9 (owner, October 27, 2026)
 
