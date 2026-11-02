@@ -3835,5 +3835,83 @@
       "pending": "buffer_queue_pending"
     },
     "draft_sent": "2026-11-01_2026"
+  },
+  {
+    "date": "2026-11-02_0652",
+    "story_id": "98587a17745d",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Tokoloshe Water Spirit Legend",
+    "premise": "Villagers on the highveld discovered that people sleeping on grass mats near floor fires died mysteriously at night, blaming the invisible water spirit known as the tokoloshe.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Tokoloshe",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Traditional rondavel huts on the South African highveld",
+    "threat": "The invisible dwarf-like water spirit stealing lives at night",
+    "twist": "The deadly curse could be avoided simply by lifting the bed off the floor with bricks.",
+    "score": null,
+    "seconds": 57.1,
+    "voice_speed": 1.0,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:5712539"
+    ],
+    "visual_mode": "classic",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 79,
+    "visuals": {
+      "distinct": 19,
+      "longest_s": 4.4,
+      "longest_share": 0.073,
+      "longest_name": "image:scene_05a.png:full"
+    },
+    "yt_title": "Invisible Spirits Hunted Villagers... The Tokoloshe #shorts",
+    "hashtags": [
+      "tokoloshe",
+      "southafrica",
+      "folklore",
+      "legends"
+    ],
+    "yt_tags": [
+      "the tokoloshe",
+      "tokoloshe water spirit",
+      "south african folklore",
+      "nguni mythology",
+      "tokoloshe legend",
+      "water spirit legend",
+      "tokoloshe monster",
+      "south africa legends",
+      "african folklore",
+      "invisible water spirit",
+      "tokoloshe creature",
+      "traditional folklore",
+      "tokoloshe",
+      "south africa folklore",
+      "scary legend"
+    ],
+    "opening": "Invisible spirits hunted villagers who slept too close to the cold floor during dark winter nights.",
+    "music_file": "background_music.mp3",
+    "buffered": "2026-11-02_0652",
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7703470118898157598",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    },
+    "draft_sent": "2026-11-02_0720"
   }
 ]
