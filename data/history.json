@@ -3983,6 +3983,14 @@
     "opening": "Ten seats vanished into the dark ocean when a massive hole ripped open in the cabin at twenty-three thousand feet.",
     "music_file": "bk_grnde.mp3",
     "buffered": "2026-11-02_1033",
-    "tiktok": null
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7703716484053092382",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    },
+    "draft_sent": "2026-11-02_2316"
   }
 ]
