@@ -1,0 +1,423 @@
+{
+ "title": "United Airlines Flight 811 Cargo Door Failure",
+ "premise": "An international flight from Honolulu suffered explosive decompression when a cargo door failed in mid-flight.",
+ "hook_overlay": "A massive hole ripped open in the cabin",
+ "scenes": [
+  {
+   "narration": "Ten seats vanished into the dark ocean when a massive hole ripped open in the cabin at twenty-three thousand feet. This is a true story.",
+   "image_prompt": "Captain David M. Cronin sits in the cockpit flying over the Pacific Ocean under a dark night sky.",
+   "image_prompt_2": "Captain David M. Cronin looks forward inside the commercial airliner passenger cabin with glowing instruments.",
+   "image_prompt_3": "none",
+   "image_prompt_4": "none",
+   "sfx": "none",
+   "image_location": "Pacific Ocean",
+   "image_location_2": "interior cabin",
+   "image_location_3": "none",
+   "image_location_4": "none",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "image_query": "boeing 747 flight night",
+   "image_query_2": "airplane interior cabin oxygen masks"
+  },
+  {
+   "narration": "On February twenty-fourth, nineteen eighty-nine, United Airlines Flight eight hundred eleven took off from Honolulu International Airport.",
+   "image_prompt": "Honolulu International Airport terminal building illuminated at night under a dark starry sky.",
+   "image_prompt_2": "A large commercial passenger airplane sitting on an illuminated airport tarmac before takeoff.",
+   "image_prompt_3": "none",
+   "image_prompt_4": "none",
+   "sfx": "none",
+   "image_location": "Honolulu Airport",
+   "image_location_2": "Honolulu Airport",
+   "image_location_3": "none",
+   "image_location_4": "none",
+   "image_source": "real_photo",
+   "image_source_2": "stock_video",
+   "image_query": "Honolulu International Airport",
+   "image_query_2": "airplane tarmac night"
+  },
+  {
+   "narration": "Captain David M. Cronin and his crew flew a Boeing seven hundred forty-seven carrying three hundred thirty-seven passengers toward Sydney.",
+   "image_prompt": "Pilots operating the instrument controls inside a dark commercial airliner cockpit illuminated by glowing dashboard panels.",
+   "image_prompt_2": "Close-up of pilot hands adjusting navigation dials on a commercial aircraft control panel.",
+   "image_prompt_3": "none",
+   "image_prompt_4": "none",
+   "sfx": "none",
+   "image_location": "cockpit",
+   "image_location_2": "cockpit",
+   "image_location_3": "none",
+   "image_location_4": "none",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "image_query": "airline cockpit night",
+   "image_query_2": "pilot hands controls"
+  },
+  {
+   "narration": "Seventeen minutes into the climb, a loud thump echoed through the cabin as the forward cargo door separated.",
+   "image_prompt": "Exterior view of a large commercial aircraft flying through dark clouds with a damaged cargo door area.",
+   "image_prompt_2": "Captain David M. Cronin checks the dark aircraft cargo compartment with metal frames during the climb.",
+   "image_prompt_3": "none",
+   "image_prompt_4": "none",
+   "sfx": "none",
+   "image_location": "Pacific Ocean",
+   "image_location_2": "cargo hold",
+   "image_location_3": "none",
+   "image_location_4": "none",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "image_query": "airplane exterior night",
+   "image_query_2": "aircraft cargo door mechanism"
+  },
+  {
+   "narration": "The sudden decompression killed nine passengers and wrecked the number three and four engines, forcing the pilots to shut them down.",
+   "image_prompt": "An airplane engine glowing under dark conditions with visible exhaust heat distortion.",
+   "image_prompt_2": "Airplane wing seen from a cabin window against a dark night sky.",
+   "image_prompt_3": "none",
+   "image_prompt_4": "none",
+   "sfx": "none",
+   "image_location": "airplane exterior",
+   "image_location_2": "interior cabin",
+   "image_location_3": "none",
+   "image_location_4": "none",
+   "image_source": "ai",
+   "image_source_2": "stock_video",
+   "image_query": "airplane engine night",
+   "image_query_2": "airplane wing night"
+  },
+  {
+   "narration": "Captain Cronin executed an emergency turn and guided the damaged aircraft back to Honolulu for a safe landing.",
+   "image_prompt": "An airplane landing on a bright airport runway surrounded by emergency lights at night.",
+   "image_prompt_2": "Emergency rescue vehicles parked near a passenger airplane on an airport tarmac.",
+   "image_prompt_3": "none",
+   "image_prompt_4": "none",
+   "sfx": "none",
+   "image_location": "Honolulu Airport",
+   "image_location_2": "Honolulu Airport",
+   "image_location_3": "none",
+   "image_location_4": "none",
+   "image_source": "ai",
+   "image_source_2": "real_photo",
+   "image_query": "airplane landing runway night",
+   "image_query_2": "Honolulu Airport runway"
+  },
+  {
+   "narration": "Investigators later determined that an electrical malfunction combined with latch design deficiencies caused the door to open in flight.",
+   "image_prompt": "Captain David M. Cronin stands inside the investigation room looking at recovered metal fragments.",
+   "image_prompt_2": "Captain David M. Cronin reviews technical analysis documents inside the investigation room.",
+   "image_prompt_3": "none",
+   "image_prompt_4": "none",
+   "sfx": "none",
+   "image_location": "investigation room",
+   "image_location_2": "investigation room",
+   "image_location_3": "none",
+   "image_location_4": "none",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "image_query": "aviation investigation warehouse",
+   "image_query_2": "technical blueprints desk"
+  },
+  {
+   "narration": "An electrical system malfunction and latch design flaw led to the disaster. Share this story with someone interested in aviation history.",
+   "image_prompt": "An airplane flying peacefully above the clouds under soft morning light.",
+   "image_prompt_2": "A calm ocean horizon viewed from high above in the sky during early morning.",
+   "image_prompt_3": "none",
+   "image_prompt_4": "none",
+   "sfx": "none",
+   "image_location": "sky",
+   "image_location_2": "sky",
+   "image_location_3": "none",
+   "image_location_4": "none",
+   "image_source": "stock_video",
+   "image_source_2": "stock_video",
+   "image_query": "airplane above clouds morning",
+   "image_query_2": "ocean horizon sky"
+  }
+ ],
+ "twist_scene": 6,
+ "caption": "What happened to United Airlines Flight 811? What caused the cargo door failure? ✈️",
+ "hashtags": [
+  "unitedairlines",
+  "flight811",
+  "aviationhistory",
+  "ntsb",
+  "trueaviation"
+ ],
+ "pinned_comment": "How did the NTSB determine the final cause of the cargo door failure?",
+ "call_to_action": "Share this story with someone interested in aviation history.",
+ "central_question": "What caused United Airlines Flight 811 to suffer explosive decompression?",
+ "characters": [
+  {
+   "name": "Captain David M. Cronin",
+   "look": "man in his late 50s, white hair, pilot uniform with gold epaulets, serious expression"
+  }
+ ],
+ "ending_payoff": "Investigators later determined that an electrical malfunction combined with latch design deficiencies caused the door to open in flight.",
+ "fact_ledger": [
+  "Location: Honolulu Hawaii",
+  "Flight: United Airlines Flight 811",
+  "Route: Los Angeles to Sydney via Honolulu and Auckland",
+  "Date: February 24 1989",
+  "Aircraft: Boeing 747-122 N4713U",
+  "Fatalities: 9 passengers",
+  "Captain: David M. Cronin",
+  "First Officer: Gregory Allen Slader",
+  "Flight Engineer: Randal Mark Thomas",
+  "Passengers: 337",
+  "Crew members: 18",
+  "Altitude: 22,000 to 23,000 feet",
+  "Report dates: April 1990 and March 1992"
+ ],
+ "hook_candidates": [
+  "A massive hole ripped open in the cabin at twenty-three thousand feet, blowing ten seats into the dark ocean.",
+  "The Boeing 747 experienced a sudden explosive decompression that tore open the fuselage.",
+  "Pilots heard a loud thump as the forward cargo door separated from the aircraft in mid-flight."
+ ],
+ "hook_scores": [
+  "9/10 | A massive hole ripped open in the cabin at twenty-three thousand feet, blowing ten seats into the dark ocean.",
+  "8/10 | The Boeing 747 experienced a sudden explosive decompression that tore open the fuselage.",
+  "8/10 | Pilots heard a loud thump as the forward cargo door separated from the aircraft in mid-flight."
+ ],
+ "locations": [
+  {
+   "name": "Honolulu Airport",
+   "look": "1980s airport terminal building and tarmac at night"
+  },
+  {
+   "name": "Pacific Ocean",
+   "look": "dark open ocean under a night sky"
+  },
+  {
+   "name": "cockpit",
+   "look": "1980s Boeing 747 flight deck with analog dials and glowing instruments"
+  },
+  {
+   "name": "interior cabin",
+   "look": "commercial airliner passenger cabin with rows of seats"
+  },
+  {
+   "name": "cargo hold",
+   "look": "dark aircraft cargo compartment with metal frames"
+  },
+  {
+   "name": "airplane exterior",
+   "look": "metal fuselage of a large passenger jet at night"
+  },
+  {
+   "name": "investigation room",
+   "look": "technical analysis room with documents and recovered metal fragments"
+  },
+  {
+   "name": "sky",
+   "look": "open sky with clouds above the ocean"
+  }
+ ],
+ "recurring_visual_motif": "A close-up of aircraft metal and instruments",
+ "setting": "Pacific Ocean near Honolulu, Hawaii, 1989",
+ "threat": "Explosive decompression and structural failure",
+ "twist": "The NTSB issued a superseding report blaming an electrical system malfunction and door design deficiencies rather than ground crew error.",
+ "understanding_shift": "Initial suspicion of ground crew error shifted to an electrical malfunction and latch design defect after recovered door analysis.",
+ "viewer_lesson": "After watching, the viewer can explain how an electrical system malfunction and latch design flaw led to the Flight 811 disaster.",
+ "model": "gemini-3.5-flash-lite",
+ "writer": "gemini (gemini-3.5-flash-lite)",
+ "writing": {
+  "llm_calls": 4,
+  "revisions": 1,
+  "kind": "true",
+  "primary": "gemini-3.5-flash-lite",
+  "checks_primary": [],
+  "challenger": "failed: nvidia:deepseek-ai/deepseek-v4.1-flash: ReadTimeout: HTTPSConnectionPool(host='integrate.api.nvidia.com', port=443): Read timed out. (read timeout=30.0); openrouter:qwen/qwen3-32b: ValueError: bad scene count 5",
+  "critic": {
+   "available": true,
+   "score": 96,
+   "score_kind": "editorial, not audience retention",
+   "bar": 75,
+   "notes": [
+    "weak line 'This is a true story.': Filler phrase that breaks immersion and adds no factual value. -> Delete the sentence and let the dramatic imagery carry the truth of the event.",
+    "The hook opens with a striking, true factual detail directly related to the title.",
+    "The case name and details are established early in the narrative.",
+    "Pacing remains steady, delivering a new factual piece of information in each successive beat.",
+    "The ending provides a clear payoff answering the central question backed by NTSB findings.",
+    "Call to action is singular and compliant with guidelines."
+   ],
+   "viewer_learns": "how an electrical system malfunction and latch design flaw led to the Flight 811 disaster.",
+   "payoff_line": "Investigators later determined that an electrical malfunction combined with latch design deficiencies caused the door to open in flight.",
+   "cta_line": "Share this story with someone interested in aviation history.",
+   "weak_lines": [
+    {
+     "quote": "This is a true story.",
+     "problem": "Filler phrase that breaks immersion and adds no factual value.",
+     "fix": "Delete the sentence and let the dramatic imagery carry the truth of the event."
+    }
+   ]
+  },
+  "checks_after_revision": []
+ },
+ "critic_score": 96,
+ "_fact_source": "Pacific Ocean near Honolulu , Hawaii, U.S.\n20°41′24″N 158°40′30″W ﻿ / ﻿ 20.690°N 158.675°W ﻿ / 20.690; -158.675\nUnited Airlines Flight 811 was a regularly scheduled international flight from Los Angeles to Sydney , with intermediate stops at Honolulu and Auckland . On February 24, 1989, the Boeing 747 serving the flight experienced a cargo-door failure in flight shortly after leaving Honolulu. The resulting explosive decompression blew out several rows of seats, killing nine passengers. The aircraft returned to Honolulu and landed without further incident.\nIn its report on the accident in April 1990, the NTSB asserted that it was not possible for a properly latched cargo door to have opened in mid-flight, and focused primarily on potential mishandling of the door by ground crew. It blamed the accident on in-service damage to the door locking mechanism. An alternative investigation by the parents of one of the victims focused instead on the design of the door latching mechanism and the electrical system that opens it. After the final report on the incident was issued, the cargo door was recovered by a deep-sea operation, and its condition was not consistent with the report. After another incident occurred on a 747 aircraft undergoing maintenance in 1991, the NTSB issued a superseding final report in March 1992 that attributed the accident to the electrical system malfunctioning and causing the door to open during flight, along with deficiencies in the door's latching design, as had been suggested by the independent family investigation.\nThe aircraft involved was a Boeing 747-122 ( registration number N4713U ). [ 2 ] Its serial number was 19875 and it was the 89th 747 built. At the time of the accident, the aircraft had accumulated 58,814 total flight hours and 15,028 flight pressurization cycles, [ 3 ] and had not been involved in any previous accidents. [ 2 ]\nOn February 24, 1989, the aircraft was scheduled by United Airlines to operate as Flight 811 from Los Angeles International Airport in Los Angeles, California , to Sydney Airport in Mascot, New South Wales , Australia, with intermediate stops at Honolulu International Airport in Honolulu , Hawaii , and Auckland Airport in Auckland , New Zealand. [ 2 ] Flight 811 operated without incident on the first leg of the flight from Los Angeles to Honolulu; the flight crew reported no difficulties upon arriving at Honolulu, where a crew change occurred. [ 2 ]\nAfter the accident, the aircraft was repaired and put back into service with United but was re-registered as N4724U. In 1997, the aircraft was taken out of service and passed on to Air Dabia as C5-FBS. Air Dabia ceased operations in 1998, and the aircraft was abandoned at Plattsburgh International Airport , where it was scrapped in June 2003. [ 4 ]\nStarting in Honolulu, Flight 811 was under Captain David M. Cronin (age 59). [ 1 ] : 101 At the time of the accident, Cronin had logged around 28,000 flight hours, including roughly 1,600 hours in Boeing 747 aircraft. [ 1 ] : 101 Flight 811 was Cronin's penultimate scheduled flight before his mandatory retirement . [ 5 ]\nThe remaining flight crew consisted of First Officer Gregory Allen \"Al\" Slader (48), and Flight Engineer Randal Mark Thomas (46), and 15 flight attendants . [ 1 ] : 101–103 The first officer and flight engineer had logged 14,500 flight hours and 20,000 flight hours, respectively. [ 1 ] : 101–102\nFlight 811 took off from Honolulu International Airport at 01:52 local time , with 337 passengers and 18 crew members on board. [ 1 ] : 1–2 During the climb, the crew made preparations to detour around thunderstorms along the plane's track; the captain anticipated turbulence and kept the passenger seatbelt sign lit. [ 1 ] : 2\nThe aircraft had been flying for 17 minutes. [ 1 ] : 25 As it was passing from 22,000 to 23,000 feet (6,700 to 7,000 m) , the flight crew heard a loud \"thump\", which shook the plane. [ 1 ] : 2 About a second and a half later, the forward cargo door separated from the aircraft. It swung out with such force that it tore a massive hole in the fuselage. This caused the plane to slightly bank to the left. Pressure differentials and aerodynamic forces caused the cabin floor to cave in, and 10 seats (G and H of rows 8 through 12) were ejected from the cabin. [ 1 ] : 8 [ 7 ] All eight passengers occupying these seats were ejected from the aircraft, as was the passenger in seat 9F. Seats 8G and 12G were unoccupied. [ 1 ] : 109 [ 7 ] A gaping hole was left in the aircraft, through which a flight attendant, Mae Sapolu, in the business-class cabin, was almost blown out. Purser Laura Brentlinger hung on to the steps leading to the upper deck and was dangling from them when the decompression occurred. Passengers and crew members saw her clinging to a seat leg and were able to pull her back inside the cabin, although she was severely injured. [ 7 ]\nThe pilots initially believed that a bomb had gone off inside the airliner, as this accident happened just two months after Pan Am Flight 103 was blown up over Lockerbie , Scotland . They began an emergency descent to reach an altitude where the air was breathable while also performing a 180° left turn to fly back to Honolulu. [ 1 ] : 2 The explosion damaged components of the on-board emergency oxygen supply system , as it was primarily located in the forward cargo sidewall area, just aft of the cargo door. [ 1 ] : 8\nThe debris ejected from the aircraft during the explosive decompression damaged the Number 3 and 4 engines. [ 1 ] : 4–8 Engine 3 was experiencing heavy vibration, no N 1 tachometer reading, and a low exhaust-gas temperature (EGT) and engine-pressure ratio , so the crew shut it down. [ 1 ] : 2 At 02:20, an emergency was declared, and the crew began dumping fuel to reduce the aircraft's landing weight. [ 1 ] : 2 The N 1 reading of engine number 4 soon fell to almost zero, its EGT reading was high, and it was emitting flames, so the pilots shut it down as well. [ 1 ] : 2 Some of the explosively ejected debris damaged the right wing's leading edge , dented the horizontal stabilizer on that side, and damaged the vertical stabilizer . [ 1 ] : 4\nDuring the descent, Captain Cronin ordered Flight Engineer Thomas to tell the flight attendants to prepare for an emergency landing, but Thomas could not contact them through the intercom. Thomas asked the captain for permission to go down to find out what was happening, and Cronin agreed. Thomas saw severe damage immediately upon leaving the cockpit; the aircraft skin was peeled off in some areas on the upper deck, revealing the frames and stringers . As Thomas went down to the lower deck, the magnitude of the damage became apparent as he saw the large hole in the side of the cabin. Thomas returned to the cockpit and reported that a large section of the fuselage was open aft of the Number 1 exit door. Thomas concluded that it was probably a bomb.\nAs the airliner neared the airport, the landing gear was extended, but the flaps could only be partially deployed as a result of damage sustained following the decompression. [ 1 ] : 3 This necessitated a higher-than-normal landing speed around 190–200 knots (220–230 mph; 350–370 km/h) . [ 1 ] : 3 Despite these factors, Captain Cronin was able to bring the aircraft to a halt without overrunning the runway . [ 7 ] About 14 minutes had elapsed since the emergency was declared. All the remaining passengers and flight attendants evacuated the aircraft in less than 45 seconds. Every flight attendant suffered some injury during the evacuation, ranging from scratches to a dislocated shoulder . [ 1 ] : 108–109\nDespite extensive air and sea searches, no remains of the nine victims lost in flight were found at sea. [ 1 ] : 4 Small body fragments and pieces of clothing were found in the Number 3 engine, indicating that at least one victim ejected from the fuselage was ingested by the engine, but whether the fragments were from one or more victims was not known. [ 8 ]\nNine passengers were ejected through this hole in the fuselage\nThe National Transportation Safety Board (NTSB) immediately commenced an investigation into the accident. An extensive aerial and surface search of the ocean had initially failed to locate the aircraft's cargo door. [ 9 ] : 22 The NTSB proceeded with its investigation, without the cargo door to inspect, issuing a final report on April 16, 1990. [ 9 ] : 22\nThe investigation relied heavily on circumstantial evidence, including prior incidents involving cargo doors. On March 10, 1987, Pan Am Flight 125, another Boeing 747, outbound from London Heathrow Airport , encountered pressurization problems at 20,000 feet (6,100 m) , causing the crew to abort the flight and return to the airport. [ 1 ] : 57 [ 10 ] After that aircraft landed safely back at London Heathrow Airport, the aircraft's cargo door was found to be ajar by about 1.5 inches (40 mm) along its ventral edge. When the aircraft was examined further, all of the door's ",
+ "sources": [],
+ "mode": "case",
+ "case": "United Airlines Flight 811",
+ "subgenre": "true crime case file",
+ "true_story": true,
+ "_skipped": [],
+ "story_id": "2a1d0651553d",
+ "explainer_adapted": true,
+ "explainer_before": [
+  "A massive hole ripped open in the cabin at twenty-three thousand feet, blowing ten seats into the dark ocean. This is a true story.",
+  "On February twenty-fourth, nineteen eighty-nine, United Airlines Flight eight hundred eleven took off from Honolulu International Airport.",
+  "Captain David M. Cronin and his crew were flying a Boeing seven hundred forty-seven carrying three hundred thirty-seven passengers toward Sydney.",
+  "Seventeen minutes into the flight, the crew heard a loud thump as the forward cargo door separated from the aircraft.",
+  "The resulting decompression killed nine passengers and damaged the number three and four engines, forcing the pilots to shut them down.",
+  "Captain Cronin executed an emergency turn and brought the damaged aircraft back to Honolulu for a safe landing.",
+  "Investigators later determined that an electrical malfunction combined with latch design deficiencies caused the door to open in flight.",
+  "After watching, the viewer can explain how an electrical system malfunction and latch design flaw led to the Flight eight hundred eleven disaster. Share this story with someone interested in aviation history."
+ ],
+ "_story_bible": {
+  "title": "United Airlines Flight 811 Cargo Door Failure",
+  "retention_contract": {
+   "central_question": "What caused United Airlines Flight 811 to suffer explosive decompression?",
+   "understanding_shift": "Initial suspicion of ground crew error shifted to an electrical malfunction and latch design defect after recovered door analysis.",
+   "ending_payoff": "Investigators later determined that an electrical malfunction combined with latch design deficiencies caused the door to open in flight.",
+   "optional_visual_motif": "A close-up of aircraft metal and instruments",
+   "review_status": "writer-planned; verify against narration and nonfiction sources"
+  },
+  "series_id": null,
+  "series_episode": null,
+  "series_continuity": null,
+  "premise": "An international flight from Honolulu suffered explosive decompression when a cargo door failed in mid-flight.",
+  "setting": "Pacific Ocean near Honolulu, Hawaii, 1989",
+  "threat": "Explosive decompression and structural failure",
+  "twist": "The NTSB issued a superseding report blaming an electrical system malfunction and door design deficiencies rather than ground crew error.",
+  "twist_scene": 6,
+  "characters": [
+   {
+    "name": "Captain David M. Cronin",
+    "look": "man in his late 50s, white hair, pilot uniform with gold epaulets, serious expression"
+   }
+  ],
+  "locations": [
+   {
+    "name": "Honolulu Airport",
+    "look": "1980s airport terminal building and tarmac at night"
+   },
+   {
+    "name": "Pacific Ocean",
+    "look": "dark open ocean under a night sky"
+   },
+   {
+    "name": "cockpit",
+    "look": "1980s Boeing 747 flight deck with analog dials and glowing instruments"
+   },
+   {
+    "name": "interior cabin",
+    "look": "commercial airliner passenger cabin with rows of seats"
+   },
+   {
+    "name": "cargo hold",
+    "look": "dark aircraft cargo compartment with metal frames"
+   },
+   {
+    "name": "airplane exterior",
+    "look": "metal fuselage of a large passenger jet at night"
+   },
+   {
+    "name": "investigation room",
+    "look": "technical analysis room with documents and recovered metal fragments"
+   },
+   {
+    "name": "sky",
+    "look": "open sky with clouds above the ocean"
+   }
+  ],
+  "timeline": [
+   {
+    "scene": 1,
+    "event": "Ten seats vanished into the dark ocean when a massive hole ripped open in the cabin at twenty-three thousand feet. This is a true story.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 2,
+    "event": "On February twenty-fourth, nineteen eighty-nine, United Airlines Flight eight hundred eleven took off from Honolulu International Airport.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 3,
+    "event": "Captain David M. Cronin and his crew flew a Boeing seven hundred forty-seven carrying three hundred thirty-seven passengers toward Sydney.",
+    "location": "",
+    "characters": [
+     "Captain David M. Cronin"
+    ]
+   },
+   {
+    "scene": 4,
+    "event": "Seventeen minutes into the climb, a loud thump echoed through the cabin as the forward cargo door separated.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 5,
+    "event": "The sudden decompression killed nine passengers and wrecked the number three and four engines, forcing the pilots to shut them down.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 6,
+    "event": "Captain Cronin executed an emergency turn and guided the damaged aircraft back to Honolulu for a safe landing.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 7,
+    "event": "Investigators later determined that an electrical malfunction combined with latch design deficiencies caused the door to open in flight.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 8,
+    "event": "An electrical system malfunction and latch design flaw led to the disaster. Share this story with someone interested in aviation history.",
+    "location": "",
+    "characters": []
+   }
+  ],
+  "continuity_rules": [
+   "Use the exact character names and keep each character's fixed look unchanged.",
+   "Keep each shot in the scene's stated location unless the narration explicitly moves.",
+   "Do not introduce a new person, creature, object, or location that the story does not establish.",
+   "The twist scene must visually support the documented twist, not invent a different reveal."
+  ]
+ },
+ "_ai_only": [
+  "00a",
+  "00b",
+  "03b",
+  "06a",
+  "06b"
+ ],
+ "_shot_rules_done": true,
+ "visual_mode": "fast",
+ "_previous_narrator_voice": "am_adam",
+ "narrator_voice": "am_michael",
+ "final_script_approval": {
+  "sha256": "f8062fa37fe20c1190ac0b2cf874bb59da474a6c58c0aa36a3ed5b0dae43a8c8",
+  "checked": true,
+  "kind": "true",
+  "checks": [],
+  "blocked": false,
+  "editor": "available",
+  "approved": true,
+  "ratings": {
+   "title_alignment": 10,
+   "narrative_logic": 10,
+   "payoff": 10,
+   "fact_integrity": 10,
+   "natural_voice": 10
+  },
+  "reasons": [
+   "Opens directly with the core incident matching the title promise",
+   "Maintains strict adherence to documented historical facts from the ledger",
+   "Provides a clear lesson on the cause of the cargo door failure",
+   "Includes a single, relevant call to action at the conclusion"
+  ]
+ }
+}

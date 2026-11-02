@@ -1,0 +1,9 @@
+{
+ "story_id": "2a1d0651553d",
+ "title": "United Airlines Flight 811 Cargo Door Failure",
+ "status": "branch_unfinished",
+ "reason": "unfinished on branch fixing-it: main's runs cannot restore that branch's checkpoint cache; resume it with retry_story_id=2a1d0651553d",
+ "at": "2026-11-02T10:21:42+00:00",
+ "last_stage": "explainer",
+ "last_error": "RuntimeError: Explainer render was forced but failed: ValueError: Attention ring requires a non-empty target bounds"
+}

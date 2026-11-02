@@ -1,0 +1,7 @@
+[
+ {
+  "at": "2026-11-02T10:21:41+00:00",
+  "stage": "explainer",
+  "error": "RuntimeError: Explainer render was forced but failed: ValueError: Attention ring requires a non-empty target bounds"
+ }
+]

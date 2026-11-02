@@ -1,0 +1,24 @@
+{
+ "validated": {
+  "story.json": "49f257f295e4cb537ab96ff83767abadcabc3ae6a21dd0a06c42e02fd9cda6c2",
+  "narration.wav": "c45246267fec9a17e6e3c3a1935af36af7ddd35f38a883276196f62c3d6291be",
+  "narration.json": "957c24c8e1e2f9438f12d112723e6bcd692265cb812f4aa409e196c3fc5cbf41",
+  "images/scene_04b.png": "0ee070ed1037256492ffbd468082c5d6b42e174e386cf8e66a10111a952e362e",
+  "images/scene_03b.png": "936b63b75c9506792964b8ac26c69d9ab625603aba3e4ebc07e7b47bd00463ec",
+  "images/scene_05a.png": "1395bfa1511a1e080b059755e94aa3d2e20bcfbaec271f86fef16035ee350dd8",
+  "images/scene_02a.png": "fece0a11eac623690dc907a0978e02c9ab8a75ed925f306d7c6c6e31089fdb1d",
+  "images/scene_01b.png": "e8965e782d6ce61e0a3763926d2e4b082b85194940eb62e80c2aee65b20fb353",
+  "images/scene_03a.png": "92c5dece3639ab513fc5680d75a60c334e5e7963ed1a421b9a0208f051e720fb",
+  "images/scene_06a.png": "c5a230b4bbefeccb0ca94c6764d0805cf173156191b3dffb49695082b1a88989",
+  "images/scene_07b.png": "b756e8364499c40e68271960dce67f1f3e6c9b782f788f48054a988929a0c936",
+  "images/scene_04a.png": "69a97d44d52ee39cb73a70720483df5cb2c5e1d783731525bdf1efaa176c55cf",
+  "images/scene_00b.png": "dbcd06cc9133b43e483d04fd08d8946ed46549c3240cc763aa6ea21efdbff4d5",
+  "images/scene_00a.png": "0d718bc4ac9f28196b07371db777e42eea1d0da9cbea6b70c8bdae6d8babf036",
+  "images/scene_06b.png": "a11ddeba9cb233a6ee42f409574ea3f001fda2e02d8bbb37adb36f9d02cc9eac",
+  "images/scene_02b.png": "5510d2b3ddb7b0117c7a1ee042dd27238572e6a0766cc541c67c00882db615c6",
+  "images/scene_01a.png": "a797b680eff32aecbd8ac3096c59ae4ef0aa263c99219db5b0252642d7096b14",
+  "images/scene_05b.png": "f0e548dbda0252eb787fea74541020bdd811848aaaa586f0413bc40036a8ea62",
+  "images/scene_07a.png": "2cc944c94543a63d9bfb95f7e7a6698cfcbbefae6e5869a41f8a5c2c4dc12162",
+  "images/explainer_storyboard.json": "08d5169849857ac7a48e07d26899b63103667f21e3e0aab73b82455139d1431f"
+ }
+}
