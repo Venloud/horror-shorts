@@ -19,7 +19,12 @@ STYLE_FILE = Path(__file__).resolve().parent.parent / "docs" / "NIGHT_FILES_STOR
 
 def shared_style(prompt: str) -> str:
     """Use one checked-in voice/style standard across ALL model calls."""
-    return "NIGHT FILES SHARED STYLE:\n" + STYLE_FILE.read_text(encoding="utf-8") + "\n\nTASK:\n" + prompt
+    return ("NIGHT FILES SHARED STYLE:\n" + STYLE_FILE.read_text(encoding="utf-8")
+            + "\n\nTASK:\n" + prompt
+            + "\n\nFINAL EDITORIAL REQUIREMENT: Apply the shared viewer-value contract even "
+              "if an older task prompt makes learning optional or requires an ending question. "
+              "Deliver a specific lesson/discovery, the hook\'s payoff, then exactly one relevant "
+              "call to action. Preserve facts, approved text, and the requested output schema.")
 
 
 SCHEMA = {
