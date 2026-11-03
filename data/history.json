@@ -4070,5 +4070,81 @@
       "pending": "buffer_queue_pending"
     },
     "draft_sent": "2026-11-03_0746"
+  },
+  {
+    "date": "2026-11-03_2116",
+    "story_id": "08a99296e6c4",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Legend of Black Shuck",
+    "premise": "A ghostly black dog with a fiery eye roams the coastline and countryside of East Anglia.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Black Shuck",
+    "source": null,
+    "prompt_file": null,
+    "setting": "East Anglia, England, 1577",
+    "threat": "Black Shuck",
+    "twist": "The beast kills two people instantly and causes the church steeple to collapse through the roof.",
+    "score": null,
+    "seconds": 53.4,
+    "voice_speed": 1.0,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [],
+    "visual_mode": "classic",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 87,
+    "visuals": {
+      "distinct": 18,
+      "longest_s": 3.8,
+      "longest_share": 0.067,
+      "longest_name": "image:scene_04b.png:full"
+    },
+    "yt_title": "His Footfalls Make No Sound... Black Shuck of East Anglia #shorts",
+    "hashtags": [
+      "blackshuck",
+      "eastanglia",
+      "folklore",
+      "legends"
+    ],
+    "yt_tags": [
+      "black shuck",
+      "black shuck legend",
+      "east anglia folklore",
+      "phantom hound",
+      "norfolk ghost dog",
+      "holy trinity church",
+      "english folklore",
+      "black shuck history",
+      "british cryptids",
+      "legend of black shuck",
+      "black shuck story",
+      "phantom dog",
+      "scary legend",
+      "folklore",
+      "creepy legend"
+    ],
+    "opening": "His footfalls make no sound, yet his howling instantly freezes the blood of anyone listening in the dark.",
+    "music_file": "background_music.mp3",
+    "buffered": "2026-11-03_2116",
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7704064580250978335",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    },
+    "draft_sent": "2026-11-03_2146"
   }
 ]
