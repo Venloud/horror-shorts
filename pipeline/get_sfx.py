@@ -3,6 +3,8 @@
 Sources (both free for commercial use, no credit required):
   - BigSoundBank (CC0), by sound ID
   - Freesound, searched automatically, CC0 results only, most-downloaded first (needs FREESOUND_API_KEY)
+  - Openverse (no key, opt-in NIGHTFILES_OPENVERSE_SFX=1), CC0 / public domain only: used when Freesound
+    is skipped or fails for a sound
 """
 import json
 import os
@@ -16,6 +18,7 @@ OUT = ROOT / "assets" / "sfx"
 SOURCES = json.loads((ROOT / "data" / "sfx_sources.json").read_text())
 UA = {"User-Agent": "Mozilla/5.0 (NightFilesBot)"}
 FS_KEY = os.environ.get("FREESOUND_API_KEY", "").strip()
+OPENVERSE_SFX = os.environ.get("NIGHTFILES_OPENVERSE_SFX") == "1"
 
 
 def is_mp3(data: bytes) -> bool:
@@ -58,6 +61,28 @@ def freesound(query: str, dur: list[float]) -> tuple[bytes, str]:
     raise RuntimeError(f"could not download any result for '{query}'")
 
 
+def openverse(query: str, dur: list[float]) -> tuple[bytes, str]:
+    """Openverse audio search (20 requests/min, 200/day without a key): CC0 / public domain, inside dur, real mp3."""
+    r = requests.get("https://api.openverse.org/v1/audio/", headers=UA, timeout=60, params={
+        "q": query, "license": "cc0,pdm", "mature": "false", "page_size": 20})
+    if r.status_code == 429:
+        raise RuntimeError(f"Openverse rate limit (retry after {r.headers.get('Retry-After', '?')} s)")
+    r.raise_for_status()
+    results = r.json().get("results")
+    if not isinstance(results, list):
+        raise RuntimeError("Openverse response has no results list")
+    for hit in results:
+        seconds = (hit.get("duration") or 0) / 1000
+        if (hit.get("license") or "").lower() not in ("cc0", "pdm") or not dur[0] <= seconds <= dur[1] or not hit.get("url"):
+            continue
+        a = requests.get(hit["url"], headers=UA, timeout=60)
+        if a.ok and is_mp3(a.content):
+            lic = "CC0" if hit["license"].lower() == "cc0" else "Public Domain Mark"
+            return a.content, (f"Openverse {hit.get('source')} '{hit.get('title')}' by {hit.get('creator')} ({lic}) "
+                               f"{hit.get('foreign_landing_url') or hit['url']}")
+    raise RuntimeError(f"no CC0 / public-domain mp3 on Openverse for '{query}' in {dur} s")
+
+
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     credits, failed = {}, []
@@ -70,7 +95,13 @@ def main() -> int:
             if "bsb" in info:
                 data, credit = bigsoundbank(info["bsb"])
             else:
-                data, credit = freesound(info["fs"], info.get("dur", [1, 15]))
+                try:
+                    data, credit = freesound(info["fs"], info.get("dur", [1, 15]))
+                except Exception as e:  # noqa: BLE001
+                    if not OPENVERSE_SFX:
+                        raise
+                    print(f"      {name}: Freesound failed ({e}); trying Openverse")
+                    data, credit = openverse(info["fs"], info.get("dur", [1, 15]))
             if not is_mp3(data):
                 raise RuntimeError("not an mp3")
             (OUT / f"{name}.mp3").write_bytes(data)
