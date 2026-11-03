@@ -256,9 +256,10 @@
       "title": "United Airlines Flight 811 of Hawaii | Aviation History #shorts"
     },
     "2026-11-03_0716": {
-      "status": "attempt_started",
-      "title": "The Wooden Coffin Was Chewed... Jiangshi of imperial China #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-11-03_0716.mp4"
+      "status": "queued",
+      "buffer_post_id": "6ae991786896a4441f6a98cb",
+      "due_at": "2026-11-06T01:44:00.000Z",
+      "title": "The Wooden Coffin Was Chewed... Jiangshi of imperial China #shorts"
     }
   }
 }
