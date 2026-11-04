@@ -4227,5 +4227,85 @@
       "pending": "buffer_queue_pending"
     },
     "draft_sent": "2026-11-04_0739"
+  },
+  {
+    "date": "2026-11-04_2130",
+    "story_id": "2cd6d1a3ca49",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Rougarou of the Bayou",
+    "premise": "In the Louisiana swamps, a werewolf-like creature prowls for human blood to break a hundred-and-one-day curse.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Rougarou",
+    "source": null,
+    "prompt_file": null,
+    "setting": "French Louisiana bayous and sugar cane fields",
+    "threat": "A blood-hunting wolf-human hybrid seeking to transfer its 101-day curse",
+    "twist": "The monster doesn't kill to destroy; it only draws a single drop of blood to pass its agonizing curse onto you.",
+    "score": null,
+    "seconds": 55.3,
+    "voice_speed": 1.0,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:19806007",
+      "pexels:30406405",
+      "pexels:19712391"
+    ],
+    "visual_mode": "analog",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 91,
+    "visuals": {
+      "distinct": 19,
+      "longest_s": 4.1,
+      "longest_share": 0.069,
+      "longest_name": "image:scene_01a.png:full"
+    },
+    "yt_title": "Howling in the Swamp Woods... The Rougarou of French Louisiana #shorts",
+    "hashtags": [
+      "rougarou",
+      "louisiana",
+      "folklore",
+      "monsters"
+    ],
+    "yt_tags": [
+      "the rougarou",
+      "rougarou legend",
+      "french louisiana folklore",
+      "louisiana swamp monster",
+      "louisiana legends",
+      "creole folklore",
+      "werewolf legend louisiana",
+      "bayou monster story",
+      "rougarou curse",
+      "louisiana scary stories",
+      "swamp ghost story",
+      "southern folklore",
+      "rougarou",
+      "scary legend",
+      "folklore"
+    ],
+    "opening": "That howling in the swamp woods is not a stray dog.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-11-04_2130",
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7704438530851833887",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    },
+    "draft_sent": "2026-11-04_2157"
   }
 ]
