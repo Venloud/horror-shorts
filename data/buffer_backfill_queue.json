@@ -268,9 +268,10 @@
       "title": "His Footfalls Make No Sound... Black Shuck of East Anglia #shorts"
     },
     "2026-11-04_0700": {
-      "status": "attempt_started",
-      "title": "The Lost Colony of Roanoke of North Carolina #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-11-04_0700.mp4"
+      "status": "queued",
+      "buffer_post_id": "6aeae153e478396c27474a4f",
+      "due_at": "2026-11-06T23:16:00.000Z",
+      "title": "The Lost Colony of Roanoke of North Carolina #shorts"
     }
   }
 }
