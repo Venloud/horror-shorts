@@ -4146,5 +4146,86 @@
       "pending": "buffer_queue_pending"
     },
     "draft_sent": "2026-11-03_2146"
+  },
+  {
+    "date": "2026-11-04_0700",
+    "story_id": "0debc982a6e2",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Mysterious Disappearance of Roanoke Colony",
+    "premise": "The second English settlement in North America was found completely abandoned with only a single word carved into a wooden post.",
+    "subgenre": "real unsolved mystery",
+    "mode": "mystery",
+    "true_story": true,
+    "case": "Roanoke Colony",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Roanoke Island, North Carolina, 1585-1590",
+    "threat": "Unknown disappearance and potential hostility",
+    "twist": "The entire colony vanished leaving only a carved tribal name.",
+    "score": null,
+    "seconds": 65.8,
+    "voice_speed": 1.1,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:19501240",
+      "pexels:35239445",
+      "pexels:10651007",
+      "pexels:38164731"
+    ],
+    "visual_mode": "fast",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 94,
+    "visuals": {
+      "distinct": 24,
+      "longest_s": 4.3,
+      "longest_share": 0.062,
+      "longest_name": "image:scene_06b.png:full"
+    },
+    "yt_title": "The Lost Colony of Roanoke of North Carolina #shorts",
+    "hashtags": [
+      "roanoke",
+      "northcarolina",
+      "unsolvedmysteries",
+      "history"
+    ],
+    "yt_tags": [
+      "the lost colony of roanoke",
+      "roanoke colony disappearance",
+      "croatoan carving",
+      "john white roanoke",
+      "north carolina history",
+      "lost colonists of roanoke",
+      "unsolved mystery",
+      "virginia dare",
+      "sir walter raleigh",
+      "roanoke island 1590",
+      "disappearance true story",
+      "historical mystery",
+      "lost colony of roanoke",
+      "lost colony of roanoke story",
+      "north carolina mystery"
+    ],
+    "opening": "CROATOAN was the only word carved into the palisade when a resupply ship found the English colony completely abandoned.",
+    "music_file": "unsolved_mystery.mp3",
+    "buffered": "2026-11-04_0700",
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7704217113334958110",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    },
+    "draft_sent": "2026-11-04_0739"
   }
 ]
