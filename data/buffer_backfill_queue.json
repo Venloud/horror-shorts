@@ -274,9 +274,10 @@
       "title": "The Lost Colony of Roanoke of North Carolina #shorts"
     },
     "2026-11-04_2130": {
-      "status": "attempt_started",
-      "title": "Howling in the Swamp Woods... The Rougarou of French Louisiana #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-11-04_2130.mp4"
+      "status": "queued",
+      "buffer_post_id": "6aebaa60e33a6d353dc5a8b7",
+      "due_at": "2026-11-07T23:41:00.000Z",
+      "title": "Howling in the Swamp Woods... The Rougarou of French Louisiana #shorts"
     }
   }
 }
