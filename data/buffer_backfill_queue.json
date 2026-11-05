@@ -280,9 +280,10 @@
       "title": "Howling in the Swamp Woods... The Rougarou of French Louisiana #shorts"
     },
     "2026-11-05_0726": {
-      "status": "attempt_started",
-      "title": "Thirty-Four Thousand Feet Vanished... TWA Flight 841 #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-11-05_0726.mp4"
+      "status": "queued",
+      "buffer_post_id": "6aec356275052a1eb82c21fc",
+      "due_at": "2026-11-08T00:56:00.000Z",
+      "title": "Thirty-Four Thousand Feet Vanished... TWA Flight 841 #shorts"
     }
   }
 }
