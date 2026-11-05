@@ -4307,5 +4307,79 @@
       "pending": "buffer_queue_pending"
     },
     "draft_sent": "2026-11-04_2157"
+  },
+  {
+    "date": "2026-11-05_0726",
+    "story_id": "0b83ad5f564d",
+    "series_id": null,
+    "series_episode": null,
+    "title": "TWA Flight 841 Uncontrolled Dive",
+    "premise": "A Boeing 727 airliner suddenly went into a violent spiral dive over Michigan after a slat failed during cruise flight.",
+    "subgenre": "true crime case file",
+    "mode": "case",
+    "true_story": true,
+    "case": "TWA Flight 841 (1979)",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Boeing 727 cockpit and Michigan night sky",
+    "threat": "Sudden aircraft structural failure and out-of-control spiral dive",
+    "twist": "NTSB concluded the accident was caused by the crew's manipulation of the controls, which the crew denied.",
+    "score": null,
+    "seconds": 59.6,
+    "voice_speed": 1.1,
+    "narrator_voice": "am_adam",
+    "writer": "groq (openai/gpt-oss-120b)",
+    "media_ids": [],
+    "visual_mode": "classic",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 87,
+    "visuals": {
+      "distinct": 23,
+      "longest_s": 3.6,
+      "longest_share": 0.057,
+      "longest_name": "image:scene_06a.png:full"
+    },
+    "yt_title": "Thirty-Four Thousand Feet Vanished... TWA Flight 841 #shorts",
+    "hashtags": [
+      "twaflight841",
+      "michigan",
+      "mystery",
+      "history"
+    ],
+    "yt_tags": [
+      "twa flight 841",
+      "twa 841",
+      "twa flight 841 crash",
+      "twa 841 accident",
+      "twa flight 841 mystery",
+      "michigan plane crash",
+      "b727 crash",
+      "airplane dive",
+      "aviation accident",
+      "plane crash mystery",
+      "airline incident",
+      "flight 841 dive",
+      "twa flight 841 story",
+      "michigan mystery",
+      "true crime story"
+    ],
+    "opening": "Thirty-four thousand feet vanished in sixty-three seconds.",
+    "music_file": "background_music.mp3",
+    "buffered": "2026-11-05_0726",
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7704591159884253214",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    },
+    "draft_sent": "2026-11-05_0750"
   }
 ]
