@@ -12,12 +12,20 @@ This guide is shared across the primary writer, alternate writers, script editor
 - Establish real stakes, maintain clear cause-and-effect, and end with a meaningful payoff or an honest unresolved question, not a generic call for comments.
 
 ## The viewer-value contract (Night Files, October 26, 2026)
-Before writing each new script, answer privately: **what does somebody get from this minute of attention?**
-Choose at least one earned outcome: (1) a real, sourced and repeatable fact; (2) a clear story reversal or insight;
-or (3) a specific emotion and consequence worth remembering. No compulsory life lesson, sermon, moral, CTA or fake
-scientific lesson. An unexplained object at the end is not automatically a payoff. The last two scenes should make
-clear **what changed, what the clues mean, and why the hook mattered**. The final line can remain unsettling or
-honestly unresolved, but the viewer should still be able to retell what happened and why it mattered.
+Before writing each new script, define all three privately:
+1. **Lesson/discovery:** "After watching, the viewer can explain ..." Name one specific new understanding beyond a creature's name, appearance or powers. A scare alone is insufficient.
+2. **Payoff:** Name the supported answer, reveal, consequence or clearly explained uncertainty that rewards the hook within this video.
+3. **Call to action:** Choose exactly one relevant action after delivering the lesson and payoff. Invite a meaningful contribution, sharing with a relevant person, or following for a specific related learning promise. Never stack comment/share/follow requests.
+
+Build the hook around the discovery, then use connected evidence, decisions and consequences to earn it. Cut padded adjectives and repeated atmosphere. Move a useful question to the opening when the story can explore it. Never automatically end with "what would you check tonight?" or an unrelated survival question. A CTA cannot replace the ending.
+
+For folklore, research how the legend came to be: earliest documented accounts, cultural context, spread and changes between versions. Choose the strongest supported discovery; do not force an origin claim when sources cannot establish one. Distinguish earliest recorded appearance from an actual origin, and documented context from a proposed explanation. Mark disputed or unknown origins clearly. Attribute escape rules to versions of the legend, never real safety advice.
+
+For historical mysteries, teach what the evidence supports and what remains unknown. For original fiction, earn an insight through the character's decision and consequence, clearly within fiction; never invent a real-world scientific or historical lesson. No forced moral or sermon.
+
+**Editor/critic review:** Identify the exact narration delivering the lesson and the payoff, and the single CTA. Quote a weak line, explain the specific problem, and propose a concrete revision when any requirement is missing. Do not accept a monster description as discovery or a generic final question as payoff. Recheck changed narration within the existing bounded revision budget, without extra model-call loops. Unavailable review is unverified, never a passing result. Subjective editorial scores do not predict retention and do not discard already completed safe videos.
+
+These November 2, 2026 owner requirements supersede older task prompts that make learning optional or demand a viewer question at every ending. Preserve source integrity, existing JSON schemas, owner-approved text and production safety gates.
 
 ### Make it instantly understandable
 - Establish WHAT happened, WHO or WHAT it affects and WHERE the story occurs as soon as those details help
@@ -76,6 +84,17 @@ Make progression intelligible **through the primary cinematic footage and narrat
 ## Occasional trilogy production policy, owner update 2026-10-27
 
 The R1–R9 writing principles above apply to **all** Night Files stories, not just the occasional original-fiction three-part feature. The ordinary standalone rotation stays the default. Start a new original trilogy only after at least **seven full days and 14 unique verified public Night Files posts** since the last one began. Neither TikTok inbox drafts, Buffer.com queue receipts, generated videos nor successful jobs count as public. Require separate owner approval of concept, scripts, visual continuity and production, preserve the one-second cover and current workflows, and never enable the trilogy selector automatically. See `docs/series_proposals/2026-10-27_trilogy_review.md` for unapproved concept proposals.
+
+## Retention repair, owner review November 6, 2026
+
+Apply these checks to the complete spoken narration, including scene boundaries:
+- Open once. After the hook, advance the event instead of restating its sentence, date, setting or premise. Do not repeat the opening at the end to manufacture a playback loop. If a historical task requires "This is a true story.", use it once and continue with new information; never use it for folklore or fiction.
+- Deliver useful information early. The next one or two beats must introduce a sourced clue, explanation, decision or consequence that changes understanding. Do not spend the first half listing appearance, powers or atmosphere and save every discovery for the last line. No invented evidence to satisfy this timing.
+- Make the lesson specific. For folklore, investigate who first recorded it, how it circulated, the cultural context and differences between versions. A country name, creature description or list of powers alone does not fulfill the discovery. Distinguish a first surviving record from the unknown creator/origin; if the supplied sources cannot establish origins, teach a different supported discovery and state the limit.
+- Earn the ending before the CTA. Answer the opening promise or explain exactly what remains unknown. Replace generic questions such as "What would you check first?" with one invitation grounded in the discovery. For a legend comparison, a suitable example is "Does your hometown have a version? Tell us its name and where you heard it." Vary the invitation to fit the story; do not repeat this exact template in every video. Treat viewer replies as research leads, not verified facts.
+- During the existing editor/critic pass, quote the early discovery, payoff and CTA, and identify repeated opening information across scenes. Repair concrete defects within the existing revision budget. Do not add model calls or regenerate safe completed videos because of subjective scores.
+
+Analytics are diagnostic context, not a writing formula: average view duration is not an exact exit point; one high-view story does not prove a genre wins. Compare matched video lengths, retention curves and engaged-view definitions before claiming an improvement.
 
 ## Adaptation by genre
 - Unsolved mystery: the disappearance/event first, then necessary context, evidence, search, competing sourced interpretations, and what remains unknown.
