@@ -24,7 +24,11 @@ def shared_style(prompt: str) -> str:
             + "\n\nFINAL EDITORIAL REQUIREMENT: Apply the shared viewer-value contract even "
               "if an older task prompt makes learning optional or requires an ending question. "
               "Deliver a specific lesson/discovery, the hook\'s payoff, then exactly one relevant "
-              "call to action. Preserve facts, approved text, and the requested output schema.")
+              "call to action. Advance after the hook without repeating its opening or date; "
+              "deliver a sourced discovery in the next one or two beats, not only monster description. "
+              "Never repeat the hook at the ending or append a generic survival question. "
+              "Use the existing review budget, with no additional model calls. "
+              "Preserve facts, approved text, and the requested output schema.")
 
 
 SCHEMA = {
