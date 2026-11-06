@@ -286,9 +286,10 @@
       "title": "Thirty-Four Thousand Feet Vanished... TWA Flight 841 #shorts"
     },
     "2026-11-06_2103": {
-      "status": "attempt_started",
-      "title": "Her Locked Front Door Opened | Scary Story #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-11-06_2103.mp4"
+      "status": "queued",
+      "buffer_post_id": "6aee48ec004e4879a71821da",
+      "due_at": "2026-11-09T00:45:00.000Z",
+      "title": "Her Locked Front Door Opened | Scary Story #shorts"
     }
   }
 }
