@@ -4381,5 +4381,83 @@
       "pending": "buffer_queue_pending"
     },
     "draft_sent": "2026-11-05_0750"
+  },
+  {
+    "date": "2026-11-06_2103",
+    "story_id": "8dad07dfc0ff",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Blackwood Cove Disappearance",
+    "premise": "An archivist vanishes during a blackout, leaving behind three eerie clues and a recording of mysterious breathing.",
+    "subgenre": "cold case file (fiction)",
+    "mode": "coldcase",
+    "true_story": false,
+    "case": null,
+    "source": null,
+    "prompt_file": "fiction_cold_case.txt",
+    "setting": null,
+    "threat": null,
+    "twist": null,
+    "score": 86,
+    "seconds": 64.9,
+    "voice_speed": 1.1,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:8382686",
+      "pexels:37757498",
+      "pexels:8118120"
+    ],
+    "visual_mode": "fast",
+    "render_style": "explainer",
+    "story_shape": "gradual realization",
+    "research_sources": [],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": null,
+    "visuals": {
+      "distinct": 23,
+      "longest_s": 4.6,
+      "longest_share": 0.067,
+      "longest_name": "image:scene_10b.png:full"
+    },
+    "yt_title": "Her Locked Front Door Opened | Scary Story #shorts",
+    "hashtags": [
+      "blackwoodcove",
+      "scarystories",
+      "horrorstory",
+      "claravance"
+    ],
+    "yt_tags": [
+      "clara vance archivist",
+      "blackwood cove blackout",
+      "missing archivist mystery",
+      "scary story blackwood cove",
+      "fictional horror story",
+      "creepy audio recording mystery",
+      "locked room disappearance",
+      "coastal town mystery",
+      "horror short story",
+      "unsolved coastal mystery",
+      "blackwood cove disappearance",
+      "scary story",
+      "horror story",
+      "creepy story",
+      "short horror story"
+    ],
+    "opening": "Her locked front door opened automatically the moment the neighborhood power grid failed.",
+    "music_file": "unsolved_mystery.mp3",
+    "buffered": "2026-11-06_2103",
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7705175790819887135",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    },
+    "draft_sent": "2026-11-06_2138"
   }
 ]
