@@ -43,6 +43,17 @@ These November 2, 2026 owner requirements supersede older task prompts that make
 - Judge edits by what a normal viewer will **understand, remember or feel**, not by the number of facts, unexplained
   jargon, eerie props, visuals or transitions.
 
+## Retention repair, owner review November 6, 2026
+
+Apply these checks to the complete spoken narration, including scene boundaries:
+- Open once. After the hook, advance the event instead of restating its sentence, date, setting or premise. Do not repeat the opening at the end to manufacture a playback loop. If a historical task requires "This is a true story.", use it once and continue with new information; never use it for folklore or fiction.
+- Deliver useful information early. The next one or two beats must introduce a sourced clue, explanation, decision or consequence that changes understanding. Do not spend the first half listing appearance, powers or atmosphere and save every discovery for the last line. No invented evidence to satisfy this timing.
+- Make the lesson specific. For folklore, investigate who first recorded it, how it circulated, the cultural context and differences between versions. A country name, creature description or list of powers alone does not fulfill the discovery. Distinguish a first surviving record from the unknown creator/origin; if the supplied sources cannot establish origins, teach a different supported discovery and state the limit.
+- Earn the ending before the CTA. Answer the opening promise or explain exactly what remains unknown. Replace generic questions such as "What would you check first?" with one invitation grounded in the discovery. For a legend comparison, a suitable example is "Does your hometown have a version? Tell us its name and where you heard it." Vary the invitation to fit the story; do not repeat this exact template in every video. Treat viewer replies as research leads, not verified facts.
+- During the existing editor/critic pass, quote the early discovery, payoff and CTA, and identify repeated opening information across scenes. Repair concrete defects within the existing revision budget. Do not add model calls or regenerate safe completed videos because of subjective scores.
+
+Analytics are diagnostic context, not a writing formula: average view duration is not an exact exit point; one high-view story does not prove a genre wins. Compare matched video lengths, retention curves and engaged-view definitions before claiming an improvement.
+
 ## Adaptation by genre
 - Unsolved mystery: the disappearance/event first, then necessary context, evidence, search, competing sourced interpretations, and what remains unknown.
 - Historical event: defining moment first, then how/why it unfolded and why it mattered.
