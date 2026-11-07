@@ -292,9 +292,10 @@
       "title": "Her Locked Front Door Opened | Scary Story #shorts"
     },
     "2026-11-07_0637": {
-      "status": "attempt_started",
-      "title": "Three Keepers Vanished... The Flannan Isles Mystery #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-11-07_0637.mp4"
+      "status": "queued",
+      "buffer_post_id": "6aeed094004e4879a73d8d9f",
+      "due_at": "2026-11-09T01:32:00.000Z",
+      "title": "Three Keepers Vanished... The Flannan Isles Mystery #shorts"
     }
   }
 }
