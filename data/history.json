@@ -4535,5 +4535,83 @@
       "pending": "buffer_queue_pending"
     },
     "draft_sent": "2026-11-07_0717"
+  },
+  {
+    "date": "2026-11-07_1936",
+    "story_id": "1b2b2935a910",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Pontianak",
+    "premise": "In Southeast Asian folklore, a vengeful spirit tracks the scent of clean laundry under the full moon.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Pontianak (folklore)",
+    "source": null,
+    "prompt_file": null,
+    "setting": "A quiet rural village in Southeast Asia under the full moon",
+    "threat": "The Pontianak, a vengeful spirit disguised as a beautiful woman",
+    "twist": "When she turns around, her back is completely hollow and gaping.",
+    "score": null,
+    "seconds": 52.7,
+    "voice_speed": 1.041,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:37431627"
+    ],
+    "visual_mode": "classic",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 92,
+    "visuals": {
+      "distinct": 20,
+      "longest_s": 3.5,
+      "longest_share": 0.062,
+      "longest_name": "image:scene_02a.png:full"
+    },
+    "yt_title": "The Scent of Clean Laundry... The Pontianak of Southeast Asia #shorts",
+    "hashtags": [
+      "pontianak",
+      "southeastasia",
+      "folklore",
+      "scarystories"
+    ],
+    "yt_tags": [
+      "the pontianak",
+      "pontianak legend",
+      "southeast asia folklore",
+      "southeast asian folklore",
+      "pontianak spirit",
+      "vengeful spirit legend",
+      "scary legends",
+      "ghost story",
+      "folklore creatures",
+      "urban legend",
+      "creepy folklore",
+      "supernatural legends",
+      "pontianak",
+      "scary legend",
+      "folklore"
+    ],
+    "opening": "Leaving clean laundry outside under the full moon was the exact mistake that drew the spirit to his yard.",
+    "music_file": "background_music.mp3",
+    "buffered": "2026-11-07_1936",
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7705524524443879454",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    },
+    "draft_sent": "2026-11-07_2012"
   }
 ]
