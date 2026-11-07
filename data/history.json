@@ -4459,5 +4459,81 @@
       "pending": "buffer_queue_pending"
     },
     "draft_sent": "2026-11-06_2138"
+  },
+  {
+    "date": "2026-11-07_0637",
+    "story_id": "ddf99ad19c4f",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Flannan Isles Mystery",
+    "premise": "Three lighthouse keepers vanish from a deserted Scottish island, leaving behind uneaten food, locked doors, and twisted iron railings.",
+    "subgenre": "creator script",
+    "mode": "inbox-script",
+    "true_story": true,
+    "case": null,
+    "source": "inbox/flannan_isles_lighthouse_1900.txt",
+    "prompt_file": null,
+    "setting": null,
+    "threat": null,
+    "twist": null,
+    "score": null,
+    "seconds": 65.3,
+    "voice_speed": 1.1,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "wikimedia:157441719",
+      "pexels:10228684"
+    ],
+    "visual_mode": "analog",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": null,
+    "visuals": {
+      "distinct": 24,
+      "longest_s": 4.0,
+      "longest_share": 0.058,
+      "longest_name": "image:scene_08a.png:full"
+    },
+    "yt_title": "Three Keepers Vanished... The Flannan Isles Mystery #shorts",
+    "hashtags": [
+      "flannanisles",
+      "unsolvedmysteries",
+      "mystery"
+    ],
+    "yt_tags": [
+      "the flannan isles mystery",
+      "flannan isles disappearance",
+      "scotland unsolved mystery",
+      "december 1900 disappearance",
+      "flannan isles lighthouse",
+      "unsolved mystery",
+      "scotland history",
+      "true mystery story",
+      "missing keepers scotland",
+      "flannan isles true story",
+      "mysterious disappearance",
+      "flannan isles mystery",
+      "flannan isles mystery story",
+      "true crime story",
+      "true story"
+    ],
+    "opening": "Three lighthouse keepers vanished from a Scottish island.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-11-07_0637",
+    "tiktok": {
+      "publish_id": "v_inbox_file~v2.7705324676905469983",
+      "status": "SEND_TO_USER_INBOX",
+      "mode": "draft"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    },
+    "draft_sent": "2026-11-07_0717"
   }
 ]
