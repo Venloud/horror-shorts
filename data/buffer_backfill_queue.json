@@ -298,9 +298,10 @@
       "title": "Three Keepers Vanished... The Flannan Isles Mystery #shorts"
     },
     "2026-11-07_1936": {
-      "status": "attempt_started",
-      "title": "The Scent of Clean Laundry... The Pontianak of Southeast Asia #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-11-07_1936.mp4"
+      "status": "queued",
+      "buffer_post_id": "6aef86369214322f6813af5d",
+      "due_at": "2026-11-09T11:04:00.000Z",
+      "title": "The Scent of Clean Laundry... The Pontianak of Southeast Asia #shorts"
     }
   }
 }
