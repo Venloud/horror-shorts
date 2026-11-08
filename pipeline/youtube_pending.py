@@ -1,12 +1,12 @@
-"""Durable MP4 staging for Buffer.com YouTube delivery (no Google upload API).
+"""Durable MP4 staging for Buffer.com TikTok and YouTube delivery (no Google upload API).
 The Daily publisher archives every accepted Night Files video here:
 
   data/youtube_pending.json  {"videos": [{stamp, story_id, title, video_number, posted, status, file, ...}],
                               "last_alert": "YYYY-MM-DD", "uploads": {"YYYY-MM-DD": n}}
   release "youtube-pending"  <stamp>.mp4 + <stamp>.json (caption.json: yt_title / yt_description / yt_tags ...)
 
-The GitHub Release MP4 remains reachable after the TikTok video buffer item is removed;
-Buffer.com queues the public release asset independently. Historical statuses remain intact.
+The GitHub Release MP4 remains reachable after the production buffer item is removed;
+Buffer.com queues the public release asset independently for each channel. Historical statuses remain intact.
 The direct API uploader is permanently disabled.
 """
 import json
@@ -106,22 +106,30 @@ def _alert(d: dict) -> None:
 def record(stamp: str, mp4: Path, meta: Path, video_number: int | None) -> None:
     """Store accepted video for Buffer.com; never call Google. Never raises."""
     d = load()
-    if any(v["stamp"] == stamp for v in d["videos"]):
+    entry = next((v for v in d["videos"] if v.get("stamp") == stamp), None)
+    if entry and entry.get("file"):
         return
     try:
         m = json.loads(Path(meta).read_text())
     except Exception:  # noqa: BLE001
         m = {}
-    entry = {"stamp": stamp, "story_id": m.get("story_id"), "title": m.get("title"), "video_number": video_number,
-             "posted": datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M"), "status": "pending", "file": False}
+    if entry is None:
+        entry = {"stamp": stamp, "story_id": m.get("story_id"), "title": m.get("title"),
+                 "video_number": video_number,
+                 "posted": datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M"),
+                 "status": "pending", "file": False}
+        d["videos"].append(entry)
+    else:
+        entry.update({"story_id": m.get("story_id"), "title": m.get("title"),
+                      "video_number": video_number, "status": "pending"})
+        entry.pop("file_error", None)
     try:
         _store(stamp, Path(mp4), Path(meta))
         entry["file"] = True
-        log(f"YouTube Buffer staging: #{video_number} '{entry['title']}' archived in {TAG}")
+        log(f"Buffer staging: #{video_number} '{entry['title']}' archived in {TAG}")
     except Exception as e:  # noqa: BLE001
         entry["file_error"] = str(e)[:200]
-        log(f"YouTube Buffer staging failed for {stamp} ({e}); kept queue record")
-    d["videos"].append(entry)
+        log(f"Buffer staging failed for {stamp} ({e}); kept queue record")
     _alert(d)
     save(d)
 

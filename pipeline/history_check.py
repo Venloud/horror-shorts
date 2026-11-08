@@ -25,11 +25,23 @@ def problems(history: list[dict]) -> list[str]:
     posted = ROOT / ".posted"
     if posted.exists():
         p = json.loads(posted.read_text())
-        expected_field = "draft_sent" if p.get("mode") == "draft" else "posted"
+        if p.get("mode") == "buffer":
+            def expected(h):
+                tiktok = h.get("tiktok") or {}
+                youtube = h.get("youtube") or {}
+                return (isinstance(tiktok, dict) and tiktok.get("status") == "STAGED_FOR_BUFFER"
+                        and isinstance(youtube, dict)
+                        and youtube.get("pending") == "buffer_queue_pending")
+
+            label = "durable Buffer staging"
+        else:
+            expected_field = "draft_sent" if p.get("mode") == "draft" else "posted"
+            expected = lambda h: bool(h.get(expected_field))
+            label = expected_field
         if not any((h.get("buffered") == p["stamp"] or h.get("date") == p["stamp"]
-                    or (p.get("story_id") and h.get("story_id") == p["story_id"])) and h.get(expected_field)
+                    or (p.get("story_id") and h.get("story_id") == p["story_id"])) and expected(h)
                    for h in history):
-            out.append(f"video {p['stamp']} has no {expected_field} history entry on main")
+            out.append(f"video {p['stamp']} has no {label} history entry on main")
     return out
 
 

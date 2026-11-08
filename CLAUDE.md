@@ -54,7 +54,7 @@ All Night Files writers/critics and Claude changes must use the **existing sourc
 
 ## OWNER YOUTUBE RULE (2026-10-25): BUFFER.COM IS THE ONLY UPLOAD ROUTE
 
-The direct Google YouTube Data API upload is **retired**. Do not reinstate it through `youtube.py`, `youtube_pending.upload_some`, `yt_backfill`, Google refresh tokens or workflow secrets. **Daily Horror Video** delivers its accepted video to the original TikTok route, archives its completed MP4 in the existing `youtube-pending` GitHub Release and then queues that exact video to Buffer.com in the **same daily run**. The independent 15-minute `buffer_backfill_auto.yml` worker catches missed queue attempts and queues up to one older Night Files video per run. Once current inventory is exhausted, recover only verified Night Files historical media, first from surviving Actions artifacts, then from owner-authorized public TikTok posts with exact caption evidence and a validated MP4. Draft-only TikTok receipt is NOT public proof. Persist write-ahead queue receipts before attempting Buffer GraphQL mutations; avoid cross-workflow races, duplicates, unapproved content, and modifying old original MP4s. Do not confuse Buffer.com queueing with YouTube-public confirmation. **Never manually dispatch production workflows merely for a code test.**
+The direct Google YouTube Data API upload is **retired**. Do not reinstate it through `youtube.py`, `youtube_pending.upload_some`, `yt_backfill`, Google refresh tokens or workflow secrets. **Owner route update (2026-11-07):** Daily Horror Video stages the accepted MP4 in the existing `youtube-pending` GitHub Release and queues that exact video to both TikTok and YouTube through Buffer.com in the **same daily run**. The independent 15-minute `buffer_backfill_auto.yml` worker keeps per-channel write-ahead receipts and catches missing queue attempts. Existing YouTube historical backfill remains YouTube-only; the TikTok rollout cutoff and history checks prevent old public posts and inbox drafts from being replayed. Recover only verified Night Files historical media, first from surviving Actions artifacts, then from owner-authorized public TikTok posts with exact caption evidence and a validated MP4. Buffer queue receipts are NOT public proof. Avoid cross-workflow races, duplicates, unapproved content, and modifying old original MP4s. **Never manually dispatch production workflows merely for a code test.**
 
 The legacy `youtube_paused=true` and `data/youtube_pending.json` carry historical Google OAuth state, not a reason to stop Buffer.com. The direct upload function intentionally fails closed. Preserve Google Analytics if separately authorized, but never resurrect Google upload. If TikTok `video.list` authorization or GH_PAT token-rotation persistence is unavailable, report a concrete recovery blocker; do not scrape unknown accounts or reuse stale credentials.
 
@@ -76,7 +76,7 @@ The owner listened to the finished Aka Manto explainer and said **"I like that v
 
 **Precisely distinguish:** unit tests, mock renders, intermediate snippets, frame sheets, diagnostics and unfinished/rejected MP4s are NOT completed publishable videos. They do not post or enter history. A full final MP4 that passes the regular production gate DOES enter the buffer and remains queued until the legitimate publisher can deliver it; don't pretend queueing or sending to a draft inbox is the same as a public post. The daily publisher and platform permissions are the authoritative delivery mechanism. Don't bypass account restrictions, credentials, scheduled slots, approval requirements or safety checks to force a post.
 
-**Current implementation reality when this rule was recorded:** `pipeline/main.py` already uses production-only `testing = False`, puts complete validated MP4s into the buffer, and `daily.yml` runs `publish.py` on its configured slots; manual `buffer_fill.yml` fills the queue without immediate posting. `config.json` currently sets `tiktok_mode="draft"` and `youtube_paused=true`, so neither a draft handoff nor a paused YouTube upload is evidence of public posting. Preserve actual supported credentials/capabilities; report any delivery blockers truthfully rather than silently declaring videos "published". This is a POLICY update, not evidence that the social-platform restrictions were lifted.
+**Current implementation reality (updated 2026-11-07):** `pipeline/main.py` uses production-only `testing = False`, puts complete validated MP4s into the buffer, and `daily.yml` runs `publish.py` on its configured slots; manual `buffer_fill.yml` fills the queue without immediate posting. `config.json` sets `tiktok_mode="buffer"` and `youtube_paused=true`; Buffer queue receipts are staging/scheduling evidence, not proof of public posting. Preserve actual supported credentials/capabilities; report delivery blockers truthfully rather than silently declaring videos "published". This is a POLICY update, not evidence that every scheduled video has posted.
 
 ## Owner next action implemented: Whisper diagnostics on in production (2026-10-25)
 
@@ -713,8 +713,10 @@ Keep user-approved editing standards in `docs/NIGHT_FILES_EDITING_QUALITY_CHECKL
 
 ## TikTok inbox drafts, owner requested 2026-10-21
 
-- Production config `tiktok_mode` is `draft`. Do not switch back to public
-  direct posting without explicit owner instruction.
+**Route superseded by the owner on 2026-11-07:** new Night Files videos now go to TikTok through Buffer.com, not the TikTok Content Posting API inbox. The historical inbox behavior and receipt rules below remain relevant only to legacy history and recovery; do not restore draft or direct API delivery for new daily videos without a new owner instruction.
+
+- At the time of this directive, production config `tiktok_mode` was `draft`.
+  Do not switch back to public direct posting without explicit owner instruction.
 - TikTok API `SEND_TO_USER_INBOX` means a video was delivered to the
   creator's inbox, NOT published. The owner still finishes posting in TikTok.
 - Only a confirmed inbox delivery consumes the durable FIFO buffer item,

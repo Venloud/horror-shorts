@@ -42,17 +42,22 @@ time), get-sfx.
 
 Wikimedia Commons, Chronicling America and the Wikipedia pageviews API need no key.
 
-## 3. TikTok developer app
+## 3. TikTok delivery
 
-developers.tiktok.com -> your app with **Login Kit** + **Content Posting API**, scopes `user.info.basic` and
-`video.upload`, a web Redirect URI on your own site, and a **sandbox** with your account as Target User. Posting
-mode is `tiktok_mode: "draft"`: videos land in your TikTok inbox and you post them.
+Daily TikTok videos are queued through the connected TikTok channel in Buffer.com;
+`config.json` uses `tiktok_mode: "buffer"`. The shared Buffer access token and
+channel IDs are supplied by the scheduled workflows. Verify the post in TikTok
+and Buffer before retrying any ambiguous or still-processing item to avoid a
+duplicate.
 
-## 4. Connect TikTok (one time)
+## 4. Optional legacy TikTok recovery
 
-Open `https://www.tiktok.com/v2/auth/authorize/?client_key=YOUR_CLIENT_KEY&scope=user.info.basic,video.upload&response_type=code&redirect_uri=YOUR_REDIRECT_URI&state=horror`,
-approve, copy the whole URL you land on (within ~5 minutes), then run **Actions -> Connect TikTok (one time)** with
-it. `TIKTOK_REFRESH_TOKEN` is saved for you.
+The TikTok developer app and `TIKTOK_*` secrets are only used by the 15-minute
+recovery worker to locate verified historical public posts. They are not needed
+for new daily Buffer queueing. If historical recovery is needed, authorize the
+app with the `user.info.basic` and `video.list` scopes and run **Actions ->
+Connect TikTok (one time)**. Keep `GH_PAT` configured so token rotation can be
+saved securely.
 
 ## 5. Connect YouTube (one time)
 
