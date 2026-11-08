@@ -100,6 +100,21 @@ These **eight story-writing requirements** refine R1–R9 and the five-part arc.
 
 **Final writer check:** Why does the audience care about this person? What decision causes the next event? What exactly is promised in the first seconds? Where does the promise change meaning? What concrete danger might happen? Which detail matters later? Is dialogue genuinely needed? What makes the ending both unexpected and inevitable in hindsight? Has the whole script been written before review?
 
+## Cascading suspense loops: stakes, big question, head fake, re-hook (owner, November 7, 2026)
+
+Use this **four-step storytelling lens** inside the existing R1–R9 rules, five-part arc, eight story-craft priorities and complete-script-first review. It describes connected audience curiosity, **not a medically proven “dopamine addiction loop”** or a promise of casino-like effects. Apply it where the material earns it, not as an obligatory four-scene template.
+
+1. **Stakes:** Make viewers care about a specific person and outcome. Establish **a relatable character, something personally meaningful at risk, and urgency when real or narratively justified**. Stakes need not involve death; a threatened responsibility, trust, livelihood, safety, answer or relationship can matter. Show them through action or precise verified context, not invented inner thoughts, fabricated deadlines or melodrama.
+2. **Big question:** From those stakes, make **one concrete central question** irresistible and intelligible. Give enough context for an audience to predict what might happen, without dumping exposition or promising an answer the evidence cannot supply. This feeds R9's trackable question and the main hook.
+3. **Head fake / expectation reversal:** Let the story's established facts or character choices suggest **A**, then reveal a supported **B** that changes what the viewer reasonably believed. This can be a genuine contradiction, new clue, changed interpretation or consequence, not an arbitrary jump scare or a narrator falsely implying A is proven. **In nonfiction, never invent a discovery, character reaction, motive, chronology, threat or historical conclusion merely to create a twist.** If no legitimate reversal exists, use an honest refinement of the question or skip the head fake.
+4. **Re-hook:** Let B immediately create the **next meaningful, causally connected question, risk or decision**. Answer enough of the preceding question to reward attention; do not pile up mysteries or conceal every payoff. The next loop must grow from the previous evidence or consequence, not from a generic “but then” or unrelated cliffhanger.
+
+**Cascade rather than repeat:** A strong standalone script can have one main loop and, where justified, smaller **stakes → question → evidence-based reversal → connected re-hook** cycles. The ending must still discharge the original hook's promise with a real answer, human consequence or clearly bounded uncertainty. Do not demand a reversal or re-hook every fixed number of seconds. Every spoken detail must advance character, evidence, understanding, danger or payoff.
+
+**Example, documented Flannan Isles lighthouse case:** The keepers were missing when relief arrived (**stakes and question: where are the three men?**). The orderly station contrasts with severe damage at the western landing (**supported expectation shift**). That evidence changes the question to what happened near the water (**re-hook**). Investigators considered a large wave the likely explanation; their final moments remain unobserved (**honest payoff, not a supernatural claim**). Do not invent thoughts for Joseph Moore or imply the wave was witnessed.
+
+**Writing and review sequence:** Establish the four beats during planning as useful, **finish the entire narration and ending first**, then have the existing bounded editor/critic/scorer identify the lead and risk, central question, the exact line of any supported expectation shift, what new question it causes, and the final payoff. A missing manufactured twist is **not** a defect. Compare actual completed video retention only when data exists; a writing score is not evidence of addiction or guaranteed retention.
+
 ## Retention repair, owner review November 6, 2026
 
 Apply these checks to the complete spoken narration, including scene boundaries:
