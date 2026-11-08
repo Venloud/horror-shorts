@@ -23,7 +23,7 @@ def hit(seconds=3, **kw):
     return {"id": "a", "duration": seconds * 1000, **kw}
 
 def test_openverse_filters_duration_and_records_rights(sfx, tmp_path):
-    from pipeline import openverse_assets as ov
+    import openverse_assets as ov
     cached = tmp_path / "cached"
     cached.with_suffix(".mp3").write_bytes(M3 := MP3)
     record = {"license": "cc0", "source_verified": True, "attribution": "Openverse CC0 credit"}
@@ -35,7 +35,7 @@ def test_openverse_filters_duration_and_records_rights(sfx, tmp_path):
     assert acquire.call_count == 1
 
 def test_openverse_failure_is_bounded(sfx):
-    from pipeline import openverse_assets as ov
+    import openverse_assets as ov
     with patch.object(ov, "search", return_value=[hit()]), patch.object(ov, "acquire", side_effect=ValueError("unverified")):
         with pytest.raises(RuntimeError, match="no CC0"):
             sfx.openverse("x", [1, 15])
