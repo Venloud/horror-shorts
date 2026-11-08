@@ -388,6 +388,78 @@
       "posted": "2026-11-03_0746",
       "status": "pending",
       "file": true
+    },
+    {
+      "stamp": "2026-11-03_2116",
+      "story_id": "08a99296e6c4",
+      "title": "The Legend of Black Shuck",
+      "video_number": null,
+      "posted": "2026-11-03_2146",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-04_0700",
+      "story_id": "0debc982a6e2",
+      "title": "The Mysterious Disappearance of Roanoke Colony",
+      "video_number": null,
+      "posted": "2026-11-04_0739",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-04_2130",
+      "story_id": "2cd6d1a3ca49",
+      "title": "The Rougarou of the Bayou",
+      "video_number": null,
+      "posted": "2026-11-04_2157",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-05_0726",
+      "story_id": "0b83ad5f564d",
+      "title": "TWA Flight 841 Uncontrolled Dive",
+      "video_number": null,
+      "posted": "2026-11-05_0750",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-06_2103",
+      "story_id": "8dad07dfc0ff",
+      "title": "The Blackwood Cove Disappearance",
+      "video_number": null,
+      "posted": "2026-11-06_2138",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-07_0637",
+      "story_id": "ddf99ad19c4f",
+      "title": "The Flannan Isles Mystery",
+      "video_number": null,
+      "posted": "2026-11-07_0717",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-07_1936",
+      "story_id": "1b2b2935a910",
+      "title": "The Pontianak",
+      "video_number": null,
+      "posted": "2026-11-07_2012",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-08_0644",
+      "story_id": "18df547c34f0",
+      "title": "The Solway Firth Spaceman",
+      "video_number": null,
+      "posted": "2026-11-08_0713",
+      "status": "pending",
+      "file": true
     }
   ],
   "uploads": {},

@@ -1,0 +1,32 @@
+{
+ "_note": "Regression example (owner, Nov 2 2026): a script the bot produced before the viewer-value rules.",
+ "title": "The Legend of the Mngwa",
+ "mode": "lore",
+ "true_story": false,
+ "scenes": [
+  {
+   "narration": "Massive paw prints outside the heavy wooden door left the terrified villagers certain that something impossible was prowling."
+  },
+  {
+   "narration": "Back in nineteen thirty-eight in Tanganyika, terrified local residents whispered quietly about the dreaded Mngwa."
+  },
+  {
+   "narration": "The unseen beast was described as far more ferocious than any lion and much faster than a leopard."
+  },
+  {
+   "narration": "Some frightened residents even believed it walked as a human by day before shifting forms at night."
+  },
+  {
+   "narration": "British administrator William Hitchens finally arrived to track down the true source of the terror."
+  },
+  {
+   "narration": "As local residents detailed the nightly attacks, Hitchens carefully searched for physical evidence."
+  },
+  {
+   "narration": "Instead of finding any shapeshifter, he ultimately concluded the culprit was simply a lion with gigantism."
+  },
+  {
+   "narration": "No actual body was ever found, leaving you to decide if giant tracks mean a hidden beast."
+  }
+ ]
+}

@@ -313,11 +313,14 @@ def main(from_build: bool = False) -> int:
         )
         return 1
 
-    # TikTok and YouTube are independent. One failure never prevents the other.
+    # Buffer handles TikTok and YouTube queueing after this run durably stages the video.
     result, tt_error = None, None
     try:
         mode = CONFIG.get("tiktok_mode")
-        if mode == "direct":
+        if mode == "buffer":
+            result = {"status": "STAGED_FOR_BUFFER", "mode": "buffer"}
+            log("TikTok: staged for Buffer.com; no TikTok API upload")
+        elif mode == "direct":
             result = tiktok.post_direct(mp4, meta["caption_text"])
             if result.get("status") != "PUBLISH_COMPLETE":
                 raise RuntimeError("TikTok direct post not confirmed: " + str(result))
@@ -334,9 +337,7 @@ def main(from_build: bool = False) -> int:
         tt_error = f"{type(e).__name__}: {str(e)[:300]}"
 
     import youtube_pending
-    # YouTube Data API uploads are retired. The Daily workflow queues this
-    # accepted MP4 through Buffer.com after its durable release/state is saved.
-    # The 15-minute Buffer worker also picks up videos whose TikTok delivery failed.
+    # Both channels are queued through Buffer.com after durable release staging.
     yt, yt_error, yt_paused = None, None, True
     log("YouTube: Buffer.com only, no Google upload API calls")
 
@@ -350,14 +351,29 @@ def main(from_build: bool = False) -> int:
         )
         return 1
 
-    # A confirmed TikTok inbox delivery is NOT a public post. Consume its buffer
-    # item to avoid duplicate draft notifications, but track it separately.
+    # A Buffer queue receipt is not proof of a public post. Track queue staging
+    # separately; only verified TikTok public posts count toward public-post gates.
     draft_sent = bool(result and result.get("mode") == "draft")
     publicly_posted = bool(yt or (result and result.get("mode") == "direct"))
     delivery_time = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M")
 
-    # At least one platform accepted the delivery. Remove the buffer item to
-    # prevent repeated drafts/posts. If removal fails, record that fact.
+    if result and result.get("mode") == "buffer":
+        # Keep the exact approved MP4 in a durable release before removing it
+        # from the production buffer. Buffer queueing and recovery read this pair.
+        youtube_pending.record(video["stamp"], mp4, out / "caption.json", None)
+        staged = next((v for v in youtube_pending.load()["videos"]
+                       if v.get("stamp") == video["stamp"]), None)
+        if not staged or not staged.get("file"):
+            notify_text(
+                "Night Files: Buffer staging FAILED",
+                f"'{video['stamp']}' could not be saved to the durable Buffer staging release. "
+                "The original video stays in the production buffer for a later retry.",
+                warn=True,
+            )
+            return 1
+
+    # Buffer staging succeeded. Retire the source item to prevent repeat delivery;
+    # if removal fails, record that fact for reconciliation.
     removal_pending = False
     try:
         buffer.remove(video)
@@ -371,10 +387,10 @@ def main(from_build: bool = False) -> int:
     number = take_video_number() if publicly_posted else None
     if number is not None:
         _gh_output("video_number", number)
-    if result:  # Retain the exact accepted MP4 + metadata so Buffer.com can queue it
+    if result and result.get("mode") != "buffer":
         youtube_pending.record(video["stamp"], mp4, out / "caption.json", number)
     log(
-        f"Video {'#' + str(number) if number is not None else '(TikTok inbox draft)'}: "
+        f"Video {'#' + str(number) if number is not None else '(Buffer queue pending)'}: "
         f"'{meta['title']}' (story {meta.get('story_id', '?')}, buffered {video['stamp']})"
     )
 
@@ -423,7 +439,9 @@ def main(from_build: bool = False) -> int:
                     "caption.json. Check that the build that made it saved history.", warn=True)
     save_history(history)
     (ROOT / ".posted").write_text(json.dumps({"stamp": video["stamp"], "story_id": meta.get("story_id"),
-                                              "video_number": number, "mode": "draft" if draft_sent else "public"}))
+                                              "video_number": number,
+                                              "mode": "buffer" if result and result.get("mode") == "buffer"
+                                              else ("draft" if draft_sent else "public")}))
 
     lines = []
     if yt:
@@ -446,6 +464,8 @@ def main(from_build: bool = False) -> int:
         if meta.get("yt_tags"):
             lines.append("YouTube tags: " + ", ".join(meta["yt_tags"]))
 
+    if result and result.get("mode") == "buffer":
+        lines.append("TikTok: staged for Buffer.com queue. Check TikTok and Buffer before retrying an uncertain attempt.")
     if tt_error:
         lines.append(
             f"TikTok FAILED: {tt_error}. "
@@ -464,7 +484,9 @@ def main(from_build: bool = False) -> int:
     )
 
     left = len(waiting) - 1
-    if draft_sent and not publicly_posted:
+    if result and result.get("mode") == "buffer":
+        log(f"Done: video staged for TikTok and YouTube Buffer queues. {left} video(s) left in buffer.")
+    elif draft_sent and not publicly_posted:
         log(f"Done: TikTok inbox draft delivered, NOT publicly posted. {left} video(s) left in buffer.")
     else:
         log(f"Done: video #{number} publicly posted. {left} video(s) left in buffer.")

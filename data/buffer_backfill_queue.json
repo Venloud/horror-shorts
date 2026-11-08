@@ -260,6 +260,62 @@
       "buffer_post_id": "6ae991786896a4441f6a98cb",
       "due_at": "2026-11-06T01:44:00.000Z",
       "title": "The Wooden Coffin Was Chewed... Jiangshi of imperial China #shorts"
+    },
+    "2026-11-03_2116": {
+      "status": "queued",
+      "buffer_post_id": "6aea5653ca28ab6c3178fc4b",
+      "due_at": "2026-11-06T22:01:00.000Z",
+      "title": "His Footfalls Make No Sound... Black Shuck of East Anglia #shorts"
+    },
+    "2026-11-04_0700": {
+      "status": "queued",
+      "buffer_post_id": "6aeae153e478396c27474a4f",
+      "due_at": "2026-11-06T23:16:00.000Z",
+      "title": "The Lost Colony of Roanoke of North Carolina #shorts"
+    },
+    "2026-11-04_2130": {
+      "status": "queued",
+      "buffer_post_id": "6aebaa60e33a6d353dc5a8b7",
+      "due_at": "2026-11-07T23:41:00.000Z",
+      "title": "Howling in the Swamp Woods... The Rougarou of French Louisiana #shorts"
+    },
+    "2026-11-05_0726": {
+      "status": "queued",
+      "buffer_post_id": "6aec356275052a1eb82c21fc",
+      "due_at": "2026-11-08T00:56:00.000Z",
+      "title": "Thirty-Four Thousand Feet Vanished... TWA Flight 841 #shorts"
+    },
+    "2026-11-06_2103": {
+      "status": "queued",
+      "buffer_post_id": "6aee48ec004e4879a71821da",
+      "due_at": "2026-11-09T00:45:00.000Z",
+      "title": "Her Locked Front Door Opened | Scary Story #shorts"
+    },
+    "2026-11-07_0637": {
+      "status": "queued",
+      "buffer_post_id": "6aeed094004e4879a73d8d9f",
+      "due_at": "2026-11-09T01:32:00.000Z",
+      "title": "Three Keepers Vanished... The Flannan Isles Mystery #shorts"
+    },
+    "2026-11-07_1936": {
+      "status": "queued",
+      "buffer_post_id": "6aef86369214322f6813af5d",
+      "due_at": "2026-11-09T11:04:00.000Z",
+      "title": "The Scent of Clean Laundry... The Pontianak of Southeast Asia #shorts"
+    },
+    "2026-11-08_0644": {
+      "status": "queued",
+      "buffer_post_id": "6af0210b51492b796e21fede",
+      "due_at": "2026-11-10T02:27:00.000Z",
+      "title": "The Solway Firth Spaceman of England | Unsolved Mystery #shorts"
+    }
+  },
+  "tiktok_queued": {
+    "2026-11-08_0644": {
+      "status": "queued",
+      "buffer_post_id": "6af0210f9214322f6839dd05",
+      "due_at": "2026-11-08T14:52:00.000Z",
+      "title": "The Solway Firth Spaceman of England | Unsolved Mystery #shorts"
     }
   }
 }

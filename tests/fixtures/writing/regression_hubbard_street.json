@@ -1,0 +1,29 @@
+{
+ "_note": "Regression example (owner, Nov 2 2026): a script the bot produced before the viewer-value rules.",
+ "title": "The Haunted House Noises on Hubbard Street",
+ "mode": "mystery",
+ "true_story": true,
+ "scenes": [
+  {
+   "narration": "Baffling police for more than two weeks, mysterious noises at seventy Hubbard Street in Milwaukee hit the local evening newspapers. This is a true story."
+  },
+  {
+   "narration": "On Monday, November seventeenth, nineteen nineteen, the usual three sharp taps on the cold windowpane sounded as loud as ever before."
+  },
+  {
+   "narration": "Inside the quiet residence lived Mr. and Mrs. J. H. Graus right alongside Mr. and Mrs. J. M. Marzi."
+  },
+  {
+   "narration": "A full automobile load of seasoned detectives rushed quickly through the dark streets to the active scene to investigate."
+  },
+  {
+   "narration": "Yet the supposed ghost that the officers eagerly sought was simply not in evidence anywhere."
+  },
+  {
+   "narration": "Detectives sat inside the tense house for a very long time trying to locate the hidden source."
+  },
+  {
+   "narration": "With zero answers found, what would you check first in an empty room like that tonight?"
+  }
+ ]
+}
