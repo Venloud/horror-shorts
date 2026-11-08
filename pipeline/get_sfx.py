@@ -66,26 +66,29 @@ def freesound(query: str, dur: list[float], meta: dict | None = None) -> tuple[b
     raise RuntimeError(f"could not download any result for '{query}'")
 
 
-def openverse(query: str, dur: list[float]) -> tuple[bytes, str]:
-    """Openverse audio search (20 requests/min, 200/day without a key): CC0 / public domain, inside dur, real mp3."""
-    r = requests.get("https://api.openverse.org/v1/audio/", headers=UA, timeout=60, params={
-        "q": query, "license": "cc0,pdm", "mature": "false", "page_size": 20})
-    if r.status_code == 429:
-        raise RuntimeError(f"Openverse rate limit (retry after {r.headers.get('Retry-After', '?')} s)")
-    r.raise_for_status()
-    results = r.json().get("results")
-    if not isinstance(results, list):
-        raise RuntimeError("Openverse response has no results list")
-    for hit in results:
+def openverse(query: str, dur: list[float], meta: dict | None = None) -> tuple[bytes, str]:
+    """Optional CC0/PDM audio, original license verified, decoded and cached."""
+    try:
+        from . import openverse_assets as ov
+    except ImportError:  # direct script entry point
+        import openverse_assets as ov
+    for hit in ov.search("audio", query, ("cc0", "pdm")):
         seconds = (hit.get("duration") or 0) / 1000
-        if (hit.get("license") or "").lower() not in ("cc0", "pdm") or not dur[0] <= seconds <= dur[1] or not hit.get("url"):
+        if not dur[0] <= seconds <= dur[1]:
             continue
-        a = requests.get(hit["url"], headers=UA, timeout=60)
-        if a.ok and is_mp3(a.content):
-            lic = "CC0" if hit["license"].lower() == "cc0" else "Public Domain Mark"
-            return a.content, (f"Openverse {hit.get('source')} '{hit.get('title')}' by {hit.get('creator')} ({lic}) "
-                               f"{hit.get('foreign_landing_url') or hit['url']}")
-    raise RuntimeError(f"no CC0 / public-domain mp3 on Openverse for '{query}' in {dur} s")
+        try:
+            cached, record = ov.acquire(hit, "audio", ("cc0", "pdm"))
+            mp3 = cached.with_suffix(".mp3")
+            if not mp3.exists():
+                __import__("subprocess").run(["ffmpeg", "-y", "-v", "error", "-i", str(cached), str(mp3)],
+                                             check=True, capture_output=True, timeout=60)
+            if meta is not None:
+                meta.update(record)
+            return mp3.read_bytes(), record["attribution"]
+        except Exception:
+            continue
+    raise RuntimeError(f"no CC0 / public-domain audio on Openverse for {query!r} in {dur} s")
+
 
 DOWNLOADED: list[str] = []  # names fetched by ensure() in this run (main.py copies them next to the video)
 
@@ -100,7 +103,7 @@ def ensure(name: str) -> Path | None:
     info = SOURCES.get(name) or {}
     if "fs" not in info:
         return None
-    if not FS_KEY:
+    if not FS_KEY and not OPENVERSE_SFX:
         print(f"SFX: FREESOUND_API_KEY is not set: '{name}' cannot be fetched (CC0), that effect sound is skipped")
         return None
     try:
@@ -109,7 +112,12 @@ def ensure(name: str) -> Path | None:
         data = credit = None
         for q in dict.fromkeys([info["fs"], " ".join(words[:2]), " ".join(words[-2:]), words[0]]):
             try:  # the full search first, then simpler ones (a 3-word search often has no CC0 result)
-                data, credit = freesound(q, info.get("dur", [0.05, 3]), meta)
+                try:
+                    data, credit = freesound(q, info.get("dur", [0.05, 3]), meta)
+                except Exception:
+                    if not OPENVERSE_SFX:
+                        raise
+                    data, credit = openverse(q, info.get("dur", [0.05, 3]), meta)
                 break
             except RuntimeError as e:
                 if "no CC0 results" not in str(e):
@@ -117,7 +125,8 @@ def ensure(name: str) -> Path | None:
         if data is None:
             raise RuntimeError(f"no CC0 results for '{info['fs']}' or simpler searches")
         if not is_mp3(data) or "creative commons 0" not in str(meta.get("license", "")).lower() \
-                and "publicdomain/zero" not in str(meta.get("license", "")).lower():
+                and "publicdomain/zero" not in str(meta.get("license", "")).lower() \
+                and not (meta.get("source_verified") and meta.get("license") in ("cc0", "pdm")):
             raise RuntimeError(f"not a CC0 mp3 ({meta.get('license')})")
         OUT.mkdir(parents=True, exist_ok=True)
         path.write_bytes(data)
