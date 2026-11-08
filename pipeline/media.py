@@ -373,7 +373,7 @@ def openverse(query: str) -> list[dict]:
             continue
         name = {"pdm": "Public Domain Mark", "cc0": "CC0"}.get(lic, f"CC BY {r.get('license_version') or ''}".strip())
         out.append({"kind": "photo", "archive_kind": "print", "source": "openverse",
-                    "id": f"openverse:{r.get('id')}", "url": r.get("foreign_landing_url") or r.get("url"),
+                    "openverse_hit": r, "id": f"openverse:{r.get('id')}", "url": r.get("foreign_landing_url") or r.get("url"),
                     "download": r.get("url"), "title": r.get("title") or "", "author": r.get("creator") or "",
                     "license": name, "license_url": r.get("license_url") or "", "provider": r.get("provider") or "",
                     "attribution": r.get("attribution") or "", "date": "", "min_side": 760})
@@ -457,7 +457,13 @@ def _download(url: str, dest: Path, max_mb: int = 80) -> Path:
 def _photo(c: dict, png: Path) -> None:
     """Crop the photo to 9:16 around the centre (never upscaled from a tiny crop), grade it, 1080x1920 PNG."""
     raw = png.with_suffix(".src")
-    _download(c["download"], raw, max_mb=40)
+    if c.get("source") == "openverse":
+        from . import openverse_assets as ov
+        cached, record = ov.acquire(c["openverse_hit"], "images")
+        raw.write_bytes(cached.read_bytes())
+        c["rights"] = record
+    else:
+        _download(c["download"], raw, max_mb=40)
     with Image.open(raw) as im:
         im = im.convert("RGB")
         w, h = im.size
