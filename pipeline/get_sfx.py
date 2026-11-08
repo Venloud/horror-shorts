@@ -134,7 +134,7 @@ def ensure(name: str) -> Path | None:
                      "fetched_at": __import__("datetime").datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")})
         (OUT / f"{name}.license.json").write_text(json.dumps(meta, indent=1, ensure_ascii=False))
         DOWNLOADED.append(name)
-        print(f"SFX: fetched '{name}' from Freesound: {credit}")
+        print(f"SFX: fetched '{name}' from {meta.get('provider') or 'freesound'}: {credit}")
         return path
     except Exception as e:  # noqa: BLE001
         print(f"SFX: could not fetch '{name}' from Freesound ({str(e)[:160]}); that effect sound is skipped")
