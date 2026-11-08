@@ -4613,5 +4613,82 @@
       "pending": "buffer_queue_pending"
     },
     "draft_sent": "2026-11-07_2012"
+  },
+  {
+    "date": "2026-11-08_0644",
+    "story_id": "18df547c34f0",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Solway Firth Spaceman",
+    "premise": "A firefighter takes a photograph of his daughter in 1964, capturing an anomalous figure in a space suit in the background.",
+    "subgenre": "real unsolved mystery",
+    "mode": "mystery",
+    "true_story": true,
+    "case": "Solway Firth Spaceman",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Burgh Marsh, Cumberland, England, 1964",
+    "threat": "An unexplained anomalous figure appearing in a personal family photograph",
+    "twist": "The figure was identified by a journalist as the photographer's wife in an overexposed blue dress.",
+    "score": null,
+    "seconds": 67.4,
+    "voice_speed": 1.1,
+    "narrator_voice": "am_michael",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:19378829",
+      "pexels:12822168"
+    ],
+    "visual_mode": "fast",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 86,
+    "visuals": {
+      "distinct": 20,
+      "longest_s": 5.8,
+      "longest_share": 0.082,
+      "longest_name": "image:scene_08b.png:full"
+    },
+    "yt_title": "The Solway Firth Spaceman of England | Unsolved Mystery #shorts",
+    "hashtags": [
+      "solwayfirthspaceman",
+      "england",
+      "mystery",
+      "unsolvedmysteries"
+    ],
+    "yt_tags": [
+      "the solway firth spaceman",
+      "solway firth spaceman photo",
+      "jim templeton photograph",
+      "burgh marsh 1964",
+      "england mystery",
+      "unsolved mystery",
+      "solway firth mystery",
+      "paranormal photograph",
+      "kodak analyzed photo",
+      "true mystery story",
+      "unexplained photograph",
+      "david clarke investigation",
+      "solway firth spaceman",
+      "solway firth spaceman story",
+      "true crime story"
+    ],
+    "opening": "Kodak analysts confirmed the photograph was genuine and unaltered after a firefighter discovered a figure in a space suit in the background.",
+    "music_file": "unsolved_mystery.mp3",
+    "buffered": "2026-11-08_0644",
+    "tiktok": {
+      "status": "STAGED_FOR_BUFFER",
+      "mode": "buffer"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    }
   }
 ]
