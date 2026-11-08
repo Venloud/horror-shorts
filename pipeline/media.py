@@ -357,15 +357,9 @@ def openverse(query: str) -> list[dict]:
     if not enabled("openverse"):
         return []
 
-    def fetch():
-        r = requests.get("https://api.openverse.org/v1/images/", timeout=30, headers={"User-Agent": UA},
-                         params={"q": query[:200], "license": ",".join(sorted(OPENVERSE_OK)), "page_size": 12,
-                                 "mature": "false"})
-        r.raise_for_status()
-        return r.json()
-
+    from . import openverse_assets as ov
     out = []
-    for r in _cached("openverse", query, fetch).get("results") or []:
+    for r in ov.search("images", query, tuple(OPENVERSE_OK), filters={"page_size": 12}):
         lic = (r.get("license") or "").lower()
         if lic not in OPENVERSE_OK or r.get("mature"):
             continue
