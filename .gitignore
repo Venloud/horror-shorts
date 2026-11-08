@@ -5,3 +5,6 @@ remotion/node_modules/
 remotion/package-lock.json
 remotion/public/
 .state_base
+
+# Openverse local runtime cache and throttle state
+/output/openverse/
