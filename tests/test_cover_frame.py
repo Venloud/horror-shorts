@@ -41,7 +41,8 @@ class CoverTests(unittest.TestCase):
                      "true_story": True, "scenes": [{"narration": "No footprints led out."}]}
             with mock.patch.dict(os.environ, {"CLOUDFLARE_API_TOKEN": "", "CLOUDFLARE_ACCOUNT_ID": ""}):
                 meta = cover_frame.make_cover(story, work, work / "images", work / "unused.mp4")
-            self.assertEqual(meta["duration_seconds"], 1.0)
+            self.assertEqual(meta["duration_seconds"], cover_frame.COVER_SECONDS)
+            self.assertLessEqual(meta["duration_seconds"], 1.0)
             self.assertEqual(meta["source"], "story_image")
             self.assertTrue(meta["illustration_not_archival_evidence"])
             self.assertTrue((work / "cover_main.png").is_file())
@@ -79,6 +80,10 @@ class CoverTests(unittest.TestCase):
             self.assertIn("PHOTO-REALISTIC black-and-white", calls[0])
             self.assertIn("Someone approached the barn", calls[0])
 
+    def test_cover_seconds_comes_from_config_and_never_exceeds_one_second(self):
+        self.assertAlmostEqual(cover_frame.COVER_SECONDS, min(1.0, float(cover_frame.CONFIG.get("cover_seconds", 0.8))))
+        self.assertLessEqual(cover_frame.COVER_SECONDS, 1.0)
+
     def test_exact_first_second_preserves_audio_runtime_and_main_edit(self):
         with tempfile.TemporaryDirectory() as d:
             work = Path(d)
@@ -97,20 +102,20 @@ class CoverTests(unittest.TestCase):
             before = media_duration(original)
             cover_frame.insert_cover(original, work, work / "cover_main.png")
             self.assertAlmostEqual(before, media_duration(original), delta=0.15)
-            with frame_at(original, 0.5, work / "early.png") as first:
+            with frame_at(original, cover_frame.COVER_SECONDS * 0.5, work / "early.png") as first:
                 r, g, b = first.getpixel((500, 800))
                 self.assertLessEqual(max(r, g, b) - min(r, g, b), 3,
-                                     "cover must be entirely grayscale for the full first second")
-            with frame_at(original, 1.5, work / "later.png") as later:
+                                     "the cover must be entirely grayscale")
+            with frame_at(original, cover_frame.COVER_SECONDS + 0.12, work / "later.png") as later:
                 r, g, b = later.getpixel((500, 800))
-                self.assertGreater(b, r + 60, "after second 1, the original video must resume")
+                self.assertGreater(b, r + 60, "right after the cover, the original video must resume (hard cut)")
             self.assertIn("audio", run(["ffprobe", "-v", "error",
                                         "-show_entries", "stream=codec_type",
                                         "-of", "csv=p=0", str(original)]))
 
     def test_pipeline_has_one_shared_cover_stage_before_production_gate(self):
         script = (ROOT / "pipeline" / "main.py").read_text()
-        self.assertIn("from cover_frame import make_cover, insert_cover", script)
+        self.assertIn("from cover_frame import COVER_SECONDS, make_cover, insert_cover", script)
         self.assertLess(script.index("video = insert_cover("), script.index('stage = "qa"'))
         self.assertLess(script.index("video = insert_cover("), script.index('stage = "production_gate"'))
 

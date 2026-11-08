@@ -1,0 +1,32 @@
+{
+ "_note": "Regression example (owner, Nov 2 2026): a script the bot produced before the viewer-value rules.",
+ "title": "The Legend of Kuchisake Onna",
+ "mode": "lore",
+ "true_story": false,
+ "scenes": [
+  {
+   "narration": "Your answer decides whether you live or die the moment she asks if she is pretty."
+  },
+  {
+   "narration": "This is Kuchisake Onna, haunting quiet towns as the slit mouthed woman of ancient Japanese folklore."
+  },
+  {
+   "narration": "A terrified pedestrian who answers no gets struck instantly with heavy iron medical scissors."
+  },
+  {
+   "narration": "Saying yes causes her to pull down the mask slowly, revealing a horrifying mouth slit from ear to ear."
+  },
+  {
+   "narration": "She asks the exact same terrifying question again, and screaming guarantees a fatal cut from her heavy weapon."
+  },
+  {
+   "narration": "Village tradition holds that smart survivors escape by carefully describing her appearance as merely average today."
+  },
+  {
+   "narration": "Throwing hard caramel candy or heavy coins buys enough precious time to run away very safely."
+  },
+  {
+   "narration": "What exact words would you choose first if she suddenly stopped you alone in the dark fog?"
+  }
+ ]
+}

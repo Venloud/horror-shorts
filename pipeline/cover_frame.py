@@ -1,4 +1,5 @@
-"""One-second monochrome story cover for Night Files, inserted at the final MP4 stage.
+"""The monochrome story cover for Night Files: the very first frame for config cover_seconds (<= 1.0 s, default
+0.8), inserted at the final MP4 stage, then a hard cut straight into the story (no title card in front of it).
 
 Only horror-shorts uses this module. The rendered movie and narration keep their
 original duration. A separate image is saved for thumbnail selection; automatic
@@ -16,9 +17,9 @@ from pathlib import Path
 
 from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 
-from common import log, media_duration, run
+from common import CONFIG, log, media_duration, run
 
-COVER_SECONDS = 1.0
+COVER_SECONDS = max(0.1, min(1.0, float(CONFIG.get("cover_seconds", 0.8))))  # the thumbnail frame, never > 1 s
 WIDTH, HEIGHT, FPS = 1080, 1920, 30
 
 
@@ -136,9 +137,9 @@ def make_cover(story: dict, workdir: Path, img_dir: Path, video: Path) -> dict:
 
 
 def insert_cover(video: Path, workdir: Path, cover: Path) -> Path:
-    """Hard-cut at exactly t=1 second, preserving the original audio and total runtime.
+    """Hard-cut at exactly t=COVER_SECONDS, preserving the original audio and total runtime.
 
-    The first 30 frames display the cover. The rest of the existing edit is unchanged
+    The first COVER_SECONDS * 30 frames display the cover. The rest of the existing edit is unchanged
     in time, keeping captions and sound synchronized. Do not concatenate another
     second because the 61-68 second production gate must still pass.
     """
@@ -146,15 +147,15 @@ def insert_cover(video: Path, workdir: Path, cover: Path) -> Path:
         raise RuntimeError("Missing Night Files cover image")
     duration = media_duration(video)
     if duration <= COVER_SECONDS + 0.2:
-        raise RuntimeError("Night Files video is too short for the 1-second cover")
+        raise RuntimeError("Night Files video is too short for the cover")
     stage = workdir / "cover_stage.mp4"
     # Original video is the timeline source; audio is copied bit for bit from it.
-    # overlay expression is 1 only on t < 1s, so the boundary is a hard cut.
+    # overlay expression is 1 only on t < COVER_SECONDS, so the boundary is a hard cut.
     run([
         "ffmpeg", "-y", "-v", "error", "-nostdin", "-i", str(video),
         "-loop", "1", "-framerate", str(FPS), "-i", str(cover),
         "-filter_complex",
-        "[1:v]format=yuv420p[hero];[0:v][hero]overlay=0:0:enable='lt(t,1)':"
+        f"[1:v]format=yuv420p[hero];[0:v][hero]overlay=0:0:enable='lt(t,{COVER_SECONDS:.3f})':"
         "eof_action=pass:format=auto,format=yuv420p[v]",
         "-map", "[v]", "-map", "0:a:0", "-c:v", "libx264", "-preset", "veryfast",
         "-crf", "21", "-pix_fmt", "yuv420p", "-r", str(FPS),
@@ -162,7 +163,7 @@ def insert_cover(video: Path, workdir: Path, cover: Path) -> Path:
         str(stage),
     ])
     if not stage.is_file() or stage.stat().st_size < 1_024:
-        raise RuntimeError("Night Files one-second cover output was not encoded")
+        raise RuntimeError("Night Files cover output was not encoded")
     after = media_duration(stage)
     if abs(after - duration) > 0.15:
         raise RuntimeError(f"Night Files cover changed movie length: {duration:.3f} -> {after:.3f}s")
@@ -172,5 +173,5 @@ def insert_cover(video: Path, workdir: Path, cover: Path) -> Path:
     if f"{WIDTH},{HEIGHT}" not in streams or "audio" not in streams:
         raise RuntimeError("Covered movie is missing the vertical video or audio")
     stage.replace(video)
-    log("Night Files mandatory first-second cover applied, hard cut at 1.0s, audio unchanged")
+    log(f"Night Files cover applied: first {COVER_SECONDS:.2f}s, hard cut into the story, audio unchanged")
     return video

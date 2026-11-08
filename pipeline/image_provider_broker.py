@@ -137,7 +137,7 @@ def install(namespace: dict) -> None:
         if nvidia_key and not state["nvidia_out"] and state["broker_counts"]["nvidia"] < nvidia_max:
             try:
                 from providers import nvidia
-                raw = nvidia.generate_image(prompt, seed, steps or int(CONFIG.get("image_steps", 4)))
+                raw = nvidia.generate_image(prompt, seed, steps or int(config.get("image_steps", 4)))
                 state["broker_counts"]["nvidia"] += 1
                 namespace["log"](f"Image broker: provider=nvidia model=flux.2-klein-4b count={state['broker_counts']['nvidia']}/{nvidia_max}")
                 return raw

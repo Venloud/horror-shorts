@@ -210,3 +210,71 @@ def approved_full_body(view: str = "front", height: int = 900, facing: str = "ri
         return full_body(view, height, facing)
     except MissingAsset:
         return None
+
+
+# ---------------------------------------------------------------- the owner's own pose set (assets/poses)
+# The owner's personal pose PNGs (added Oct 27, 86 transparent 1024x1536 files, SHA-256 in asset_checksums.json).
+# The editor prefers them, when a narration line matches a pose's tag, as the host's B-roll shot (still <= ~15%
+# of the runtime): placement only, the bytes are verified and never changed. Tags are generic actions / props,
+# never a story: the first matching cue wins.
+POSES_DIR = ROOT / "assets" / "poses"
+POSE_CUES = [
+    (r"\bknock(?:ed|ing|s)?\b", "P30_knocking_on_door"),
+    (r"\bopen(?:ed|s|ing)?\s+(?:the\s+|a\s+|her\s+|his\s+|their\s+)?(?:\w+\s+)?door\b", "P30_opening_door"),
+    (r"\b(?:read|reads|reading)\b[^.]{0,40}\b(?:letter|note|document|report|file|diary|newspaper|record)s?\b",
+     "P18_reading_document"),
+    (r"\b(?:held|holding|holds)\b[^.]{0,30}\b(?:photo|photograph|picture|portrait)s?\b", "P19_holding_photograph"),
+    (r"\benvelopes?\b", "P20_holding_envelope"),
+    (r"\b(?:magnifying|examin\w+|inspect\w+)\b", "P21_inspecting_magnifying_glass"),
+    (r"\b(?:flashlight|torch)\b", "P22_searching_with_flashlight"),
+    (r"\b(?:phone call|on the phone|dial(?:l)?ed|answered the phone|called the police)\b", "P23_talking_on_phone"),
+    (r"\b(?:text(?:ed|s)?|messages?|notification|(?:checked|checks) (?:his|her|their|the) phone)\b",
+     "P24_checking_phone"),
+    (r"\btyp(?:ed|ing)\b", "P25_typing"),
+    (r"\b(?:wrote|writing|took notes)\b", "P26_writing_notes"),
+    (r"\b(?:folder|case file)s?\b", "P27_opening_folder"),
+    (r"\b(?:waited|waiting|sat alone)\b", "P31_sitting_waiting"),
+    (r"\b(?:peek\w*|peer\w*|around the corner)\b", "P32_peeking_around_corner_scene_variant"),
+    (r"\b(?:ran|runs|running|fled|sprinted)\b", "P34_running_stride_clean_variant"),
+    (r"\b(?:hid|hides|hiding)\b", "P35_hiding_behind_barrier_scene_variant"),
+    (r"\b(?:sneak\w*|tiptoe\w*|crept)\b", "P36_sneaking_tiptoeing"),
+    (r"\b(?:over (?:his|her|their|your) shoulder|being followed|being watched)\b", "P37_looking_over_shoulder"),
+    (r"\b(?:fell|falls|tripped|stumbled)\b", "P38_falling_losing_balance"),
+    (r"\b(?:walked|walking|wandered)\b", "P33_walking_stride"),
+    (r"\b(?:looked around|searched|searching)\b", "P13_looking_around"),
+    (r"\b(?:wallet)\b", "P49_examining_found_wallet"),
+    (r"\b(?:pockets?)\b", "P46_checking_pockets"),
+    (r"\b(?:checked the time|looked at (?:his|her|the) watch|wristwatch)\b", "P45_looking_at_watch"),
+]
+
+
+@lru_cache(maxsize=1)
+def owner_pose_checksums() -> dict:
+    p = POSES_DIR / "asset_checksums.json"
+    return json.loads(p.read_text(encoding="utf-8")) if p.is_file() else {}
+
+
+def owner_pose_ok(pose_id: str) -> bool:
+    """The owner's pose file exists and its bytes match asset_checksums.json."""
+    want = owner_pose_checksums().get(f"{pose_id}.png")
+    p = POSES_DIR / f"{pose_id}.png"
+    return bool(want) and p.is_file() and hashlib.sha256(p.read_bytes()).hexdigest() == want
+
+
+def owner_pose_for(text: str) -> str | None:
+    """The first owner pose whose action / prop tag the line says ("she knocked on the door" -> P30_knocking_on_
+    door), verified; None when nothing matches (the editor then keeps its normal picture / face choice)."""
+    for rx, pose_id in POSE_CUES:
+        if re.search(rx, text or "", re.IGNORECASE) and owner_pose_ok(pose_id):
+            return pose_id
+    return None
+
+
+@lru_cache(maxsize=12)
+def owner_pose_image(pose_id: str) -> Image.Image:
+    """The verified owner pose, trimmed to its visible pixels (placement only). Raises MissingAsset."""
+    if not owner_pose_ok(pose_id):
+        raise MissingAsset(pose_id, "is missing or its SHA-256 differs from assets/poses/asset_checksums.json")
+    im = Image.open(POSES_DIR / f"{pose_id}.png").convert("RGBA")
+    box = im.getchannel("A").getbbox()
+    return (im.crop(box) if box else im).copy()
