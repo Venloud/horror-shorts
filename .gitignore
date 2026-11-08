@@ -4,3 +4,4 @@ cache/
 remotion/node_modules/
 remotion/package-lock.json
 remotion/public/
+.state_base

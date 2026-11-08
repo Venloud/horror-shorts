@@ -352,6 +352,30 @@ def retry(sid: str) -> dict:
     return story
 
 
+def branch_handoff() -> Path | None:
+    """A run from another branch (fixing-it) that ends with an UNFINISHED story: its Actions cache entry is visible
+    only to that branch, so the story is also written to data/failed_stories/<id>/ (status branch_unfinished,
+    pushed to main by push_state.sh): a main run resumes it with retry_story_id instead of losing it."""
+    from common import STATE_BRANCH, current_branch
+    if not os.environ.get("GITHUB_ACTIONS") or current_branch() in ("", STATE_BRANCH):
+        return None
+    f = CK / "story.json"
+    if (CK / "done.json").exists() or not f.exists():
+        return None
+    try:
+        story = json.loads(f.read_text())
+    except (OSError, ValueError):
+        return None
+    sid = story.get("story_id") or manifest().get("story_id")
+    if not sid:
+        return None
+    dest = _export(story, FAILED / sid, "branch_unfinished",
+                   f"unfinished on branch {current_branch()}: main's runs cannot restore that branch's checkpoint "
+                   f"cache; resume it with retry_story_id={sid}")
+    log(f"Checkpoint {sid} is unfinished on branch {current_branch()}: also saved to {dest.relative_to(ROOT)}")
+    return dest
+
+
 def finish(story: dict) -> None:
     """The final video passed validation AND is in the buffer: drop the heavy files, leave a marker so this story is
     never resumed; a parked / shelved copy is marked recovered."""

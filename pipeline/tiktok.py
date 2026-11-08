@@ -110,7 +110,9 @@ def post_direct(path: Path, caption: str) -> dict:
             "disable_comment": bool(info.get("comment_disabled", False)),
             "disable_duet": bool(info.get("duet_disabled", False)),
             "disable_stitch": bool(info.get("stitch_disabled", False)),
-            "video_cover_timestamp_ms": 1500,
+            # the story cover is the first cover_seconds (<= 1 s): TikTok's cover = its middle frame. The inbox
+            # (draft) upload has no cover field; this applies only if direct posting is ever approved.
+            "video_cover_timestamp_ms": int(min(1.0, float(CONFIG.get("cover_seconds", 0.8))) * 500),
             "is_aigc": bool(CONFIG.get("tiktok_ai_label", True)),
         },
         "source_info": _source_info(path),

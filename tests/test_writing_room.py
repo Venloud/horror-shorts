@@ -348,3 +348,94 @@ class Continuity(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def _fixture(name: str) -> dict:
+    return json.loads((FIX / "writing" / f"regression_{name}.json").read_text())
+
+
+class ViewerValue(unittest.TestCase):
+    """Owner, Nov 2 2026: a discovery beyond the monster's name and looks, an earned payoff, at most one relevant
+    call to action, no padding, no generic closing question. Regression scripts the bot actually produced."""
+
+    def codes(self, s: dict) -> dict:
+        return {c["code"]: c for c in story.viewer_value_findings(s, story.writing_kind(s))}
+
+    def test_kuchisake_onna_monster_only_and_stock_question(self):
+        c = self.codes(_fixture("kuchisake_onna"))
+        self.assertIn("no_discovery", c)
+        self.assertIn("generic_ending", c)  # "What exact words would you choose first if she suddenly stopped you"
+        self.assertIn("What exact words would you choose", c["generic_ending"]["detail"])  # quotes the weak line
+
+    def test_hubbard_street_stock_question_instead_of_payoff(self):
+        c = self.codes(_fixture("hubbard_street"))
+        self.assertIn("generic_ending", c)
+        self.assertIn("what would you check first", c["generic_ending"]["detail"])
+
+    def test_krampus_padded_and_no_origin(self):
+        c = self.codes(_fixture("krampus"))
+        self.assertIn("no_discovery", c)
+        self.assertIn("generic_ending", c)
+        self.assertEqual(c["padded"]["severity"], "revise")
+        self.assertIn("Heavy chains drag", c["padded"]["detail"])
+
+    def test_mngwa_has_a_discovery_and_no_stock_question(self):
+        c = self.codes(_fixture("mngwa"))  # Hitchens concluded a lion with gigantism: a real answer
+        self.assertNotIn("no_discovery", c)
+        self.assertNotIn("generic_ending", c)
+
+    def test_origin_payoff_and_one_cta_passes(self):
+        s = _fixture("krampus")
+        s["scenes"][-1]["narration"] = ("The oldest versions come from Alpine villages, where Krampus walked beside "
+                                        "Saint Nicholas on the night of December fifth. If your town tells it "
+                                        "differently, say where you're from and how it goes.")
+        c = self.codes(s)
+        self.assertNotIn("no_discovery", c)
+        self.assertNotIn("generic_ending", c)
+        self.assertNotIn("stacked_cta", c)
+
+    def test_stacked_cta_flagged(self):
+        s = _fixture("mngwa")
+        s["scenes"][-1]["narration"] = "Comment your theory, share this with a friend and follow for more."
+        self.assertIn("stacked_cta", self.codes(s))
+
+    def test_prompts_no_longer_demand_an_ending_question(self):
+        import explainer
+        import mystery
+        for p in (mystery.MYSTERY_PROMPT, mystery.LORE_PROMPT, mystery.TRUE_PROMPT, explainer.REWRITE_PROMPT):
+            self.assertNotIn("question to the viewer", p)
+            self.assertNotIn("an open question that makes them APPLY", p)
+        self.assertIn("THE DISCOVERY", mystery.LORE_PROMPT)
+        self.assertIn("viewer-value contract", story.shared_style("x"))
+
+    def test_director_quotes_weak_lines_and_labels_scores_editorial(self):
+        s = _fixture("krampus")
+        s["fact_ledger"] = ["Name: Krampus"]
+        reply = {"hook": 12, "clarity": 12, "pacing": 10, "name_early": 5, "payoff": 5, "integrity": 8, "story": 14,
+                 "what_happened": "Krampus visits", "viewer_learns": "", "payoff_line": "", "cta_line": "",
+                 "weak_lines": [{"quote": "Every single fifth of December", "problem": "padding",
+                                 "fix": "On December fifth"}], "reasons": []}
+        with mock.patch.object(story, "_json_call", return_value=reply), \
+                mock.patch.object(story, "_run_models", side_effect=RuntimeError("offline")):
+            out = story.critic_pass(s, "k", "legend", "rules")
+        crit = out["writing"]["critic"]
+        self.assertEqual(crit["score_kind"], "editorial, not audience retention")
+        self.assertTrue(any("teaches the viewer" in n for n in crit["notes"]))
+        self.assertTrue(any("Every single fifth of December" in n for n in crit["notes"]))
+
+    def test_flight_811_recap_ending_and_spoken_planning_note(self):
+        s = _fixture("flight_811")
+        c = self.codes(s)
+        self.assertIn("restated", c)  # "An electrical system malfunction and latch design flaw led to the disaster."
+        self.assertIn("latch design flaw", c["restated"]["detail"])
+        before = _with(s["explainer_before"], s)
+        self.assertIn("meta_leak", self.codes(before))
+        removed = story.strip_meta(before)
+        self.assertEqual(len(removed), 1)
+        self.assertNotIn("After watching", story._narr(before))
+        self.assertIn("Share this story", story._narr(before))  # the rest of that scene stays
+
+    def test_owner_exact_words_script_never_stripped(self):
+        s = _with(["After watching, the viewer can explain it. The end."], _fixture("mngwa"))
+        s["mode"] = "inbox-script"
+        self.assertEqual(story.strip_meta(s), [])

@@ -148,6 +148,7 @@ jobs:
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
           MODELSCOPE_TOKEN: ${{ secrets.MODELSCOPE_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}  # CC0 effect sounds fetched once (reel ticks, typing)
           TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
           TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
           TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
@@ -207,6 +208,8 @@ jobs:
             output/**/visual_qa.json
             output/**/shot_manifest.json
             output/**/provenance.json
+            output/**/cover_main.png
+            output/**/sfx_new/**
           retention-days: 7
           if-no-files-found: error
 
