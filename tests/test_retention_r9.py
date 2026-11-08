@@ -11,6 +11,20 @@ import story_bible
 
 
 class RetentionR9Tests(unittest.TestCase):
+    def test_owner_cascading_suspense_reaches_writer_and_story_scorer(self):
+        # Real writer and all shared_style callers must receive the canonical update.
+        prompt = story.shared_style("Write a complete horror story.")
+        for term in ("Cascading suspense loops", "Stakes:", "Big question:",
+                     "Head fake / expectation reversal:", "Re-hook:",
+                     "In nonfiction, never invent", "finish the entire narration"):
+            self.assertIn(term.lower(), prompt.lower())
+        # No new scorer schema, model calls, publishing paths, or hard QA gates.
+        self.assertIn("relatable stakes -> one big question", story.SCORE_PROMPT)
+        self.assertIn("causally connected re-hooks", story.SCORE_PROMPT)
+        self.assertIn("supported head fake", story.SCORE_PROMPT)
+        self.assertIn("Do not demand arbitrary twists", story.SCORE_PROMPT)
+        self.assertEqual(sum(story.SCORE_MAX.values()), 100)
+
     def test_all_writers_receive_trackable_question_rule(self):
         prompt = story.shared_style("Write an original suspense story.")
         self.assertIn("Rule R9: Give the viewer a question they can track", prompt)
