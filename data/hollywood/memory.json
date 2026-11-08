@@ -1,9 +1,9 @@
 {
- "videos": 3,
+ "videos": 4,
  "entries": {
   "title": {
-   "fired": 3,
-   "last": "2026-11-08_0644"
+   "fired": 4,
+   "last": "2026-11-08_1956"
   },
   "year_reel": {
    "fired": 3,
@@ -14,8 +14,8 @@
    "last": "2026-11-02_1033"
   },
   "place": {
-   "fired": 4,
-   "last": "2026-11-08_0644"
+   "fired": 5,
+   "last": "2026-11-08_1956"
   },
   "counter_people": {
    "fired": 1,
@@ -50,7 +50,7 @@
    "lat": 46.066
   },
   "This": {
-   "times": 1,
+   "times": 2,
    "iso2": "SN",
    "level": "region",
    "lon": -16.87,
@@ -90,7 +90,20 @@
   "white due to overexposure": 1,
   "camera viewfinder": 1,
   "showed seventy": 1,
-  "seventy percent": 1
+  "seventy percent": 1,
+  "northern japan while waiting": 1,
+  "legend traces": 1,
+  "traces back": 1,
+  "back historically": 1,
+  "body in half": 1,
+  "died in absolute agony": 1,
+  "travels entirely": 1,
+  "elbows producing": 1,
+  "characteristic teke": 1,
+  "dark": 1,
+  "legend warns": 1,
+  "warns clearly": 1,
+  "fatal vengeance": 1
  },
  "log": [
   {
@@ -127,6 +140,14 @@
     "place",
     "zoom_punch",
     "polaroid"
+   ]
+  },
+  {
+   "stamp": "2026-11-08_1956",
+   "story_id": "2ba7374d2f00",
+   "effects": [
+    "title",
+    "place"
    ]
   }
  ]

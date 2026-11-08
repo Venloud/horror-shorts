@@ -4690,5 +4690,79 @@
     "youtube": {
       "pending": "buffer_queue_pending"
     }
+  },
+  {
+    "date": "2026-11-08_1956",
+    "story_id": "2ba7374d2f00",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Legend of Teke Teke",
+    "premise": "A schoolgirl split in half by a train becomes a vengeful ghost hunting pedestrians at night.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Teke Teke",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Japanese train stations at night",
+    "threat": "A vengeful bisected spirit that slices people in half",
+    "twist": "The spirit mimics her own train accident out of spite against the living",
+    "score": null,
+    "seconds": 59.9,
+    "voice_speed": 1.0,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [],
+    "visual_mode": "analog",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 86,
+    "visuals": {
+      "distinct": 19,
+      "longest_s": 5.5,
+      "longest_share": 0.087,
+      "longest_name": "image:scene_07b.png:full"
+    },
+    "yt_title": "Legless Torso Dragging Itself Closer... Teke Teke #shorts",
+    "hashtags": [
+      "teketeke",
+      "japan",
+      "urbanlegend",
+      "ghoststory"
+    ],
+    "yt_tags": [
+      "teke teke",
+      "teke teke legend",
+      "northern japan folklore",
+      "japanese urban legend",
+      "teke teke ghost",
+      "japanese train station legend",
+      "vengeful spirit japan",
+      "teke teke story",
+      "japan folklore",
+      "urban legend teke teke",
+      "teke teke ghost story",
+      "japanese legend",
+      "scary legend",
+      "folklore",
+      "creepy legend"
+    ],
+    "opening": "That scratching sound on the pavement belongs to a legless upper torso dragging itself closer in the dark.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-11-08_1956",
+    "tiktok": {
+      "status": "STAGED_FOR_BUFFER",
+      "mode": "buffer"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    }
   }
 ]
