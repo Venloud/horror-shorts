@@ -1225,13 +1225,14 @@ SCORE_PROMPT = """You are a tough judge for a horror TikTok channel. Score this 
 Be strict: most first drafts deserve 55-75. Only a genuinely gripping, clear, complete story scores 80+.
 
 SCORING (give each category a whole number up to its maximum):
+Judge connected suspense: relatable stakes -> one big question -> an earned expectation shift -> a causally connected re-hook, if the story supports each beat. Do not demand arbitrary twists or timed question quotas. Score the COMPLETE script and whether its ending actually pays off the opening.
 - grab (max 15): does the FIRST sentence alone make you think "wait, what?" (contradiction, impossible situation, threat)? A plain setup line ("At 2 AM someone knocked") scores 5 or less.
-- curiosity_gap (max 10): is there one burning question the viewer needs answered?
-- relatable_setup (max 10): an ordinary situation the viewer can picture themselves in, with no biography or wasted names?
+- curiosity_gap (max 10): do the specific stakes establish one clear, compelling big question the viewer wants answered, rather than a vague unanswered mystery?
+- relatable_setup (max 10): can viewers root for the central person, understand what matters to them or is at risk, and sense any naturally justified urgency, with no unrelated biography or made-up crisis?
 - one_wrong_thing (max 10): ONE central strange thing the story stays focused on (not a pile of creepy details)?
-- pressure_loop (max 20): does every answer create a worse question, so tension keeps rising?
+- pressure_loop (max 20): do partial answers, new consequences or grounded expectation changes promptly generate meaningful, causally connected re-hooks, rather than withholding all answers or stacking unrelated questions?
 - choice (max 10): is the narrator forced into a decision the viewer instinctively makes with them?
-- reframe (max 10): a reveal that changes the meaning of something already shown (not a random new monster)?
+- reframe (max 10): does a seeded, supported head fake change an earlier reasonable expectation (A -> B) or reveal an earned new interpretation, not a random new monster, fabricated evidence or forced twist?
 - payoff_clarity (max 10): can the viewer say in one sentence WHAT JUST HAPPENED? The monster may stay unexplained, but the event must be understandable. A vague ending where you can't tell what happened scores 0-3.
 - final_image (max 5): does it end on one unforgettable image or line?
 
