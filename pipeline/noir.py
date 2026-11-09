@@ -1559,6 +1559,38 @@ def _o_typewriter(layer, fields, t, dur, ctx):
         d.rectangle((cur[0], cur[1] + 8, cur[0] + 24, cur[1] + 56), fill=(232, 36, 52, int(220 * alpha)))
 
 
+CARD_CREAM, CARD_INK, CARD_BLUE = (241, 234, 219), (27, 30, 36), (47, 111, 219)
+
+
+def _o_info_card(layer, fields, t, dur, ctx):
+    """An information card: cream paper, dark type, a restrained blue label bar. fields label = DOCUMENT /
+    EVIDENCE / DISCOVERY / CONTRADICTION, text = the narrator's own words. Eases out on entry (a small rise and
+    settle), eases in on exit; no flash, no bounce."""
+    text = str(fields.get("text") or "").strip()
+    if not text:
+        return
+    a_in = ease(t / 0.32)
+    alpha = a_in * _fade_out(t, dur, 0.3)
+    if alpha <= 0:
+        return
+    f, lines = fit(text, "bold", 760, 3, 64, 42)
+    lh = int(f.size * 1.22)
+    cw, ch = 880, 150 + len(lines) * lh
+    card = Image.new("RGBA", (cw, ch), CARD_CREAM + (255,))
+    d = ImageDraw.Draw(card)
+    d.rectangle((0, 0, 12, ch), fill=CARD_BLUE + (255,))
+    d.text((60, 40), str(fields.get("label") or "").upper(), font=font("bold", 34), fill=CARD_BLUE + (255,))
+    for k, line in enumerate(lines):
+        d.text((60, 104 + k * lh), line, font=f, fill=CARD_INK + (255,))
+    shadow = Image.new("RGBA", (cw + 80, ch + 80), (0, 0, 0, 0))
+    ImageDraw.Draw(shadow).rectangle((40, 52, cw + 40, ch + 52), fill=(0, 0, 0, 120))
+    shadow = shadow.filter(ImageFilter.GaussianBlur(18))
+    x, y = (W - cw) // 2, int(470 + 22 * (1 - a_in))
+    shadow.alpha_composite(card, (40, 40))
+    shadow.putalpha(shadow.getchannel("A").point(lambda v: int(v * alpha)))
+    layer.alpha_composite(shadow, (x - 40, y - 40))
+
+
 def _o_phrase(layer, fields, t, dur, ctx):
     """Kinetic key phrase on the picture: mode pop (word pop + scale), stagger (letter stagger), highlight (a red
     swipe behind the accent word), strike (a red line strikes through it), underline / circle (drawn on the accent
