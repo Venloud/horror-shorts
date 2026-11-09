@@ -1,13 +1,13 @@
 {
- "videos": 4,
+ "videos": 5,
  "entries": {
   "title": {
-   "fired": 4,
-   "last": "2026-11-08_1956"
+   "fired": 5,
+   "last": "2026-11-09_0713"
   },
   "year_reel": {
-   "fired": 3,
-   "last": "2026-11-08_0644"
+   "fired": 4,
+   "last": "2026-11-09_0713"
   },
   "phrase": {
    "fired": 3,
@@ -30,8 +30,8 @@
    "last": "2026-11-08_0644"
   },
   "zoom_punch": {
-   "fired": 1,
-   "last": "2026-11-08_0644"
+   "fired": 5,
+   "last": "2026-11-09_0713"
   }
  },
  "places": {
@@ -103,7 +103,14 @@
   "dark": 1,
   "legend warns": 1,
   "warns clearly": 1,
-  "fatal vengeance": 1
+  "fatal vengeance": 1,
+  "blade broke from fatigue": 1,
+  "fragments shattered": 1,
+  "fourteen window": 1,
+  "window causing": 1,
+  "investigators traced": 1,
+  "fatigue crack": 1,
+  "crack prompting": 1
  },
  "log": [
   {
@@ -148,6 +155,18 @@
    "effects": [
     "title",
     "place"
+   ]
+  },
+  {
+   "stamp": "2026-11-09_0713",
+   "story_id": "f1c6056ddf8c",
+   "effects": [
+    "title",
+    "year_reel",
+    "zoom_punch",
+    "zoom_punch",
+    "zoom_punch",
+    "zoom_punch"
    ]
   }
  ]
