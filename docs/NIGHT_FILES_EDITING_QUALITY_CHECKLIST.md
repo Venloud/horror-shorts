@@ -220,3 +220,16 @@ Implementation lives in `pipeline/cover_frame.py`, called once from `pipeline/ma
 Do not affect other Vandam video projects, invoke paid image providers, alter scheduled publishing, or mutate media from existing buffer entries. The cover must be a clean full-frame image, not a collage, title card, or new decorative transition. If even the accepted scene media is unavailable, derive the cover from the actual current video's frame; do not import unrelated old story imagery.
 
 Acceptance: verify first and thirty-first frames, natural colors after one second, 1080x1920 size, audio stream, the exact same runtime and the existing production QA gate.
+
+## Narration-aware editing rules, November 9, 2026
+
+Implemented in the existing renderer (no new renderer): `pipeline/edit_rules.py` reads what each shot's narration is doing, and `pipeline/explainer.py` / `pipeline/noir.py` / `remotion/src/polish.jsx` apply it.
+
+- **Camera** (`plan_motion`): someone approaching a place gets a slow push-in; a narrated object or record (letter, phone, photo, file, key...) gets a slow closeup; emptiness or scale gets a controlled pull-back; a realisation or reveal holds still. With no cue a slow push alternates with a still hold, and never more than two moving shots run back to back. The same move never repeats back to back.
+- **Light** (`seg["grade"]`, `explainer_scene_grade`): each scene gets its own split-tone: `night` (cold blue shadows), `warm` (a practical lamp, candle or fire is in the story) or `dusk` (gentle default). Midtones stay untouched; there is no single universal colour filter.
+- **Information cards** (`info_card` overlay, `info_card_max_per_video`, default 2): cream card, dark type, a restrained blue label for a narrated DOCUMENT, EVIDENCE, DISCOVERY or CONTRADICTION. The card text is the narrator's own clause, never paraphrased or invented; hypotheticals never trigger one. A card may replace an impact/evidence/fact card that says the same thing; it never sits on a host shot or crowds another big effect.
+- **Captions**: white, with cyan (`caption_accent`) only on the few payoff words `caption_accents` chose; a short fade in/out, no scale, slide or word bounce; same safe area as before.
+- **Transitions**: hard cut by default, dissolve only on narrated time passage. The old whip pan on a place jump is now off (`explainer_whip_pan: false`).
+- Dates keep the existing one-timeline-per-video rule; names keep the existing redaction reveal.
+
+Tested on an isolated fictional story with Night Files' own library images and the production narrator, renderer, Remotion pass and visual QA (not published, not buffered).
