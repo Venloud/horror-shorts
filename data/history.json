@@ -4764,5 +4764,81 @@
     "youtube": {
       "pending": "buffer_queue_pending"
     }
+  },
+  {
+    "date": "2026-11-09_0713",
+    "story_id": "f1c6056ddf8c",
+    "series_id": null,
+    "series_episode": null,
+    "title": "Southwest Airlines Flight 1380",
+    "premise": "A Boeing 737 suffered an uncontained engine failure at thirty-two thousand feet over Pennsylvania.",
+    "subgenre": "true crime case file",
+    "mode": "case",
+    "true_story": true,
+    "case": "Southwest Airlines Flight 1380",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Commercial airliner en route from New York to Texas",
+    "threat": "Uncontained engine failure and cabin depressurization",
+    "twist": "A latent fatigue crack in the fan blade caused the cowling latch to fail",
+    "score": null,
+    "seconds": 61.8,
+    "voice_speed": 1.2,
+    "narrator_voice": "am_michael",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:13599833",
+      "pexels:13830214",
+      "pexels:28467261",
+      "pexels:34934579"
+    ],
+    "visual_mode": "classic",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 95,
+    "visuals": {
+      "distinct": 20,
+      "longest_s": 4.5,
+      "longest_share": 0.069,
+      "longest_name": "image:scene_08a.png:full"
+    },
+    "yt_title": "Southwest Airlines Flight 1380 of Pennsylvania #shorts",
+    "hashtags": [
+      "pennsylvania",
+      "history",
+      "truecrime"
+    ],
+    "yt_tags": [
+      "southwest airlines flight 1380",
+      "flight 1380 incident",
+      "pennsylvania aviation history",
+      "boeing 737 engine failure",
+      "captain shults flight 1380",
+      "april 2018 plane emergency",
+      "philadelphia emergency landing",
+      "flight 1380 fan blade",
+      "true aviation disaster story",
+      "ntsb flight 1380 investigation",
+      "pennsylvania mystery",
+      "true crime story",
+      "unsolved mystery",
+      "true story",
+      "mystery explained"
+    ],
+    "opening": "A broken fan blade triggered an explosive depressurization over Pennsylvania.",
+    "music_file": "unsolved_mystery.mp3",
+    "buffered": "2026-11-09_0713",
+    "tiktok": {
+      "status": "STAGED_FOR_BUFFER",
+      "mode": "buffer"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    }
   }
 ]
