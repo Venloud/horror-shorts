@@ -2242,7 +2242,7 @@ def plan_effects(story: dict, narration: dict, segs: list[dict], cover: float | 
         if card and info_cards < int(CONFIG.get("info_card_max_per_video", 2)):
             info_cards += 1
             t = words[_word_at(idx, offs, card["char"])]["start"]
-            cands.append({"kind": "info_card", "start": t - 0.15, "dur": 2.8, "anchor": t, "prio": 4, "big": True,
+            cands.append({"kind": "info_card", "start": t - 0.15, "dur": 2.8, "anchor": t, "prio": 3, "big": True,
                           "fields": {"label": card["label"], "text": card["text"], "land": 0.15}})
         m = LIGHT_CUE.search(text)
         if m and not HYPOTHETICAL.search(_sentence_of(text, m.start())):

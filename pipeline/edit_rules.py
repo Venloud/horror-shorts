@@ -28,7 +28,7 @@ CUES = {
             r"sunset|dinner|bulb|neon)\b",
     # night and cold places: deeper blue shadows
     "night": r"\b(night|midnight|dark\w*|moon\w*|fog|mist|rain\w*|snow\w*|forest|woods|basement|cellar|attic|"
-             r"3 a\.?m|cold)\b",
+             r"3 a\.?m|(?:two|three|four) in the morning|cold)\b",
 }
 _RX = {k: re.compile(v, re.IGNORECASE) for k, v in CUES.items()}
 HYPOTHETICAL = re.compile(r"\b(if|might|would|could|imagine|whether|maybe|perhaps)\b", re.IGNORECASE)
@@ -128,12 +128,17 @@ def info_card(text: str) -> dict | None:
         sent = _sentence(text, m.start())
         if not sent or HYPOTHETICAL.search(sent):
             continue
-        words = sent.rstrip(".!?").split()
+        # the comma-delimited clause holding the cue, so the card reads as a whole phrase
+        off = text.find(sent)
+        cut = [0] + [k + 1 for k, ch in enumerate(sent) if ch in ",;:"] + [len(sent) + 1]
+        rel = m.start() - off
+        lo = max(c for c in cut if c <= rel)
+        hi = min(c for c in cut if c > rel)
+        words = sent[lo:hi - 1].strip(" ,;:.!?").split()
         if len(words) < 3:
             continue
-        cue_at = len(text[:m.start()].split()) - len(text[:text.find(sent)].split()) if sent in text else 0
-        cue_at = max(0, min(len(words) - 1, cue_at))
-        a = max(0, cue_at - 4)
-        body = " ".join(words[a:a + 9])
+        cue_at = len(sent[lo:rel].split())
+        a = max(0, min(cue_at - 4, len(words) - 12))
+        body = " ".join(words[a:a + 12]).strip(" ,;:")
         return {"label": label, "text": body, "cue": m.group(0), "char": m.start()}
     return None
