@@ -4916,5 +4916,79 @@
     "youtube": {
       "pending": "buffer_queue_pending"
     }
+  },
+  {
+    "date": "2026-11-10_0746",
+    "story_id": "46fe91e575df",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Nordic Revenant Known As Draugr",
+    "premise": "Villagers discovered an animated corpse guarding its burial mound, its burial shroud chewed to rags.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Draugr",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Nordic burial mounds and medieval Icelandic sagas",
+    "threat": "A malevolent corporeal undead revenant guarding burial mounds",
+    "twist": "The dead inhabitant of the cairn remains tangible and reanimated rather than a formless ghost.",
+    "score": null,
+    "seconds": 66.5,
+    "voice_speed": 1.1,
+    "narrator_voice": "am_michael",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [],
+    "visual_mode": "analog",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 85,
+    "visuals": {
+      "distinct": 22,
+      "longest_s": 5.6,
+      "longest_share": 0.081,
+      "longest_name": "image:scene_07a.png:full"
+    },
+    "yt_title": "Shroud Chewed To Rags... Draugr of Iceland #shorts",
+    "hashtags": [
+      "draugr",
+      "iceland",
+      "folklore",
+      "legends"
+    ],
+    "yt_tags": [
+      "draugr",
+      "draugr legend",
+      "iceland folklore",
+      "nordic undead",
+      "draugr myth",
+      "barrow ghost",
+      "scary legend",
+      "viking revenant",
+      "draugr saga",
+      "norwegian folklore",
+      "sea draugr",
+      "cryptid nordic",
+      "folklore",
+      "creepy legend",
+      "folklore creatures"
+    ],
+    "opening": "When villagers opened the burial mound, the burial shroud was already chewed to rags.",
+    "music_file": "unsolved_mystery.mp3",
+    "buffered": "2026-11-10_0746",
+    "tiktok": {
+      "status": "STAGED_FOR_BUFFER",
+      "mode": "buffer"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    }
   }
 ]
