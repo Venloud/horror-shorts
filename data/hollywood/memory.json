@@ -1,17 +1,17 @@
 {
- "videos": 6,
+ "videos": 7,
  "entries": {
   "title": {
-   "fired": 6,
-   "last": "2026-11-09_2352"
+   "fired": 7,
+   "last": "2026-11-10_0746"
   },
   "year_reel": {
    "fired": 5,
    "last": "2026-11-09_2352"
   },
   "phrase": {
-   "fired": 4,
-   "last": "2026-11-09_2352"
+   "fired": 7,
+   "last": "2026-11-10_0746"
   },
   "place": {
    "fired": 5,
@@ -30,8 +30,8 @@
    "last": "2026-11-08_0644"
   },
   "zoom_punch": {
-   "fired": 8,
-   "last": "2026-11-09_2352"
+   "fired": 11,
+   "last": "2026-11-10_0746"
   }
  },
  "places": {
@@ -113,7 +113,8 @@
   "crack prompting": 1,
   "spirit a banshee": 1,
   "irish speech as ben": 1,
-  "death": 1
+  "death": 1,
+  "unlike ordinary ghosts": 1
  },
  "log": [
   {
@@ -178,6 +179,19 @@
    "effects": [
     "title",
     "year_reel",
+    "phrase",
+    "zoom_punch",
+    "zoom_punch",
+    "zoom_punch"
+   ]
+  },
+  {
+   "stamp": "2026-11-10_0746",
+   "story_id": "46fe91e575df",
+   "effects": [
+    "title",
+    "phrase",
+    "phrase",
     "phrase",
     "zoom_punch",
     "zoom_punch",
