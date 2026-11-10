@@ -142,3 +142,25 @@ def info_card(text: str) -> dict | None:
         body = " ".join(words[a:a + 12]).strip(" ,;:")
         return {"label": label, "text": body, "cue": m.group(0), "char": m.start()}
     return None
+
+
+def kinetic_line(text: str) -> dict | None:
+    """The turning-point line for kinetic type: the clause of this narration where the reveal lands, verbatim,
+    3 to 7 words (the end of the clause, where the payoff sits). None for hypotheticals or no reveal."""
+    m = _RX["reveal"].search(text or "")
+    if not m:
+        return None
+    sent = _sentence(text, m.start())
+    if not sent or HYPOTHETICAL.search(sent):
+        return None
+    off = text.find(sent)
+    rel = m.start() - off
+    cut = [0] + [k + 1 for k, ch in enumerate(sent) if ch in ",;:"] + [len(sent) + 1]
+    lo = max(c for c in cut if c <= rel)
+    hi = min(c for c in cut if c > rel)
+    words = sent[lo:hi - 1].strip(" ,;:.!?").split()
+    words = [w for w in words if w.lower() not in ("then", "and", "but", "so")] if len(words) > 7 else words
+    if len(words) < 3:
+        return None
+    body = " ".join(words[-7:]).strip(" ,;:.!?\"'")
+    return {"text": body, "char": off + lo + max(0, sent[lo:].find(words[-7:][0]))}

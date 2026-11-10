@@ -82,6 +82,8 @@
   "explainer_scene_grade": true,
   "explainer_whip_pan": false,
   "info_card_max_per_video": 2,
+  "dolly_max_per_video": 2,
+  "push_through_max_per_video": 2,
   "explainer_host_max_share": 0.15,
   "explainer_host_max_seconds": 2.0,
   "explainer_depth_parallax": false,

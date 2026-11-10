@@ -1007,6 +1007,8 @@ def plan_transitions(segs: list[dict], words: list[dict], max_swoosh: int = 2) -
     place jump is off by default (config explainer_whip_pan); a location change is a hard cut.
     Fade to black is reserved for a terminal outro, never a scene boundary.
     """
+    import edit_memory
+    push_cap = edit_memory.allowed("cut:push_through", int(CONFIG.get("push_through_max_per_video", 2)))
     out = []
     for k, seg in enumerate(segs):
         kind = (seg.get("shot") or {}).get("type")
@@ -1015,6 +1017,9 @@ def plan_transitions(segs: list[dict], words: list[dict], max_swoosh: int = 2) -
         want = "dissolve" if kind == "image" and new_scene and TIME_PASSAGE_CUE.search(text) else "cut"
         if want == "dissolve" and out and out[-1] == "dissolve":
             want = "cut"
+        if want == "cut" and kind == "image" and new_scene and k and segs[k - 1].get("motion") in ("push", "dolly") \
+                and out.count("push_through") < push_cap and (not out or out[-1] != "push_through"):
+            want = "push_through"  # the camera keeps travelling forward through the cut into the next scene
         if want == "cut" and CONFIG.get("explainer_whip_pan", False) and kind == "image" and new_scene \
                 and WHIP_CUE.search(text) and out.count("whip") < 2 and (not out or out[-1] != "whip"):
             want = "whip"
@@ -1031,14 +1036,18 @@ def plan_motion(segs: list[dict], words: list[dict]) -> list[str]:
     push toward someone approaching, closeup on a narrated object or record, pull back for isolation, still so a
     reveal lands; with no cue a slow push alternates with a still hold, never more than two moving shots in a row.
     The same move never repeats back to back. seg['grade'] is the scene's light (warm / night / dusk)."""
+    import edit_memory
     import edit_rules
     out, last, run = [], "", 0
+    dollies, dolly_cap = 0, edit_memory.allowed("move:dolly", int(CONFIG.get("dolly_max_per_video", 2)))
     for seg in segs:
         if (seg.get("shot") or {}).get("type") != "image":
             out.append("")
             continue
         text = _seg_text(seg, words)
         m = edit_rules.camera_move(text, last, run)
+        if m == "push" and "approach" in edit_rules.tags(text) and dollies < dolly_cap:
+            m, dollies = "dolly", dollies + 1
         if m == last:
             m = "closeup" if m == "still" else "still"
         run = 0 if m == "still" else run + 1
@@ -1341,8 +1350,8 @@ def sequence(story: dict, narration: dict, scene_images: list[list[Path]], graph
             segs.append({"start": round(s0, 3), "end": round(s1, 3), "shot": item, "scene": i})
     for k in range(1, len(segs)):  # contiguous timeline
         segs[k]["start"] = segs[k - 1]["end"]
-    plan_transitions(segs, words)  # hard cut by default; dissolve only when narrated time passes
-    plan_motion(segs, words)  # push / pan / pull / still per story picture
+    plan_motion(segs, words)  # push / dolly / closeup / pull / still per story picture
+    plan_transitions(segs, words)  # hard cut by default; dissolve for time passing; push-through after a push
     return segs
 
 
@@ -1620,6 +1629,8 @@ class Renderer:
             frame = self._crop(base, cx, cy * 0.94, z * (1.24 + 0.05 * x))
         elif move == "push":
             frame = self._crop(base, cx, cy, z * (1.0 + 0.095 * x))
+        elif move == "dolly":  # 3D: the camera tracks forward and turns slightly, so the frame shifts in depth
+            frame = self._dolly(self._crop(base, cx, cy, z * (1.04 + 0.11 * x)), x)
         elif move == "pan":
             frame = self._crop(base, cx + 0.075 * (x - 0.5), cy, z * 1.03)
         else:
@@ -1634,6 +1645,15 @@ class Renderer:
             frame = self._graded(frame, seg["grade"])
         frame.alpha_composite(self._vignette())
         return frame
+
+    @staticmethod
+    def _dolly(frame: Image.Image, x: float) -> Image.Image:
+        """A perspective (keystone) move: one side of the frame comes toward camera as the shot travels, like a
+        slow dolly with a gentle yaw. The frame is overscanned first, so no edge is ever exposed."""
+        k = 0.035 * (x - 0.5)
+        dx, dy = W * abs(k), H * abs(k) * 0.6
+        quad = (dx, dy, dx, H - dy, W, H, W, 0) if k >= 0 else (0, 0, 0, H, W - dx, H - dy, W - dx, dy)
+        return frame.transform((W, H), Image.QUAD, quad, Image.BILINEAR)
 
     def _graded(self, frame: Image.Image, name: str) -> Image.Image:
         """The scene's own light: cool blue shadows, warm highlights (edit_rules.GRADES), midtones untouched."""
@@ -1728,7 +1748,8 @@ class Renderer:
         return frame
 
     # transition lengths (s); plan_transitions chose one per cut ("cut" = none)
-    TRANSITION_S = {"dissolve": 0.45, "slide": 0.28, "swoosh": 0.24, "pop": 0.18, "whip": 0.24}
+    TRANSITION_S = {"dissolve": 0.45, "slide": 0.28, "swoosh": 0.24, "pop": 0.18, "whip": 0.24,
+                    "push_through": 0.36}
 
     def _transition(self, seg: dict, frame: Image.Image, local: float) -> Image.Image:
         """Into this segment: dissolve (cross-fade from the previous shot's last frame), slide / swoosh (push: the
@@ -1748,6 +1769,14 @@ class Renderer:
         a = _ease(local / dur)
         if tr == "dissolve":
             return Image.blend(prev.convert("RGBA"), frame.convert("RGBA"), a)
+        if tr == "push_through":  # the forward move carries through: the old shot rushes in, the new one settles
+            old = self._crop(prev, 0.5, 0.5, 1.0 + 0.16 * a)
+            new = self._crop(frame, 0.5, 0.5, 1.12 - 0.12 * a)
+            blur = math.sin(math.pi * a)
+            if blur > 0.05:
+                old = old.filter(ImageFilter.GaussianBlur(5 * blur))
+                new = new.filter(ImageFilter.GaussianBlur(4 * blur * (1 - a)))
+            return Image.blend(old.convert("RGBA"), new.convert("RGBA"), _ease(min(1, a * 1.25)))
         if tr in ("slide", "swoosh", "whip"):
             out = Image.new("RGBA", (W, H), BLACK + (255,))
             off = int(W * a)
@@ -2195,6 +2224,7 @@ def plan_effects(story: dict, narration: dict, segs: list[dict], cover: float | 
         if c["kind"] == "sticky_note":
             c["fields"]["text"] = c["fields"]["text"].title()
         cands.append(c)
+    import edit_memory
     import edit_rules
     info_cards = 0
     for i, sc in enumerate(story["scenes"]):
@@ -2249,6 +2279,18 @@ def plan_effects(story: dict, narration: dict, segs: list[dict], cover: float | 
             t = words[_word_at(idx, offs, m.start())]["start"]
             cands.append({"kind": "flicker", "start": t, "dur": 0.8, "anchor": t, "prio": 9, "big": True,
                           "fields": {}})
+    if edit_memory.allowed("fx:kinetic", 1):  # the turning point: the LAST scene whose narration lands a reveal
+        for i in range(len(story["scenes"]) - 1, 0, -1):
+            idx, text, offs = _scene_text(narration, i)
+            if not idx:
+                continue
+            kl = edit_rules.kinetic_line(text)
+            if kl:
+                t = words[_word_at(idx, offs, kl["char"])]["start"]
+                n = len(kl["text"].split())
+                cands.append({"kind": "kinetic", "start": t - 0.2, "dur": 0.2 + 0.16 * n + 1.9, "anchor": t,
+                              "prio": 2, "big": True, "fields": {"text": kl["text"], "land": 0.2, "step": 0.16}})
+                break
     accents = sorted(caption_accents(story, narration))
     phrase_n = 0
     for n, k in enumerate(accents):  # payoff words: a zoom punch, and a few kinetic key phrases
@@ -2729,6 +2771,9 @@ def build(story: dict, narration: dict, img_dir: Path, workdir: Path) -> Path:
                       "reason": f"{type(exc).__name__}: {str(exc)[:220]}"}
         report["narration_check"] = story["narration_check"] = result
     write_reports(workdir, report, segs)
+    story["explainer_segments"] = [{"motion": s.get("motion"), "transition": s.get("transition")} for s in segs]
+    import edit_memory
+    edit_memory.record(story, segs, report["failures"])  # the editor learns: QA failures cost weight
     story["explainer_plan"] = {"shots": report["shots"], "runtime_share": report["runtime_share"],
                                "media_used": report["media_used"]}
     log(f"Visual QA: shots {report['shots']}, runtime {report['runtime_share']}, media {report['media_used']}, "

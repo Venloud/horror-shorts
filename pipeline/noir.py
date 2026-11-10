@@ -1665,6 +1665,74 @@ def _o_phrase(layer, fields, t, dur, ctx):
             layer.paste(Image.fromarray(arr))
 
 
+KINETIC_RED = (240, 23, 103)
+
+
+def _o_kinetic(layer, fields, t, dur, ctx):
+    """Kinetic type for the story's turning point: the narrator's own words land one at a time (each comes in from
+    soft focus and wide letter spacing to sharp and tight, no bounce), the last word in red. Underneath, a red
+    shape morphs: a dot grows into a rule, the rule folds into corner brackets that frame the line, then everything
+    fades. fields text, land (s before the first word), step (s between words)."""
+    words = str(fields.get("text") or "").split()
+    if not words:
+        return
+    alpha = _fade_out(t, dur, 0.35)
+    if alpha <= 0:
+        return
+    step = float(fields.get("step", 0.16))
+    f, lines = fit(" ".join(words), "bold", 860, 3, 92, 54)
+    lh = int(f.size * 1.18)
+    top = 760 - (len(lines) * lh) // 2
+    k = 0
+    for li, line in enumerate(lines):
+        lw = line.split()
+        widths = [f.getlength(w + " ") for w in lw]
+        x0 = (W - sum(widths) + f.getlength(" ")) / 2
+        for wi, w in enumerate(lw):
+            p = ease((t - float(fields.get("land", 0.2)) - k * step) / 0.28)
+            k += 1
+            if p <= 0:
+                x0 += widths[wi]
+                continue
+            col = KINETIC_RED if k == len(words) else (255, 255, 255)
+            track = int(26 * (1 - p))
+            tw = int(f.getlength(w)) + track * len(w) + 40
+            im = Image.new("RGBA", (tw, lh + 40), (0, 0, 0, 0))
+            d = ImageDraw.Draw(im)
+            cx = 20
+            for ch in w:
+                d.text((cx, 10), ch, font=f, fill=col + (255,))
+                cx += f.getlength(ch) + track
+            if p < 1:
+                im = im.filter(ImageFilter.GaussianBlur(6 * (1 - p)))
+            im.putalpha(im.getchannel("A").point(lambda v, a=p * alpha: int(v * a)))
+            sh = Image.new("RGBA", im.size, (0, 0, 0, 0))
+            sh.putalpha(im.getchannel("A").point(lambda v: int(v * 0.6)))
+            sh = sh.filter(ImageFilter.GaussianBlur(10))
+            px = int(x0 - 20 - track * len(w) / 2)
+            layer.alpha_composite(sh, (px + 3, top + li * lh + 4))
+            layer.alpha_composite(im, (px, top + li * lh - 10))
+            x0 += widths[wi]
+    # the morphing shape: dot -> rule -> corner brackets around the text block
+    m = (t - float(fields.get("land", 0.2))) / max(0.3, len(words) * step + 0.3)
+    d = ImageDraw.Draw(layer)
+    a = int(255 * alpha)
+    by = top + len(lines) * lh + 30
+    if m < 0.35:
+        r = int(4 + 300 * ease(m / 0.35))
+        d.rounded_rectangle((W // 2 - r, by - 3, W // 2 + r, by + 3), 3, fill=KINETIC_RED + (a,))
+    else:
+        q = ease((m - 0.35) / 0.5)
+        x1, x2, y1, y2 = W // 2 - 304 - 60 * q, W // 2 + 304 + 60 * q, by - (by - top + 40) * q, by
+        arm = int(304 * (1 - q) + 54 * q)
+        for sx, dx in ((x1, 1), (x2, -1)):
+            d.line((sx, y2, sx + dx * arm, y2), fill=KINETIC_RED + (a,), width=6)
+            if q > 0.02:
+                d.line((sx, y2, sx, y2 - 54 * q), fill=KINETIC_RED + (a,), width=6)
+                d.line((sx, y1, sx + dx * 54 * q, y1), fill=KINETIC_RED + (a,), width=6)
+                d.line((sx, y1, sx, y1 + 54 * q), fill=KINETIC_RED + (a,), width=6)
+
+
 def _o_film_burn(layer, fields, t, dur, ctx):
     """A short warm film burn over a narrated time jump: amber blooms flare from an edge and fade (<= 0.6 s)."""
     p = t / max(0.05, dur)

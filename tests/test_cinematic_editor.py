@@ -754,3 +754,79 @@ class EditingRules(unittest.TestCase):
         self.assertNotIn("spring(", jsx)
         self.assertNotIn("scale(", jsx)
         self.assertEqual(explainer.caption_accent(), (0xF0, 0x17, 0x67))
+
+
+class HighlightsAndMemory(unittest.TestCase):
+    """Nov 10: kinetic type + morphing shape at the turning point, 3D dolly, push-through cut, editing memory."""
+
+    def setUp(self):
+        import os
+        import tempfile
+        import edit_memory
+        self.tmp = Path(tempfile.mkdtemp()) / "memory.json"
+        self.env = mock.patch.dict(os.environ, {"NIGHT_FILES_EDIT_MEMORY": str(self.tmp)})
+        self.env.start()
+        self.mem = mock.patch.object(edit_memory, "MEMORY", self.tmp)
+        self.mem.start()
+        self.em = edit_memory
+
+    def tearDown(self):
+        self.mem.stop()
+        self.env.stop()
+
+    def test_kinetic_line_is_the_narrators_own_words(self):
+        import edit_rules
+        text = "He lit a candle in the hallway. Then he realized one of the faces was his."
+        k = edit_rules.kinetic_line(text)
+        self.assertIsNotNone(k)
+        self.assertIn(k["text"], text)
+        self.assertIsNone(edit_rules.kinetic_line("If he realized it, he might run away."))
+
+    def test_kinetic_overlay_draws_words_and_red_shape(self):
+        layer = noir.overlay("kinetic", {"text": "one of the faces was his", "land": 0.2, "step": 0.16}, 1.6, 3.0, {})
+        cols = {c[:3] for _, c in layer.getcolors(4_000_000) if c[3] > 200}
+        self.assertIn(noir.KINETIC_RED, cols)
+        self.assertIn((255, 255, 255), cols)
+
+    def test_dolly_and_push_through_planned_from_narration(self):
+        texts = ["He walked toward the front door slowly.", "Inside, the hallway was dark and cold tonight."]
+        words, segs, t = [], [], 0.0
+        for i, s in enumerate(texts):
+            w = _words(s, i, t)
+            words += w
+            segs.append({"start": t, "end": w[-1]["end"] + 0.4, "scene": i, "shot": {"type": "image"}})
+            t = segs[-1]["end"]
+        moves = explainer.plan_motion(segs, words)
+        self.assertEqual(moves[0], "dolly")
+        self.assertEqual(explainer.plan_transitions(segs, words)[1], "push_through")
+
+    def test_dolly_frame_has_no_exposed_edges(self):
+        from PIL import Image
+        im = Image.new("RGBA", (noir.W, noir.H), (90, 90, 90, 255))
+        out = explainer.Renderer._dolly(im, 1.0)
+        self.assertEqual(out.size, (noir.W, noir.H))
+        self.assertGreater(min(out.convert("L").getextrema()), 0)
+
+    def test_memory_learns_and_turns_techniques_down_and_up(self):
+        story = {"story_id": "s1", "explainer_effects": [{"kind": "kinetic"}]}
+        segs = [{"motion": "dolly", "transition": "push_through"}]
+        self.assertEqual(self.em.allowed("move:dolly", 2), 2)
+        for n in range(4):
+            self.em.record(dict(story, story_id=f"q{n}"), segs, ["black frame"])
+        self.assertEqual(self.em.allowed("move:dolly", 2), 0)  # repeated QA failures switch it off
+        for n in range(4):
+            self.em.verdict(f"q{n}", True)
+        self.assertGreaterEqual(self.em.allowed("move:dolly", 2), 2)  # owner approvals bring it back
+        self.em.record(story, segs)
+        for sid, ret in (("a", 80), ("b", 40), ("c", 60)):
+            self.em.record(dict(story, story_id=sid), [{"motion": "still"}])
+        self.assertEqual(self.em.learn_metrics([{"story_id": "a", "retention": 80},
+                                                {"story_id": "b", "retention": 40},
+                                                {"story_id": "c", "retention": 60}]), 2)
+
+    def test_unit_tests_never_touch_production_memory(self):
+        import os
+        with mock.patch.dict(os.environ, {}, clear=True):
+            with mock.patch.object(self.em, "MEMORY", self.tmp.parent / "untouched.json"):
+                self.em.record({"story_id": "x"}, [{"motion": "push"}], ["qa"])
+                self.assertFalse((self.tmp.parent / "untouched.json").exists())
