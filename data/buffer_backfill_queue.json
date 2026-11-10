@@ -360,10 +360,10 @@
       "title": "A Mournful Cry Echoes... The Banshee of Ireland #shorts"
     },
     "2026-11-10_0746": {
-      "status": "attempt_started",
-      "title": "Shroud Chewed To Rags... Draugr of Iceland #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-11-10_0746.mp4",
-      "channel_id": "6aefbb44e29c69a1719c4ae8"
+      "status": "queued",
+      "buffer_post_id": "6af2cfc8223aa16048fa4917",
+      "due_at": "2026-11-10T12:08:00.000Z",
+      "title": "Shroud Chewed To Rags... Draugr of Iceland #shorts"
     }
   }
 }
