@@ -4840,5 +4840,81 @@
     "youtube": {
       "pending": "buffer_queue_pending"
     }
+  },
+  {
+    "date": "2026-11-09_2352",
+    "story_id": "60968406f7f3",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Banshee and the Family Doom",
+    "premise": "A wailing fairy woman heralds the death of a noble Irish family.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Banshee",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Ireland",
+    "threat": "The banshee",
+    "twist": "Earliest written accounts reach back to thirteen eighty in the Triumphs of Torlough by Sean mac Craith.",
+    "score": null,
+    "seconds": 53.1,
+    "voice_speed": 1.0,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:5391986"
+    ],
+    "visual_mode": "fast",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 67,
+    "visuals": {
+      "distinct": 19,
+      "longest_s": 3.8,
+      "longest_share": 0.067,
+      "longest_name": "image:scene_05a.png:full"
+    },
+    "yt_title": "A Mournful Cry Echoes... The Banshee of Ireland #shorts",
+    "hashtags": [
+      "banshee",
+      "ireland",
+      "folklore",
+      "legends"
+    ],
+    "yt_tags": [
+      "the banshee",
+      "banshee legend",
+      "ireland folklore",
+      "banshee crying",
+      "irish folklore",
+      "ben side",
+      "triumphs of torlough",
+      "sean mac craith",
+      "banshee myth",
+      "irish legends",
+      "banshee spirit",
+      "banshee",
+      "scary legend",
+      "folklore",
+      "creepy legend"
+    ],
+    "opening": "A mournful cry echoes in the silence of the night, bringing certain death to a member of the family.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-11-09_2352",
+    "tiktok": {
+      "status": "STAGED_FOR_BUFFER",
+      "mode": "buffer"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    }
   }
 ]

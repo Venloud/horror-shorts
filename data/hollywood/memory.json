@@ -1,17 +1,17 @@
 {
- "videos": 5,
+ "videos": 6,
  "entries": {
   "title": {
-   "fired": 5,
-   "last": "2026-11-09_0713"
+   "fired": 6,
+   "last": "2026-11-09_2352"
   },
   "year_reel": {
-   "fired": 4,
-   "last": "2026-11-09_0713"
+   "fired": 5,
+   "last": "2026-11-09_2352"
   },
   "phrase": {
-   "fired": 3,
-   "last": "2026-11-02_1033"
+   "fired": 4,
+   "last": "2026-11-09_2352"
   },
   "place": {
    "fired": 5,
@@ -30,8 +30,8 @@
    "last": "2026-11-08_0644"
   },
   "zoom_punch": {
-   "fired": 5,
-   "last": "2026-11-09_0713"
+   "fired": 8,
+   "last": "2026-11-09_2352"
   }
  },
  "places": {
@@ -110,7 +110,10 @@
   "window causing": 1,
   "investigators traced": 1,
   "fatigue crack": 1,
-  "crack prompting": 1
+  "crack prompting": 1,
+  "spirit a banshee": 1,
+  "irish speech as ben": 1,
+  "death": 1
  },
  "log": [
   {
@@ -164,6 +167,18 @@
     "title",
     "year_reel",
     "zoom_punch",
+    "zoom_punch",
+    "zoom_punch",
+    "zoom_punch"
+   ]
+  },
+  {
+   "stamp": "2026-11-09_2352",
+   "story_id": "60968406f7f3",
+   "effects": [
+    "title",
+    "year_reel",
+    "phrase",
     "zoom_punch",
     "zoom_punch",
     "zoom_punch"
