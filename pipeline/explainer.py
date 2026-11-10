@@ -43,8 +43,8 @@ def accent() -> tuple:
 
 
 def caption_accent() -> tuple:
-    """Captions highlight meaningful words in cyan (config caption_accent); white everywhere else."""
-    h = str(CONFIG.get("caption_accent", "#5ED6F2")).lstrip("#")
+    """Captions highlight meaningful words in red (config caption_accent); white everywhere else."""
+    h = str(CONFIG.get("caption_accent", "#F01767")).lstrip("#")
     return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
 
 

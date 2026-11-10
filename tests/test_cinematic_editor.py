@@ -287,7 +287,7 @@ class ContextGraphicsAndSound(unittest.TestCase):
         self.assertEqual([w["accent"] for w in m["words"]], [False, True])
         jsx = (ROOT / "remotion" / "src" / "polish.jsx").read_text()
         self.assertNotIn('x.transition==="swoosh"', jsx)  # no decorative sweep layer
-        self.assertIn("hit?(w.accent", jsx)  # cyan only on accented words
+        self.assertIn("hit?(w.accent", jsx)  # red only on accented words
         self.assertIn('x.kind==="host"', jsx)  # captions move up while a host bust is on screen
 
 
@@ -748,9 +748,9 @@ class EditingRules(unittest.TestCase):
         words = _words("Meanwhile, miles away, the phone rang.", 1, 2.5)
         self.assertNotIn("whip", explainer.plan_transitions(segs, words))
 
-    def test_captions_are_white_with_cyan_accents_and_no_bounce(self):
+    def test_captions_are_white_with_red_accents_and_no_bounce(self):
         jsx = (ROOT / "remotion" / "src" / "polish.jsx").read_text()
-        self.assertIn("PALETTE.cyan", jsx)
+        self.assertIn("PALETTE.accent", jsx)
         self.assertNotIn("spring(", jsx)
         self.assertNotIn("scale(", jsx)
-        self.assertEqual(explainer.caption_accent(), (0x5E, 0xD6, 0xF2))
+        self.assertEqual(explainer.caption_accent(), (0xF0, 0x17, 0x67))

@@ -5,7 +5,7 @@ import {AbsoluteFill, OffthreadVideo, interpolate, staticFile,
 // Edit existing Night Files output, do not replace its Python/Pillow render engine.
 // Original character PNGs, palette, background illustration and audio are untouched.
 // All movements below are deterministic and synchronized to the storyboard.
-const PALETTE = {paper: "#FFFFFF", ink: "#11151B", cyan: "#5ED6F2", muted: "#B9C0C9"};
+const PALETTE = {paper: "#FFFFFF", ink: "#11151B", accent: "#F01767", muted: "#B9C0C9"};
 const clamp = {extrapolateLeft: "clamp", extrapolateRight: "clamp"};
 const cap = (v, n=64) => String(v ?? "").replace(/[\r\n]+/g," ").slice(0,n);
 
@@ -66,7 +66,7 @@ const CaptionTrack=({words=[],shots=[]})=>{
         return <span key={i} style={{
           display:"inline-block",margin:"0 5px",
           // Cyan ONLY on the payoff words the editor chose (explainer.caption_accents), never every word.
-          color:hit?(w.accent?PALETTE.cyan:PALETTE.paper):PALETTE.muted,
+          color:hit?(w.accent?PALETTE.accent:PALETTE.paper):PALETTE.muted,
           opacity:hit?1:0.60,
           textShadow:hit?"0 1px 8px rgba(255,255,255,0.12)":"none",
           transition:"none"
