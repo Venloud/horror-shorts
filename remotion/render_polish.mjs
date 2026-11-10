@@ -37,7 +37,8 @@ try {
     "render","src/index.jsx","NightFilesPolish",cleanVideo,
     "--props="+propsPath,"--codec=h264","--pixel-format=yuv420p",
     "--concurrency=2","--log=error"
-  ],{cwd:here,stdio:"inherit",timeout:30*60*1000});
+  ],{cwd:here,stdio:"inherit",timeout:30*60*1000,
+    shell:process.platform==="win32"});  // Windows: a .cmd launcher needs a shell (Node >= 20 security fix)
   if(!fs.existsSync(cleanVideo) || fs.statSync(cleanVideo).size<10000)
     throw new Error("Remotion produced no valid MP4");
   // Remotion renders the visual pass; FFmpeg remuxes EXACT original audio.

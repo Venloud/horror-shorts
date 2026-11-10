@@ -42,6 +42,12 @@ def accent() -> tuple:
     return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
 
 
+def caption_accent() -> tuple:
+    """Captions highlight meaningful words in red (config caption_accent); white everywhere else."""
+    h = str(CONFIG.get("caption_accent", "#F01767")).lstrip("#")
+    return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+
+
 def style_for(story: dict) -> str:
     forced = (os.environ.get("RENDER_STYLE") or "").strip().lower()
     if forced:
@@ -997,8 +1003,8 @@ def plan_transitions(segs: list[dict], words: list[dict], max_swoosh: int = 2) -
     """Plan purposeful punctuation between shots; preserve max_swoosh only for caller compatibility.
 
     A hard cut is always the default, including graphics, locations, ideas and sudden beats.
-    A short dissolve is allowed only at a NEW scene with explicit narrated passage of time; a whip pan (max 2 per
-    video) only at a new scene whose narration jumps to another place ("meanwhile", "flew to", "miles away").
+    A short dissolve is allowed only at a NEW scene with explicit narrated passage of time. The old whip pan on a
+    place jump is off by default (config explainer_whip_pan); a location change is a hard cut.
     Fade to black is reserved for a terminal outro, never a scene boundary.
     """
     out = []
@@ -1009,8 +1015,8 @@ def plan_transitions(segs: list[dict], words: list[dict], max_swoosh: int = 2) -
         want = "dissolve" if kind == "image" and new_scene and TIME_PASSAGE_CUE.search(text) else "cut"
         if want == "dissolve" and out and out[-1] == "dissolve":
             want = "cut"
-        if want == "cut" and kind == "image" and new_scene and WHIP_CUE.search(text) and out.count("whip") < 2 \
-                and (not out or out[-1] != "whip"):
+        if want == "cut" and CONFIG.get("explainer_whip_pan", False) and kind == "image" and new_scene \
+                and WHIP_CUE.search(text) and out.count("whip") < 2 and (not out or out[-1] != "whip"):
             want = "whip"
         out.append(want)
         seg["transition"] = want
@@ -1021,25 +1027,23 @@ REVEAL = re.compile(r"\b(reveal\w*|face|mask|eyes|blood|dead|body|grave|still|si
 
 
 def plan_motion(segs: list[dict], words: list[dict]) -> list[str]:
-    """Camera motion per story picture (seg['motion']): push / pan / pull, or 'still' on a reveal beat that should
-    land without movement (never two stills in a row, never the same move twice in a row)."""
-    out, last = [], ""
-    cycle = ("push", "pan", "pull")
-    n = 0
+    """Camera motion per story picture (seg['motion']), chosen from what the narration is doing (edit_rules):
+    push toward someone approaching, closeup on a narrated object or record, pull back for isolation, still so a
+    reveal lands; with no cue a slow push alternates with a still hold, never more than two moving shots in a row.
+    The same move never repeats back to back. seg['grade'] is the scene's light (warm / night / dusk)."""
+    import edit_rules
+    out, last, run = [], "", 0
     for seg in segs:
         if (seg.get("shot") or {}).get("type") != "image":
             out.append("")
             continue
         text = _seg_text(seg, words)
-        if REVEAL.search(text) and last != "still":
-            m = "still"
-        else:
-            m = cycle[n % 3]
-            n += 1
-            if m == last:
-                m = cycle[n % 3]
-                n += 1
+        m = edit_rules.camera_move(text, last, run)
+        if m == last:
+            m = "closeup" if m == "still" else "still"
+        run = 0 if m == "still" else run + 1
         seg["motion"] = m
+        seg["grade"] = edit_rules.grade(text)
         out.append(m)
         last = m
     return out
@@ -1612,6 +1616,8 @@ class Renderer:
         move = seg.get("motion") or ("push", "pan", "pull")[self._index(seg) % 3]
         if move == "still":
             frame = self._crop(base, cx, cy, z * 1.03)
+        elif move == "closeup":  # evidence: a tight frame that creeps in slowly, slightly above centre
+            frame = self._crop(base, cx, cy * 0.94, z * (1.24 + 0.05 * x))
         elif move == "push":
             frame = self._crop(base, cx, cy, z * (1.0 + 0.095 * x))
         elif move == "pan":
@@ -1624,8 +1630,20 @@ class Renderer:
                 frame.alpha_composite(self._crop(fg, cx, cy, z * (1.0 + 0.135 * x)))
             else:
                 frame.alpha_composite(self._crop(fg, cx + 0.105 * (x - 0.5), cy, z * 1.03))
+        if CONFIG.get("explainer_scene_grade", True) and seg.get("grade"):
+            frame = self._graded(frame, seg["grade"])
         frame.alpha_composite(self._vignette())
         return frame
+
+    def _graded(self, frame: Image.Image, name: str) -> Image.Image:
+        """The scene's own light: cool blue shadows, warm highlights (edit_rules.GRADES), midtones untouched."""
+        import edit_rules
+        lut = self.layer_cache.get(("grade", name))
+        if lut is None:
+            lut = edit_rules.grade_lut(name)
+            self.layer_cache[("grade", name)] = lut
+        r, g, b, a = frame.split()
+        return Image.merge("RGB", (r, g, b)).point(lut).convert("RGBA")
 
     # ---------------------------------------------------------------- the approved host (occasional B-roll)
     def figure(self, view, facing, height):
@@ -1900,7 +1918,7 @@ class Renderer:
                 else:
                     col = (255, 255, 255, 255) if on else (255, 255, 255, 120)
                     if k < len(flags) and flags[k] and on:
-                        col = self.acc + (255,)
+                        col = caption_accent() + (255,)
                     ds.text((x, y + 6), w, font=f, fill=(0, 0, 0, 200))
                 d.text((x, y), w, font=f, fill=col)
                 x += ww + sp
@@ -2177,6 +2195,8 @@ def plan_effects(story: dict, narration: dict, segs: list[dict], cover: float | 
         if c["kind"] == "sticky_note":
             c["fields"]["text"] = c["fields"]["text"].title()
         cands.append(c)
+    import edit_rules
+    info_cards = 0
     for i, sc in enumerate(story["scenes"]):
         idx, text, offs = _scene_text(narration, i)
         if not idx:
@@ -2218,6 +2238,12 @@ def plan_effects(story: dict, narration: dict, segs: list[dict], cover: float | 
             t = words[_word_at(idx, offs, m.start())]["start"]
             cands.append({"kind": "phrase", "start": t - 0.3, "dur": 2.0, "anchor": t, "prio": prio, "big": True,
                           "fields": {"text": ph[0]["text"], "accent": ph[0]["accent"], "mode": mode, "land": 0.3}})
+        card = edit_rules.info_card(text)
+        if card and info_cards < int(CONFIG.get("info_card_max_per_video", 2)):
+            info_cards += 1
+            t = words[_word_at(idx, offs, card["char"])]["start"]
+            cands.append({"kind": "info_card", "start": t - 0.15, "dur": 2.8, "anchor": t, "prio": 3, "big": True,
+                          "fields": {"label": card["label"], "text": card["text"], "land": 0.15}})
         m = LIGHT_CUE.search(text)
         if m and not HYPOTHETICAL.search(_sentence_of(text, m.start())):
             t = words[_word_at(idx, offs, m.start())]["start"]
@@ -2352,6 +2378,8 @@ def effect_sfx(c: dict) -> list[tuple]:
         out.append((s + f.get("land", 0.3), "stamp_thud", 0.16, 0.3, duck))
     elif c["kind"] == "polaroid":
         out.append((s + f["land"] - 0.05, "camera_shutter", 0.28, 0.7, duck))
+    elif c["kind"] == "info_card":
+        out.append((s + f["land"], "ui_click", 0.14, 0.3, dict(duck, pitch=-4)))  # the card settles
     elif c["kind"] == "typewriter":
         out += [(s + tt, "typing_click", 0.09, 0.08, dict(duck, pitch=(k % 3) - 1))
                 for k, tt in enumerate(noir.type_times(f["text"], f.get("start", 0.15)))]

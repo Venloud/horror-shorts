@@ -287,7 +287,7 @@ class ContextGraphicsAndSound(unittest.TestCase):
         self.assertEqual([w["accent"] for w in m["words"]], [False, True])
         jsx = (ROOT / "remotion" / "src" / "polish.jsx").read_text()
         self.assertNotIn('x.transition==="swoosh"', jsx)  # no decorative sweep layer
-        self.assertIn("hit&&w.accent", jsx)  # underline only accented words
+        self.assertIn("hit?(w.accent", jsx)  # red only on accented words
         self.assertIn('x.kind==="host"', jsx)  # captions move up while a host bust is on screen
 
 
@@ -678,3 +678,79 @@ class Hollywood(unittest.TestCase):
         story2 = {"title": "x", "scenes": [{"narration": s} for s in quiet]}
         n2 = self._narr(quiet)
         self.assertNotIn("footprint_route", [e["kind"] for e in explainer.plan_effects(story2, n2, self._segs(n2, 2))])
+
+
+class EditingRules(unittest.TestCase):
+    """Narration-aware editing (pipeline/edit_rules.py): restraint, stillness, grounded information cards."""
+
+    def test_camera_follows_what_the_narration_does(self):
+        import edit_rules as r
+        self.assertEqual(r.camera_move("She walked toward the abandoned house."), "push")
+        self.assertEqual(r.camera_move("A message lit up her phone."), "closeup")
+        self.assertEqual(r.camera_move("Then she realized it was already inside."), "still")
+        self.assertEqual(r.camera_move("The whole town was empty."), "pull")
+
+    def test_camera_rests_between_moves(self):
+        import edit_rules as r
+        self.assertEqual(r.camera_move("The road went on.", "push", 1), "still")
+        self.assertEqual(r.camera_move("The road went on.", "still", 0), "push")
+        segs = [{"start": 2.5 * k, "end": 2.5 * k + 2.5, "scene": k, "shot": {"type": "image"}} for k in range(9)]
+        words = []
+        for k in range(9):
+            words += _words("The road went on.", k, segs[k]["start"])
+        m = explainer.plan_motion(segs, words)
+        self.assertGreaterEqual(m.count("still"), 4)
+        run = 0
+        for x in m:
+            run = 0 if x == "still" else run + 1
+            self.assertLessEqual(run, 2, m)
+
+    def test_light_is_chosen_per_scene(self):
+        import edit_rules as r
+        self.assertEqual(r.grade("She lit a candle in the kitchen."), "warm")
+        self.assertEqual(r.grade("The forest was dark that night."), "night")
+        self.assertEqual(r.grade("He signed the papers."), "dusk")
+        lut = r.grade_lut("night")
+        self.assertEqual(len(lut), 768)
+        self.assertGreater(lut[512 + 10], 10)  # blue shadows lifted
+        self.assertLessEqual(lut[512 + 250], 250)  # highlights not cooled
+
+    def test_info_card_uses_only_spoken_words(self):
+        import edit_rules as r
+        text = "Police checked her file. But the records showed she had died in 1987."
+        card = r.info_card(text)
+        self.assertEqual(card["label"], "CONTRADICTION")
+        for w in card["text"].split():
+            self.assertIn(w, text)
+        self.assertIsNone(r.info_card("If a letter had arrived, she might have known."))
+        self.assertIsNone(r.info_card("The road went on into the hills."))
+
+    def test_info_cards_are_rare_and_rendered(self):
+        lines = ["Investigators found a letter under the floor.", "The road went on.",
+                 "They found a diary in the attic.", "But the records showed she never existed.",
+                 "The road went on."]
+        story = {"title": "", "scenes": [{"narration": s} for s in lines]}
+        words, segs, t = [], [], 0.0
+        for i, s in enumerate(lines):
+            w = _words(s, i, t)
+            words += w
+            segs.append({"start": t, "end": w[-1]["end"] + 0.6, "scene": i, "shot": {"type": "image", "file": "x"}})
+            t = segs[-1]["end"]
+        eff = explainer.plan_effects(story, {"words": words}, segs, cover=0.0)
+        cards = [e for e in eff if e["kind"] == "info_card"]
+        self.assertTrue(1 <= len(cards) <= 2, [e["kind"] for e in eff])
+        layer = noir.overlay("info_card", cards[0]["fields"], 1.0, cards[0]["dur"], {})
+        self.assertIsNotNone(layer.getbbox())
+        self.assertIn((241, 234, 219, 255), layer.getcolors(4_000_000) and [c for _, c in layer.getcolors(4_000_000)])
+
+    def test_no_whip_pan_by_default(self):
+        segs = [{"start": 2.5 * k, "end": 2.5 * k + 2.5, "scene": k, "shot": {"type": "image"}} for k in range(3)]
+        words = _words("Meanwhile, miles away, the phone rang.", 1, 2.5)
+        self.assertNotIn("whip", explainer.plan_transitions(segs, words))
+
+    def test_captions_are_white_with_red_accents_and_no_bounce(self):
+        jsx = (ROOT / "remotion" / "src" / "polish.jsx").read_text()
+        self.assertIn("PALETTE.accent", jsx)
+        self.assertNotIn("spring(", jsx)
+        self.assertNotIn("scale(", jsx)
+        self.assertEqual(explainer.caption_accent(), (0xF0, 0x17, 0x67))

@@ -1,11 +1,11 @@
 import React, {useMemo} from "react";
-import {AbsoluteFill, OffthreadVideo, interpolate, spring, staticFile,
+import {AbsoluteFill, OffthreadVideo, interpolate, staticFile,
         useCurrentFrame, useVideoConfig} from "remotion";
 
 // Edit existing Night Files output, do not replace its Python/Pillow render engine.
 // Original character PNGs, palette, background illustration and audio are untouched.
 // All movements below are deterministic and synchronized to the storyboard.
-const PALETTE = {paper: "#F1EEE8", ink: "#11151B", red: "#F01767", muted: "#B9C0C9"};
+const PALETTE = {paper: "#FFFFFF", ink: "#11151B", accent: "#F01767", muted: "#B9C0C9"};
 const clamp = {extrapolateLeft: "clamp", extrapolateRight: "clamp"};
 const cap = (v, n=64) => String(v ?? "").replace(/[\r\n]+/g," ").slice(0,n);
 
@@ -42,15 +42,13 @@ const CaptionTrack=({words=[],shots=[]})=>{
   const groups=useMemo(()=>groupSpokenWords(words),[words]);
   const g=groups.find(group=>t>=group.start-0.055 && t<group.end+0.12);
   if(!g) return null;
-  const local=Math.max(0,frame-Math.round(g.start*fps));
-  const reveal=spring({fps,frame:local,config:{damping:200,mass:0.65,stiffness:260}});
+  // A short fade in and out; no scale, slide or bounce (owner: readable, not distracting).
+  const enter=interpolate(t,[g.start-0.055,g.start+0.06],[0,1],clamp);
   const exit=interpolate(t,[g.end-0.08,g.end+0.14],[1,0],clamp);
-  const total=1-Math.pow(1-reveal,2);
   return <div style={{
     position:"absolute",left:73,right:185,top:high?250:1120,height:171,
     display:"flex",alignItems:"center",justifyContent:"center",
-    opacity:Math.min(1,Math.max(0,exit)),
-    transform:`translateY(${(1-total)*26}px) scale(${0.95+0.05*total})`,
+    opacity:Math.min(1,Math.max(0,Math.min(enter,exit))),
     pointerEvents:"none"
   }}>
     <div style={{
@@ -65,15 +63,12 @@ const CaptionTrack=({words=[],shots=[]})=>{
     }}>
       {g.words.map((w,i)=>{
         const hit=t>=Number(w.start)-0.045;
-        const p=interpolate(t,[Number(w.start)-0.09,Number(w.start)+0.11],[0,1],clamp);
         return <span key={i} style={{
           display:"inline-block",margin:"0 5px",
-          color:hit?PALETTE.paper:PALETTE.muted,
+          // Cyan ONLY on the payoff words the editor chose (explainer.caption_accents), never every word.
+          color:hit?(w.accent?PALETTE.accent:PALETTE.paper):PALETTE.muted,
           opacity:hit?1:0.60,
-          transform:`translateY(${hit?(1-p)*7:0}px)`,
           textShadow:hit?"0 1px 8px rgba(255,255,255,0.12)":"none",
-          // Underline ONLY the payoff words the editor chose (explainer.caption_accents), never every word.
-          borderBottom:hit&&w.accent?`4px solid ${PALETTE.red}`:"4px solid transparent",
           transition:"none"
         }}>{w.word}</span>;
       })}
