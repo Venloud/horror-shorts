@@ -1,0 +1,359 @@
+{
+ "title": "The Mysterious Lights of Hessdalen",
+ "premise": "Unidentified bright lights have floated through a Norwegian valley since the 1930s, baffling scientists without consensus.",
+ "hook_overlay": "Unidentified lights in rural Norway",
+ "scenes": [
+  {
+   "narration": "Bright white, yellow, and red lights float through and above the Hessdalen valley.",
+   "image_prompt": "A bright white luminous orb floats silently above the dark steep mountain slopes of the Hessdalen Valley at night.",
+   "image_prompt_2": "A glowing red light sphere hovers in mid-air over the dark mountain slopes of the Hessdalen Valley during the quiet night.",
+   "image_prompt_3": "A yellow luminous orb drifting across a steep rural hillside under darkness",
+   "image_prompt_4": "A sudden burst of bright colored atmospheric illumination over a remote Norwegian valley",
+   "sfx": "none",
+   "image_location": "Hessdalen Valley",
+   "image_location_2": "Hessdalen Valley",
+   "image_location_3": "Hessdalen Valley",
+   "image_location_4": "Hessdalen Valley",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "image_query": "glowing light orb valley",
+   "image_query_2": "red light sphere mountain",
+   "image_query_3": "yellow luminous orb hillside",
+   "image_query_4": "bright atmospheric illumination norway"
+  },
+  {
+   "narration": "This is a true story. Unusual lights have been reported in the rural central Norway region since at least the nineteen thirties.",
+   "image_prompt": "An old black and white photograph style landscape of a remote Norwegian valley in the 1930s",
+   "image_prompt_2": "A wide shot of steep mountain slopes flanking a quiet rural valley under an overcast sky",
+   "image_prompt_3": "A rustic wooden cabin nestled in a deep and quiet Scandinavian mountain valley",
+   "image_prompt_4": "An expansive rural valley in Norway surrounded by dark towering peaks at dusk",
+   "sfx": "none",
+   "image_location": "Hessdalen Valley",
+   "image_location_2": "Hessdalen Valley",
+   "image_location_3": "Hessdalen Valley",
+   "image_location_4": "Hessdalen Valley",
+   "image_source": "ai",
+   "image_source_2": "stock_video",
+   "image_query": "norwegian valley 1930s",
+   "image_query_2": "norway mountain valley wide",
+   "image_query_3": "rustic cabin scandinavian valley",
+   "image_query_4": "rural valley norway dusk"
+  },
+  {
+   "narration": "Activity peaked between December nineteen eighty-one and mid-nineteen eighty-four, with sightings occurring fifteen to twenty times per week.",
+   "image_prompt": "A calendar page showing winter months in the early 1980s on a wooden desk",
+   "image_prompt_2": "A small group of tourists looking up into the night sky with binoculars in a dark valley",
+   "image_prompt_3": "A close-up of a vintage hand-held camera looking up at the night sky",
+   "image_prompt_4": "A notebook detailing night observations with tally marks under a dim lamp",
+   "sfx": "none",
+   "image_location": "none",
+   "image_location_2": "Hessdalen Valley",
+   "image_location_3": "none",
+   "image_location_4": "none",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "image_query": "calendar 1980s wood",
+   "image_query_2": "tourists night sky binoculars",
+   "image_query_3": "vintage camera night sky",
+   "image_query_4": "notebook tally marks lamp"
+  },
+  {
+   "narration": "Project Hessdalen began field investigations in nineteen eighty-three, followed by the Hessdalen Automatic Measurement Station in nineteen ninety-eight.",
+   "image_prompt": "A small scientific instrument station cabin resting on a grassy hill in a rural valley",
+   "image_prompt_2": "An automated measurement device with flashing sensor lights mounted on a metal pole outdoors",
+   "image_prompt_3": "Electronic monitoring equipment recording data inside a remote field research station",
+   "image_prompt_4": "A weather station mast equipped with optical sensors pointing toward the night sky",
+   "sfx": "none",
+   "image_location": "Measurement Station",
+   "image_location_2": "Measurement Station",
+   "image_location_3": "Measurement Station",
+   "image_location_4": "Measurement Station",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "image_query": "scientific instrument station",
+   "image_query_2": "automated measurement device",
+   "image_query_3": "electronic monitoring equipment research",
+   "image_query_4": "weather station mast sensors"
+  },
+  {
+   "narration": "One hypothesis attributes the phenomenon to an incompletely understood combustion of airborne dust containing titanium and scandium.",
+   "image_prompt": "A close-up view of grey metallic rock ore containing trace mineral deposits",
+   "image_prompt_2": "Scientific laboratory beakers and test equipment glowing faintly on a wooden workbench",
+   "image_prompt_3": "A microscope view of fine airborne mineral dust particles under laboratory lighting",
+   "image_prompt_4": "A chemical testing apparatus heating mineral samples in a glass flask",
+   "sfx": "none",
+   "image_location": "none",
+   "image_location_2": "Measurement Station",
+   "image_location_3": "none",
+   "image_location_4": "Measurement Station",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "image_query": "grey metallic rock ore",
+   "image_query_2": "scientific laboratory beakers",
+   "image_query_3": "mineral dust particles microscope",
+   "image_query_4": "chemical testing glass flask"
+  },
+  {
+   "narration": "Another hypothesis suggests macroscopic Coulomb crystals in a plasma formed by radon decay in the dusty atmosphere.",
+   "image_prompt": "A glowing plasma light sphere hovers near the Measurement Station on a dark grassy hill in the Hessdalen Valley.",
+   "image_prompt_2": "A bright yellow luminous sphere hovers quietly beside the Measurement Station under the dark night sky.",
+   "image_prompt_3": "Digital graphs illustrating atomic particle decay and ionization energy levels",
+   "image_prompt_4": "A theoretical physics diagram displaying plasma cluster structures on a screen",
+   "sfx": "none",
+   "image_location": "none",
+   "image_location_2": "Hessdalen Valley",
+   "image_location_3": "none",
+   "image_location_4": "Measurement Station",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "image_query": "plasma particles helix",
+   "image_query_2": "radioactive rock ultraviolet",
+   "image_query_3": "atomic particle decay graphs",
+   "image_query_4": "physics diagram plasma screen"
+  },
+  {
+   "narration": "Despite ongoing research by universities and institutes, there is still no consensus for an explanation of the Hessdalen lights.",
+   "image_prompt": "A researcher reviewing complex scientific data charts on a computer screen in a dim room",
+   "image_prompt_2": "A dark rural valley at twilight with distant faint lights glowing near the horizon",
+   "image_prompt_3": "An open research journal resting on a desk beside a glowing computer monitor",
+   "image_prompt_4": "A quiet mountain valley under a starry night sky as an unknown light fades away",
+   "sfx": "none",
+   "image_location": "Measurement Station",
+   "image_location_2": "Hessdalen Valley",
+   "image_location_3": "Measurement Station",
+   "image_location_4": "Hessdalen Valley",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "image_query": "researcher data charts screen",
+   "image_query_2": "rural valley twilight lights",
+   "image_query_3": "research journal computer monitor",
+   "image_query_4": "mountain valley starry night light fading"
+  }
+ ],
+ "twist_scene": 5,
+ "caption": "What are the Hessdalen lights? Share your theory on what causes these unexplained atmospheric lights.",
+ "hashtags": [
+  "hessdalenlights",
+  "unsolvedmysteries",
+  "norway",
+  "unexplained",
+  "science"
+ ],
+ "pinned_comment": "Which of the scientific hypotheses do you find most plausible for the Hessdalen lights?",
+ "call_to_action": "Tell us which scientific explanation you think is most likely.",
+ "central_question": "What causes the unidentified lights observed in the Hessdalen valley?",
+ "characters": [],
+ "ending_payoff": "Despite ongoing research by universities and institutes, there is still no consensus for an explanation of the Hessdalen lights.",
+ "fact_ledger": [
+  "Location: Hessdalen valley, rural central Norway",
+  "Length of stretch: 12-kilometre-long (7.5 mi)",
+  "Timeline: periodic since at least the 1930s",
+  "Colors: bright white, yellow or red",
+  "Duration: few seconds to well over an hour",
+  "Peak activity: December 1981 and mid-1984, 15-20 times per week",
+  "Observations in 2010: 10 to 20 sightings yearly",
+  "Project Hessdalen: started 1983 by UFO-Norge and UFO-Sverige",
+  "Triangle Project: 1997-1998",
+  "Hessdalen AMS: set up in 1998",
+  "Research institutions: Østfold University College and Italian National Research Council",
+  "Hypotheses: airborne dust combustion with titanium/scandium, Coulomb crystals in plasma from radon decay, piezoelectricity from quartz rocks, geological battery"
+ ],
+ "hook_candidates": [
+  "Bright white, yellow, and red lights float through and above the Hessdalen valley.",
+  "Unidentified lights have been observed in a rural Norwegian valley since the 1930s.",
+  "Glowing orbs move with enormous speed or hover silently in mid-air over rural Norway."
+ ],
+ "hook_scores": [
+  "9/10",
+  "8/10",
+  "8/10"
+ ],
+ "locations": [
+  {
+   "name": "Hessdalen Valley",
+   "look": "A remote rural valley in central Norway surrounded by dark steep mountain slopes under a quiet night sky."
+  },
+  {
+   "name": "Measurement Station",
+   "look": "A small scientific monitoring cabin equipped with automated sensors on a grassy hill."
+  }
+ ],
+ "recurring_visual_motif": "A glowing light orb floating above a valley ridge",
+ "setting": "Hessdalen valley, rural central Norway",
+ "threat": "Unidentified natural luminous phenomena",
+ "twist": "Multiple competing scientific hypotheses exist ranging from dust combustion to plasma physics, but no consensus has been reached.",
+ "understanding_shift": "The lights are not simply written off as folklore; they have been rigorously studied by automated stations and international scientific programmes yielding complex plasma and geological theories.",
+ "viewer_lesson": "After watching, the viewer can explain that the Hessdalen lights have been studied by scientific programmes since 1983, resulting in competing hypotheses involving dusty plasma, piezoelectricity, and combustion without a final consensus.",
+ "model": "gemini-3.5-flash-lite",
+ "writer": "gemini (gemini-3.5-flash-lite)",
+ "writing": {
+  "llm_calls": 3,
+  "revisions": 1,
+  "kind": "true",
+  "primary": "gemini-3.5-flash-lite",
+  "checks_primary": [],
+  "challenger": "failed: nvidia:deepseek-ai/deepseek-v4.1-flash: ReadTimeout: HTTPSConnectionPool(host='integrate.api.nvidia.com', port=443): Read timed out. (read timeout=30.0)",
+  "critic": {
+   "available": true,
+   "score": 93,
+   "score_kind": "editorial, not audience retention",
+   "bar": 75,
+   "notes": [
+    "The opening scene immediately plunges into the visual mystery without a clunky biography or date opener.",
+    "The name 'Hessdalen' is successfully introduced early in the script.",
+    "Pacing moves smoothly from historical sightings to automated stations and specific scientific hypotheses without lag."
+   ],
+   "viewer_learns": "After watching, the viewer can explain that the Hessdalen lights have been studied by scientific programmes since 1983, resulting in competing hypotheses involving dusty plasma, piezoelectricity, and combustion without a final consensus.",
+   "payoff_line": "Despite ongoing research by universities and institutes, there is still no consensus for an explanation of the Hessdalen lights.",
+   "cta_line": "Tell us which scientific explanation you think is most likely.",
+   "weak_lines": []
+  },
+  "checks_after_revision": [
+   {
+    "code": "unsupported_fact",
+    "severity": "serious",
+    "detail": "not in the source: 19"
+   }
+  ]
+ },
+ "critic_score": 93,
+ "_fact_source": "The Hessdalen lights are unidentified lights which have been observed in a 12-kilometre-long (7.5 mi) stretch of the Hessdalen valley in rural central Norway periodically since at least the 1930s.\n\n\n== Background ==\nThe Hessdalen lights appear both by day and by night, and seem to float through and above the valley. They are usually bright white, yellow or red and can appear above and below the horizon. The duration of the phenomenon may be a few seconds to well over an hour. Sometimes the lights move with enormous speed; at other times they seem to sway slowly back and forth. On yet other occasions, they hover in mid‑air.\nUnusual lights have been reported in the region since at least the 1930s. Especially high activity occurred between December 1981 and mid-1984, during which the lights were observed 15–20 times per week, attracting many overnight tourists. As of 2010, the number of observations had dwindled, with only 10 to 20 sightings yearly.\nSince 1983, \"Project Hessdalen\" initiated by UFO-Norge and UFO-Sverige have attempted to investigate the lights. This project was active as field investigations during 1983–1985. A group of students, engineers, and journalists collaborated as \"The Triangle Project\" in 1997–1998 and recorded the lights in a pyramid shape that bounced up and down. In 1998, the Hessdalen Automatic Measurement Station (Hessdalen AMS) was set up in the valley to register and record the appearance of lights.\nLater, a programme named EMBLA was initiated to bring together established scientists and students to researching the lights. Leading research institutions are Østfold University College (Norway) and the Italian National Research Council.\n\n\n== Hypotheses ==\nDespite ongoing research, there is no consensus for an explanation of the phenomenon. A number of potentially plausible theories have been put forward.\nThere have been some sightings positively identified as misperceptions of astronomical bodies, aircraft, car headlights and mirages.\nOne explanation attributes the phenomenon to an incompletely understood combustion of airborne dust from mining in the area. The analysis identified hydrogen, oxygen and other elements including titanium. It was thought this occurs in Hessdalen because of the large deposits of scandium there. The publication of this research led to the Norwegian press proclaiming that \"The Mystery in Hessdalen is Solved\".\nOne hypothesis put forward in 2010 suggests that the lights are formed by a cluster of macroscopic Coulomb crystals in a plasma produced by the ionization of air and dust by alpha particles during radon decay in the dusty atmosphere. Several physical properties including oscillation, geometric structure, and light spectrum, observed in the Hessdalen lights might be explained through a dust plasma model. Radon decay produces alpha particles (responsible by helium emissions in HL spectrum) and radioactive elements such as polonium. In 2004, physicist Massimo Teodorani showed an occurrence where a higher level of radioactivity on rocks was detected near the area where a large light ball was reported. Computer simulations show that dust immersed in ionized gas can organize itself into double helixes like some occurrences of the Hessdalen lights; dusty plasmas may also form in this structure.\nAnother hypothesis explains Hessdalen lights as a product of piezoelectricity generated under specific rock strains, because many crystal rocks in Hessdalen valley include quartz grains which produce an intense charge density.\n\n\n=== Piezoelectricity ===\n\nIn a 2011 paper, based on the dusty plasma theory of Hessdalen lights, Gerson Paiva and Carlton Taft suggested that piezoelectricity of quartz cannot explain a peculiar property assumed by the Hessdalen lights phenomenon – the presence of geometrical structures in its center. Paiva and Taft have shown a mechanism of light ball cluster formation in Hessdalen lights by nonlinear interaction of ion-acoustic and dusty-acoustic waves with low frequency geoelectromagnetic waves in dusty plasmas. The theoretical velocity of ejected light balls is about 10,000 m/s (33,000 ft/s), in good agreement with the observed velocity of some ejected light balls, estimated at 20,000 m/s (66,000 ft/s).\nThe central ball is white, while the ejected balls that are observed are always green in colour. This is ascribed to radiation pressure produced by the interaction between very low frequency electromagnetic waves (VLF) and atmospheric ions (present in the central white-coloured ball) through ion-acoustic waves. O+2 ions (electronic transition b4Σ−g → a4Πu), with green emission lines, are probably the only ones transported by these waves. Electronic bands of O+2 ions occur in auroral spectra.\nThe estimated temperature of Hessdalen lights is about 5,000 K (4,730 °C; 8,540 °F). At this temperature, the rate coefficients of dissociative recombination will be 10−8 cm3 s−1 for the oxygen ions, and 10−7 cm3 s−1 for the nitrogen ions. Thus, in the Hessdalen lights plasma, the nitrogen ions will decompose (N+2 + e− → N + N*) more rapidly than oxygen ions. Only ionic species are transported by ion acoustic waves. Therefore, oxygen ions will dominate in the ejected green light balls in Hessdalen lights, presenting a negative band of O+2 with electronic transition b4Σ−g → a4Πu after ion-acoustic wave formation.\nPaiva and Taft presented a model for resolving the apparently contradictory spectrum observed in Hessdalen lights. The spectrum is nearly flat on the top with steep sides, due to the effect of optical thickness on the bremsstrahlung spectrum. At low frequencies self-absorption modifies the spectrum to follow the Rayleigh–Jeans part of the blackbody curve. Such a spectrum is typical of dense ionized gas. Additionally, the spectrum produced in the thermal bremsstrahlung process is flat up to a cutoff frequency, νcut, and falls off exponentially at higher frequencies. This sequence of events forms the typical spectrum of Hessdalen lights phenomenon when the atmosphere is clear, with no fog. \nAccording to the model, the spatial color distribution of luminous balls commonly observed in Hessdalen lights phenomenon is produced by electrons accelerated by electric fields during rapid fracture of piezoelectric rocks under the ground. In 2014, Jader Monari published a new Hessdalen Lights model  involving a geological-like battery. Thus, two sides of the valley are the electrodes and the river Hesja can be acting as the electrolyte. Gas bubbles rise into the air and can become electrically charged producing gas luminesce and Hessdalen Lights phenomenon.\n\n",
+ "sources": [
+  {
+   "title": "Wikipedia: Hessdalen lights",
+   "url": "https://en.wikipedia.org/wiki/Hessdalen_lights",
+   "domain": "en.wikipedia.org"
+  }
+ ],
+ "mode": "mystery",
+ "case": "Hessdalen lights",
+ "subgenre": "real unsolved mystery",
+ "true_story": true,
+ "_skipped": [],
+ "story_id": "5494501f8167",
+ "explainer_adapted": true,
+ "explainer_before": [
+  "Bright white, yellow, and red lights float through and above the Hessdalen valley.",
+  "This is a true story. Unusual lights have been reported in the rural central Norway region since at least the nineteen thirties.",
+  "Activity peaked between December nineteen eighty-one and mid-nineteen eighty-four, with sightings occurring fifteen to twenty times per week.",
+  "Project Hessdalen began field investigations in nineteen eighty-three, followed by the Hessdalen Automatic Measurement Station in nineteen ninety-eight.",
+  "One hypothesis attributes the phenomenon to an incompletely understood combustion of airborne dust containing titanium and scandium.",
+  "Another twenty ten hypothesis suggests macroscopic Coulomb crystals in a plasma formed by radon decay in the dusty atmosphere.",
+  "Despite ongoing research by universities and institutes, there is still no consensus for an explanation of the Hessdalen lights."
+ ],
+ "_story_bible": {
+  "title": "The Mysterious Lights of Hessdalen",
+  "retention_contract": {
+   "central_question": "What causes the unidentified lights observed in the Hessdalen valley?",
+   "understanding_shift": "The lights are not simply written off as folklore; they have been rigorously studied by automated stations and international scientific programmes yielding complex plasma and geological theories.",
+   "ending_payoff": "Despite ongoing research by universities and institutes, there is still no consensus for an explanation of the Hessdalen lights.",
+   "optional_visual_motif": "A glowing light orb floating above a valley ridge",
+   "review_status": "writer-planned; verify against narration and nonfiction sources"
+  },
+  "series_id": null,
+  "series_episode": null,
+  "series_continuity": null,
+  "premise": "Unidentified bright lights have floated through a Norwegian valley since the 1930s, baffling scientists without consensus.",
+  "setting": "Hessdalen valley, rural central Norway",
+  "threat": "Unidentified natural luminous phenomena",
+  "twist": "Multiple competing scientific hypotheses exist ranging from dust combustion to plasma physics, but no consensus has been reached.",
+  "twist_scene": 5,
+  "characters": [],
+  "locations": [
+   {
+    "name": "Hessdalen Valley",
+    "look": "A remote rural valley in central Norway surrounded by dark steep mountain slopes under a quiet night sky."
+   },
+   {
+    "name": "Measurement Station",
+    "look": "A small scientific monitoring cabin equipped with automated sensors on a grassy hill."
+   }
+  ],
+  "timeline": [
+   {
+    "scene": 1,
+    "event": "Bright white, yellow, and red lights float through and above the Hessdalen valley.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 2,
+    "event": "This is a true story. Unusual lights have been reported in the rural central Norway region since at least the nineteen thirties.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 3,
+    "event": "Activity peaked between December nineteen eighty-one and mid-nineteen eighty-four, with sightings occurring fifteen to twenty times per week.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 4,
+    "event": "Project Hessdalen began field investigations in nineteen eighty-three, followed by the Hessdalen Automatic Measurement Station in nineteen ninety-eight.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 5,
+    "event": "One hypothesis attributes the phenomenon to an incompletely understood combustion of airborne dust containing titanium and scandium.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 6,
+    "event": "Another twenty ten hypothesis suggests macroscopic Coulomb crystals in a plasma formed by radon decay in the dusty atmosphere.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 7,
+    "event": "Despite ongoing research by universities and institutes, there is still no consensus for an explanation of the Hessdalen lights.",
+    "location": "",
+    "characters": []
+   }
+  ],
+  "continuity_rules": [
+   "Use the exact character names and keep each character's fixed look unchanged.",
+   "Keep each shot in the scene's stated location unless the narration explicitly moves.",
+   "Do not introduce a new person, creature, object, or location that the story does not establish.",
+   "The twist scene must visually support the documented twist, not invent a different reveal."
+  ]
+ },
+ "_ai_only": [
+  "00a",
+  "00b",
+  "05a",
+  "05b"
+ ],
+ "_shot_rules_done": true,
+ "visual_mode": "classic",
+ "_previous_narrator_voice": "am_michael",
+ "narrator_voice": "am_adam",
+ "final_script_approval": {
+  "sha256": "bd8266eae4da1de4f532c2e8c123d4e00831b0d1a4f214f6ef21992467ab8536",
+  "checked": true,
+  "kind": "true",
+  "checks": [
+   {
+    "code": "unsupported_fact",
+    "severity": "serious",
+    "detail": "not in the source: 19"
+   }
+  ],
+  "blocked": true,
+  "editor": "available",
+  "approved": false,
+  "ratings": {
+   "title_alignment": 9,
+   "narrative_logic": 8,
+   "payoff": 7,
+   "fact_integrity": 10,
+   "natural_voice": 8
+  },
+  "reasons": [
+   "Used the prohibited filler line 'This is a true story.'",
+   "Missing the required specific call to action (CTA) at the end"
+  ]
+ }
+}
