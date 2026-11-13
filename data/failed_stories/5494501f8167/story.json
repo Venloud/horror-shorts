@@ -155,7 +155,7 @@
   "Project Hessdalen: started 1983 by UFO-Norge and UFO-Sverige",
   "Triangle Project: 1997-1998",
   "Hessdalen AMS: set up in 1998",
-  "Research institutions: Østfold University College and Italian National Research Council",
+  "Research institutions: stfold University College and Italian National Research Council",
   "Hypotheses: airborne dust combustion with titanium/scandium, Coulomb crystals in plasma from radon decay, piezoelectricity from quartz rocks, geological battery"
  ],
  "hook_candidates": [
@@ -349,11 +349,11 @@
    "narrative_logic": 8,
    "payoff": 7,
    "fact_integrity": 10,
-   "natural_voice": 7
+   "natural_voice": 8
   },
   "reasons": [
    "Used forbidden phrase 'This is a true story.'",
-   "Failed to deliver a specific call to action (CTA) at the end, missing the mandatory viewer-value contract requirement."
+   "Failed to include a specific final call to action required by the viewer-value contract."
   ]
  }
 }
