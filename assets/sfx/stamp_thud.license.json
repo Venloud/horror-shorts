@@ -1,0 +1,22 @@
+{
+ "provider": "openverse",
+ "openverse_id": "f65de1b6-13d5-4a1e-a99a-6f00ce0be2c7",
+ "title": "Thump.mp3",
+ "creator": "mpuffenbarger",
+ "source_url": "https://freesound.org/people/mpuffenbarger/sounds/683031",
+ "asset_url": "https://cdn.freesound.org/previews/683/683031_4257513-hq.mp3",
+ "license": "cc0",
+ "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+ "license_version": "1.0",
+ "attribution": "\"Thump.mp3\" by mpuffenbarger is marked with CC0 1.0. To view the terms, visit https://creativecommons.org/publicdomain/zero/1.0/.",
+ "attribution_required": false,
+ "commercial_use": true,
+ "modification": true,
+ "source_verified": true,
+ "source_checked_at": 1794161413.2746136,
+ "source_page_sha256": "df2cbaf6a145597d06f15ec19ce2fddfb9cdd69a08e2ad51a0e55a035b5fba2f",
+ "sha256": "0a7e94d959a97548211da52edfb60914315a8cae549da98caab53137c7267544",
+ "name": "stamp_thud",
+ "credit": "\"Thump.mp3\" by mpuffenbarger is marked with CC0 1.0. To view the terms, visit https://creativecommons.org/publicdomain/zero/1.0/.",
+ "fetched_at": "2026-11-08T18:10:13Z"
+}

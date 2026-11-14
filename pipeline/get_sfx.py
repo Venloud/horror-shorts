@@ -3,6 +3,8 @@
 Sources (both free for commercial use, no credit required):
   - BigSoundBank (CC0), by sound ID
   - Freesound, searched automatically, CC0 results only, most-downloaded first (needs FREESOUND_API_KEY)
+  - Openverse (no key, opt-in NIGHTFILES_OPENVERSE_SFX=1), CC0 / public domain only: used when Freesound
+    is skipped or fails for a sound
 """
 import json
 import os
@@ -16,6 +18,7 @@ OUT = ROOT / "assets" / "sfx"
 SOURCES = json.loads((ROOT / "data" / "sfx_sources.json").read_text())
 UA = {"User-Agent": "Mozilla/5.0 (NightFilesBot)"}
 FS_KEY = os.environ.get("FREESOUND_API_KEY", "").strip()
+OPENVERSE_SFX = os.environ.get("NIGHTFILES_OPENVERSE_SFX") == "1"
 
 
 def is_mp3(data: bytes) -> bool:
@@ -63,6 +66,30 @@ def freesound(query: str, dur: list[float], meta: dict | None = None) -> tuple[b
     raise RuntimeError(f"could not download any result for '{query}'")
 
 
+def openverse(query: str, dur: list[float], meta: dict | None = None) -> tuple[bytes, str]:
+    """Optional CC0/PDM audio, original license verified, decoded and cached."""
+    try:
+        from . import openverse_assets as ov
+    except ImportError:  # direct script entry point
+        import openverse_assets as ov
+    for hit in ov.search("audio", query, ("cc0", "pdm")):
+        seconds = (hit.get("duration") or 0) / 1000
+        if not dur[0] <= seconds <= dur[1]:
+            continue
+        try:
+            cached, record = ov.acquire(hit, "audio", ("cc0", "pdm"))
+            mp3 = cached.with_suffix(".mp3")
+            if not mp3.exists():
+                __import__("subprocess").run(["ffmpeg", "-y", "-v", "error", "-i", str(cached), str(mp3)],
+                                             check=True, capture_output=True, timeout=60)
+            if meta is not None:
+                meta.update(record)
+            return mp3.read_bytes(), record["attribution"]
+        except Exception:
+            continue
+    raise RuntimeError(f"no CC0 / public-domain audio on Openverse for {query!r} in {dur} s")
+
+
 DOWNLOADED: list[str] = []  # names fetched by ensure() in this run (main.py copies them next to the video)
 
 
@@ -76,7 +103,7 @@ def ensure(name: str) -> Path | None:
     info = SOURCES.get(name) or {}
     if "fs" not in info:
         return None
-    if not FS_KEY:
+    if not FS_KEY and not OPENVERSE_SFX:
         print(f"SFX: FREESOUND_API_KEY is not set: '{name}' cannot be fetched (CC0), that effect sound is skipped")
         return None
     try:
@@ -85,7 +112,12 @@ def ensure(name: str) -> Path | None:
         data = credit = None
         for q in dict.fromkeys([info["fs"], " ".join(words[:2]), " ".join(words[-2:]), words[0]]):
             try:  # the full search first, then simpler ones (a 3-word search often has no CC0 result)
-                data, credit = freesound(q, info.get("dur", [0.05, 3]), meta)
+                try:
+                    data, credit = freesound(q, info.get("dur", [0.05, 3]), meta)
+                except Exception:
+                    if not OPENVERSE_SFX:
+                        raise
+                    data, credit = openverse(q, info.get("dur", [0.05, 3]), meta)
                 break
             except RuntimeError as e:
                 if "no CC0 results" not in str(e):
@@ -93,7 +125,8 @@ def ensure(name: str) -> Path | None:
         if data is None:
             raise RuntimeError(f"no CC0 results for '{info['fs']}' or simpler searches")
         if not is_mp3(data) or "creative commons 0" not in str(meta.get("license", "")).lower() \
-                and "publicdomain/zero" not in str(meta.get("license", "")).lower():
+                and "publicdomain/zero" not in str(meta.get("license", "")).lower() \
+                and not (meta.get("source_verified") and meta.get("license") in ("cc0", "pdm")):
             raise RuntimeError(f"not a CC0 mp3 ({meta.get('license')})")
         OUT.mkdir(parents=True, exist_ok=True)
         path.write_bytes(data)
@@ -101,11 +134,12 @@ def ensure(name: str) -> Path | None:
                      "fetched_at": __import__("datetime").datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")})
         (OUT / f"{name}.license.json").write_text(json.dumps(meta, indent=1, ensure_ascii=False))
         DOWNLOADED.append(name)
-        print(f"SFX: fetched '{name}' from Freesound: {credit}")
+        print(f"SFX: fetched '{name}' from {meta.get('provider') or 'freesound'}: {credit}")
         return path
     except Exception as e:  # noqa: BLE001
         print(f"SFX: could not fetch '{name}' from Freesound ({str(e)[:160]}); that effect sound is skipped")
         return None
+
 
 
 def main() -> int:
@@ -120,7 +154,14 @@ def main() -> int:
             if "bsb" in info:
                 data, credit = bigsoundbank(info["bsb"])
             else:
-                data, credit = freesound(info["fs"], info.get("dur", [1, 15]))  # noqa: E501
+                try:
+                    data, credit = freesound(info["fs"], info.get("dur", [1, 15]))
+                except Exception as e:  # noqa: BLE001
+                    if not OPENVERSE_SFX:
+                        raise
+                    print(f"      {name}: Freesound failed ({e}); trying Openverse")
+                    data, credit = openverse(info["fs"], info.get("dur", [1, 15]))
+
             if not is_mp3(data):
                 raise RuntimeError("not an mp3")
             (OUT / f"{name}.mp3").write_bytes(data)
