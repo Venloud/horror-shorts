@@ -346,14 +346,15 @@
   "approved": false,
   "ratings": {
    "title_alignment": 9,
-   "narrative_logic": 8,
-   "payoff": 7,
-   "fact_integrity": 10,
-   "natural_voice": 8
+   "narrative_logic": 7,
+   "payoff": 6,
+   "fact_integrity": 7,
+   "natural_voice": 5
   },
   "reasons": [
-   "Used forbidden phrase: 'This is a true story.'",
-   "Failed to include a specific call to action (CTA) at the end, violating the viewer-value contract."
+   "Missing required call to action following the lesson and payoff: the script abruptly ends on 'there is still no consensus for an explanation of the Hessdalen lights.'",
+   "Code flagged serious unsupported fact regarding number '19', likely triggered by spelled-out century fragments or unverified numerals.",
+   "Voice reads like an encyclopedia or technical abstract rather than a spoken story: 'Another twenty ten hypothesis suggests macroscopic Coulomb crystals in a plasma formed by radon decay in the dusty atmosphere.'"
   ]
  }
 }

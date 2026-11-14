@@ -3,7 +3,7 @@
  "title": "The Mysterious Lights of Hessdalen",
  "status": "parked",
  "reason": "3 failed attempts",
- "at": "2026-11-13T21:40:07+00:00",
+ "at": "2026-11-14T07:09:02+00:00",
  "last_stage": "narration",
  "last_error": "StoryDiscarded: Final narration has a serious problem: serious unsupported_fact: not in the source: 19"
 }
