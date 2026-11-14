@@ -94,7 +94,7 @@
    "image_query_4": "chemical testing glass flask"
   },
   {
-   "narration": "Another twenty ten hypothesis suggests macroscopic Coulomb crystals in a plasma formed by radon decay in the dusty atmosphere.",
+   "narration": "Another hypothesis suggests macroscopic Coulomb crystals in a plasma formed by radon decay in the dusty atmosphere.",
    "image_prompt": "A glowing plasma light sphere hovers near the Measurement Station on a dark grassy hill in the Hessdalen Valley.",
    "image_prompt_2": "A bright yellow luminous sphere hovers quietly beside the Measurement Station under the dark night sky.",
    "image_prompt_3": "Digital graphs illustrating atomic particle decay and ionization energy levels",
@@ -331,7 +331,7 @@
  "_previous_narrator_voice": "am_michael",
  "narrator_voice": "am_adam",
  "final_script_approval": {
-  "sha256": "ec670e64fc575ed5cfba1154d916b03fe7df0a4c048f60eecb965ab8ad81943b",
+  "sha256": "bd8266eae4da1de4f532c2e8c123d4e00831b0d1a4f214f6ef21992467ab8536",
   "checked": true,
   "kind": "true",
   "checks": [
@@ -345,16 +345,16 @@
   "editor": "available",
   "approved": false,
   "ratings": {
-   "title_alignment": 9,
-   "narrative_logic": 7,
+   "title_alignment": 10,
+   "narrative_logic": 8,
    "payoff": 6,
-   "fact_integrity": 7,
-   "natural_voice": 5
+   "fact_integrity": 10,
+   "natural_voice": 7
   },
   "reasons": [
-   "Missing required call to action following the lesson and payoff: the script abruptly ends on 'there is still no consensus for an explanation of the Hessdalen lights.'",
-   "Code flagged serious unsupported fact regarding number '19', likely triggered by spelled-out century fragments or unverified numerals.",
-   "Voice reads like an encyclopedia or technical abstract rather than a spoken story: 'Another twenty ten hypothesis suggests macroscopic Coulomb crystals in a plasma formed by radon decay in the dusty atmosphere.'"
+   "Used the prohibited filler line 'This is a true story.'",
+   "Missing a distinct viewer-value lesson beyond listing raw hypotheses",
+   "Missing a specific closing call to action inviting engagement with the mystery"
   ]
  }
 }
