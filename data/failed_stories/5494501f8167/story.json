@@ -94,7 +94,7 @@
    "image_query_4": "chemical testing glass flask"
   },
   {
-   "narration": "Another hypothesis suggests macroscopic Coulomb crystals in a plasma formed by radon decay in the dusty atmosphere.",
+   "narration": "Another twenty ten hypothesis suggests macroscopic Coulomb crystals in a plasma formed by radon decay in the dusty atmosphere.",
    "image_prompt": "A glowing plasma light sphere hovers near the Measurement Station on a dark grassy hill in the Hessdalen Valley.",
    "image_prompt_2": "A bright yellow luminous sphere hovers quietly beside the Measurement Station under the dark night sky.",
    "image_prompt_3": "Digital graphs illustrating atomic particle decay and ionization energy levels",
@@ -331,7 +331,7 @@
  "_previous_narrator_voice": "am_michael",
  "narrator_voice": "am_adam",
  "final_script_approval": {
-  "sha256": "bd8266eae4da1de4f532c2e8c123d4e00831b0d1a4f214f6ef21992467ab8536",
+  "sha256": "ec670e64fc575ed5cfba1154d916b03fe7df0a4c048f60eecb965ab8ad81943b",
   "checked": true,
   "kind": "true",
   "checks": [
@@ -345,16 +345,16 @@
   "editor": "available",
   "approved": false,
   "ratings": {
-   "title_alignment": 10,
-   "narrative_logic": 8,
+   "title_alignment": 8,
+   "narrative_logic": 5,
    "payoff": 6,
-   "fact_integrity": 10,
-   "natural_voice": 7
+   "fact_integrity": 5,
+   "natural_voice": 4
   },
   "reasons": [
-   "Used the prohibited filler line 'This is a true story.'",
-   "Missing a distinct viewer-value lesson beyond listing raw hypotheses",
-   "Missing a specific closing call to action inviting engagement with the mystery"
+   "Missing required call to action following the payoff, violating the viewer-value contract.",
+   "Text claims 'Another twenty ten hypothesis suggests macroscopic Coulomb crystals', but the source ledger associates 2010 only with sighting frequency ('Observations in 2010: 10 to 20 sightings yearly'), not the Coulomb crystal hypothesis.",
+   "Narrative devolves into an encyclopedic chronology of dates ('nineteen thirties', 'nineteen eighty-one', 'nineteen eighty-four', 'nineteen eighty-three', 'nineteen ninety-eight', 'twenty ten') rather than conversational storytelling."
   ]
  }
 }
