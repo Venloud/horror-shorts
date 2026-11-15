@@ -155,7 +155,7 @@
   "Project Hessdalen: started 1983 by UFO-Norge and UFO-Sverige",
   "Triangle Project: 1997-1998",
   "Hessdalen AMS: set up in 1998",
-  "Research institutions: Østfold University College and Italian National Research Council",
+  "Research institutions: stfold University College and Italian National Research Council",
   "Hypotheses: airborne dust combustion with titanium/scandium, Coulomb crystals in plasma from radon decay, piezoelectricity from quartz rocks, geological battery"
  ],
  "hook_candidates": [
@@ -347,14 +347,15 @@
   "ratings": {
    "title_alignment": 8,
    "narrative_logic": 5,
-   "payoff": 6,
-   "fact_integrity": 5,
+   "payoff": 5,
+   "fact_integrity": 6,
    "natural_voice": 4
   },
   "reasons": [
-   "Missing required call to action following the payoff, violating the viewer-value contract.",
-   "Text claims 'Another twenty ten hypothesis suggests macroscopic Coulomb crystals', but the source ledger associates 2010 only with sighting frequency ('Observations in 2010: 10 to 20 sightings yearly'), not the Coulomb crystal hypothesis.",
-   "Narrative devolves into an encyclopedic chronology of dates ('nineteen thirties', 'nineteen eighty-one', 'nineteen eighty-four', 'nineteen eighty-three', 'nineteen ninety-eight', 'twenty ten') rather than conversational storytelling."
+   "Code flagged a serious unsupported fact issue: 'serious unsupported_fact: not in the source: 19'",
+   "Missing required call to action at the close: 'Despite ongoing research by universities and institutes, there is still no consensus for an explanation of the Hessdalen lights.'",
+   "Violates core voice by reading like an encyclopedia/lecture rather than conversational storytelling: 'macroscopic Coulomb crystals in a plasma formed by radon decay in the dusty atmosphere.'",
+   "Presents a dry institutional chronology rather than narrative cause and effect: 'Project Hessdalen began field investigations in nineteen eighty-three, followed by the Hessdalen Automatic Measurement Station in nineteen ninety-eight.'"
   ]
  }
 }
