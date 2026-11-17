@@ -1,21 +1,21 @@
 {
- "videos": 8,
+ "videos": 9,
  "entries": {
   "title": {
-   "fired": 8,
-   "last": "2026-11-17_0832"
+   "fired": 9,
+   "last": "2026-11-17_2318"
   },
   "year_reel": {
-   "fired": 6,
-   "last": "2026-11-17_0832"
+   "fired": 7,
+   "last": "2026-11-17_2318"
   },
   "phrase": {
    "fired": 7,
    "last": "2026-11-10_0746"
   },
   "place": {
-   "fired": 6,
-   "last": "2026-11-17_0832"
+   "fired": 7,
+   "last": "2026-11-17_2318"
   },
   "counter_people": {
    "fired": 1,
@@ -30,20 +30,24 @@
    "last": "2026-11-08_0644"
   },
   "zoom_punch": {
-   "fired": 11,
-   "last": "2026-11-10_0746"
+   "fired": 12,
+   "last": "2026-11-17_2318"
   },
   "year_line": {
    "fired": 2,
    "last": "2026-11-17_0832"
   },
   "kinetic": {
-   "fired": 1,
-   "last": "2026-11-17_0832"
+   "fired": 2,
+   "last": "2026-11-17_2318"
   },
   "flicker": {
    "fired": 1,
    "last": "2026-11-17_0832"
+  },
+  "info_card": {
+   "fired": 1,
+   "last": "2026-11-17_2318"
   }
  },
  "places": {
@@ -81,6 +85,13 @@
    "level": "country",
    "lon": 9.68,
    "lat": 61.36
+  },
+  "Tennessee": {
+   "times": 1,
+   "iso2": "US",
+   "level": "region",
+   "lon": -86.34,
+   "lat": 35.75
   }
  },
  "unmatched": {
@@ -134,7 +145,15 @@
   "irish speech as ben": 1,
   "death": 1,
   "unlike ordinary ghosts": 1,
-  "coulomb crystals": 1
+  "coulomb crystals": 1,
+  "orting residents": 1,
+  "residents described": 1,
+  "ape-man standing": 1,
+  "before disappearing": 1,
+  "giant threw": 1,
+  "threw heavy": 1,
+  "archivists maintain cryptozoology files": 1,
+  "bigfoot lore lives inside": 1
  },
  "log": [
   {
@@ -230,6 +249,18 @@
     "kinetic",
     "flicker"
    ]
+  },
+  {
+   "stamp": "2026-11-17_2318",
+   "story_id": "fc3f1f915d8b",
+   "effects": [
+    "title",
+    "year_reel",
+    "place",
+    "kinetic",
+    "zoom_punch",
+    "info_card"
+   ]
   }
  ],
  "editing": {
@@ -249,6 +280,24 @@
      "cut:cut": 19,
      "move:still": 4,
      "cut:push_through": 1
+    },
+    "verdict": null,
+    "metric": null
+   },
+   "fc3f1f915d8b": {
+    "stamp": "",
+    "title": "On the Trail of Bigfoot",
+    "used": {
+     "fx:title": 1,
+     "fx:year_reel": 1,
+     "fx:globe_pin": 1,
+     "fx:kinetic": 1,
+     "fx:zoom_punch": 1,
+     "fx:info_card": 1,
+     "move:still": 5,
+     "cut:cut": 18,
+     "move:push": 4,
+     "move:closeup": 1
     },
     "verdict": null,
     "metric": null

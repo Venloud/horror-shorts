@@ -5067,5 +5067,80 @@
     "youtube": {
       "pending": "buffer_queue_pending"
     }
+  },
+  {
+    "date": "2026-11-17_2318",
+    "story_id": "fc3f1f915d8b",
+    "series_id": null,
+    "series_episode": null,
+    "title": "On the Trail of Bigfoot",
+    "premise": "A Library of Congress researcher explores archived audio recordings containing eyewitness accounts of Bigfoot encounters.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "On the trail of Bigfoot in the Library of Congress",
+    "source": "https://blogs.loc.gov/folklife/2024/05/on-the-trail-of-bigfoot-in-the-library-of-congress/",
+    "prompt_file": null,
+    "setting": "Library of Congress archives and recorded American folklore locations",
+    "threat": "A towering hairy creature with glowing red eyes hiding in remote forests",
+    "twist": "Eyewitness accounts of Bigfoot are officially preserved inside the Library of Congress audio archives.",
+    "score": null,
+    "seconds": 52.9,
+    "voice_speed": 1.1,
+    "narrator_voice": "am_michael",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:10811637"
+    ],
+    "visual_mode": "fast",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "https://blogs.loc.gov/folklife/2024/05/on-the-trail-of-bigfoot-in-the-library-of-congress/"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 75,
+    "visuals": {
+      "distinct": 18,
+      "longest_s": 3.9,
+      "longest_share": 0.069,
+      "longest_name": "image:scene_07a.png:full"
+    },
+    "yt_title": "Glowing Red Eyes In The Dark... Bigfoot #shorts",
+    "hashtags": [
+      "bigfoot",
+      "cryptid",
+      "folklore"
+    ],
+    "yt_tags": [
+      "bigfoot",
+      "bigfoot legend",
+      "bigfoot folklore",
+      "library of congress archives",
+      "american folklife center",
+      "sasquatch encounters",
+      "cryptid stories",
+      "cryptozoology files",
+      "orting folklore",
+      "white pine encounter",
+      "american legends",
+      "scary legend",
+      "folklore",
+      "creepy legend",
+      "folklore creatures"
+    ],
+    "opening": "Glowing red eyes watch from the dark forest while armed posses form in the town.",
+    "music_file": "unsolved_mystery.mp3",
+    "buffered": "2026-11-17_2318",
+    "tiktok": {
+      "status": "STAGED_FOR_BUFFER",
+      "mode": "buffer"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    }
   }
 ]
