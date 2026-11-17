@@ -372,10 +372,10 @@
       "title": "Shroud Chewed To Rags... Draugr of Iceland #shorts"
     },
     "2026-11-17_0832": {
-      "status": "attempt_started",
-      "title": "Floating Lights Over Hessdalen | Unsolved Mystery #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-11-17_0832.mp4",
-      "channel_id": "6aefbb44e29c69a1719c4ae8"
+      "status": "queued",
+      "buffer_post_id": "6afc174598f5cdd9f251f587",
+      "due_at": "2026-11-17T11:05:00.000Z",
+      "title": "Floating Lights Over Hessdalen | Unsolved Mystery #shorts"
     }
   }
 }
