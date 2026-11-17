@@ -4990,5 +4990,82 @@
     "youtube": {
       "pending": "buffer_queue_pending"
     }
+  },
+  {
+    "date": "2026-11-17_0832",
+    "story_id": "5494501f8167",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Mysterious Lights of Hessdalen",
+    "premise": "Unidentified bright lights have floated through a Norwegian valley since the 1930s, baffling scientists without consensus.",
+    "subgenre": "real unsolved mystery",
+    "mode": "mystery",
+    "true_story": true,
+    "case": "Hessdalen lights",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Hessdalen valley, rural central Norway",
+    "threat": "Unidentified natural luminous phenomena",
+    "twist": "Multiple competing scientific hypotheses exist ranging from dust combustion to plasma physics, but no consensus has been reached.",
+    "score": null,
+    "seconds": 55.0,
+    "voice_speed": 1.1,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.8-flash)",
+    "media_ids": [
+      "pexels:36961364",
+      "pexels:39931362"
+    ],
+    "visual_mode": "classic",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 93,
+    "visuals": {
+      "distinct": 20,
+      "longest_s": 4.6,
+      "longest_share": 0.079,
+      "longest_name": "image:scene_05b.png:full"
+    },
+    "yt_title": "Floating Lights Over Hessdalen | Unsolved Mystery #shorts",
+    "hashtags": [
+      "hessdalen",
+      "norway",
+      "unsolvedmysteries",
+      "mystery"
+    ],
+    "yt_tags": [
+      "hessdalen lights",
+      "hessdalen phenomenon",
+      "norway lights",
+      "hessdalen mystery",
+      "norwegian lights",
+      "unexplained lights norway",
+      "hessdalen valley",
+      "hessdalen research",
+      "hessdalen lights explanation",
+      "hessdalen lights unsolved",
+      "norway mystery",
+      "strange lights norway",
+      "hessdalen lights story",
+      "true crime story",
+      "unsolved mystery"
+    ],
+    "opening": "Bright white, yellow, and red lights float through and above the Hessdalen valley.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-11-17_0832",
+    "tiktok": {
+      "status": "STAGED_FOR_BUFFER",
+      "mode": "buffer"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    }
   }
 ]

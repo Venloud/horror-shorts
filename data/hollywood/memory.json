@@ -1,21 +1,21 @@
 {
- "videos": 7,
+ "videos": 8,
  "entries": {
   "title": {
-   "fired": 7,
-   "last": "2026-11-10_0746"
+   "fired": 8,
+   "last": "2026-11-17_0832"
   },
   "year_reel": {
-   "fired": 5,
-   "last": "2026-11-09_2352"
+   "fired": 6,
+   "last": "2026-11-17_0832"
   },
   "phrase": {
    "fired": 7,
    "last": "2026-11-10_0746"
   },
   "place": {
-   "fired": 5,
-   "last": "2026-11-08_1956"
+   "fired": 6,
+   "last": "2026-11-17_0832"
   },
   "counter_people": {
    "fired": 1,
@@ -32,6 +32,18 @@
   "zoom_punch": {
    "fired": 11,
    "last": "2026-11-10_0746"
+  },
+  "year_line": {
+   "fired": 2,
+   "last": "2026-11-17_0832"
+  },
+  "kinetic": {
+   "fired": 1,
+   "last": "2026-11-17_0832"
+  },
+  "flicker": {
+   "fired": 1,
+   "last": "2026-11-17_0832"
   }
  },
  "places": {
@@ -62,6 +74,13 @@
    "level": "city",
    "lon": -82.433,
    "lat": 8.433
+  },
+  "Norway": {
+   "times": 1,
+   "iso2": "NO",
+   "level": "country",
+   "lon": 9.68,
+   "lat": 61.36
   }
  },
  "unmatched": {
@@ -114,7 +133,8 @@
   "spirit a banshee": 1,
   "irish speech as ben": 1,
   "death": 1,
-  "unlike ordinary ghosts": 1
+  "unlike ordinary ghosts": 1,
+  "coulomb crystals": 1
  },
  "log": [
   {
@@ -197,6 +217,43 @@
     "zoom_punch",
     "zoom_punch"
    ]
+  },
+  {
+   "stamp": "2026-11-17_0832",
+   "story_id": "5494501f8167",
+   "effects": [
+    "title",
+    "place",
+    "year_reel",
+    "year_line",
+    "year_line",
+    "kinetic",
+    "flicker"
+   ]
   }
- ]
+ ],
+ "editing": {
+  "weights": {},
+  "videos": {
+   "5494501f8167": {
+    "stamp": "",
+    "title": "The Mysterious Lights of Hessdalen",
+    "used": {
+     "fx:title": 1,
+     "fx:globe_pin": 1,
+     "fx:year_reel": 1,
+     "fx:year_line": 2,
+     "fx:kinetic": 1,
+     "fx:flicker": 1,
+     "move:push": 5,
+     "cut:cut": 19,
+     "move:still": 4,
+     "cut:push_through": 1
+    },
+    "verdict": null,
+    "metric": null
+   }
+  },
+  "history": []
+ }
 }
