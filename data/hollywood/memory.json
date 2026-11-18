@@ -1,17 +1,17 @@
 {
- "videos": 9,
+ "videos": 10,
  "entries": {
   "title": {
-   "fired": 9,
-   "last": "2026-11-17_2318"
+   "fired": 10,
+   "last": "2026-11-18_0757"
   },
   "year_reel": {
-   "fired": 7,
-   "last": "2026-11-17_2318"
+   "fired": 8,
+   "last": "2026-11-18_0757"
   },
   "phrase": {
-   "fired": 7,
-   "last": "2026-11-10_0746"
+   "fired": 8,
+   "last": "2026-11-18_0757"
   },
   "place": {
    "fired": 7,
@@ -30,12 +30,12 @@
    "last": "2026-11-08_0644"
   },
   "zoom_punch": {
-   "fired": 12,
-   "last": "2026-11-17_2318"
+   "fired": 14,
+   "last": "2026-11-18_0757"
   },
   "year_line": {
-   "fired": 2,
-   "last": "2026-11-17_0832"
+   "fired": 3,
+   "last": "2026-11-18_0757"
   },
   "kinetic": {
    "fired": 2,
@@ -46,8 +46,12 @@
    "last": "2026-11-17_0832"
   },
   "info_card": {
+   "fired": 3,
+   "last": "2026-11-18_0757"
+  },
+  "counter_bullets": {
    "fired": 1,
-   "last": "2026-11-17_2318"
+   "last": "2026-11-18_0757"
   }
  },
  "places": {
@@ -153,7 +157,9 @@
   "giant threw": 1,
   "threw heavy": 1,
   "archivists maintain cryptozoology files": 1,
-  "bigfoot lore lives inside": 1
+  "bigfoot lore lives inside": 1,
+  "brazen daylight slaughter backfired": 1,
+  "capone through forensic accounting": 1
  },
  "log": [
   {
@@ -261,6 +267,21 @@
     "zoom_punch",
     "info_card"
    ]
+  },
+  {
+   "stamp": "2026-11-18_0757",
+   "story_id": "3f1daf149cc4",
+   "effects": [
+    "title",
+    "year_reel",
+    "counter_bullets",
+    "phrase",
+    "info_card",
+    "zoom_punch",
+    "info_card",
+    "zoom_punch",
+    "year_line"
+   ]
   }
  ],
  "editing": {
@@ -298,6 +319,24 @@
      "cut:cut": 18,
      "move:push": 4,
      "move:closeup": 1
+    },
+    "verdict": null,
+    "metric": null
+   },
+   "3f1daf149cc4": {
+    "stamp": "",
+    "title": "The St. Valentine's Day Massacre",
+    "used": {
+     "fx:title": 1,
+     "fx:year_reel": 1,
+     "fx:counter": 1,
+     "fx:phrase": 1,
+     "fx:info_card": 2,
+     "fx:zoom_punch": 2,
+     "fx:year_line": 1,
+     "move:push": 7,
+     "cut:cut": 20,
+     "move:still": 7
     },
     "verdict": null,
     "metric": null
