@@ -1,17 +1,17 @@
 {
- "videos": 10,
+ "videos": 11,
  "entries": {
   "title": {
-   "fired": 10,
-   "last": "2026-11-18_0757"
+   "fired": 11,
+   "last": "2026-11-18_2243"
   },
   "year_reel": {
-   "fired": 8,
-   "last": "2026-11-18_0757"
+   "fired": 9,
+   "last": "2026-11-18_2243"
   },
   "phrase": {
-   "fired": 8,
-   "last": "2026-11-18_0757"
+   "fired": 9,
+   "last": "2026-11-18_2243"
   },
   "place": {
    "fired": 7,
@@ -30,8 +30,8 @@
    "last": "2026-11-08_0644"
   },
   "zoom_punch": {
-   "fired": 14,
-   "last": "2026-11-18_0757"
+   "fired": 15,
+   "last": "2026-11-18_2243"
   },
   "year_line": {
    "fired": 3,
@@ -46,8 +46,8 @@
    "last": "2026-11-17_0832"
   },
   "info_card": {
-   "fired": 3,
-   "last": "2026-11-18_0757"
+   "fired": 4,
+   "last": "2026-11-18_2243"
   },
   "counter_bullets": {
    "fired": 1,
@@ -159,7 +159,17 @@
   "archivists maintain cryptozoology files": 1,
   "bigfoot lore lives inside": 1,
   "brazen daylight slaughter backfired": 1,
-  "capone through forensic accounting": 1
+  "capone through forensic accounting": 1,
+  "local communities": 1,
+  "communities shared": 1,
+  "shared chilling": 1,
+  "later expeditions": 1,
+  "expeditions gathered": 1,
+  "stories leaving": 1,
+  "black rhinoceroses once roaming": 1,
+  "nineteen thirteen": 1,
+  "thirteen survey": 1,
+  "survey remains": 1
  },
  "log": [
   {
@@ -282,6 +292,17 @@
     "zoom_punch",
     "year_line"
    ]
+  },
+  {
+   "stamp": "2026-11-18_2243",
+   "story_id": "454a895ebe5d",
+   "effects": [
+    "title",
+    "phrase",
+    "year_reel",
+    "zoom_punch",
+    "info_card"
+   ]
   }
  ],
  "editing": {
@@ -337,6 +358,25 @@
      "move:push": 7,
      "cut:cut": 20,
      "move:still": 7
+    },
+    "verdict": null,
+    "metric": null
+   },
+   "454a895ebe5d": {
+    "stamp": "",
+    "title": "Mokele-mbembe, The Congo River Cryptid",
+    "used": {
+     "fx:title": 1,
+     "fx:phrase": 1,
+     "fx:year_reel": 1,
+     "fx:zoom_punch": 1,
+     "fx:info_card": 1,
+     "move:push": 5,
+     "cut:cut": 14,
+     "move:still": 6,
+     "cut:push_through": 2,
+     "move:closeup": 2,
+     "cut:dissolve": 1
     },
     "verdict": null,
     "metric": null
