@@ -5142,5 +5142,74 @@
     "youtube": {
       "pending": "buffer_queue_pending"
     }
+  },
+  {
+    "date": "2026-11-18_0757",
+    "story_id": "3f1daf149cc4",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The St. Valentine's Day Massacre",
+    "premise": "Gunmen disguised as police ambushed seven mobsters in a Chicago garage, sparking the downfall of Al Capone.",
+    "subgenre": "true crime case file",
+    "mode": "case",
+    "true_story": true,
+    "case": "St. Valentine's Day Massacre",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Chicago, Illinois, 1929",
+    "threat": "Gunmen disguised as police officers executing rival mobsters.",
+    "twist": "The massacre eliminated Capone's rivals, but the public outrage triggered the federal investigation that imprisoned him for tax evasion.",
+    "score": null,
+    "seconds": 60.8,
+    "voice_speed": 1.1,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [],
+    "visual_mode": "analog",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 96,
+    "visuals": {
+      "distinct": 20,
+      "longest_s": 5.9,
+      "longest_share": 0.092,
+      "longest_name": "image:scene_02a.png:full"
+    },
+    "yt_title": "Gunmen Dressed As Police... The St. Valentine's Day Massacre #shorts",
+    "hashtags": [
+      "chicago",
+      "truecrime",
+      "darkhistory"
+    ],
+    "yt_tags": [
+      "st valentines day massacre",
+      "chicago true crime",
+      "al capone garage shooting",
+      "bugs moran bootlegging",
+      "1929 chicago massacre",
+      "north clark street garage",
+      "frank gusenberg",
+      "true crime story",
+      "chicago history",
+      "al capone tax evasion",
+      "st. valentine's day massacre",
+      "chicago mystery",
+      "true story"
+    ],
+    "opening": "Gunmen dressed as police officers lined seven rival mobsters against a wall and opened fire.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-11-18_0757",
+    "tiktok": {
+      "status": "STAGED_FOR_BUFFER",
+      "mode": "buffer"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    }
   }
 ]
