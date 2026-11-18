@@ -408,10 +408,10 @@
       "title": "Gunmen Dressed As Police... The St. Valentine's Day Massacre #shorts"
     },
     "2026-11-18_2243": {
-      "status": "attempt_started",
-      "title": "Wooden Canoes Vanished Beneath the Surface... Mokele-mbembe #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-11-18_2243.mp4",
-      "channel_id": "6aefbb44e29c69a1719c4ae8"
+      "status": "queued",
+      "buffer_post_id": "6afe3181c462756e9e273fdc",
+      "due_at": "2026-11-20T02:30:00.000Z",
+      "title": "Wooden Canoes Vanished Beneath the Surface... Mokele-mbembe #shorts"
     }
   }
 }
