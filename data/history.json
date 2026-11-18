@@ -5211,5 +5211,81 @@
     "youtube": {
       "pending": "buffer_queue_pending"
     }
+  },
+  {
+    "date": "2026-11-18_2243",
+    "story_id": "454a895ebe5d",
+    "series_id": null,
+    "series_episode": null,
+    "title": "Mokele-mbembe, The Congo River Cryptid",
+    "premise": "In the Congo River Basin, travelers along the Congo River often feared their canoes would be overturned by the colossal creature.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Mokele-mbembe",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Congo River Basin",
+    "threat": "mokele-mbembe",
+    "twist": "Expeditions found eyewitness accounts but no direct physical evidence.",
+    "score": null,
+    "seconds": 54.6,
+    "voice_speed": 1.1,
+    "narrator_voice": "am_michael",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:38885988"
+    ],
+    "visual_mode": "classic",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 65,
+    "visuals": {
+      "distinct": 17,
+      "longest_s": 5.2,
+      "longest_share": 0.089,
+      "longest_name": "image:scene_03a.png:full"
+    },
+    "yt_title": "Wooden Canoes Vanished Beneath the Surface... Mokele-mbembe #shorts",
+    "hashtags": [
+      "mokelembembe",
+      "congoriverbasin",
+      "cryptid",
+      "legends"
+    ],
+    "yt_tags": [
+      "mokele mbembe",
+      "congo river cryptid",
+      "congo river basin",
+      "mokele mbembe legend",
+      "african cryptids",
+      "lake monsters",
+      "cryptozoology",
+      "colossal river beast",
+      "ludwig von stein",
+      "congo river monster",
+      "cryptid legends",
+      "river cryptids",
+      "mokele-mbembe",
+      "mokele-mbembe legend",
+      "congo river basin folklore"
+    ],
+    "opening": "Wooden canoes vanished beneath the murky surface whenever the colossal river beast struck.",
+    "music_file": "unsolved_mystery.mp3",
+    "buffered": "2026-11-18_2243",
+    "tiktok": {
+      "status": "STAGED_FOR_BUFFER",
+      "mode": "buffer"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    }
   }
 ]
