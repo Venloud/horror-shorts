@@ -420,10 +420,10 @@
       "title": "Wooden Canoes Vanished Beneath the Surface... Mokele-mbembe #shorts"
     },
     "2026-11-19_0757": {
-      "status": "attempt_started",
-      "title": "Three Knocks on the Third Stall... Hanako-san of Japan #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-11-19_0757.mp4",
-      "channel_id": "6aefbb44e29c69a1719c4ae8"
+      "status": "queued",
+      "buffer_post_id": "6afeb3b9b7fe0c41ddac7098",
+      "due_at": "2026-11-20T03:46:00.000Z",
+      "title": "Three Knocks on the Third Stall... Hanako-san of Japan #shorts"
     }
   }
 }
