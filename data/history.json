@@ -5287,5 +5287,79 @@
     "youtube": {
       "pending": "buffer_queue_pending"
     }
+  },
+  {
+    "date": "2026-11-19_0757",
+    "story_id": "da9cca892b81",
+    "series_id": null,
+    "series_episode": null,
+    "title": "Hanako-san, the Ghost in the Toilet",
+    "premise": "A student knocks on the third stall of the third-floor school bathroom, summoning a vengeful spirit with a bobbed haircut and a red skirt.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Hanako-san",
+    "source": null,
+    "prompt_file": null,
+    "setting": "A Japanese school bathroom",
+    "threat": "Hanako-san, the toilet ghost",
+    "twist": "A ghostly hand reaches out to drag the challenger into the depths.",
+    "score": null,
+    "seconds": 62.6,
+    "voice_speed": 1.1,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [],
+    "visual_mode": "fast",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 81,
+    "visuals": {
+      "distinct": 22,
+      "longest_s": 3.5,
+      "longest_share": 0.053,
+      "longest_name": "image:scene_06b.png:full"
+    },
+    "yt_title": "Three Knocks on the Third Stall... Hanako-san of Japan #shorts",
+    "hashtags": [
+      "hanakosan",
+      "japan",
+      "urbanlegend",
+      "ghoststory"
+    ],
+    "yt_tags": [
+      "hanako san",
+      "toilet no hanako san",
+      "japan urban legend",
+      "hanakosan ghost",
+      "japanese school ghost",
+      "toilets of japan legend",
+      "red skirt ghost",
+      "japanese folklore",
+      "third stall ghost",
+      "urban legends",
+      "school bathroom ghost",
+      "hanako san legend",
+      "hanako-san",
+      "hanako-san legend",
+      "japan folklore"
+    ],
+    "opening": "Three knocks on the third stall echo through the empty school bathroom as the quiet voice asks if anyone is inside.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-11-19_0757",
+    "tiktok": {
+      "status": "STAGED_FOR_BUFFER",
+      "mode": "buffer"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    }
   }
 ]
