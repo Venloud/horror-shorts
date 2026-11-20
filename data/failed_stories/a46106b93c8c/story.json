@@ -1,0 +1,439 @@
+{
+ "title": "The Dover Demon Sightings",
+ "premise": "Three teenagers reported seeing a bizarre, four-foot-tall creature with glowing eyes and a watermelon-shaped head over two nights in Dover, Massachusetts.",
+ "hook_overlay": "Glowing eyes, no face",
+ "scenes": [
+  {
+   "narration": "A creature with a watermelon-shaped head and glowing orange eyes sat perched atop a broken stone wall. This is a true story.",
+   "image_prompt": "A bizarre four-foot-tall creature with a smooth watermelon-shaped head and glowing orange eyes perched on an old stone wall at night",
+   "image_prompt_2": "An unidentified four-foot-tall cryptid with glowing orange eyes perched atop a broken stone wall along Farm Street at night",
+   "image_prompt_3": "",
+   "image_prompt_4": "",
+   "sfx": "none",
+   "image_location": "Farm Street",
+   "image_location_2": "Farm Street",
+   "image_location_3": "none",
+   "image_location_4": "none",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "image_query": "creature on stone wall",
+   "image_query_2": "empty dark road"
+  },
+  {
+   "narration": "On April twenty-first, nineteen seventy-seven, seventeen-year-old William Bartlett drove along Farm Street in Dover, Massachusetts.",
+   "image_prompt": "A vintage nineteen seventies car driving down a narrow tree-lined New England asphalt road at dusk",
+   "image_prompt_2": "An old Massachusetts town sign marking the town limits of Dover",
+   "image_prompt_3": "",
+   "image_prompt_4": "",
+   "sfx": "none",
+   "image_location": "Farm Street",
+   "image_location_2": "Dover",
+   "image_location_3": "none",
+   "image_location_4": "none",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "image_query": "seventies car road",
+   "image_query_2": "town sign"
+  },
+  {
+   "narration": "That same evening, fifteen-year-old John Baxter reported seeing something similar nearby on Miller Hill Road.",
+   "image_prompt": "A desolate rural hillside road surrounded by dark woods under a quiet night sky",
+   "image_prompt_2": "An old wooden fence running alongside a quiet New England hill road",
+   "image_prompt_3": "",
+   "image_prompt_4": "",
+   "sfx": "none",
+   "image_location": "Miller Hill Road",
+   "image_location_2": "Miller Hill Road",
+   "image_location_3": "none",
+   "image_location_4": "none",
+   "image_source": "stock_video",
+   "image_source_2": "ai",
+   "image_query": "dark wooded road",
+   "image_query_2": "wooden fence hill road"
+  },
+  {
+   "narration": "The following night, another fifteen-year-old, Abby Brabham, encountered the being on Springdale Avenue, describing green eyes.",
+   "image_prompt": "A quiet suburban road at night with tall trees casting long shadows under pale moonlight",
+   "image_prompt_2": "A quiet residential street corner in a small New England town at night",
+   "image_prompt_3": "",
+   "image_prompt_4": "",
+   "sfx": "none",
+   "image_location": "Springdale Avenue",
+   "image_location_2": "Springdale Avenue",
+   "image_location_3": "none",
+   "image_location_4": "none",
+   "image_source": "stock_video",
+   "image_source_2": "stock_video",
+   "image_query": "suburban road night",
+   "image_query_2": "quiet street night"
+  },
+  {
+   "narration": "When investigators plotted the three sighting locations on a map, they formed a straight line extending for more than two miles.",
+   "image_prompt": "An investigator inside the Police Station leaning over a desk to examine a map showing three points connected in a straight line",
+   "image_prompt_2": "An investigator holding a pencil over a map at the Police Station desk, looking at a straight red line drawn across it",
+   "image_prompt_3": "",
+   "image_prompt_4": "",
+   "sfx": "none",
+   "image_location": "none",
+   "image_location_2": "none",
+   "image_location_3": "none",
+   "image_location_4": "none",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "image_query": "vintage map red line",
+   "image_query_2": "paper map close up"
+  },
+  {
+   "narration": "Police concluded the reports were probably nothing more than a school vacation hoax.",
+   "image_prompt": "An old police desk with a telephone and a paperwork file under a green shaded lamp",
+   "image_prompt_2": "A police officer standing behind a desk inside the dimly lit Police Station holding a stack of typed incident reports",
+   "image_prompt_3": "",
+   "image_prompt_4": "",
+   "sfx": "none",
+   "image_location": "Police Station",
+   "image_location_2": "Police Station",
+   "image_location_3": "none",
+   "image_location_4": "none",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "image_query": "police desk lamp",
+   "image_query_2": "police station exterior"
+  },
+  {
+   "narration": "Researchers suggested other explanations, including the misidentification of a local foal or moose calf.",
+   "image_prompt": "A young horse standing alone in a dark misty pasture at twilight",
+   "image_prompt_2": "A small moose calf standing quietly among the dark trees within the misty woods bordering Miller Hill Road at night",
+   "image_prompt_3": "",
+   "image_prompt_4": "",
+   "sfx": "none",
+   "image_location": "Pasture",
+   "image_location_2": "Pasture",
+   "image_location_3": "none",
+   "image_location_4": "none",
+   "image_source": "stock_video",
+   "image_source_2": "ai",
+   "image_query": "horse in pasture mist",
+   "image_query_2": "forest brush ferns"
+  },
+  {
+   "narration": "Skeptic Joe Nickell suggested a snowy owl reflecting car headlights could explain the peach-colored appearance and long spindly arms.",
+   "image_prompt": "A snowy owl perched on a branch at night with bright reflective eyes",
+   "image_prompt_2": "A close up of an owl wing feather pattern in dim light",
+   "image_prompt_3": "",
+   "image_prompt_4": "",
+   "sfx": "owl",
+   "image_location": "none",
+   "image_location_2": "none",
+   "image_location_3": "none",
+   "image_location_4": "none",
+   "image_source": "ai",
+   "image_source_2": "ai",
+   "image_query": "snowy owl night",
+   "image_query_2": "owl feather pattern"
+  },
+  {
+   "narration": "Today, the true nature of the sightings remains unexplained by any official consensus.",
+   "image_prompt": "A foggy New England landscape fading into darkness at the edge of a tree line",
+   "image_prompt_2": "An empty rural road vanishing into thick night fog",
+   "image_prompt_3": "",
+   "image_prompt_4": "",
+   "sfx": "none",
+   "image_location": "Dover",
+   "image_location_2": "Farm Street",
+   "image_location_3": "none",
+   "image_location_4": "none",
+   "image_source": "stock_video",
+   "image_source_2": "stock_video",
+   "image_query": "foggy landscape trees",
+   "image_query_2": "road in fog"
+  }
+ ],
+ "twist_scene": 4,
+ "caption": "What was the Dover Demon? Tell us your theory in the comments.",
+ "hashtags": [
+  "doverdemon",
+  "cryptid",
+  "massachusetts",
+  "unsolvedmysteries",
+  "folklore"
+ ],
+ "pinned_comment": "Do you think the sightings were a hoax, an owl, or something else entirely?",
+ "call_to_action": "Tell us your theory in the comments.",
+ "central_question": "What was the strange creature reported by teenagers across Dover in 1977?",
+ "characters": [],
+ "ending_payoff": "Today, the true nature of the sightings remains unexplained by any official consensus.",
+ "fact_ledger": [
+  "Creature name: Dover Demon",
+  "Dates: April 21-22 1977",
+  "Location: Dover Massachusetts 15 miles southwest of Boston",
+  "Witness 1: William Bill Bartlett age 17 Farm Street",
+  "Creature description: 4 feet tall glowing orange eyes no nose or mouth watermelon-shaped head",
+  "Witness 2: John Baxter age 15 Miller Hill Road",
+  "Witness 3: Abby Brabham age 15 Springdale Avenue green eyes",
+  "Map detail: sightings formed a straight line extending for more than 2 miles",
+  "Public release: first half of May",
+  "Cryptozoologist: Loren Coleman",
+  "Comparison: Kelly-Hopkinsville encounter of 1955",
+  "Investigators: Mutual UFO Network",
+  "Explanations: foal or moose calf",
+  "Skeptic 1: Joe Nickell snowy owl reflecting car headlights",
+  "Skeptic 2: Brian Dunning",
+  "Police view: school vacation hoax",
+  "Skeptic 3: Ben Radford Star Wars and Close Encounters influence"
+ ],
+ "hook_candidates": [
+  "A creature with a watermelon-shaped head and glowing orange eyes sat perched atop a broken stone wall.",
+  "Seventeen-year-old William Bartlett swore on a stack of Bibles that he saw an unknown being perched on a stone wall.",
+  "Three teenagers in Dover reported seeing a four-foot-tall creature with glowing eyes over two nights."
+ ],
+ "hook_scores": [
+  "9/10",
+  "8/10",
+  "7/10"
+ ],
+ "locations": [
+  {
+   "name": "Farm Street",
+   "look": "A narrow New England asphalt road bordered by old stone walls and dark woods at night"
+  },
+  {
+   "name": "Dover",
+   "look": "A quiet New England town with wooded roads and sparse rural houses"
+  },
+  {
+   "name": "Miller Hill Road",
+   "look": "A desolate rural hillside road surrounded by dark woods and a wooden fence"
+  },
+  {
+   "name": "Springdale Avenue",
+   "look": "A quiet residential street corner with tall trees casting shadows under pale moonlight"
+  },
+  {
+   "name": "Police Station",
+   "look": "A small town police station interior with a desk, lamp, and paperwork"
+  },
+  {
+   "name": "Pasture",
+   "look": "A dark misty rural horse pasture surrounded by a wooden rail fence"
+  }
+ ],
+ "recurring_visual_motif": "A vintage paper map showing mapped sighting locations",
+ "setting": "Dover, Massachusetts, April 1977",
+ "threat": "An unidentified four-foot-tall cryptid with glowing eyes",
+ "twist": "When plotted on a map, the three independent sighting locations formed a straight line over two miles long.",
+ "understanding_shift": "Initial panic and bizarre descriptions gave way to competing explanations ranging from hoaxes to misidentified wildlife like snowy owls.",
+ "viewer_lesson": "After watching, the viewer can explain how three separate teenager sightings in Dover formed a straight line on a map and sparked various prosaic and cryptid explanations.",
+ "model": "gemini-3.5-flash-lite",
+ "writer": "gemini (gemini-3.5-flash-lite)",
+ "writing": {
+  "llm_calls": 4,
+  "revisions": 2,
+  "kind": "true",
+  "primary": "gemini-3.5-flash-lite",
+  "checks_primary": [
+   {
+    "code": "unsupported_fact",
+    "severity": "serious",
+    "detail": "not in the source: 20"
+   }
+  ],
+  "challenger": "failed: nvidia:deepseek-ai/deepseek-v4.1-flash: RuntimeError: NVIDIA chat HTTP 410: {\"type\":\"about:blank\",\"title\":\"Gone\",\"status\":410,\"detail\":\"The model 'deepseek-ai/deeps",
+  "critic": {
+   "available": true,
+   "score": 96,
+   "score_kind": "editorial, not audience retention",
+   "bar": 75,
+   "notes": [
+    "The hook effectively starts with the strangest true detail from the source without using a date or place opener.",
+    "Clarity is high as the timeline and events are easily understood in one sentence.",
+    "Pacing maintains new verified information every few seconds without filler.",
+    "The location and subject (Dover, Massachusetts) are established immediately in scene two.",
+    "The payoff clearly resolves the narrative by stating the current official consensus remains unexplained."
+   ],
+   "viewer_learns": "After watching, the viewer can explain how three separate teenager sightings in Dover formed a straight line on a map and sparked various prosaic and cryptid explanations.",
+   "payoff_line": "Today, the true nature of the sightings remains unexplained by any official consensus.",
+   "cta_line": "Tell us your theory in the comments.",
+   "weak_lines": []
+  },
+  "checks_after_revision": [
+   {
+    "code": "unsupported_fact",
+    "severity": "serious",
+    "detail": "not in the source: 20"
+   }
+  ]
+ },
+ "critic_score": 96,
+ "_fact_source": "The Dover Demon is a cryptid reportedly sighted on April 21–22, 1977, in Dover, Massachusetts, a town approximately 15 miles (24 km) southwest of Boston. Police said that the descriptions provided by the teenagers were \"probably nothing more than a school vacation hoax\", while researchers have suggested the possible misidentification of local fauna. The descriptions have been compared to those of alleged close encounters.\n\n\n== Alleged sightings ==\nWhile driving along Farm Street in Dover, Massachusetts on April 21, 1977, seventeen-year-old William \"Bill\" Bartlett reported seeing an unknown being approximately 4 feet (1.2 m) tall, which he claimed possessed glowing orange eyes, lacked a visible nose or mouth, and had a watermelon-shaped head. According to Bartlett, the figure was perched atop a broken stone wall. That same evening, 15-year-old John Baxter reported seeing something similar on Miller Hill Road. The following night, another 15-year-old, Abby Brabham, claimed to have encountered the being on Springdale Avenue, although she described green eyes.\nThe three teenagers each produced sketches of what they claimed to have seen. Bartlett accompanied his drawing with the statement, \"I, Bill Bartlett, swear on a stack of Bibles that I saw this creature.\" A local news report noted that the locations of the alleged sightings, when plotted on a map, formed a straight line extending for more than 2 miles (3.2 km). The sightings did not become public until the first half of May. At the time, cryptozoologist Loren Coleman said he thought it was similar to the Kelly–Hopkinsville encounter of 1955. Although none of the witnesses reported seeing a UFO, the sightings were investigated by the Mutual UFO Network and other associated organizations.\n\n\n== Possible explanations ==\n\nSome explanations have proposed that what the witnesses may have actually seen was a foal or moose calf. Skeptic Joe Nickell suggested that a snowy owl could account for the reported sightings.  He speculated that the owl's plumage may have reflected the yellow headlights of older automobiles, producing the peach-colored appearance described by Bartlett. Furthermore, the \"long spindly arms\" and fingers that were reported could have been the partially extended wings and splayed feathers at the wingtips of a snowy owl. Skeptic Brian Dunning disagreed with the snowy owl explanation, stating: \"Yes, granted, a person might look at a snowy owl in the right conditions and they could think they're seeing something that looks like what these teens drew. But if it happened to four people in town in just 24 hours, it must be a very compelling illusion. Yet the illusion never fooled anyone, ever, before or since.\" Nevertheless, Dunning remained convinced that a prosaic explanation existed that could explain the sighting.\nPolice told the Associated Press that the descriptions provided by the teenagers were \"probably nothing more than a school vacation hoax\". Skeptic Ben Radford has suggested that popular culture may have influenced the sightings, noting that 1977 saw the release of Star Wars and Close Encounters of the Third Kind, although Brian Dunning disagreed, at least regarding the latter film, stating: \"I discount this, as the movie was released a full eight months after the Dover Demon sightings.\" Dunning went on to say:\n\nJust to be clear, I'm not calling the kids liars. Nothing unusual having happened is simply our null hypothesis, our default assumption, in the lack of any compelling evidence to the contrary. The alternatives all range from illogical to completely implausible.\n\n\n\nIN POPULAR CULTURE:\nIn 2009, the Dover Demon was featured in an episode of the American horror television series Lost Tapes, which aired on Animal Planet.\nThe Dover Demon appears as a character in an American comic book series that features various cryptids called Proof, in which the being is able to see into the future. Another similar comic book series called The Perhapanauts also features the Dover Demon. Brief appearances can also be found in the comic books The Pound: Ghouls Night Out and Hack/Slash: Entry Wound. A Dover Demon also appears in the webcomic Gunnerkrigg Court.\nThe manga and anime series Dandadan features an alien character called a Dover Demon. Its appearance is significantly different from the original sightings, being a bipedal crustacean-like alien with the ability to transform into a stronger form resembling a mantis shrimp.",
+ "sources": [
+  {
+   "title": "Wikipedia: Dover Demon",
+   "url": "https://en.wikipedia.org/wiki/Dover_Demon",
+   "domain": "en.wikipedia.org"
+  }
+ ],
+ "mode": "mystery",
+ "case": "Dover Demon",
+ "subgenre": "real unsolved mystery",
+ "true_story": true,
+ "_skipped": [],
+ "story_id": "a46106b93c8c",
+ "explainer_adapted": true,
+ "explainer_before": [
+  "A creature with a watermelon-shaped head and glowing orange eyes sat perched atop a broken stone wall. This is a true story.",
+  "On April twenty-first, nineteen seventy-seven, seventeen-year-old William Bartlett drove along Farm Street in Dover, Massachusetts.",
+  "That same evening, fifteen-year-old John Baxter reported seeing something similar nearby on Miller Hill Road.",
+  "The following night, another fifteen-year-old, Abby Brabham, encountered the being on Springdale Avenue, describing green eyes.",
+  "When investigators plotted the three sighting locations on a map, they formed a straight line extending for more than two miles.",
+  "Police concluded the reports were probably nothing more than a school vacation hoax.",
+  "Researchers suggested other explanations, including the misidentification of a local foal or moose calf.",
+  "Skeptic Joe Nickell suggested a snowy owl reflecting car headlights could explain the peach-colored appearance and long spindly arms.",
+  "Today, the true nature of the sightings remains unexplained by any official consensus."
+ ],
+ "_story_bible": {
+  "title": "The Dover Demon Sightings",
+  "retention_contract": {
+   "central_question": "What was the strange creature reported by teenagers across Dover in 1977?",
+   "understanding_shift": "Initial panic and bizarre descriptions gave way to competing explanations ranging from hoaxes to misidentified wildlife like snowy owls.",
+   "ending_payoff": "Today, the true nature of the sightings remains unexplained by any official consensus.",
+   "optional_visual_motif": "A vintage paper map showing mapped sighting locations",
+   "review_status": "writer-planned; verify against narration and nonfiction sources"
+  },
+  "series_id": null,
+  "series_episode": null,
+  "series_continuity": null,
+  "premise": "Three teenagers reported seeing a bizarre, four-foot-tall creature with glowing eyes and a watermelon-shaped head over two nights in Dover, Massachusetts.",
+  "setting": "Dover, Massachusetts, April 1977",
+  "threat": "An unidentified four-foot-tall cryptid with glowing eyes",
+  "twist": "When plotted on a map, the three independent sighting locations formed a straight line over two miles long.",
+  "twist_scene": 4,
+  "characters": [],
+  "locations": [
+   {
+    "name": "Farm Street",
+    "look": "A narrow New England asphalt road bordered by old stone walls and dark woods at night"
+   },
+   {
+    "name": "Dover",
+    "look": "A quiet New England town with wooded roads and sparse rural houses"
+   },
+   {
+    "name": "Miller Hill Road",
+    "look": "A desolate rural hillside road surrounded by dark woods and a wooden fence"
+   },
+   {
+    "name": "Springdale Avenue",
+    "look": "A quiet residential street corner with tall trees casting shadows under pale moonlight"
+   },
+   {
+    "name": "Police Station",
+    "look": "A small town police station interior with a desk, lamp, and paperwork"
+   },
+   {
+    "name": "Pasture",
+    "look": "A dark misty rural horse pasture surrounded by a wooden rail fence"
+   }
+  ],
+  "timeline": [
+   {
+    "scene": 1,
+    "event": "A creature with a watermelon-shaped head and glowing orange eyes sat perched atop a broken stone wall. This is a true story.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 2,
+    "event": "On April twenty-first, nineteen seventy-seven, seventeen-year-old William Bartlett drove along Farm Street in Dover, Massachusetts.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 3,
+    "event": "That same evening, fifteen-year-old John Baxter reported seeing something similar nearby on Miller Hill Road.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 4,
+    "event": "The following night, another fifteen-year-old, Abby Brabham, encountered the being on Springdale Avenue, describing green eyes.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 5,
+    "event": "When investigators plotted the three sighting locations on a map, they formed a straight line extending for more than two miles.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 6,
+    "event": "Police concluded the reports were probably nothing more than a school vacation hoax.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 7,
+    "event": "Researchers suggested other explanations, including the misidentification of a local foal or moose calf.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 8,
+    "event": "Skeptic Joe Nickell suggested a snowy owl reflecting car headlights could explain the peach-colored appearance and long spindly arms.",
+    "location": "",
+    "characters": []
+   },
+   {
+    "scene": 9,
+    "event": "Today, the true nature of the sightings remains unexplained by any official consensus.",
+    "location": "",
+    "characters": []
+   }
+  ],
+  "continuity_rules": [
+   "Use the exact character names and keep each character's fixed look unchanged.",
+   "Keep each shot in the scene's stated location unless the narration explicitly moves.",
+   "Do not introduce a new person, creature, object, or location that the story does not establish.",
+   "The twist scene must visually support the documented twist, not invent a different reveal."
+  ]
+ },
+ "_ai_only": [
+  "00b",
+  "04a",
+  "04b",
+  "05b",
+  "06b",
+  "00a"
+ ],
+ "_shot_rules_done": true,
+ "visual_mode": "analog",
+ "_previous_narrator_voice": "am_adam",
+ "narrator_voice": "am_michael",
+ "final_script_approval": {
+  "sha256": "94397e3c72c34edf10051c476ad30503fa45897a7108313522cc749ca66edbb1",
+  "checked": true,
+  "kind": "true",
+  "checks": [
+   {
+    "code": "unsupported_fact",
+    "severity": "serious",
+    "detail": "not in the source: 20"
+   }
+  ],
+  "blocked": true,
+  "editor": "available",
+  "approved": false,
+  "ratings": {
+   "title_alignment": 8,
+   "narrative_logic": 6,
+   "payoff": 5,
+   "fact_integrity": 10,
+   "natural_voice": 6
+  },
+  "reasons": [
+   "The narration includes the prohibited opening filler phrase: 'This is a true story.'",
+   "Fails to deliver the required single call to action after the payoff and lesson.",
+   "Lacks a distinct specific discovery beyond repeating the creature description and sighting dates."
+  ]
+ }
+}
