@@ -70,6 +70,25 @@ class StalledBackupsStaySkipped(unittest.TestCase):
             self.assertNotIn(backup, story.model_chain())
 
 
+class ShotGenderMatchesNarration(unittest.TestCase):
+    def test_she_scene_gets_a_female_subject_in_prompt_and_stock_query(self):
+        # Hanako-san 2026-11-19: "she was a victim of bullying" over stock footage of a boy ("student sitting alone")
+        import shot_rules
+        st = {"scenes": [
+            {"narration": "Different versions claim she was a victim of bullying.",
+             "image_prompt": "a student sitting alone on school stairs", "image_query": "student sitting alone"},
+            {"narration": "He opened the door and she screamed.", "image_prompt": "a person at a door"},
+            {"narration": "She looked back.", "image_prompt": "a woman and a child on a porch"},
+            {"narration": "He walked home.", "image_prompt": "An adult walking on a dark road"}]}
+        shot_rules.match_gender(st)
+        sc = st["scenes"]
+        self.assertEqual(sc[0]["image_prompt"], "a female student sitting alone on school stairs")
+        self.assertEqual(sc[0]["image_query"], "female student sitting alone")
+        self.assertEqual(sc[1]["image_prompt"], "a person at a door")             # both pronouns: untouched
+        self.assertEqual(sc[2]["image_prompt"], "a woman and a child on a porch")  # already gendered: untouched
+        self.assertEqual(sc[3]["image_prompt"], "a man walking on a dark road")
+
+
 class SpokenNumberFactCheck(unittest.TestCase):
     """Runs 44827959383 (Dover Demon) and the Nov 16 Hessdalen run parked true stories as 'unsupported_fact: 20 / 19':
     the checker read 'April twenty-first' as 20 and 'the nineteen thirties' as 19 and 30."""
