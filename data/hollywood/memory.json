@@ -1,21 +1,21 @@
 {
- "videos": 12,
+ "videos": 13,
  "entries": {
   "title": {
-   "fired": 12,
-   "last": "2026-11-19_0757"
+   "fired": 13,
+   "last": "2026-11-21_0743"
   },
   "year_reel": {
    "fired": 9,
    "last": "2026-11-18_2243"
   },
   "phrase": {
-   "fired": 10,
-   "last": "2026-11-19_0757"
+   "fired": 11,
+   "last": "2026-11-21_0743"
   },
   "place": {
-   "fired": 8,
-   "last": "2026-11-19_0757"
+   "fired": 10,
+   "last": "2026-11-21_0743"
   },
   "counter_people": {
    "fired": 1,
@@ -46,12 +46,16 @@
    "last": "2026-11-17_0832"
   },
   "info_card": {
-   "fired": 4,
-   "last": "2026-11-18_2243"
+   "fired": 5,
+   "last": "2026-11-21_0743"
   },
   "counter_bullets": {
    "fired": 1,
    "last": "2026-11-18_0757"
+  },
+  "counter_plain": {
+   "fired": 1,
+   "last": "2026-11-21_0743"
   }
  },
  "places": {
@@ -96,6 +100,20 @@
    "level": "region",
    "lon": -86.34,
    "lat": 35.75
+  },
+  "Lyon": {
+   "times": 1,
+   "iso2": "FR",
+   "level": "city",
+   "lon": 4.828,
+   "lat": 45.772
+  },
+  "Versailles": {
+   "times": 1,
+   "iso2": "FR",
+   "level": "city",
+   "lon": 2.133,
+   "lat": 48.8
   }
  },
  "unmatched": {
@@ -177,7 +195,14 @@
   "pale": 1,
   "tellings warn": 1,
   "three-headed lizard": 1,
-  "lizard waits": 1
+  "lizard waits": 1,
+  "parents cast": 1,
+  "longer feed": 1,
+  "joined band": 1,
+  "act": 1,
+  "stones": 1,
+  "prussian forces": 1,
+  "returned to french lines": 1
  },
  "log": [
   {
@@ -320,6 +345,18 @@
     "place",
     "phrase"
    ]
+  },
+  {
+   "stamp": "2026-11-21_0743",
+   "story_id": "720c9b03ec93",
+   "effects": [
+    "title",
+    "place",
+    "counter_plain",
+    "phrase",
+    "info_card",
+    "place"
+   ]
   }
  ],
  "editing": {
@@ -409,6 +446,24 @@
      "cut:cut": 22,
      "move:still": 8,
      "move:push": 7
+    },
+    "verdict": null,
+    "metric": null
+   },
+   "720c9b03ec93": {
+    "stamp": "",
+    "title": "Tarrare the Insatiable French Showman",
+    "used": {
+     "fx:title": 1,
+     "fx:globe_pin": 2,
+     "fx:counter": 1,
+     "fx:phrase": 1,
+     "fx:info_card": 1,
+     "move:push": 8,
+     "cut:cut": 20,
+     "move:still": 8,
+     "cut:push_through": 2,
+     "move:closeup": 1
     },
     "verdict": null,
     "metric": null

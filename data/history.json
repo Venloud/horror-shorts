@@ -5361,5 +5361,77 @@
     "youtube": {
       "pending": "buffer_queue_pending"
     }
+  },
+  {
+    "date": "2026-11-21_0743",
+    "story_id": "720c9b03ec93",
+    "series_id": null,
+    "series_episode": null,
+    "title": "Tarrare the Insatiable French Showman",
+    "premise": "A French showman and soldier in the eighteenth century possessed an unending appetite that drove him to consume live animals, stones, and eventually cadavers.",
+    "subgenre": "real unsolved mystery",
+    "mode": "mystery",
+    "true_story": true,
+    "case": "Tarrare",
+    "source": null,
+    "prompt_file": null,
+    "setting": "France, late eighteenth century",
+    "threat": "Uncontrollable polyphagia and dangerous consumption habits",
+    "twist": "He was employed as a military courier to swallow secret documents.",
+    "score": null,
+    "seconds": 68.9,
+    "voice_speed": 1.146,
+    "narrator_voice": "am_michael",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [],
+    "visual_mode": "analog",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 92,
+    "visuals": {
+      "distinct": 22,
+      "longest_s": 4.5,
+      "longest_share": 0.062,
+      "longest_name": "image:scene_07a.png:full"
+    },
+    "yt_title": "Tarrare | Unsolved Mystery #shorts",
+    "hashtags": [
+      "tarrare",
+      "truecrime",
+      "unsolvedmysteries"
+    ],
+    "yt_tags": [
+      "tarrare",
+      "tarrare story",
+      "true crime story",
+      "unsolved mystery",
+      "true story",
+      "mystery explained",
+      "true crime",
+      "strange history",
+      "dark history",
+      "real story",
+      "illustrated horror",
+      "unexplained",
+      "crime documentary short",
+      "history mystery"
+    ],
+    "opening": "Tarrare tore open a live cat's abdomen with his teeth and drank its blood.",
+    "music_file": "unsolved_mystery.mp3",
+    "buffered": "2026-11-21_0743",
+    "tiktok": {
+      "status": "STAGED_FOR_BUFFER",
+      "mode": "buffer"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    }
   }
 ]
