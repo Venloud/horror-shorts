@@ -198,7 +198,7 @@
   "openrouter_models": ["openai/gpt-oss-120b", "qwen/qwen3-32b"],
   "openrouter_max_tokens": 8000,
   "writer_challenge_enabled": true,
-  "writer_challenger_model": "nvidia:z-ai/glm-5.3-flash",
+  "writer_challenger_model": "nvidia:deepseek-ai/deepseek-v4.1-flash",
   "writer_challenge_policy": "on_problems",
   "writer_judge_models": ["groq:openai/gpt-oss-120b", "openrouter:openai/gpt-oss-120b"],
   "writer_max_revisions": 1,
