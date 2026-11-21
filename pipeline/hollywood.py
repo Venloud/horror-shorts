@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import re
+import unicodedata
 from functools import lru_cache
 from pathlib import Path
 
@@ -26,7 +27,8 @@ GEO = ROOT / "assets" / "geo"
 NOT_PLACES = {"chad", "jordan", "georgia", "victoria", "florence", "paris", "lincoln", "washington", "jersey",
               "turkey", "china", "guinea", "niger", "nice", "split", "reading", "mobile", "normal", "orange", "york",
               "independence", "liberty", "hope", "eden", "eureka", "darwin", "hamilton", "wellington", "regina",
-              "virginia", "carolina", "victoria", "alexandria", "sydney", "austin", "dallas", "phoenix", "aurora"}
+              "virginia", "carolina", "victoria", "alexandria", "sydney", "austin", "dallas", "phoenix", "aurora",
+              "more", "bone", "para"}  # accent-folded place names that are English words (Bône, Pará...)
 TRUSTED_ALONE = {"china", "turkey", "georgia", "jordan", "paris", "virginia", "washington", "sydney", "phoenix"}
 
 
@@ -91,8 +93,16 @@ def word_at(sent: dict, char: int) -> int:
 
 # ---------------------------------------------------------------- places
 
+_FOLD = str.maketrans({"đ": "d", "ø": "o", "ł": "l", "ß": "ss", "æ": "ae", "œ": "oe", "ı": "i", "þ": "th"})
+
+
 def _norm(s: str) -> str:
-    return re.sub(r"[^a-z0-9 ]", "", s.lower().replace("-", " ")).strip()
+    """Accents are folded, not dropped: 'Thiès' -> 'thies'. Dropping them made 1,984 gazetteer names unmatchable and
+    turned Thiès (Senegal) into 'this', so "This is the urban legend of..." drew a Senegal map on a Japanese legend
+    (Hanako-san, 2026-11-19)."""
+    s = unicodedata.normalize("NFKD", s.lower().translate(_FOLD))
+    s = "".join(c for c in s if not unicodedata.combining(c))
+    return re.sub(r"[^a-z0-9 ]", "", s.replace("-", " ")).strip()
 
 
 @lru_cache(maxsize=1)

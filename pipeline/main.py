@@ -545,9 +545,20 @@ def main() -> int:
         if testing:
             notify(story, None, error=f"{type(e).__name__}: {e}", prefix=prefix)
             return 1
-        from story import ApiBusy
+        from story import ApiBusy, StoryDiscarded
+        replace = isinstance(e, StoryDiscarded) and stage == "narration" and not os.environ.get("NF_REPLACEMENT_STORY")
         if isinstance(e, (images.ImageQuotaWait, ApiBusy)) or stage == "preflight":
             log(f"Not counted as a failed attempt of the story ({type(e).__name__} at {stage}): it resumes next run")
+        elif replace and checkpoint.failed_attempt(story, stage, f"{type(e).__name__}: {e}", park_now=True):
+            # The voiced script failed the final gate AND its one targeted revision. The next run would re-check the
+            # same kept narration and fail again (Dover Demon cost three slots, Nov 19-20), so it is parked now
+            # (retry_story_id still brings it back) and ONE new story is written in this run instead of a missed slot.
+            os.environ["NF_REPLACEMENT_STORY"] = "1"
+            log("Writing one replacement story in this run (the parked story stays retryable)")
+            if datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M") == stamp:  # its own output/<stamp> folder
+                import time
+                time.sleep(61 - datetime.now(timezone.utc).second)
+            return main()
         elif checkpoint.failed_attempt(story, stage, f"{type(e).__name__}: {e}"):
             return 1
         # Quiet failure: the checkpoint is kept and the next build (every 3 h) continues from it.

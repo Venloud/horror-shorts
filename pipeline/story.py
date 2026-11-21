@@ -341,7 +341,9 @@ def model_chain(light: bool = False) -> list[str]:
         for name in CONFIG.get("openrouter_models", []):
             if isinstance(name, str) and name.strip():
                 models.append("openrouter:" + name.strip())
-    return list(dict.fromkeys(models or list(CONFIG["llm_models"])))
+    # backups are skipped too once they stalled (run 42904751972: DeepSeek's 2 x 180 s timeouts on every topic)
+    models = [m for m in dict.fromkeys(models) if m not in _OVERLOADED]
+    return models or list(dict.fromkeys(CONFIG["llm_models"]))
 
 
 def _call_model(model: str, prompt: str, api_key: str, temperature: float = 1.0, as_json: bool = True, schema=None, timeout_seconds=None):
@@ -490,6 +492,10 @@ def _with_models(call, what: str = "story", light: bool = False):
                         continue
                     break
                 if isinstance(e, DailyLimit):
+                    break
+                if "HTTP 413" in msg:  # the prompt is over this provider's free-tier size: it will not shrink this run
+                    _OVERLOADED.add(model)
+                    log(f"{model}: request too large for its free tier, skipping it for the rest of this run")
                     break
                 busy_only = False
                 if "404" in msg or (model.startswith("groq:") and attempt >= 2):
