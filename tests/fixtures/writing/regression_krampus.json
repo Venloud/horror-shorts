@@ -1,0 +1,29 @@
+{
+ "_note": "Regression example (owner, Nov 2 2026): a script the bot produced before the viewer-value rules.",
+ "title": "The Horned Devil Of December",
+ "mode": "lore",
+ "true_story": false,
+ "scenes": [
+  {
+   "narration": "Heavy chains drag across the frozen cobblestones while a silent, horned figure watches quietly from the deep shadows of the night."
+  },
+  {
+   "narration": "Every single fifth of December, this terrifying companion walks very slowly through the quiet and dark Alpine streets."
+  },
+  {
+   "narration": "Saint Nicholas generously rewards the good children with small gifts while the hairy devil strictly handles the disobedient."
+  },
+  {
+   "narration": "Villagers hear his snake-like tongue lash out in the cold winter air and watch his cloven hoof step firmly onto the porch."
+  },
+  {
+   "narration": "He carries a large wicker basket strapped tightly to his back to cart off naughty children into the freezing alpine night."
+  },
+  {
+   "narration": "When the heavy wooden door finally creaks slowly open, the massive beast stands waiting directly in the dark threshold."
+  },
+  {
+   "narration": "The birch rods are waiting outside, so what would you carefully check first before opening your front door tonight?"
+  }
+ ]
+}

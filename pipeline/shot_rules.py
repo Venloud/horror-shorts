@@ -15,6 +15,7 @@ from common import CONFIG, log
 
 PROMPT_KEYS = {"a": "image_prompt", "b": "image_prompt_2", "c": "image_prompt_3", "d": "image_prompt_4"}
 SRC_KEYS = {"a": "image_source", "b": "image_source_2", "c": "image_source_3", "d": "image_source_4"}
+QUERY_KEYS = {"a": "image_query", "b": "image_query_2", "c": "image_query_3", "d": "image_query_4"}  # = media.py
 ALIASES = ["corpse", "creature", "revenant", "the dead", "body"]
 # a shot whose main subject (first words) is only a material / surface / texture
 _FILLER = re.compile(r"\b(textures?|surfaces?|walls?|ground|floor|threads?|fabric|cloth|linen|moss|soil|dirt|"
@@ -226,9 +227,49 @@ def apply(story: dict) -> dict:
             text = (sc.get(PROMPT_KEYS[l]) or "").lower()
             if text and ((creature and creature in text) or i in keys):
                 lock(story, i, l)
+    gendered = match_gender(story)
     n_creature = sum(1 for sc in scenes for l in letters if creature and creature in (sc.get(PROMPT_KEYS[l]) or "").lower())
     if creature:
         log(f"Creature on screen: '{creature}' in {n_creature} shot(s) (AI only), hook shot "
             f"{'yes' if creature in (scenes[0].get(PROMPT_KEYS['a']) or '').lower() else 'NO'}")
     log(f"Key scenes {sorted(keys)}: AI shots with a real subject; locked shots: {', '.join(story.get('_ai_only', []))}")
-    return {"rewritten": rewritten, "creature_shots": n_creature}
+    return {"rewritten": rewritten, "creature_shots": n_creature, "gendered": gendered}
+
+
+_SHE = re.compile(r"\b(she|her|hers|herself)\b", re.I)
+_HE = re.compile(r"\b(he|him|his|himself)\b", re.I)
+_GENDERED = re.compile(r"\b(girls?|boys?|wom[ae]n|m[ae]n|female|male|mother|father|daughter|son|sister|brother|"
+                       r"wife|husband|widow\w*|lady|ladies|gentleman|schoolgirl|schoolboy|he|she|his|her)\b", re.I)
+_NEUTRAL = {"female": {"student": "female student", "child": "girl", "kid": "girl", "teenager": "teenage girl",
+                       "person": "woman", "figure": "female figure", "adult": "woman", "pupil": "female pupil"},
+            "male": {"student": "male student", "child": "boy", "kid": "boy", "teenager": "teenage boy",
+                     "person": "man", "figure": "male figure", "adult": "man", "pupil": "male pupil"}}
+
+
+def match_gender(story: dict) -> list[str]:
+    """A scene that narrates only 'she / her' (or only 'he / him') gets that gender on the neutral person in its
+    shots: Hanako-san (2026-11-19) narrated "she was a victim of bullying" over stock footage found for "a student
+    sitting alone on school stairs", which returned a boy. Shots that already name a gender are left alone."""
+    out = []
+    for i, sc in enumerate(story.get("scenes") or []):
+        text = sc.get("narration", "")
+        she, he = bool(_SHE.search(text)), bool(_HE.search(text))
+        if she == he:
+            continue
+        words = _NEUTRAL["female" if she else "male"]
+
+        def swap(m):
+            w = words[m.group(2).lower()]
+            return (("an " if w[0] in "aeiou" else "a ") if m.group(1) else "") + w
+        for l in _letters():
+            for key in (PROMPT_KEYS[l], QUERY_KEYS[l]):  # the AI prompt and the stock-footage search words
+                p = sc.get(key) or ""
+                if not p or _GENDERED.search(p):
+                    continue
+                new = re.sub(r"\b(?:(an?) )?(student|child|kid|teenager|person|figure|adult|pupil)\b", swap, p,
+                             count=1, flags=re.I)
+                if new != p:
+                    sc[key] = new
+                    out.append(f"{_tag(i, l)}:{key}")
+                    log(f"Shot {_tag(i, l)}: matched the narration's {'she' if she else 'he'} ({key}): {new}")
+    return out

@@ -178,6 +178,10 @@ def resume(history: list[dict], buffered: set | None = None) -> dict | None:
         log(f"Checkpoint is stale (manifest story {m.get('story_id')} vs story.json {sid}): cleared")
         clear()
         return None
+    if _status(sid) == "parked":  # an older cache entry of a story parked since (Hessdalen looped Nov 12-16)
+        log(f"Checkpoint story {sid} was parked in data/failed_stories: not resumed (retry_story_id brings it back)")
+        clear()
+        return None
     used = {h.get("story_id") for h in history if not h.get("parked")} | \
         {(h.get("title"), h.get("mode")) for h in history if not h.get("parked")}
     if sid in used or (story.get("title"), story.get("mode")) in used or sid in (buffered or set()):
@@ -265,14 +269,14 @@ def record_failure(stage: str, error: str) -> int:
     return len(m["attempts"])
 
 
-def failed_attempt(story: dict, stage: str, error: str) -> bool:
-    """main.py: count a failed run of the checkpoint's story; at MAX_ATTEMPTS park it in data/failed_stories and send
-    the ntfy alert (the next run starts a new story). True when it was parked."""
+def failed_attempt(story: dict, stage: str, error: str, park_now: bool = False) -> bool:
+    """main.py: count a failed run of the checkpoint's story; at MAX_ATTEMPTS (or at once with park_now, for a failure
+    a retry cannot fix) park it in data/failed_stories and send the ntfy alert. True when it was parked."""
     if not manifest().get("story_id"):
         return False
     n = record_failure(stage, error)
     log(f"Story {story.get('story_id')}: failed attempt {n}/{MAX_ATTEMPTS} at stage {stage}")
-    if n < MAX_ATTEMPTS:
+    if n < MAX_ATTEMPTS and not park_now:
         return False
     dest = park(story)
     try:
@@ -315,6 +319,10 @@ def park(story: dict) -> Path:
     last = (attempts() or [{}])[-1]
     dest = _export(story, FAILED / sid, "parked", f"{len(attempts())} failed attempts")
     clear()
+    # Leave a marker: with an empty folder daily.yml saves no cache, and the next run restored the story's older
+    # checkpoint entry by prefix and parked it again, run after run (Hessdalen, Nov 12-16).
+    CK.mkdir(parents=True, exist_ok=True)
+    write_atomic(CK / "done.json", json.dumps({"story_id": sid, "parked": True, "at": _now()}))
     log(f"Story {sid} parked after {MAX_ATTEMPTS} failed attempts (last at stage {last.get('stage')}): {dest}")
     return dest
 
@@ -330,6 +338,7 @@ def retry(sid: str) -> dict:
     except (OSError, ValueError):
         cur = None
     if cur and cur.get("story_id") == sid and manifest().get("story_id") == sid:
+        _set_status(sid, "retrying")
         m = manifest()
         m["attempts_before_retry"] = m.get("attempts_before_retry", []) + m.get("attempts", [])
         m["attempts"] = []
@@ -344,12 +353,34 @@ def retry(sid: str) -> dict:
         log(f"Retry {sid}: the unfinished story {cur['story_id']} was shelved to data/failed_stories")
     story = json.loads(parked.read_text())
     start(story)
-    status = FAILED / sid / "status.json"
-    st = json.loads(status.read_text()) if status.exists() else {}
-    write_atomic(status, json.dumps({**st, "status": "retrying", "retry_at": _now()}, indent=1))
+    _set_status(sid, "retrying", force=True)
     log(f"Retry {sid}: '{story.get('title')}' restored from data/failed_stories (narration and images are redone "
         "unless the restored cache still has them)")
     return story
+
+
+def branch_handoff() -> Path | None:
+    """A run from another branch (fixing-it) that ends with an UNFINISHED story: its Actions cache entry is visible
+    only to that branch, so the story is also written to data/failed_stories/<id>/ (status branch_unfinished,
+    pushed to main by push_state.sh): a main run resumes it with retry_story_id instead of losing it."""
+    from common import STATE_BRANCH, current_branch
+    if not os.environ.get("GITHUB_ACTIONS") or current_branch() in ("", STATE_BRANCH):
+        return None
+    f = CK / "story.json"
+    if (CK / "done.json").exists() or not f.exists():
+        return None
+    try:
+        story = json.loads(f.read_text())
+    except (OSError, ValueError):
+        return None
+    sid = story.get("story_id") or manifest().get("story_id")
+    if not sid:
+        return None
+    dest = _export(story, FAILED / sid, "branch_unfinished",
+                   f"unfinished on branch {current_branch()}: main's runs cannot restore that branch's checkpoint "
+                   f"cache; resume it with retry_story_id={sid}")
+    log(f"Checkpoint {sid} is unfinished on branch {current_branch()}: also saved to {dest.relative_to(ROOT)}")
+    return dest
 
 
 def finish(story: dict) -> None:
@@ -363,6 +394,22 @@ def finish(story: dict) -> None:
     if sid and status.exists():
         st = json.loads(status.read_text())
         write_atomic(status, json.dumps({**st, "status": "recovered", "recovered_at": _now()}, indent=1))
+
+
+def _status(sid: str) -> str | None:
+    try:
+        return json.loads((FAILED / str(sid) / "status.json").read_text()).get("status")
+    except (OSError, ValueError, AttributeError):
+        return None
+
+
+def _set_status(sid: str, status: str, force: bool = False) -> None:
+    """Mark data/failed_stories/<sid>/status.json (only when it exists, unless force)."""
+    f = FAILED / str(sid) / "status.json"
+    if not f.exists() and not force:
+        return
+    st = json.loads(f.read_text()) if f.exists() else {}
+    write_atomic(f, json.dumps({**st, "status": status, "retry_at": _now()}, indent=1))
 
 
 def clear() -> None:

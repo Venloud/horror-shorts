@@ -1,9 +1,10 @@
-"""Night Files -> Buffer.com YouTube queue, one verified video per invocation.
+"""Night Files -> Buffer.com TikTok + YouTube queues, one verified video per invocation.
 
-The Daily workflow uses --stamp-file .posted to queue the same completed video.
-The 15-minute workflow drains newer Night Files inventory, then historical
-backfill, then attempts artifact/TikTok recovery. NO Google/YouTube upload API.
-The GitHub queue receipt is persisted BEFORE the Buffer mutation to fail closed.
+The Daily workflow uses --stamp-file .posted to queue the same completed video
+to both configured channels. The 15-minute workflow drains newer inventory,
+then YouTube historical backfill and verified artifact/TikTok recovery. NO
+Google/YouTube upload API. Each channel's GitHub queue receipt is persisted
+BEFORE its Buffer mutation to fail closed.
 """
 import argparse
 import base64
@@ -20,7 +21,11 @@ HISTORY = ROOT / "data/history.json"
 GH_API = "https://api.github.com"
 BUF_API = "https://api.buffer.com"
 REPO = os.environ.get("GITHUB_REPOSITORY", "Venloud/horror-shorts")
-CHANNEL = os.environ.get("BUFFER_YOUTUBE_CHANNEL_ID", "6ad2d7d2778b240e2f331d8e")
+CHANNELS = {
+    "youtube": os.environ.get("BUFFER_YOUTUBE_CHANNEL_ID", "6ad2d7d2778b240e2f331d8e"),
+    "tiktok": os.environ.get("BUFFER_TIKTOK_CHANNEL_ID", "6aefbb44e29c69a1719c4ae8"),
+}
+TIKTOK_BUFFER_FROM = os.environ.get("BUFFER_TIKTOK_FROM", "2026-11-07")
 
 
 def gh(path):
@@ -37,7 +42,7 @@ def gh(path):
 def graph(query):
     token = os.environ.get("BUFFER_ACCESS_TOKEN")
     if not token:
-        raise RuntimeError("BUFFER_ACCESS_TOKEN missing: cannot queue YouTube through Buffer")
+        raise RuntimeError("BUFFER_ACCESS_TOKEN missing: cannot queue posts through Buffer")
     response = requests.post(
         BUF_API, json={"query": query},
         headers={"Authorization": "Bearer " + token}, timeout=45,
@@ -49,13 +54,13 @@ def graph(query):
     return payload["data"]
 
 
-def posts(org_id, status):
+def posts(org_id, status, channel_id):
     result, cursor, seen = [], None, set()
     for _ in range(200):
         after = (" after: " + json.dumps(cursor)) if cursor else ""
         query = ("query { posts(first: 50" + after + ", input: { organizationId: "
                  + json.dumps(org_id) + " filter: { status: [" + status
-                 + "], channelIds: [" + json.dumps(CHANNEL)
+                 + "], channelIds: [" + json.dumps(channel_id)
                  + "] } }) { edges { node { id text channelId } }"
                  + " pageInfo { hasNextPage endCursor } } }")
         page = graph(query)["posts"]
@@ -69,12 +74,12 @@ def posts(org_id, status):
     raise RuntimeError("Buffer pagination limit reached")
 
 
-def existing_posts():
+def existing_posts(channel_id):
     orgs = graph("query { account { organizations { id name } } }")["account"]["organizations"]
     if len(orgs) != 1:
         raise RuntimeError("Buffer must resolve exactly one organization")
     org_id = orgs[0]["id"]
-    return posts(org_id, "scheduled") + posts(org_id, "sent")
+    return posts(org_id, "scheduled", channel_id) + posts(org_id, "sent", channel_id)
 
 
 def read_state():
@@ -83,10 +88,11 @@ def read_state():
         response = gh("/contents/data/buffer_backfill_queue.json?ref=main")
     except requests.HTTPError as exc:
         if exc.response is not None and exc.response.status_code == 404:
-            return {"queued": {}}, None
+            return {"queued": {}, "tiktok_queued": {}}, None
         raise
     data = json.loads(base64.b64decode(response["content"]))
     data.setdefault("queued", {})
+    data.setdefault("tiktok_queued", {})
     return data, response["sha"]
 
 
@@ -167,14 +173,38 @@ def already_youtube(stamp):
     return False
 
 
-def candidates(queued, only_stamp=None):
-    """The same source order for daily and scheduled queueing, no duplicates."""
+def already_tiktok(stamp):
+    """Skip old direct posts and inbox drafts; Buffer must not publish them again."""
+    for entry in safe_history():
+        if (entry.get("buffered") or entry.get("date")) != stamp:
+            continue
+        tiktok = entry.get("tiktok") or {}
+        if not isinstance(tiktok, dict):
+            tiktok = {}
+        if entry.get("draft_sent") or tiktok.get("mode") in ("direct", "draft"):
+            return True
+    if BACKFILL.exists():
+        for item in json.loads(BACKFILL.read_text()).get("videos", []):
+            if item.get("stamp") == stamp and item.get("tiktok_published"):
+                return True
+    return False
+
+
+def needs_tiktok(stamp):
+    """Only queue post-rollout inventory, and never replay a prior TikTok delivery."""
+    return stamp[:10] >= TIKTOK_BUFFER_FROM and not already_tiktok(stamp)
+
+
+def candidates(queued, tiktok_queued, only_stamp=None):
+    """Return inventory with at least one still-needed channel delivery."""
     incoming = []
     for tag in ("youtube-pending", "buffer"):
-        for stamp, mp4, metadata in pairs(release_assets(tag), queued, after="2026-10-19"):
-            if not already_youtube(stamp) and (only_stamp is None or stamp == only_stamp):
+        for stamp, mp4, metadata in pairs(release_assets(tag), {}, after="2026-10-19"):
+            yt_needed = stamp not in queued and not already_youtube(stamp)
+            tt_needed = stamp not in tiktok_queued and needs_tiktok(stamp)
+            if (yt_needed or tt_needed) and (only_stamp is None or stamp == only_stamp):
                 incoming.append((stamp, mp4, metadata))
-    # Important: prefer durable youtube-pending after a TikTok draft removes the normal buffer asset.
+    # Prefer the durable release after the daily publisher retires the normal buffer asset.
     by_stamp = {}
     for item in incoming:
         by_stamp.setdefault(item[0], item)
@@ -206,10 +236,13 @@ def historical_candidates(queued):
     return sorted(out)
 
 
-def queue_one(stamp, mp4, json_asset, record, sha, remote_posts):
-    queued = record["queued"]
+def queue_one(stamp, mp4, json_asset, record, sha, remote_posts, destination="youtube"):
+    """Queue one Buffer channel with an independent fail-closed receipt."""
+    field = "tiktok_queued" if destination == "tiktok" else "queued"
+    queued = record[field]
     if stamp in queued:
         return False, sha
+    channel = CHANNELS[destination]
     media = mp4["browser_download_url"]
     meta_url = json_asset["browser_download_url"]
     public_asset(media, "video")
@@ -218,26 +251,44 @@ def queue_one(stamp, mp4, json_asset, record, sha, remote_posts):
     response.raise_for_status()
     metadata = response.json()
     title = (metadata.get("yt_title") or metadata.get("title") or "").strip()
-    desc = (metadata.get("yt_description") or metadata.get("caption_text")
-            or metadata.get("caption") or "").strip()
-    if not title or not desc:
-        raise RuntimeError("Missing approved YouTube title/description for " + stamp)
-    # Remote matches are a secondary guard for historical queues whose GitHub receipt was lost.
-    if any(stamp in (p.get("text") or "") or title.lower() in (p.get("text") or "").lower()
-           for p in remote_posts if p.get("channelId") == CHANNEL):
+    if destination == "tiktok":
+        text = (metadata.get("caption_text") or metadata.get("caption") or "").strip()
+        if not text:
+            raise RuntimeError("Missing approved TikTok caption for " + stamp)
+        remote_match = any(
+            p.get("channelId") == channel
+            and (stamp in (p.get("text") or "")
+                 or " ".join((p.get("text") or "").split()).casefold()
+                 == " ".join(text.split()).casefold())
+            for p in remote_posts
+        )
+        platform_metadata = " metadata: { tiktok: { isAiGenerated: true } }"
+    else:
+        text = (metadata.get("yt_description") or metadata.get("caption_text")
+                or metadata.get("caption") or "").strip()
+        if not title or not text:
+            raise RuntimeError("Missing approved YouTube title/description for " + stamp)
+        # Remote matches are a secondary guard for historical queues whose GitHub receipt was lost.
+        remote_match = any(
+            stamp in (p.get("text") or "")
+            or title.lower() in (p.get("text") or "").lower()
+            for p in remote_posts if p.get("channelId") == channel
+        )
+        platform_metadata = (" metadata: { youtube: { title: " + json.dumps(title[:100])
+                             + ' categoryId: "24" madeForKids: false isAiGenerated: true } }')
+    if remote_match:
         queued[stamp] = {"status": "already_in_buffer", "title": title}
         return False, persist(record, sha)
-    mutation = ("mutation { createPost(input: { text: " + json.dumps(desc[:4500])
-                + " channelId: " + json.dumps(CHANNEL)
+    mutation = ("mutation { createPost(input: { text: " + json.dumps(text[:4500])
+                + " channelId: " + json.dumps(channel)
                 + " schedulingType: automatic mode: addToQueue"
-                + " metadata: { youtube: { title: " + json.dumps(title[:100])
-                + ' categoryId: "24" madeForKids: false isAiGenerated: true } }'
+                + platform_metadata
                 + " assets: [{ video: { url: " + json.dumps(media)
                 + " } }] }) { ... on PostActionSuccess { post { id dueAt } }"
                 + " ... on MutationError { message } } }")
     # Important: persist BEFORE sending. A timeout/runner crash must never blindly duplicate.
     queued[stamp] = {"status": "attempt_started", "title": title,
-                     "source_url": media}
+                     "source_url": media, "channel_id": channel}
     sha = persist(record, sha)
     result = graph(mutation)["createPost"]
     post = result.get("post")
@@ -246,7 +297,7 @@ def queue_one(stamp, mp4, json_asset, record, sha, remote_posts):
     queued[stamp] = {"status": "queued", "buffer_post_id": post["id"],
                      "due_at": post.get("dueAt"), "title": title}
     sha = persist(record, sha)
-    print("Queued", stamp, "through Buffer.com:", post["id"])
+    print("Queued", stamp, "for", destination, "through Buffer.com:", post["id"])
     return True, sha
 
 
@@ -274,21 +325,29 @@ def main(argv=None):
         return 0
     record, sha = read_state()
     queued = record["queued"]
-    remote = None
+    tiktok_queued = record["tiktok_queued"]
+    remote_youtube = None
+    remote_tiktok = None
 
     def attempt(options):
-        nonlocal remote, sha
+        nonlocal remote_youtube, remote_tiktok, sha
         for key, mp4, meta in options:
-            if key in queued:
-                continue
-            if remote is None:
-                remote = existing_posts()
-            done, sha = queue_one(key, mp4, meta, record, sha, remote)
-            if done:
+            handled = False
+            if key not in queued and not already_youtube(key):
+                if remote_youtube is None:
+                    remote_youtube = existing_posts(CHANNELS["youtube"])
+                _, sha = queue_one(key, mp4, meta, record, sha, remote_youtube, "youtube")
+                handled = True
+            if key not in tiktok_queued and needs_tiktok(key):
+                if remote_tiktok is None:
+                    remote_tiktok = existing_posts(CHANNELS["tiktok"])
+                _, sha = queue_one(key, mp4, meta, record, sha, remote_tiktok, "tiktok")
+                handled = True
+            if handled:
                 return True
         return False
 
-    if attempt(candidates(queued, only_stamp=stamp)):
+    if attempt(candidates(queued, tiktok_queued, only_stamp=stamp)):
         return 0
     if stamp is not None or args.production_only:
         print("No new production video to queue")

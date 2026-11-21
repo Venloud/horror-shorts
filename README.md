@@ -1,18 +1,22 @@
 # horror-shorts (Night Files)
 
-An automated illustrated horror / true-crime / folklore video pipeline: twice-daily TikTok inbox delivery, with YouTube scheduling handled by Buffer.com.
+An automated illustrated horror / true-crime / folklore video pipeline: twice-daily video queueing to TikTok and YouTube through Buffer.com.
 
 ## TikTok delivery mode
 
-TikTok delivery is set to **draft** in `config.json`. The daily workflow sends each
-buffered video to the connected creator's TikTok inbox for the creator to open,
-finish and publish manually. `SEND_TO_USER_INBOX` confirms delivery, **not**
-public posting. A confirmed inbox delivery is recorded as `draft_sent` and
-removed from the production buffer to avoid sending duplicate drafts. Failed
-or unconfirmed deliveries remain queued. The copy-ready caption is included
-in the run artifact and phone notification, as TikTok inbox uploads do not
-automatically populate the caption. The direct Google YouTube upload API is retired;
-the video is retained in the `youtube-pending` GitHub Release and queued on Buffer.com.
+`config.json` sets `tiktok_mode` to **buffer**. Daily videos are first validated
+and saved as paired MP4/metadata assets in the `youtube-pending` GitHub Release.
+The daily workflow then queues the video and approved TikTok caption in Buffer,
+alongside the existing YouTube queue. A 15-minute recovery worker keeps separate
+queue receipts for each channel, so one accepted channel is not duplicated when
+the other channel needs recovery. Queueing is not proof of public posting.
+
+If Buffer reports a TikTok post as failed or still processing, check the TikTok
+profile and Buffer post before retrying; an uncertain API result is recorded as
+`attempt_started` and intentionally blocks blind retries to avoid duplicate posts.
+TikTok API credentials remain in the recovery worker only for verified legacy
+public-post recovery; the daily publishing path no longer uploads through TikTok's
+Content Posting API. The direct Google YouTube upload API remains retired.
 
 ## Current production flow
 
@@ -25,22 +29,27 @@ Buffer fill / media test
         ↓
    GitHub Release buffer
         ↓
- scheduled daily workflow
+   scheduled daily workflow
         ↓
- send oldest buffered item to TikTok inbox
+ stage oldest buffered item in `youtube-pending` Release
         ↓
- preserve its MP4 in `youtube-pending` Release
+ same Daily run queues it to TikTok and YouTube in Buffer.com
         ↓
- same Daily run queues it on Buffer.com
-        ↓
- 15-minute Buffer recovery worker catches missing/older inventory
+ 15-minute Buffer recovery worker catches missing queue receipts
 ```
 
-The scheduled workflow checks the production buffer first. If content is already waiting, it skips generation and publishes the oldest complete item. If the buffer is empty, it generates one video into the buffer and then publishes the next buffered item.
+The scheduled workflow checks the production buffer first. If content is already waiting, it skips generation and stages the oldest complete item for Buffer. If the buffer is empty, it generates one video into the buffer and then stages the next item.
 
 The separate `.github/workflows/buffer_fill.yml` producer can build inventory without publishing. The media-production test lane can also queue finished test output without immediately posting it.
 
-A failed TikTok delivery retains the original GitHub buffer item for later retry. Accepted TikTok drafts leave the GitHub buffer but retain their original MP4 in the `youtube-pending` Release. Buffer.com queue receipts are recorded in `data/buffer_backfill_queue.json`; queueing is not proof of a public YouTube post. The 15-minute worker queues one unqueued video per run, checking new inventory first and then surviving original historical artifacts / verified public TikTok posts. It does not use Google's YouTube upload API or replay already recorded YouTube uploads.
+A failed durable staging step retains the original GitHub buffer item. Once staged,
+the exact MP4 and metadata remain in the `youtube-pending` Release for Buffer queue
+recovery. Per-channel Buffer receipts are recorded in
+`data/buffer_backfill_queue.json`; a TikTok receipt map is separate from the
+existing YouTube backfill map. Historical backfill continues to target YouTube,
+and the TikTok rollout date prevents already-published inventory from being
+requeued. The worker does not use Google's YouTube upload API or replay posts
+already recorded for their destination.
 
 ## Pipeline
 
@@ -73,7 +82,7 @@ See **[NIGHT_FILES_UPDATE.md](NIGHT_FILES_UPDATE.md)** for the integration notes
 ```
 pipeline/
   main.py            generator: story -> voice -> visuals -> render -> QA -> buffer
-  publish.py         publisher: buffer -> TikTok + YouTube -> history
+  publish.py         publisher: buffer -> durable Buffer staging -> history
   story.py           story generation, critic, fact checks
   mystery.py         mystery / lore / case prompts
   sources.py         source and inbox handling
@@ -88,7 +97,7 @@ pipeline/
   captions.py        caption generation
   buffer.py          GitHub Release buffer
   checkpoint.py      build resume support
-  tiktok.py          TikTok publishing
+  tiktok.py          TikTok OAuth/video recovery for legacy inventory
   youtube.py         YouTube publishing
   notify.py          phone alerts
   analytics.py       analytics
@@ -124,7 +133,8 @@ Generates inventory into the GitHub Release buffer without publishing.
 
 **Scheduled publishing:** `.github/workflows/daily.yml`
 
-Checks the buffer and publishes the oldest buffered item. It generates only when the buffer is empty.
+Checks the buffer, stages the oldest item, and queues it to TikTok and YouTube via
+Buffer. It generates only when the buffer is empty.
 
 **YouTube checks/backfill:** `.github/workflows/yt_check.yml` and `.github/workflows/yt_backfill.yml`
 

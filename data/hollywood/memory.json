@@ -1,25 +1,61 @@
 {
- "videos": 2,
+ "videos": 13,
  "entries": {
   "title": {
-   "fired": 2,
-   "last": "2026-11-02_1033"
+   "fired": 13,
+   "last": "2026-11-21_0743"
   },
   "year_reel": {
-   "fired": 2,
-   "last": "2026-11-02_1033"
+   "fired": 9,
+   "last": "2026-11-18_2243"
   },
   "phrase": {
-   "fired": 3,
-   "last": "2026-11-02_1033"
+   "fired": 11,
+   "last": "2026-11-21_0743"
   },
   "place": {
-   "fired": 2,
-   "last": "2026-11-02_1033"
+   "fired": 10,
+   "last": "2026-11-21_0743"
   },
   "counter_people": {
    "fired": 1,
    "last": "2026-11-02_1033"
+  },
+  "polaroid": {
+   "fired": 2,
+   "last": "2026-11-08_0644"
+  },
+  "clue_newspaper": {
+   "fired": 1,
+   "last": "2026-11-08_0644"
+  },
+  "zoom_punch": {
+   "fired": 15,
+   "last": "2026-11-18_2243"
+  },
+  "year_line": {
+   "fired": 3,
+   "last": "2026-11-18_0757"
+  },
+  "kinetic": {
+   "fired": 2,
+   "last": "2026-11-17_2318"
+  },
+  "flicker": {
+   "fired": 1,
+   "last": "2026-11-17_0832"
+  },
+  "info_card": {
+   "fired": 5,
+   "last": "2026-11-21_0743"
+  },
+  "counter_bullets": {
+   "fired": 1,
+   "last": "2026-11-18_0757"
+  },
+  "counter_plain": {
+   "fired": 1,
+   "last": "2026-11-21_0743"
   }
  },
  "places": {
@@ -36,9 +72,52 @@
    "level": "city",
    "lon": -60.18,
    "lat": 46.066
+  },
+  "This": {
+   "times": 3,
+   "iso2": "SN",
+   "level": "region",
+   "lon": -16.87,
+   "lat": 14.69
+  },
+  "David": {
+   "times": 1,
+   "iso2": "PA",
+   "level": "city",
+   "lon": -82.433,
+   "lat": 8.433
+  },
+  "Norway": {
+   "times": 1,
+   "iso2": "NO",
+   "level": "country",
+   "lon": 9.68,
+   "lat": 61.36
+  },
+  "Tennessee": {
+   "times": 1,
+   "iso2": "US",
+   "level": "region",
+   "lon": -86.34,
+   "lat": 35.75
+  },
+  "Lyon": {
+   "times": 1,
+   "iso2": "FR",
+   "level": "city",
+   "lon": 4.828,
+   "lat": 45.772
+  },
+  "Versailles": {
+   "times": 1,
+   "iso2": "FR",
+   "level": "city",
+   "lon": 2.133,
+   "lat": 48.8
   }
  },
  "unmatched": {
+  "dark": 2,
   "unseen beast": 1,
   "more ferocious": 1,
   "much faster": 1,
@@ -59,7 +138,71 @@
   "electrical malfunction": 1,
   "electrical system": 1,
   "system malfunction": 1,
-  "latch design": 1
+  "latch design": 1,
+  "elizabeth": 1,
+  "white due to overexposure": 1,
+  "camera viewfinder": 1,
+  "showed seventy": 1,
+  "seventy percent": 1,
+  "northern japan while waiting": 1,
+  "legend traces": 1,
+  "traces back": 1,
+  "back historically": 1,
+  "body in half": 1,
+  "died in absolute agony": 1,
+  "travels entirely": 1,
+  "elbows producing": 1,
+  "characteristic teke": 1,
+  "legend warns": 1,
+  "warns clearly": 1,
+  "fatal vengeance": 1,
+  "blade broke from fatigue": 1,
+  "fragments shattered": 1,
+  "fourteen window": 1,
+  "window causing": 1,
+  "investigators traced": 1,
+  "fatigue crack": 1,
+  "crack prompting": 1,
+  "spirit a banshee": 1,
+  "irish speech as ben": 1,
+  "death": 1,
+  "unlike ordinary ghosts": 1,
+  "coulomb crystals": 1,
+  "orting residents": 1,
+  "residents described": 1,
+  "ape-man standing": 1,
+  "before disappearing": 1,
+  "giant threw": 1,
+  "threw heavy": 1,
+  "archivists maintain cryptozoology files": 1,
+  "bigfoot lore lives inside": 1,
+  "brazen daylight slaughter backfired": 1,
+  "capone through forensic accounting": 1,
+  "local communities": 1,
+  "communities shared": 1,
+  "shared chilling": 1,
+  "later expeditions": 1,
+  "expeditions gathered": 1,
+  "stories leaving": 1,
+  "black rhinoceroses once roaming": 1,
+  "nineteen thirteen": 1,
+  "thirteen survey": 1,
+  "survey remains": 1,
+  "world war two air": 1,
+  "brave classmate": 1,
+  "classmate challenges": 1,
+  "wooden door": 1,
+  "pale": 1,
+  "tellings warn": 1,
+  "three-headed lizard": 1,
+  "lizard waits": 1,
+  "parents cast": 1,
+  "longer feed": 1,
+  "joined band": 1,
+  "act": 1,
+  "stones": 1,
+  "prussian forces": 1,
+  "returned to french lines": 1
  },
  "log": [
   {
@@ -83,6 +226,249 @@
     "place",
     "counter_people"
    ]
+  },
+  {
+   "stamp": "2026-11-08_0644",
+   "story_id": "18df547c34f0",
+   "effects": [
+    "title",
+    "place",
+    "polaroid",
+    "year_reel",
+    "clue_newspaper",
+    "place",
+    "zoom_punch",
+    "polaroid"
+   ]
+  },
+  {
+   "stamp": "2026-11-08_1956",
+   "story_id": "2ba7374d2f00",
+   "effects": [
+    "title",
+    "place"
+   ]
+  },
+  {
+   "stamp": "2026-11-09_0713",
+   "story_id": "f1c6056ddf8c",
+   "effects": [
+    "title",
+    "year_reel",
+    "zoom_punch",
+    "zoom_punch",
+    "zoom_punch",
+    "zoom_punch"
+   ]
+  },
+  {
+   "stamp": "2026-11-09_2352",
+   "story_id": "60968406f7f3",
+   "effects": [
+    "title",
+    "year_reel",
+    "phrase",
+    "zoom_punch",
+    "zoom_punch",
+    "zoom_punch"
+   ]
+  },
+  {
+   "stamp": "2026-11-10_0746",
+   "story_id": "46fe91e575df",
+   "effects": [
+    "title",
+    "phrase",
+    "phrase",
+    "phrase",
+    "zoom_punch",
+    "zoom_punch",
+    "zoom_punch"
+   ]
+  },
+  {
+   "stamp": "2026-11-17_0832",
+   "story_id": "5494501f8167",
+   "effects": [
+    "title",
+    "place",
+    "year_reel",
+    "year_line",
+    "year_line",
+    "kinetic",
+    "flicker"
+   ]
+  },
+  {
+   "stamp": "2026-11-17_2318",
+   "story_id": "fc3f1f915d8b",
+   "effects": [
+    "title",
+    "year_reel",
+    "place",
+    "kinetic",
+    "zoom_punch",
+    "info_card"
+   ]
+  },
+  {
+   "stamp": "2026-11-18_0757",
+   "story_id": "3f1daf149cc4",
+   "effects": [
+    "title",
+    "year_reel",
+    "counter_bullets",
+    "phrase",
+    "info_card",
+    "zoom_punch",
+    "info_card",
+    "zoom_punch",
+    "year_line"
+   ]
+  },
+  {
+   "stamp": "2026-11-18_2243",
+   "story_id": "454a895ebe5d",
+   "effects": [
+    "title",
+    "phrase",
+    "year_reel",
+    "zoom_punch",
+    "info_card"
+   ]
+  },
+  {
+   "stamp": "2026-11-19_0757",
+   "story_id": "da9cca892b81",
+   "effects": [
+    "title",
+    "place",
+    "phrase"
+   ]
+  },
+  {
+   "stamp": "2026-11-21_0743",
+   "story_id": "720c9b03ec93",
+   "effects": [
+    "title",
+    "place",
+    "counter_plain",
+    "phrase",
+    "info_card",
+    "place"
+   ]
   }
- ]
+ ],
+ "editing": {
+  "weights": {},
+  "videos": {
+   "5494501f8167": {
+    "stamp": "",
+    "title": "The Mysterious Lights of Hessdalen",
+    "used": {
+     "fx:title": 1,
+     "fx:globe_pin": 1,
+     "fx:year_reel": 1,
+     "fx:year_line": 2,
+     "fx:kinetic": 1,
+     "fx:flicker": 1,
+     "move:push": 5,
+     "cut:cut": 19,
+     "move:still": 4,
+     "cut:push_through": 1
+    },
+    "verdict": null,
+    "metric": null
+   },
+   "fc3f1f915d8b": {
+    "stamp": "",
+    "title": "On the Trail of Bigfoot",
+    "used": {
+     "fx:title": 1,
+     "fx:year_reel": 1,
+     "fx:globe_pin": 1,
+     "fx:kinetic": 1,
+     "fx:zoom_punch": 1,
+     "fx:info_card": 1,
+     "move:still": 5,
+     "cut:cut": 18,
+     "move:push": 4,
+     "move:closeup": 1
+    },
+    "verdict": null,
+    "metric": null
+   },
+   "3f1daf149cc4": {
+    "stamp": "",
+    "title": "The St. Valentine's Day Massacre",
+    "used": {
+     "fx:title": 1,
+     "fx:year_reel": 1,
+     "fx:counter": 1,
+     "fx:phrase": 1,
+     "fx:info_card": 2,
+     "fx:zoom_punch": 2,
+     "fx:year_line": 1,
+     "move:push": 7,
+     "cut:cut": 20,
+     "move:still": 7
+    },
+    "verdict": null,
+    "metric": null
+   },
+   "454a895ebe5d": {
+    "stamp": "",
+    "title": "Mokele-mbembe, The Congo River Cryptid",
+    "used": {
+     "fx:title": 1,
+     "fx:phrase": 1,
+     "fx:year_reel": 1,
+     "fx:zoom_punch": 1,
+     "fx:info_card": 1,
+     "move:push": 5,
+     "cut:cut": 14,
+     "move:still": 6,
+     "cut:push_through": 2,
+     "move:closeup": 2,
+     "cut:dissolve": 1
+    },
+    "verdict": null,
+    "metric": null
+   },
+   "da9cca892b81": {
+    "stamp": "",
+    "title": "Hanako-san, the Ghost in the Toilet",
+    "used": {
+     "fx:title": 1,
+     "fx:globe_pin": 1,
+     "fx:phrase": 1,
+     "move:pull": 1,
+     "cut:cut": 22,
+     "move:still": 8,
+     "move:push": 7
+    },
+    "verdict": null,
+    "metric": null
+   },
+   "720c9b03ec93": {
+    "stamp": "",
+    "title": "Tarrare the Insatiable French Showman",
+    "used": {
+     "fx:title": 1,
+     "fx:globe_pin": 2,
+     "fx:counter": 1,
+     "fx:phrase": 1,
+     "fx:info_card": 1,
+     "move:push": 8,
+     "cut:cut": 20,
+     "move:still": 8,
+     "cut:push_through": 2,
+     "move:closeup": 1
+    },
+    "verdict": null,
+    "metric": null
+   }
+  },
+  "history": []
+ }
 }

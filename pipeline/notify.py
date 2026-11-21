@@ -109,7 +109,9 @@ def notify(story: dict, result: dict | None, error: str | None = None, prefix: s
         caption = story.get("caption_text") or (caption_text(story) if story.get("caption") else "")
     except Exception as e:  # noqa: BLE001 (never let the alert itself crash the run)
         caption = f"(caption unavailable: {e})"
-    kind = "draft" if result and result.get("mode") == "draft" else ("video" if not result else "post")
+    kind = ("draft" if result and result.get("mode") == "draft" else
+            "Buffer queue" if result and result.get("mode") == "buffer" else
+            ("video" if not result else "post"))
     title = f"{prefix}{num}New TikTok {kind}: {story.get('title', '(untitled)')}"
     body = (
         (f"{note}\n\n" if note else "") +

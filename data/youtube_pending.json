@@ -388,6 +388,168 @@
       "posted": "2026-11-03_0746",
       "status": "pending",
       "file": true
+    },
+    {
+      "stamp": "2026-11-03_2116",
+      "story_id": "08a99296e6c4",
+      "title": "The Legend of Black Shuck",
+      "video_number": null,
+      "posted": "2026-11-03_2146",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-04_0700",
+      "story_id": "0debc982a6e2",
+      "title": "The Mysterious Disappearance of Roanoke Colony",
+      "video_number": null,
+      "posted": "2026-11-04_0739",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-04_2130",
+      "story_id": "2cd6d1a3ca49",
+      "title": "The Rougarou of the Bayou",
+      "video_number": null,
+      "posted": "2026-11-04_2157",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-05_0726",
+      "story_id": "0b83ad5f564d",
+      "title": "TWA Flight 841 Uncontrolled Dive",
+      "video_number": null,
+      "posted": "2026-11-05_0750",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-06_2103",
+      "story_id": "8dad07dfc0ff",
+      "title": "The Blackwood Cove Disappearance",
+      "video_number": null,
+      "posted": "2026-11-06_2138",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-07_0637",
+      "story_id": "ddf99ad19c4f",
+      "title": "The Flannan Isles Mystery",
+      "video_number": null,
+      "posted": "2026-11-07_0717",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-07_1936",
+      "story_id": "1b2b2935a910",
+      "title": "The Pontianak",
+      "video_number": null,
+      "posted": "2026-11-07_2012",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-08_0644",
+      "story_id": "18df547c34f0",
+      "title": "The Solway Firth Spaceman",
+      "video_number": null,
+      "posted": "2026-11-08_0713",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-08_1956",
+      "story_id": "2ba7374d2f00",
+      "title": "The Legend of Teke Teke",
+      "video_number": null,
+      "posted": "2026-11-08_2016",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-09_0713",
+      "story_id": "f1c6056ddf8c",
+      "title": "Southwest Airlines Flight 1380",
+      "video_number": null,
+      "posted": "2026-11-09_0734",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-09_2352",
+      "story_id": "60968406f7f3",
+      "title": "The Banshee and the Family Doom",
+      "video_number": null,
+      "posted": "2026-11-10_0024",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-10_0746",
+      "story_id": "46fe91e575df",
+      "title": "The Nordic Revenant Known As Draugr",
+      "video_number": null,
+      "posted": "2026-11-10_0803",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-17_0832",
+      "story_id": "5494501f8167",
+      "title": "The Mysterious Lights of Hessdalen",
+      "video_number": null,
+      "posted": "2026-11-17_0858",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-17_2318",
+      "story_id": "fc3f1f915d8b",
+      "title": "On the Trail of Bigfoot",
+      "video_number": null,
+      "posted": "2026-11-17_2329",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-18_0757",
+      "story_id": "3f1daf149cc4",
+      "title": "The St. Valentine's Day Massacre",
+      "video_number": null,
+      "posted": "2026-11-18_0837",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-18_2243",
+      "story_id": "454a895ebe5d",
+      "title": "Mokele-mbembe, The Congo River Cryptid",
+      "video_number": null,
+      "posted": "2026-11-18_2314",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-19_0757",
+      "story_id": "da9cca892b81",
+      "title": "Hanako-san, the Ghost in the Toilet",
+      "video_number": null,
+      "posted": "2026-11-19_0830",
+      "status": "pending",
+      "file": true
+    },
+    {
+      "stamp": "2026-11-21_0743",
+      "story_id": "720c9b03ec93",
+      "title": "Tarrare the Insatiable French Showman",
+      "video_number": null,
+      "posted": "2026-11-21_0823",
+      "status": "pending",
+      "file": true
     }
   ],
   "uploads": {},

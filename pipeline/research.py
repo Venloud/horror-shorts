@@ -28,7 +28,15 @@ folklore archives, encyclopedias). Then write up to 25 short lines, one fact per
 FACT: <one fact the sources state, with names, numbers and dates exactly as written there>
 RUMOR: <a claim the sources report as rumor, legend, theory or unconfirmed (say who claims it)>
 Rules: only what the sources say; never guess or fill gaps; if sources disagree, write both as RUMOR lines;
-no opinions; no advice. Plain lines only, no markdown."""
+no opinions; no advice. Plain lines only, no markdown.
+{origin}"""
+
+ORIGIN = """For a legend / folklore topic, at least 5 of your lines must cover HOW THE LEGEND CAME TO BE: the earliest
+recorded mention (who wrote or reported it, when, where), the culture and situation it belongs to (what people
+feared, what custom or event it is tied to), how versions differ between regions or eras, and the explanations
+scholars or writers propose. An origin that sources dispute or only guess at is a RUMOR line naming who proposes
+it. If the sources say the origin is unknown, write that as a FACT line ("the origin is unknown; the earliest
+record is ..."). The earliest record is not the same as the origin: never merge the two."""
 
 
 def _today() -> str:
@@ -109,7 +117,8 @@ def research(topic: str, kind: str = "lore", notes: str = "") -> dict | None:
     key = env("GEMINI_API_KEY", required=False)
     if not key:
         return None
-    prompt = PROMPT.format(topic=topic, kind=kind, notes=(notes or "")[:600])
+    origin = ORIGIN if re.search(r"legend|folklore|lore|myth", kind, re.IGNORECASE) else ""
+    prompt = PROMPT.format(topic=topic, kind=kind, notes=(notes or "")[:600], origin=origin)
     for model in CONFIG.get("research_models", ["gemini-2.5-flash", "gemini-2.5-flash-lite"]):
         for attempt in range(2):
             try:
