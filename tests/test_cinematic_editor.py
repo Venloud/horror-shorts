@@ -590,6 +590,17 @@ class Hollywood(unittest.TestCase):
         story = {"title": "x", "characters": [{"name": "Jordan Hale"}], "scenes": [{"narration": s} for s in scenes]}
         self.assertEqual(hollywood.find_places(story, self._narr(scenes)), [])
 
+    def test_accented_place_names_fold_instead_of_becoming_english_words(self):
+        # Hanako-san (2026-11-19): 'Thiès' normalised to 'this', so "This is the urban legend of Japan" pinned Senegal
+        import hollywood
+        scenes = ["This is the urban legend of Japan, whispered by children.",
+                  "Later the rumour reached León and then Iași."]
+        story = {"title": "Hanako-san", "scenes": [{"narration": s} for s in scenes]}
+        got = [p["name"] for p in hollywood.find_places(story, self._narr(scenes))]
+        self.assertEqual(got[0], "Japan")
+        self.assertNotIn("Thiès", got)
+        self.assertIn("León", got)
+
     def test_crossing_dark_signal_and_stamp_come_from_the_library(self):
         scenes = ["Nobody expected the radio to crackle like that over the water that afternoon.",
                   "Five Navy planes flew east over the Atlantic toward the islands.",

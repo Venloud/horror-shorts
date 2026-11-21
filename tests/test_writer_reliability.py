@@ -57,5 +57,38 @@ class ChallengerReliability(unittest.TestCase):
         self.assertEqual(post.call_args.kwargs["timeout"], 30)
 
 
+class StalledBackupsStaySkipped(unittest.TestCase):
+    def test_overloaded_backup_is_not_retried_on_the_next_topic(self):
+        # run 42904751972 (Nov 10): DeepSeek was "skipped for the rest of this run", then retried (2 x 180 s) on every
+        # following topic, because only the Gemini models were filtered.
+        backup = "nvidia:deepseek-ai/deepseek-v4.1-flash"
+        with mock.patch.dict(os.environ, {"NVIDIA_API_KEY": "test"}, clear=False), \
+             mock.patch.dict(story.CONFIG, {"nvidia_text_model": "deepseek-ai/deepseek-v4.1-flash"}), \
+             mock.patch.object(story, "_OVERLOADED", set()):
+            self.assertIn(backup, story.model_chain())
+            story._OVERLOADED.add(backup)
+            self.assertNotIn(backup, story.model_chain())
+
+
+class SpokenNumberFactCheck(unittest.TestCase):
+    """Runs 44827959383 (Dover Demon) and the Nov 16 Hessdalen run parked true stories as 'unsupported_fact: 20 / 19':
+    the checker read 'April twenty-first' as 20 and 'the nineteen thirties' as 19 and 30."""
+
+    def test_ordinals_and_decades_read_as_their_value(self):
+        import spoken_numbers as nums
+        self.assertEqual(nums.values("On April twenty-first, nineteen seventy-seven"), {21, 1977})
+        self.assertEqual(nums.values("since at least the nineteen thirties"), {1930})
+        self.assertEqual(nums.values("his forty-second birthday"), {42})
+        self.assertEqual(nums.values("the one hundredth victim"), {100})
+
+    def test_spoken_date_matching_source_is_not_unsupported(self):
+        story_ = {"mode": "mystery", "scenes": [
+            {"narration": "On April twenty-first, nineteen seventy-seven, seventeen-year-old William Bartlett drove."},
+            {"narration": "Lights have been reported since at least the nineteen thirties."}]}
+        source = "The Dover Demon was sighted on April 21-22, 1977. Lights were reported since the 1930s; he was 17."
+        found = story.writing_checks(story_, "true", source)
+        self.assertFalse([f for f in found if f["code"] == "unsupported_fact"], found)
+
+
 if __name__ == "__main__":
     unittest.main()

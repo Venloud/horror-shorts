@@ -112,6 +112,18 @@ def _word_values(tokens: list[str]) -> list[float]:
     return [float(g) for g in groups]
 
 
+def _number_word_forms() -> tuple[dict[str, str], dict[str, str]]:
+    """Ordinals ('twenty-first' ends in 'first') and decade plurals ('nineteen thirties') map back to cardinal words,
+    so values() reads 'April twenty-first' as 21 and 'the nineteen thirties' as 1930 instead of 20 / 19 and 30."""
+    ords = {ordinal(n): words(n) for n in list(range(1, 20)) + list(range(20, 100, 10))}
+    ords |= {name + "th": name for name in SCALE_VAL}  # hundredth, thousandth...
+    decades = {w[:-1] + "ies": w for w in TENS if w}  # twenties .. nineties
+    return ords, decades
+
+
+ORDINAL_WORD, DECADE_WORD = _number_word_forms()
+
+
 def values(text: str) -> set[float]:
     """Every number in the text, whether written in digits or words."""
     out: set[float] = set()
@@ -125,7 +137,13 @@ def values(text: str) -> set[float]:
     for part in re.split(r"[.,;:!?()\"\n]", text.lower().replace("oh-", "zero ")):  # a run never crosses punctuation
         run: list[str] = []
         for t in re.findall(r"[a-z]+", part) + ["."]:
-            if t in WORD_VAL or (t in SCALE_VAL and run) or (t == "and" and run):
+            ends = t in ORDINAL_WORD or t in DECADE_WORD  # an ordinal / decade word is the last word of its number
+            t = ORDINAL_WORD.get(t) or DECADE_WORD.get(t) or t
+            if ends and (t in WORD_VAL or (t in SCALE_VAL and run)):
+                run.append(t)
+                out.update(_word_values(run))
+                run = []
+            elif t in WORD_VAL or (t in SCALE_VAL and run) or (t == "and" and run):
                 run.append(t)
             else:
                 if any(x in WORD_VAL for x in run):

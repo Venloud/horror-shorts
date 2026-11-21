@@ -305,7 +305,8 @@ class Parking(Base):
         att = json.loads((d / "attempts.json").read_text())
         self.assertEqual([a["stage"] for a in att], ["narration", "explainer", "explainer"])
         self.assertEqual(sent, [f"Night Files: story {story['story_id']} parked after 3 fails at stage explainer"])
-        self.assertFalse(checkpoint.CK.exists())
+        self.assertEqual(sorted(f.name for f in checkpoint.CK.iterdir()), ["done.json"])  # parked marker only
+        self.assertTrue(json.loads((checkpoint.CK / "done.json").read_text())["parked"])
         self.assertEqual(json.loads((d / "status.json").read_text())["status"], "parked")
 
     def test_retry_story_id_resumes_a_parked_story(self):
@@ -325,6 +326,45 @@ class Parking(Base):
         checkpoint.finish(back)
         self.assertEqual(json.loads((checkpoint.FAILED / story["story_id"] / "status.json").read_text())["status"],
                          "recovered")
+
+    def test_final_gate_failure_parks_at_once_so_the_run_can_write_a_replacement(self):
+        # Dover Demon (Nov 19-20): the kept narration failed the same gate in three slots in a row. A final-gate failure
+        # parks the story on its first attempt; resume() then finds nothing and main.py writes a new story.
+        story = _story()
+        self.first_run(story)
+        with mock.patch("notify.notify_text", lambda *a, **k: None):
+            self.assertTrue(checkpoint.failed_attempt(story, "narration", "StoryDiscarded: gate", park_now=True))
+        self.assertEqual(sorted(f.name for f in checkpoint.CK.iterdir()), ["done.json"])  # parked marker only
+        self.assertTrue(json.loads((checkpoint.CK / "done.json").read_text())["parked"])
+        self.assertIsNone(checkpoint.resume([], set()))
+        self.assertEqual(json.loads((checkpoint.FAILED / story["story_id"] / "status.json").read_text())["status"],
+                         "parked")
+
+    def test_parked_story_is_not_restored_from_an_older_cache_entry(self):
+        # Hessdalen 5494501f8167, Nov 12-16: park() emptied cache/checkpoint, daily.yml saved nothing, and every next
+        # run restored the pre-park entry by the 'ckpt-' prefix and "parked after 3 failed attempts" again (9 slots).
+        cache = FakeActionsCache(self.tmp / "actions-cache")
+        story = _story()
+        self.first_run(story)
+        sid = story["story_id"]
+        with mock.patch("notify.notify_text", lambda *a, **k: None):
+            checkpoint.failed_attempt(story, "narration", "gate 1")
+            checkpoint.failed_attempt(story, "narration", "gate 2")
+            cache.save(f"ckpt-{sid}-1001-1", checkpoint.CK)  # the pre-park entry
+            self.assertTrue(checkpoint.failed_attempt(story, "narration", "gate 3"))
+        # the parked state is saved (daily.yml saves only when cache/checkpoint has files) ...
+        self.assertTrue((checkpoint.CK / "done.json").exists())
+        cache.save(f"ckpt-{sid}-1002-1", checkpoint.CK)
+        shutil.rmtree(checkpoint.CK)
+        cache.restore("ckpt-restore-1003", ["ckpt-none-", "ckpt-"], checkpoint.CK)
+        self.assertIsNone(checkpoint.resume([], set()))
+        # ... and even the old pre-park entry is refused, because data/failed_stories says parked
+        shutil.rmtree(checkpoint.CK)
+        shutil.copytree(cache.root / f"ckpt-{sid}-1001-1", checkpoint.CK)
+        self.assertIsNone(checkpoint.resume([], set()))
+        # retry_story_id still brings it back
+        checkpoint.retry(sid)
+        self.assertEqual(checkpoint.resume([], set())["story_id"], sid)
 
     def test_retry_unknown_id_fails_loudly(self):
         with self.assertRaises(RuntimeError):
