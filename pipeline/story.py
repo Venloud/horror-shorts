@@ -254,7 +254,10 @@ def _call_gemini(model: str, prompt: str, api_key: str, temperature: float = 1.0
                                                   else "its daily quota is used up"))
     body["contents"][0]["parts"][0]["text"] = strip_marks(prompt)
     _gemini_pace()
-    r = requests.post(GEMINI_URL.format(model=model), json=body, timeout=60,
+    # A full story from a thinking model can take over 60 s: the old 60 s timeout read as "overloaded" and the strong
+    # models were skipped for the run, so 28 of 30 videos (Nov 2-19) were written by the last-resort lite model.
+    wait = float(CONFIG.get("gemini_timeout_seconds", 60 if "lite" in model else 180))
+    r = requests.post(GEMINI_URL.format(model=model), json=body, timeout=wait,
                       headers={"x-goog-api-key": api_key})
     if is_gemini_auth_error(r.status_code, r.text):  # suspended project / bad key: Gemini is done for the run
         note_gemini_auth(r.status_code, r.text, f"story writer ({model})")
@@ -493,9 +496,9 @@ def _with_models(call, what: str = "story", light: bool = False):
                     break
                 if isinstance(e, DailyLimit):
                     break
-                if "HTTP 413" in msg:  # the prompt is over this provider's free-tier size: it will not shrink this run
+                if "HTTP 413" in msg or "HTTP 410" in msg:  # too large for the free tier / model retired: not this run
                     _OVERLOADED.add(model)
-                    log(f"{model}: request too large for its free tier, skipping it for the rest of this run")
+                    log(f"{model}: request too large or model retired, skipping it for the rest of this run")
                     break
                 busy_only = False
                 if "404" in msg or (model.startswith("groq:") and attempt >= 2):

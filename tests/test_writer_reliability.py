@@ -89,6 +89,21 @@ class ShotGenderMatchesNarration(unittest.TestCase):
         self.assertEqual(sc[3]["image_prompt"], "a man walking on a dark road")
 
 
+class StrongWriterTimeout(unittest.TestCase):
+    def test_strong_gemini_gets_time_to_write_lite_stays_fast(self):
+        # Nov 2-19: gemini-3.8-flash hit the 60 s read timeout, was marked overloaded and skipped, so 28 of 30
+        # videos were written by the last-resort lite model.
+        ok = mock.Mock(status_code=200, text="")
+        ok.json.return_value = {"candidates": [{"content": {"parts": [{"text": "{}"}]}}]}
+        for model, want in (("gemini-3.8-flash", 180), ("gemini-3.5-flash-lite", 60)):
+            with mock.patch.object(story.requests, "post", return_value=ok) as post,                  mock.patch.object(story, "_gemini_pace", lambda: None),                  mock.patch.object(story, "gemini_model_out", return_value=False):
+                try:
+                    story._call_gemini(model, "prompt", "key")
+                except Exception:  # noqa: BLE001  (parsing the stub answer is not under test)
+                    pass
+                self.assertEqual(post.call_args.kwargs["timeout"], want, model)
+
+
 class SpokenNumberFactCheck(unittest.TestCase):
     """Runs 44827959383 (Dover Demon) and the Nov 16 Hessdalen run parked true stories as 'unsupported_fact: 20 / 19':
     the checker read 'April twenty-first' as 20 and 'the nineteen thirties' as 19 and 30."""
