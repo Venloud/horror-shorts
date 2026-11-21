@@ -219,8 +219,10 @@
     {
       "part": 53,
       "slot": 41557,
-      "state": "reserved",
-      "created_at": "2026-11-21T23:53:06.945292+00:00"
+      "state": "delivered",
+      "created_at": "2026-11-21T23:53:06.945292+00:00",
+      "publish_id": "v_inbox_file~v2.7710776879716026398",
+      "updated_at": "2026-11-21T23:54:32.877387+00:00"
     }
   ]
 }
