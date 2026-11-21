@@ -5433,5 +5433,75 @@
     "youtube": {
       "pending": "buffer_queue_pending"
     }
+  },
+  {
+    "date": "2026-11-21_2105",
+    "story_id": "e0b9c4cd2885",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Footprints in the Snow",
+    "premise": "In 1922 Bavaria, mysterious footprints led into an isolated farmstead but never out, leading to one of history's most chilling unsolved crimes.",
+    "subgenre": "creator script",
+    "mode": "inbox-script",
+    "true_story": true,
+    "case": null,
+    "source": "inbox/hinterkaifeck_1922.txt",
+    "prompt_file": null,
+    "setting": "isolated Bavarian farmstead in winter 1922",
+    "threat": "an unidentified intruder who stalked the homestead and remained hidden on the premises",
+    "twist": "The perpetrator did not flee after the killings, but lived in the house and cared for the animals.",
+    "score": null,
+    "seconds": 62.0,
+    "voice_speed": 1.1,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.8-flash)",
+    "media_ids": [
+      "pexels:7881213"
+    ],
+    "visual_mode": "classic",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": null,
+    "visuals": {
+      "distinct": 21,
+      "longest_s": 5.5,
+      "longest_share": 0.083,
+      "longest_name": "image:scene_06a.png:full"
+    },
+    "yt_title": "Footprints In The Snow... Hinterkaifeck of Bavaria #shorts",
+    "hashtags": [
+      "hinterkaifeck",
+      "bavaria",
+      "truecrime"
+    ],
+    "yt_tags": [
+      "hinterkaifeck",
+      "hinterkaifeck murders",
+      "bavaria 1922",
+      "true crime story",
+      "cold case",
+      "hinterkaifeck farm",
+      "dark history",
+      "historical mystery",
+      "bavarian farmstead",
+      "hinterkaifeck story",
+      "bavaria mystery",
+      "true story"
+    ],
+    "opening": "Someone walked out of the frozen woods and straight toward their farmhouse.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-11-21_2105",
+    "tiktok": {
+      "status": "STAGED_FOR_BUFFER",
+      "mode": "buffer"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    }
   }
 ]

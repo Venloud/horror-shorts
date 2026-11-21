@@ -1,13 +1,13 @@
 {
- "videos": 13,
+ "videos": 14,
  "entries": {
   "title": {
-   "fired": 13,
-   "last": "2026-11-21_0743"
+   "fired": 14,
+   "last": "2026-11-21_2105"
   },
   "year_reel": {
-   "fired": 9,
-   "last": "2026-11-18_2243"
+   "fired": 10,
+   "last": "2026-11-21_2105"
   },
   "phrase": {
    "fired": 11,
@@ -30,16 +30,16 @@
    "last": "2026-11-08_0644"
   },
   "zoom_punch": {
-   "fired": 15,
-   "last": "2026-11-18_2243"
+   "fired": 16,
+   "last": "2026-11-21_2105"
   },
   "year_line": {
-   "fired": 3,
-   "last": "2026-11-18_0757"
+   "fired": 4,
+   "last": "2026-11-21_2105"
   },
   "kinetic": {
-   "fired": 2,
-   "last": "2026-11-17_2318"
+   "fired": 3,
+   "last": "2026-11-21_2105"
   },
   "flicker": {
    "fired": 1,
@@ -56,6 +56,14 @@
   "counter_plain": {
    "fired": 1,
    "last": "2026-11-21_0743"
+  },
+  "tracks_no_return": {
+   "fired": 1,
+   "last": "2026-11-21_2105"
+  },
+  "stamp_unsolved": {
+   "fired": 1,
+   "last": "2026-11-21_2105"
   }
  },
  "places": {
@@ -202,7 +210,13 @@
   "act": 1,
   "stones": 1,
   "prussian forces": 1,
-  "returned to french lines": 1
+  "returned to french lines": 1,
+  "mattock": 1,
+  "indications somebody": 1,
+  "stayed after": 1,
+  "murderer hiding": 1,
+  "hiding nearby": 1,
+  "nearby before": 1
  },
  "log": [
   {
@@ -357,6 +371,19 @@
     "info_card",
     "place"
    ]
+  },
+  {
+   "stamp": "2026-11-21_2105",
+   "story_id": "e0b9c4cd2885",
+   "effects": [
+    "title",
+    "tracks_no_return",
+    "year_reel",
+    "kinetic",
+    "year_line",
+    "zoom_punch",
+    "stamp_unsolved"
+   ]
   }
  ],
  "editing": {
@@ -464,6 +491,27 @@
      "move:still": 8,
      "cut:push_through": 2,
      "move:closeup": 1
+    },
+    "verdict": null,
+    "metric": null
+   },
+   "e0b9c4cd2885": {
+    "stamp": "",
+    "title": "The Footprints in the Snow",
+    "used": {
+     "fx:title": 1,
+     "fx:footprint_route": 1,
+     "fx:year_reel": 1,
+     "fx:kinetic": 1,
+     "fx:year_line": 1,
+     "fx:zoom_punch": 1,
+     "fx:stamp": 1,
+     "move:push": 6,
+     "cut:cut": 19,
+     "move:closeup": 2,
+     "move:still": 6,
+     "cut:dissolve": 1,
+     "cut:push_through": 1
     },
     "verdict": null,
     "metric": null
