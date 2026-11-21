@@ -148,7 +148,7 @@ class Providers(unittest.TestCase):
                 mock.patch.object(story, "_call_model", side_effect=call), \
                 mock.patch.object(story, "model_chain", return_value=["gemini-3.8-flash", "groq:openai/gpt-oss-120b"]):
             out = story.challenge_draft(weak, "prompt", "k", "true")
-        self.assertEqual(out["model"], "nvidia:deepseek-ai/deepseek-v4.1-flash")
+        self.assertEqual(out["model"], story.CONFIG["writer_challenger_model"])
         self.assertTrue(out["writing"]["judge"].startswith("objective checks"))
 
     def test_independent_judge_never_an_author_or_its_family(self):
