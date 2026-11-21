@@ -432,10 +432,10 @@
       "title": "Three Knocks on the Third Stall... Hanako-san of Japan #shorts"
     },
     "2026-11-21_0743": {
-      "status": "attempt_started",
-      "title": "Tarrare | Unsolved Mystery #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-11-21_0743.mp4",
-      "channel_id": "6aefbb44e29c69a1719c4ae8"
+      "status": "queued",
+      "buffer_post_id": "6b01551520a2d09a0ae4c9ff",
+      "due_at": "2026-11-21T13:57:00.000Z",
+      "title": "Tarrare | Unsolved Mystery #shorts"
     }
   }
 }
