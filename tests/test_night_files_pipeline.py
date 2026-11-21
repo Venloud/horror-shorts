@@ -841,8 +841,9 @@ class TestMultiModelWriter(unittest.TestCase):
         candidate = self.primary.copy()
         with mock.patch.dict(os.environ, {"NVIDIA_API_KEY": "test-key"}), \
              mock.patch.object(self.story, "_call_model", return_value=candidate) as call, \
-             mock.patch.object(self.story, "model_chain", return_value=["gemini-3.8-flash", "nvidia:deepseek-ai/deepseek-v4.1-flash"]), \
-             mock.patch.dict(self.story.CONFIG, {"writer_challenge_enabled": True}):
+             mock.patch.object(self.story, "model_chain", return_value=["gemini-3.8-flash", "nvidia:z-ai/glm-5.3-flash"]), \
+             mock.patch.dict(self.story.CONFIG, {"writer_challenge_enabled": True,
+                                                 "writer_challenger_model": "nvidia:z-ai/glm-5.3-flash"}):
             result = self.story.challenge_true_story(self.primary.copy(), self.prompt, "dummy")
         self.assertEqual(result["model"], "gemini-3.8-flash")
         call.assert_called_once()
