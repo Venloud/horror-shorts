@@ -468,10 +468,10 @@
       "title": "Violent Throat Injuries Left Farm Animals | British Folklore #shorts"
     },
     "2026-11-22_2113": {
-      "status": "attempt_started",
-      "title": "The Parachute Found in Utah... Richard Floyd McCoy of Utah #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-11-22_2113.mp4",
-      "channel_id": "6aefbb44e29c69a1719c4ae8"
+      "status": "queued",
+      "buffer_post_id": "6b036284d864a01105fa15a8",
+      "due_at": "2026-11-23T13:06:00.000Z",
+      "title": "The Parachute Found in Utah... Richard Floyd McCoy of Utah #shorts"
     }
   }
 }
