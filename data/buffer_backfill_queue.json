@@ -456,10 +456,10 @@
       "title": "Footprints In The Snow... Hinterkaifeck of Bavaria #shorts"
     },
     "2026-11-22_0729": {
-      "status": "attempt_started",
-      "title": "Violent Throat Injuries Left Farm Animals | British Folklore #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-11-22_0729.mp4",
-      "channel_id": "6aefbb44e29c69a1719c4ae8"
+      "status": "queued",
+      "buffer_post_id": "6b02a634d5eabfb8cc92bc66",
+      "due_at": "2026-11-22T14:52:00.000Z",
+      "title": "Violent Throat Injuries Left Farm Animals | British Folklore #shorts"
     }
   }
 }
