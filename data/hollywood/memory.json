@@ -1,9 +1,9 @@
 {
- "videos": 14,
+ "videos": 15,
  "entries": {
   "title": {
-   "fired": 14,
-   "last": "2026-11-21_2105"
+   "fired": 15,
+   "last": "2026-11-22_0729"
   },
   "year_reel": {
    "fired": 10,
@@ -30,8 +30,8 @@
    "last": "2026-11-08_0644"
   },
   "zoom_punch": {
-   "fired": 16,
-   "last": "2026-11-21_2105"
+   "fired": 18,
+   "last": "2026-11-22_0729"
   },
   "year_line": {
    "fired": 4,
@@ -46,8 +46,8 @@
    "last": "2026-11-17_0832"
   },
   "info_card": {
-   "fired": 5,
-   "last": "2026-11-21_0743"
+   "fired": 7,
+   "last": "2026-11-22_0729"
   },
   "counter_bullets": {
    "fired": 1,
@@ -64,6 +64,10 @@
   "stamp_unsolved": {
    "fired": 1,
    "last": "2026-11-21_2105"
+  },
+  "stamp_missing": {
+   "fired": 1,
+   "last": "2026-11-22_0729"
   }
  },
  "places": {
@@ -216,7 +220,11 @@
   "stayed after": 1,
   "murderer hiding": 1,
   "hiding nearby": 1,
-  "nearby before": 1
+  "nearby before": 1,
+  "beast of bodmin moor": 1,
+  "people swore": 1,
+  "swore escaped": 1,
+  "escaped exotic": 1
  },
  "log": [
   {
@@ -384,6 +392,18 @@
     "zoom_punch",
     "stamp_unsolved"
    ]
+  },
+  {
+   "stamp": "2026-11-22_0729",
+   "story_id": "e12c0e8dc2d2",
+   "effects": [
+    "title",
+    "stamp_missing",
+    "info_card",
+    "zoom_punch",
+    "info_card",
+    "zoom_punch"
+   ]
   }
  ],
  "editing": {
@@ -512,6 +532,23 @@
      "move:still": 6,
      "cut:dissolve": 1,
      "cut:push_through": 1
+    },
+    "verdict": null,
+    "metric": null
+   },
+   "e12c0e8dc2d2": {
+    "stamp": "",
+    "title": "Beast of Bodmin Moor",
+    "used": {
+     "fx:title": 1,
+     "fx:stamp": 1,
+     "fx:info_card": 2,
+     "fx:zoom_punch": 2,
+     "move:push": 7,
+     "cut:cut": 16,
+     "move:still": 7,
+     "cut:push_through": 2,
+     "cut:dissolve": 1
     },
     "verdict": null,
     "metric": null

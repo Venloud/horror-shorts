@@ -5503,5 +5503,82 @@
     "youtube": {
       "pending": "buffer_queue_pending"
     }
+  },
+  {
+    "date": "2026-11-22_0729",
+    "story_id": "e12c0e8dc2d2",
+    "series_id": null,
+    "series_episode": null,
+    "title": "Beast of Bodmin Moor",
+    "premise": "Unexplained livestock deaths on Bodmin Moor led people to blame a phantom big cat.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Beast of Bodmin Moor",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Bodmin Moor, United Kingdom",
+    "threat": "A reported phantom big cat",
+    "twist": "Physical evidence like a skull found in the River Fowey came from a leopard skin rug.",
+    "score": null,
+    "seconds": 58.4,
+    "voice_speed": 1.1,
+    "narrator_voice": "am_michael",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "openverse:a9798522-368a-499d-b03a-e053af208e82",
+      "pexels:28829391"
+    ],
+    "visual_mode": "fast",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 79,
+    "visuals": {
+      "distinct": 19,
+      "longest_s": 5.1,
+      "longest_share": 0.083,
+      "longest_name": "image:scene_05a.png:full"
+    },
+    "yt_title": "Violent Throat Injuries Left Farm Animals | British Folklore #shorts",
+    "hashtags": [
+      "beastofbodminmoor",
+      "unitedkingdom",
+      "cryptid",
+      "urbanlegend"
+    ],
+    "yt_tags": [
+      "beast of bodmin moor",
+      "bodmin moor beast",
+      "phantom big cats",
+      "british folklore",
+      "bodmin moor legend",
+      "exotic pets uk",
+      "river fowey skull",
+      "phantom cats uk",
+      "unexplained livestock deaths",
+      "cornwall phantom cat",
+      "british urban legends",
+      "mysterious animal deaths",
+      "beast of bodmin moor legend",
+      "united kingdom folklore",
+      "scary legend"
+    ],
+    "opening": "Violent throat injuries left farm animals dead across the misty landscape.",
+    "music_file": "unsolved_mystery.mp3",
+    "buffered": "2026-11-22_0729",
+    "tiktok": {
+      "status": "STAGED_FOR_BUFFER",
+      "mode": "buffer"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    }
   }
 ]
