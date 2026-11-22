@@ -1,21 +1,21 @@
 {
- "videos": 15,
+ "videos": 16,
  "entries": {
   "title": {
-   "fired": 15,
-   "last": "2026-11-22_0729"
+   "fired": 16,
+   "last": "2026-11-22_2113"
   },
   "year_reel": {
-   "fired": 10,
-   "last": "2026-11-21_2105"
+   "fired": 11,
+   "last": "2026-11-22_2113"
   },
   "phrase": {
    "fired": 11,
    "last": "2026-11-21_0743"
   },
   "place": {
-   "fired": 10,
-   "last": "2026-11-21_0743"
+   "fired": 12,
+   "last": "2026-11-22_2113"
   },
   "counter_people": {
    "fired": 1,
@@ -30,8 +30,8 @@
    "last": "2026-11-08_0644"
   },
   "zoom_punch": {
-   "fired": 18,
-   "last": "2026-11-22_0729"
+   "fired": 19,
+   "last": "2026-11-22_2113"
   },
   "year_line": {
    "fired": 4,
@@ -46,8 +46,8 @@
    "last": "2026-11-17_0832"
   },
   "info_card": {
-   "fired": 7,
-   "last": "2026-11-22_0729"
+   "fired": 8,
+   "last": "2026-11-22_2113"
   },
   "counter_bullets": {
    "fired": 1,
@@ -126,6 +126,20 @@
    "level": "city",
    "lon": 2.133,
    "lat": 48.8
+  },
+  "Colorado": {
+   "times": 1,
+   "iso2": "US",
+   "level": "region",
+   "lon": -105.54,
+   "lat": 39.0
+  },
+  "San Francisco": {
+   "times": 1,
+   "iso2": "US",
+   "level": "city",
+   "lon": -122.417,
+   "lat": 37.769
   }
  },
  "unmatched": {
@@ -224,7 +238,12 @@
   "beast of bodmin moor": 1,
   "people swore": 1,
   "swore escaped": 1,
-  "escaped exotic": 1
+  "escaped exotic": 1,
+  "hijacker displayed": 1,
+  "displayed hand": 1,
+  "hand grenade": 1,
+  "utah before bailing": 1,
+  "magazine": 1
  },
  "log": [
   {
@@ -404,6 +423,18 @@
     "info_card",
     "zoom_punch"
    ]
+  },
+  {
+   "stamp": "2026-11-22_2113",
+   "story_id": "38016150aa71",
+   "effects": [
+    "title",
+    "year_reel",
+    "place",
+    "place",
+    "info_card",
+    "zoom_punch"
+   ]
   }
  ],
  "editing": {
@@ -549,6 +580,24 @@
      "move:still": 7,
      "cut:push_through": 2,
      "cut:dissolve": 1
+    },
+    "verdict": null,
+    "metric": null
+   },
+   "38016150aa71": {
+    "stamp": "",
+    "title": "The Hijacker Who Parachuted Over Utah",
+    "used": {
+     "fx:title": 1,
+     "fx:year_reel": 1,
+     "fx:globe_pin": 2,
+     "fx:info_card": 1,
+     "fx:zoom_punch": 1,
+     "move:push": 4,
+     "cut:cut": 21,
+     "move:still": 7,
+     "cut:push_through": 1,
+     "move:closeup": 3
     },
     "verdict": null,
     "metric": null

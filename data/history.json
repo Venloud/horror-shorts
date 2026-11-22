@@ -5580,5 +5580,79 @@
     "youtube": {
       "pending": "buffer_queue_pending"
     }
+  },
+  {
+    "date": "2026-11-22_2113",
+    "story_id": "38016150aa71",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Hijacker Who Parachuted Over Utah",
+    "premise": "A man hijacked an airplane for a ransom and parachuted over Utah, leaving behind clues that led investigators directly to his doorstep.",
+    "subgenre": "true crime case file",
+    "mode": "case",
+    "true_story": true,
+    "case": "Richard Floyd McCoy Jr.",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Utah and United Airlines Flight 855 in April 1972.",
+    "threat": "A lone gunman armed with a hand grenade and pistol hijacking a commercial airliner.",
+    "twist": "A concerned citizen reported an acquaintance whose meticulous hijacking plan matched the crime.",
+    "score": null,
+    "seconds": 69.1,
+    "voice_speed": 1.147,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:10419525"
+    ],
+    "visual_mode": "analog",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 95,
+    "visuals": {
+      "distinct": 22,
+      "longest_s": 6.2,
+      "longest_share": 0.086,
+      "longest_name": "image:scene_07b.png:full"
+    },
+    "yt_title": "The Parachute Found in Utah... Richard Floyd McCoy of Utah #shorts",
+    "hashtags": [
+      "richardfloydmccoy",
+      "utah",
+      "truecrime",
+      "history"
+    ],
+    "yt_tags": [
+      "richard floyd mccoy",
+      "united airlines flight 855",
+      "provo utah hijacking",
+      "1972 airplane hijacking",
+      "utah true crime",
+      "db cooper copycat",
+      "hijacker parachuted over utah",
+      "fbi ransom note handwriting",
+      "true crime story",
+      "april 1972 hijacking",
+      "united airlines 855",
+      "parachuting hijacker",
+      "richard floyd mccoy story",
+      "utah mystery",
+      "unsolved mystery"
+    ],
+    "opening": "A fourteen-year-old boy made a shocking discovery when he found a parachute pack lying beside a steel culvert in Provo, Utah.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-11-22_2113",
+    "tiktok": {
+      "status": "STAGED_FOR_BUFFER",
+      "mode": "buffer"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    }
   }
 ]
