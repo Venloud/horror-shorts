@@ -12,7 +12,7 @@ import sys
 import traceback
 from datetime import datetime, timezone
 
-from common import CONFIG, ROOT, load_history, log, save_history
+from common import CONFIG, ROOT, apply_length, load_history, log, save_history
 
 
 MISSED = ROOT / "data" / "missed_slot.json"
@@ -281,6 +281,9 @@ def main(from_build: bool = False) -> int:
         # Re-validate the durable buffer asset after download. The producer gate
         # protects admission; this protects the publish boundary as well.
         from production_gate import validate_final_video, validate_buffer_metadata, validate_buffer_provenance
+        # Re-check against the length it was built for: the ~40 s cut, or full (exact-words scripts and videos
+        # buffered before the short cut have no or a "full" length_variant).
+        apply_length(variant=meta.get("length_variant") or "full")
         validate_final_video(mp4)
         validate_buffer_metadata(out / "caption.json")
         validate_buffer_provenance(out / "caption.json")
@@ -424,6 +427,7 @@ def main(from_build: bool = False) -> int:
             "case": meta.get("case"), "source": meta.get("source"), "subgenre": meta.get("subgenre"),
             "premise": meta.get("premise"), "opening": meta.get("opening"),
             "visual_mode": meta.get("visual_mode"), "seconds": meta.get("seconds"),
+            "length_variant": meta.get("length_variant") or "full",
             "video_number": number, "tiktok": result if result else {"error": tt_error},
             "youtube": yt if yt else ({"pending": "buffer_queue_pending"} if yt_paused else
                                       ({"error": yt_error} if yt_error else None)),

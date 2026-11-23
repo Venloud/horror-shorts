@@ -99,6 +99,13 @@ All Night Files writers/critics and Claude changes must use the **existing sourc
 
 **Occasional original fiction trilogy:** at most one new **three-episode** series after **seven full days AND 14 confirmed Night Files published posts** since the last series start, whichever is later; each of its episodes counts as a post. The format is approved but neither the first concrete trilogy nor automatic rotation/publication is approved or enabled. Do not change `story.py` rotation, historical counters, FIFO buffer, queue, checkpoint, Daily/Buffer workflows or production publishing based on this documentation without implementing and validating an explicit approval-gated eligibility mechanism in the maintained bot. No new branch/editor/workflow merely for a demo. Standalone stories remain the default.
 
+## OWNER LENGTH EXPERIMENT (2026-11-23): ONE ~40 S VIDEO FOR YOUTUBE AND TIKTOK
+
+Config `short_cut` (on) makes every video a ~40 s cut (36-44 s, 80-92-word script) through `common.apply_length`;
+the same MP4 goes to both Buffer queues. The owner accepted losing TikTok Creator Rewards (> 60 s); do not set the
+length back to 61-68 s unless the owner asks. Exact-words inbox scripts keep the full window. History records
+`length_variant` + `video_seconds`; results go in `docs/NIGHT_FILES_GROWTH_LOG.md`.
+
 ## OWNER YOUTUBE RULE (2026-10-25): BUFFER.COM IS THE ONLY UPLOAD ROUTE
 
 The direct Google YouTube Data API upload is **retired**. Do not reinstate it through `youtube.py`, `youtube_pending.upload_some`, `yt_backfill`, Google refresh tokens or workflow secrets. **Owner route update (2026-11-07):** Daily Horror Video stages the accepted MP4 in the existing `youtube-pending` GitHub Release and queues that exact video to both TikTok and YouTube through Buffer.com in the **same daily run**. The independent 15-minute `buffer_backfill_auto.yml` worker keeps per-channel write-ahead receipts and catches missing queue attempts. Existing YouTube historical backfill remains YouTube-only; the TikTok rollout cutoff and history checks prevent old public posts and inbox drafts from being replayed. Recover only verified Night Files historical media, first from surviving Actions artifacts, then from owner-authorized public TikTok posts with exact caption evidence and a validated MP4. Buffer queue receipts are NOT public proof. Avoid cross-workflow races, duplicates, unapproved content, and modifying old original MP4s. **Never manually dispatch production workflows merely for a code test.**

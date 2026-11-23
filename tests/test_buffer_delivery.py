@@ -136,6 +136,40 @@ class BufferDeliveryTests(unittest.TestCase):
                 self.assertFalse(recovery.from_tiktok(
                     [{"stamp": "wrong", "caption": "some other video"}], {}))
 
+
+    def test_one_short_cut_mp4_goes_to_both_youtube_and_tiktok(self):
+        """Owner 2026-11-23: the ~40 s video is the only cut; both Buffer queues get that exact MP4."""
+        record = {"queued": {}, "tiktok_queued": {}}
+        sent = []
+
+        class Response:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {"title": "Night Files cut", "yt_title": "Night Files cut",
+                        "caption_text": "TikTok caption", "yt_description": "YouTube description"}
+
+        def send(query):
+            sent.append(query)
+            return {"createPost": {"post": {"id": "buffer-%d" % len(sent), "dueAt": "future"}}}
+
+        mp4 = {"browser_download_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-11-24_1540.mp4"}
+        meta = {"browser_download_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-11-24_1540.json"}
+        with patch.object(queue, "public_asset"), \
+             patch.object(queue.requests, "get", return_value=Response()), \
+             patch.object(queue, "persist", return_value="sha"), \
+             patch.object(queue, "graph", side_effect=send):
+            for destination in ("youtube", "tiktok"):
+                queue.queue_one("2026-11-24_1540", mp4, meta, record, "sha", [], destination)
+        self.assertEqual(len(sent), 2)
+        for query in sent:
+            self.assertIn(json.dumps(mp4["browser_download_url"]), query)
+        self.assertEqual(record["queued"]["2026-11-24_1540"]["status"], "queued")
+        self.assertEqual(record["tiktok_queued"]["2026-11-24_1540"]["status"], "queued")
+        with patch.object(queue, "graph", side_effect=AssertionError("duplicate!")):
+            for destination in ("youtube", "tiktok"):  # receipts still block any second queue
+                self.assertFalse(queue.queue_one("2026-11-24_1540", mp4, meta, record, "sha", [], destination)[0])
     def test_direct_youtube_api_not_called_from_live_publisher(self):
         publisher = (ROOT / "pipeline" / "publish.py").read_text()
         self.assertNotIn("youtube.upload(", publisher)

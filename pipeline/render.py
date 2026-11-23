@@ -15,7 +15,8 @@ W, H, FPS = 1080, 1920, 30
 XFADE = 0.4      # reserved for explicitly planned dissolves, never automatic
 MIN_SHOT = 1.2   # shortest a single picture stays on screen (seconds)
 TAIL = 3.4       # seconds after the last word (end card lives here)
-# config target_seconds = the FINISHED VIDEO's length (TikTok Creator Rewards needs > 60 s): [61, 68]. The narration
+# config target_seconds = the FINISHED VIDEO's length. Since 2026-11-23 config short_cut sets it to ~40 s for YouTube and
+# TikTok (owner accepted losing TikTok Creator Rewards' > 60 s; common.apply_length). The narration
 # gets that minus the end-card tail; a narration that is still too short gets a longer end card, never a video
 # under the minimum.
 
@@ -784,7 +785,7 @@ def qa_gate(path: Path, ass_path: Path | None, narration: dict, story: dict | No
     if backfill:
         if not 15 <= dur <= 180:
             problems.append(f"duration {dur:.1f}s (Shorts: 15-180s)")
-    elif dur < lo:  # hard floor: never a video under the minimum (TikTok Creator Rewards: > 60 s)
+    elif dur < lo:  # hard floor: never a video under the minimum (config target_seconds)
         problems.append(f"duration {dur:.1f}s is under the {lo}s minimum")
     elif dur > hi + 0.5:
         problems.append(f"duration {dur:.1f}s (want {lo}-{hi}s)")

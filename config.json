@@ -304,6 +304,13 @@
   "youtube_paused": true,
   "youtube_paused_reason": "Oct 6: the Google account behind project night-files-510012 is restricted (appeal submitted). Set false only when the owner says it is restored.",
   "youtube_pending_per_day": 6,
+  "short_cut": {
+    "enabled": true,
+    "label": "40s",
+    "target_seconds": [36, 44],
+    "story_words": [80, 92],
+    "note": "Owner experiment 2026-11-23: every Night Files video is a ~40 s cut, posted to YouTube AND TikTok (owner accepted losing TikTok Creator Rewards' > 60 s). Overrides target_seconds / story_words at load; an owner exact-words script (inbox-script) keeps the full window. Set enabled false to go back to the full length."
+  },
   "analytics": true,
   "analytics_start": "2026-09-01",
   "youtube_privacy": "public",

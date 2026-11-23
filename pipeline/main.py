@@ -12,7 +12,7 @@ import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 
-from common import CONFIG, ROOT, env, load_history, log, opening_line, save_history
+from common import CONFIG, ROOT, apply_length, env, load_history, log, opening_line, save_history
 import yt_packaging as packaging  # NOT "packaging": that name shadows the pip package transformers needs
 
 
@@ -22,6 +22,14 @@ def _gh_output(key: str, value) -> None:
     if path:
         with open(path, "a", encoding="utf-8") as f:
             f.write(f"{key}={value}\n")
+
+
+def _video_seconds(video) -> float:
+    try:
+        from common import media_duration
+        return media_duration(video)
+    except Exception:  # noqa: BLE001
+        return 0.0
 
 
 HARD_QA = ("one picture", "the finished video shows the same picture", "blurry start")  # never buffered
@@ -197,6 +205,8 @@ def main() -> int:
             if not testing:
                 checkpoint.start(story)
         stage = "adapt"
+        length = apply_length(story)  # the ~40 s cut (config short_cut), or full for an exact-words script
+        log(f"Length: {length} ({CONFIG['target_seconds'][0]}-{CONFIG['target_seconds'][1]} s video)")
         use_explainer = explainer.style_for(story) == "explainer"
         if use_explainer and not story.get("explainer_adapted"):  # second-person rewrite, before voicing
             story = explainer.adapt(story)
@@ -235,6 +245,12 @@ def main() -> int:
                  if item.get("narrator_voice")), "")
         stage = "narration"
         narration = None if testing else checkpoint.load_narration(story, workdir)
+        if narration is not None:
+            from render import narration_window
+            lo, hi = narration_window()
+            if not lo <= narration["duration"] <= hi:  # voiced for another length (e.g. before the short cut)
+                log(f"Checkpoint narration is {narration['duration']:.1f}s, outside {lo}-{hi}s: fitting it again")
+                narration = None
         if narration is None:
             before = json.dumps(story.get("scenes"))
             story, narration = fit_duration(story, workdir, narrate,
@@ -435,6 +451,7 @@ def main() -> int:
             **({"yt_title": story["packaging"]["yt_title"], "yt_tags": story["packaging"]["yt_tags"],
                 "yt_description": packaging.youtube_description(story)} if story.get("packaging") else {}),
             "true_story": bool(story.get("true_story")), "seconds": round(narration["duration"], 1),
+            "length_variant": length,  # publish.py re-checks the video against this length window
             "narrator_voice": story.get("narrator_voice") or narration.get("voice"),
             "visual_credits": visual_credits, "visual_mode": story.get("visual_mode"),
             "render_style": story.get("render_style", "classic"),
@@ -492,6 +509,8 @@ def main() -> int:
             "twist": story.get("twist"),
             "score": story.get("score"),
             "seconds": round(narration["duration"], 1),
+            "length_variant": length,  # owner experiment 2026-11-23: "40s" cut on YouTube + TikTok, or "full"
+            "video_seconds": round(_video_seconds(video), 1),
             "voice_speed": narration.get("speed"),
             "narrator_voice": story.get("narrator_voice") or narration.get("voice"),
             "writer": story.get("writer") or story.get("model"),  # which provider wrote it (gemini / groq)
