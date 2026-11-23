@@ -35,4 +35,20 @@ story in the same run; stalled backup writers stay skipped for the whole run.
 
 ## Experiments
 
-None running yet. Next: hook test (first 2 s show the threat in motion, no title card) once production is stable.
+### Experiment: 40 s cut (started 2026-11-23, first daily run after the merge)
+
+- **What:** every new video is a ~40 s cut (config `short_cut`: 36-44 s video, 80-92-word script written for that
+  length, same universal editor). Owner, 2026-11-23: one 40 s video goes to **both YouTube and TikTok** through
+  Buffer.com (accepts losing TikTok Creator Rewards, which needs > 60 s). Owner exact-words inbox scripts keep the
+  full length. Switch off: `short_cut.enabled=false`.
+- **Why:** first YouTube Analytics pull (28 days to 2026-11-23) — Shorts with >= 55% average viewed (18 videos)
+  gained 6 subscribers, < 55% (32 videos) gained 1. Shorter videos should raise average % viewed.
+- **Tracking:** `data/history.json` per video: `length_variant` ("40s" / "full") and `video_seconds`; daily
+  analytics report (`homebeacon\tools\night-files-analytics\report_<date>.json`) gives avg % viewed and
+  subscribersGained per Short.
+- **Baseline to beat (full-length videos, 56-73 s, 28 days to 2026-11-23):** 50 Shorts, median average viewed
+  **35.7%** (mean 42.2%), 1,224 views, **7 subscribers (5.7 per 1,000 views)**.
+- **Read-out:** after ~2 weeks (about 2026-12-07) compare the 40 s videos' median avg % viewed, views per video and
+  subscribers per 1,000 views with the baseline; TikTok views before/after as a side check.
+
+Next: hook test (first 2 s show the threat in motion, no title card) once the length test has a result.

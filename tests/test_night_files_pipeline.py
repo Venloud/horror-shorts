@@ -805,6 +805,101 @@ class FinalNarrationApproval(unittest.TestCase):
 
 
 
+class ShortCutExperiment(unittest.TestCase):
+    """Owner experiment 2026-11-23: every video is a ~40 s cut on YouTube and TikTok (config short_cut)."""
+
+    def setUp(self):
+        self.saved = {k: common.CONFIG.get(k) for k in ("target_seconds", "story_words", "short_cut")}
+
+    def tearDown(self):
+        common.CONFIG.update(self.saved)
+        common.apply_length()
+
+    def test_default_is_a_40_second_cut_for_every_written_story(self):
+        cut = common.CONFIG["short_cut"]
+        self.assertTrue(cut["enabled"])
+        self.assertEqual(cut["label"], "40s")
+        self.assertEqual(common.apply_length({"mode": "lore"}), "40s")
+        self.assertEqual(common.CONFIG["target_seconds"], [36, 44])
+        self.assertEqual(common.CONFIG["story_words"], cut["story_words"])
+        import render
+        lo, hi = render.narration_window()
+        self.assertAlmostEqual(lo, 36 - render.TAIL)
+        self.assertAlmostEqual(hi, 44 - render.TAIL)
+
+    def test_exact_words_script_and_switch_off_keep_the_full_length(self):
+        self.assertEqual(common.apply_length({"mode": "inbox-script"}), "full")
+        self.assertEqual(common.CONFIG["target_seconds"], common.FULL_LENGTH["target_seconds"])
+        self.assertEqual(common.CONFIG["story_words"], common.FULL_LENGTH["story_words"])
+        self.assertGreater(common.CONFIG["target_seconds"][0], 44)
+        self.assertEqual(common.apply_length({"mode": "lore"}), "40s")  # the next ordinary story is short again
+        common.CONFIG["short_cut"] = {**common.CONFIG["short_cut"], "enabled": False}
+        self.assertEqual(common.apply_length({"mode": "lore"}), "full")
+        self.assertEqual(common.CONFIG["target_seconds"], common.FULL_LENGTH["target_seconds"])
+
+    def test_long_script_is_tightened_and_revoiced_into_the_cut_window(self):
+        import main
+        common.apply_length({"mode": "lore"})
+        story = {"mode": "lore", "scenes": [{"narration": " ".join(["word"] * 24)} for _ in range(6)]}  # 144 words
+        calls = []
+
+        def narrate(st, workdir, speed=None):
+            speed = speed or 1.1
+            words = sum(len(s["narration"].split()) for s in st["scenes"])
+            calls.append((words, speed))
+            return {"duration": words / 2.4 * 1.1 / speed, "speed": speed, "words": []}
+
+        def resize(st, key, want_words):
+            per = max(1, want_words // len(st["scenes"]))
+            return {**st, "scenes": [{"narration": " ".join(["word"] * per)} for _ in st["scenes"]]}
+
+        with mock.patch("story.resize_story", side_effect=resize) as resized, \
+                mock.patch.object(main, "env", lambda *a, **k: "key"):
+            out, narr = main.fit_duration(story, Path(tempfile.gettempdir()), narrate, allow_rewrite=True)
+        import render
+        lo, hi = render.narration_window()
+        self.assertTrue(lo <= narr["duration"] <= hi, narr["duration"])
+        self.assertLess(resized.call_args.args[2], 110)  # asked for a ~40 s script, not a trim of the video
+        self.assertEqual(len(out["scenes"]), 6)  # same scenes: the pictures are reused
+
+    def test_production_gate_follows_the_cut_window(self):
+        import production_gate
+        common.apply_length({"mode": "lore"})
+        with tempfile.TemporaryDirectory() as tmp:
+            mp4 = Path(tmp) / "final.mp4"
+            with open(mp4, "wb") as f:
+                f.truncate(6_000_000)
+            streams = "h264,video,1080,1920,yuv420p\naac,audio"
+            for seconds, ok in (("40.2", True), ("62.0", False), ("30.0", False)):
+                with self.subTest(seconds=seconds), \
+                        mock.patch.object(production_gate, "_run", side_effect=[seconds, streams, "", ""]):
+                    if ok:
+                        self.assertEqual(production_gate.validate_final_video(mp4)["duration_seconds"], 40.2)
+                    else:
+                        with self.assertRaises(RuntimeError):
+                            production_gate.validate_final_video(mp4)
+
+    def test_publish_rechecks_each_video_against_the_length_it_was_built_for(self):
+        self.assertEqual(common.apply_length(variant="40s"), "40s")
+        self.assertEqual(common.CONFIG["target_seconds"], [36, 44])
+        # a video buffered before the short cut (no length_variant) or an exact-words script stays full length
+        self.assertEqual(common.apply_length(variant="full"), "full")
+        self.assertEqual(common.CONFIG["target_seconds"], common.FULL_LENGTH["target_seconds"])
+        src = (ROOT / "pipeline" / "publish.py").read_text(encoding="utf-8")
+        self.assertLess(src.index('apply_length(variant=meta.get("length_variant") or "full")'),
+                        src.index("        validate_final_video(mp4)\n        validate_buffer_metadata"))
+        main_src = (ROOT / "pipeline" / "main.py").read_text(encoding="utf-8")
+        self.assertIn('"length_variant": length,  # publish.py re-checks', main_src)
+
+    def test_main_sets_length_before_writing_and_records_it_in_history(self):
+        src = (ROOT / "pipeline" / "main.py").read_text()
+        self.assertLess(src.index("length = apply_length(story)"), src.index("explainer.adapt(story)"))
+        self.assertLess(src.index("length = apply_length(story)"), src.index("fit_duration(story, workdir"))
+        self.assertIn('"length_variant": length', src)
+        self.assertIn('"video_seconds": round(_video_seconds(video), 1)', src)
+        self.assertIn("outside {lo}-{hi}s: fitting it again", src)  # an old long checkpoint is re-fitted
+
+
 if __name__ == "__main__":
     unittest.main()
 

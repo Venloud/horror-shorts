@@ -9,6 +9,30 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG = json.loads((ROOT / "config.json").read_text())
 HISTORY_FILE = ROOT / "data" / "history.json"
+# Full-length window, kept for the owner's exact-words scripts (they are never rewritten to fit the short cut).
+FULL_LENGTH = {"target_seconds": list(CONFIG.get("target_seconds", [61, 68])),
+               "story_words": list(CONFIG.get("story_words", [138, 152]))}
+
+
+def apply_length(story: dict | None = None, variant: str | None = None) -> str:
+    """Set this video's length (owner experiment 2026-11-23, config short_cut): the short cut's target_seconds and
+    story_words for every video, on YouTube and TikTok alike, unless short_cut is off or the story is the owner's
+    exact-words script, which keeps the full window. Everything that reads CONFIG (writer, explainer rewrite,
+    fit_duration, QA, production gate) follows. `variant` (a built video's caption.json length_variant, "full" when
+    missing) re-applies the window it was built for. Returns the length label recorded in history ("40s" / "full")."""
+    cut = CONFIG.get("short_cut") or {}
+    label = str(cut.get("label") or "short")
+    exact = bool(story) and (story.get("mode") == "inbox-script" or bool(story.get("exact_words")))
+    short = (cut.get("enabled") and not exact) if variant is None else variant == label
+    if short:
+        CONFIG["target_seconds"] = list(cut.get("target_seconds", [36, 44]))
+        CONFIG["story_words"] = list(cut.get("story_words", [80, 92]))
+        return label
+    CONFIG.update({k: list(v) for k, v in FULL_LENGTH.items()})
+    return "full"
+
+
+apply_length()
 
 
 # Shared state lives on main, whichever branch a workflow was started from (owner, Oct 31: the fixing-it branch runs
