@@ -1,21 +1,21 @@
 {
- "videos": 16,
+ "videos": 17,
  "entries": {
   "title": {
-   "fired": 16,
-   "last": "2026-11-22_2113"
+   "fired": 17,
+   "last": "2026-11-23_0816"
   },
   "year_reel": {
-   "fired": 11,
-   "last": "2026-11-22_2113"
+   "fired": 12,
+   "last": "2026-11-23_0816"
   },
   "phrase": {
-   "fired": 11,
-   "last": "2026-11-21_0743"
+   "fired": 12,
+   "last": "2026-11-23_0816"
   },
   "place": {
-   "fired": 12,
-   "last": "2026-11-22_2113"
+   "fired": 13,
+   "last": "2026-11-23_0816"
   },
   "counter_people": {
    "fired": 1,
@@ -30,8 +30,8 @@
    "last": "2026-11-08_0644"
   },
   "zoom_punch": {
-   "fired": 19,
-   "last": "2026-11-22_2113"
+   "fired": 20,
+   "last": "2026-11-23_0816"
   },
   "year_line": {
    "fired": 4,
@@ -46,8 +46,8 @@
    "last": "2026-11-17_0832"
   },
   "info_card": {
-   "fired": 8,
-   "last": "2026-11-22_2113"
+   "fired": 9,
+   "last": "2026-11-23_0816"
   },
   "counter_bullets": {
    "fired": 1,
@@ -140,6 +140,13 @@
    "level": "city",
    "lon": -122.417,
    "lat": 37.769
+  },
+  "Western": {
+   "times": 1,
+   "iso2": "RW",
+   "level": "region",
+   "lon": 29.26,
+   "lat": -2.13
   }
  },
  "unmatched": {
@@ -243,7 +250,11 @@
   "displayed hand": 1,
   "hand grenade": 1,
   "utah before bailing": 1,
-  "magazine": 1
+  "magazine": 1,
+  "rural haitian folklore": 1,
+  "dead person physically revived": 1,
+  "africans formed the roots": 1,
+  "resting place": 1
  },
  "log": [
   {
@@ -435,6 +446,18 @@
     "info_card",
     "zoom_punch"
    ]
+  },
+  {
+   "stamp": "2026-11-23_0816",
+   "story_id": "9991baf1a3bd",
+   "effects": [
+    "title",
+    "phrase",
+    "place",
+    "year_reel",
+    "info_card",
+    "zoom_punch"
+   ]
   }
  ],
  "editing": {
@@ -598,6 +621,25 @@
      "move:still": 7,
      "cut:push_through": 1,
      "move:closeup": 3
+    },
+    "verdict": null,
+    "metric": null
+   },
+   "9991baf1a3bd": {
+    "stamp": "",
+    "title": "The True Origins of the Zombie Legend",
+    "used": {
+     "fx:title": 1,
+     "fx:phrase": 1,
+     "fx:globe_pin": 1,
+     "fx:year_reel": 1,
+     "fx:info_card": 1,
+     "fx:zoom_punch": 1,
+     "move:push": 7,
+     "cut:cut": 18,
+     "move:still": 7,
+     "cut:push_through": 1,
+     "cut:dissolve": 1
     },
     "verdict": null,
     "metric": null

@@ -5654,5 +5654,79 @@
     "youtube": {
       "pending": "buffer_queue_pending"
     }
+  },
+  {
+    "date": "2026-11-23_0816",
+    "story_id": "9991baf1a3bd",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The True Origins of the Zombie Legend",
+    "premise": "A dead body reanimated by a bokor sorcerer remains under their control as a personal slave in Haitian folklore.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Zombie",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Haitian rural villages and sugar cane plantations",
+    "threat": "A soulless human body revived through necromancy and psychoactive poisons",
+    "twist": "Researchers found that actual victims were given powerful psychoactive drugs inducing a lethargic coma.",
+    "score": null,
+    "seconds": 62.6,
+    "voice_speed": 1.1,
+    "narrator_voice": "am_michael",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [],
+    "visual_mode": "classic",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 79,
+    "visuals": {
+      "distinct": 20,
+      "longest_s": 4.8,
+      "longest_share": 0.073,
+      "longest_name": "image:scene_07b.png:full"
+    },
+    "yt_title": "Burial Shroud Chewed to Rags... The Zombie Legend of Haiti #shorts",
+    "hashtags": [
+      "zombie",
+      "haiti",
+      "folklore",
+      "legends"
+    ],
+    "yt_tags": [
+      "haitian folklore",
+      "haiti folklore",
+      "zombie legend",
+      "bokor sorcerer",
+      "zora neale hurston",
+      "w b seabrook",
+      "the magic island",
+      "felicia felix mentor",
+      "haitian zombies",
+      "scary legend",
+      "origins of the zombie",
+      "zombie legend legend",
+      "folklore",
+      "creepy legend",
+      "folklore creatures"
+    ],
+    "opening": "When they opened the grave, the burial shroud was chewed to rags.",
+    "music_file": "unsolved_mystery.mp3",
+    "buffered": "2026-11-23_0816",
+    "tiktok": {
+      "status": "STAGED_FOR_BUFFER",
+      "mode": "buffer"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    }
   }
 ]
