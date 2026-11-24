@@ -304,6 +304,12 @@
   "youtube_paused": true,
   "youtube_paused_reason": "Oct 6: the Google account behind project night-files-510012 is restricted (appeal submitted). Set false only when the owner says it is restored.",
   "youtube_pending_per_day": 6,
+  "story_bank": {
+    "enabled": true,
+    "target": 3,
+    "max_age_days": 21,
+    "note": "Owner-approved 2026-11-24: story_bank.yml writes stories ahead every 3 h with strong writers only (never lite); the daily run takes the best banked story first. enabled false = write at render time as before."
+  },
   "short_cut": {
     "enabled": true,
     "label": "40s",

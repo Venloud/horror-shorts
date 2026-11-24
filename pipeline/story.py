@@ -1,5 +1,6 @@
 """Writes an original scary story + scene breakdown + TikTok caption with Gemini."""
 import json
+import os
 import random
 import re
 import time
@@ -351,6 +352,9 @@ def model_chain(light: bool = False) -> list[str]:
         models = [m for m in models if "lite" not in m] + [m for m in models if "lite" in m]
     # backups are skipped too once they stalled (run 42904751972: DeepSeek's 2 x 180 s timeouts on every topic)
     models = [m for m in dict.fromkeys(models) if m not in _OVERLOADED]
+    if not light and os.environ.get("NF_STRONG_WRITERS_ONLY") == "1":
+        # story_bank.yml: a banked story is never written by a lite model; empty -> nothing is banked this time
+        return [m for m in models if "lite" not in m]
     return models or list(dict.fromkeys(CONFIG["llm_models"]))
 
 
