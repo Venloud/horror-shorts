@@ -406,7 +406,8 @@ class LibraryReuse(unittest.TestCase):
 
     def test_fresh_mode_still_checks_the_library(self):
         src = (ROOT / "pipeline" / "explainer.py").read_text(encoding="utf-8")
-        self.assertIn('if not fresh or CONFIG.get("library_reuse_on_fresh", True):', src)
+        self.assertIn('if not fresh or (not checkbox and CONFIG.get("library_reuse_on_fresh", True)):', src)
+        self.assertNotIn("FRESH_IMAGES", (ROOT / ".github" / "workflows" / "daily.yml").read_text(encoding="utf-8"))
         self.assertTrue(json.loads((ROOT / "config.json").read_text(encoding="utf-8"))["library_reuse_on_fresh"])
 
     def test_cast_shots_are_never_reused_and_reasons_are_logged(self):
