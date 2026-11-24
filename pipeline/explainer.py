@@ -1442,7 +1442,12 @@ def story_images(story: dict, img_dir: Path) -> list[list[Path]]:
                 sc[key] = "ai"
     dropped = _stale_images(story, img_dir)
     history = load_history()
-    if not fresh:
+    checkbox = bool((os.environ.get("FRESH_IMAGES") or "").strip())  # buffer_fill.yml's box, when a run sets it
+    if not fresh or (not checkbox and CONFIG.get("library_reuse_on_fresh", True)):
+        # Owner request 2026-11-24: runs that never set the checkbox (daily.yml) reuse matching scenery from the
+        # library before drawing; they used to skip it (444 assets, 0 reuses). A ticked fresh_images box still means
+        # all-new pictures. The library never reuses a person / cast shot, the hook or a creature shot, and every
+        # reuse passes the same vision check as a new picture.
         library.fill_shots(story, img_dir, history)
     media.fill_shots(story, img_dir, history)
     per_scene = images.generate_images(story, img_dir)
