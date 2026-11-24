@@ -7,8 +7,14 @@ its own eye-catching focal detail. images.build_prompt() uses this so a place lo
 shown, and each frame has a clear subject, depth (dark textured foreground, softer paler background) and a line
 that leads the eye to the subject.
 
+Step 2 (same call, no extra cost): the CAST. Every person or creature the shots show gets ONE fixed look (age,
+build, face, hair, clothing colours, one signature mark) plus the words the shots use for them ("the captain",
+"the fisherman"), and every shot lists who is IN it. images._shot_parts() then adds the locked look to every shot
+that shows that character, even when the shot says "the old sailor" instead of the name, so the same face and
+clothes come back in every picture. A look the writer already locked is never replaced (only aliases are added).
+
 Never invents story facts: sets only describe places the narration already names or implies. Any failure leaves
-the story as written (story["set_builder"] = "off"); the tag goes to history.json for the read-out.
+the story as written (story["set_builder"] = "off"); the tags go to history.json for the read-out.
 """
 from __future__ import annotations
 
@@ -20,6 +26,8 @@ from common import CONFIG, log
 SHOT_KEYS = {"a": "image_prompt", "b": "image_prompt_2", "c": "image_prompt_3", "d": "image_prompt_4"}
 LOC_KEYS = {"a": "image_location", "b": "image_location_2", "c": "image_location_3", "d": "image_location_4"}
 FOCAL_KEYS = {"a": "image_focal", "b": "image_focal_2", "c": "image_focal_3", "d": "image_focal_4"}
+CAST_KEYS = {"a": "image_cast", "b": "image_cast_2", "c": "image_cast_3", "d": "image_cast_4"}
+PRONOUNS = {"he", "she", "him", "her", "his", "hers", "they", "them", "it", "man", "woman", "figure", "person"}
 
 PROMPT = """You are the production designer of a short illustrated horror / true-mystery video.
 Design the SETS (places) for the shots below, then assign every shot to one set.
@@ -34,16 +42,26 @@ SETS
   "light" (one motivated light source and its colour), "detail" (one eye-catching signature detail that makes this
   place memorable), "leading_line" (a line in the set that pulls the eye to the subject: a path, a river bank,
   a corridor, a rope, rails).
+CAST
+- Every person or creature that is SHOWN in a shot (named or not: "the captain", "investigators" as a group) and
+  matters to the story. Adults only. Use the narration's name, or a short role name if unnamed.
+- "look": ONE fixed look, max 30 words, what a camera sees: age, build, face, hair, clothing with colours, and one
+  signature mark visible in every shot (a scar, a red scarf, a lantern). {era_short}Real people: period clothing
+  and build only, never a likeness of a real face. Keep the looks below that are already locked.
+- "aliases": the other words the shots use for this character (max 4, e.g. "the captain", "the old sailor").
 SHOTS
 - For every shot: "set" = the set name, or "none" for a close-up of an object / document with no place.
   "focal" = the ONE thing the eye must land on first (max 10 words, from the shot itself).
+  "cast" = names of the cast members visible in this shot ([] if nobody).
+LOCKED LOOKS: {locked}
 
 STORY: {title}
 NARRATION + SHOTS:
 {shots}
 
 Return JSON: {{"sets": [{{"name": "...", "background": "...", "midground": "...", "foreground": "...", "light": "...",
-"detail": "...", "leading_line": "..."}}], "shots": [{{"id": "1a", "set": "...", "focal": "..."}}]}}"""
+"detail": "...", "leading_line": "..."}}], "cast": [{{"name": "...", "look": "...", "aliases": ["..."]}}],
+"shots": [{{"id": "1a", "set": "...", "focal": "...", "cast": ["..."]}}]}}"""
 
 
 def enabled() -> bool:
@@ -86,10 +104,12 @@ def build(story: dict) -> dict:
         story["set_builder"] = "off"
         return story
     era = f"Era / setting: {story['setting']}." if story.get("setting") else ""
+    locked = "; ".join(f"{c['name']}: {c.get('look', '')}" for c in story.get("characters") or [] if c.get("name"))
     try:
         from common import env
         from story import _json_call
-        out = _json_call(PROMPT.format(era=era, title=story.get("title", ""), shots=shots),
+        out = _json_call(PROMPT.format(era=era, era_short="Clothing fits the era. " if era else "",
+                                       locked=locked or "(none)", title=story.get("title", ""), shots=shots),
                          env("GEMINI_API_KEY", required=False) or "", temperature=0.4, light=False)
         sets = [{k: _clean(s.get(k), 40 if k == "name" else 14) for k in
                  ("name", "background", "midground", "foreground", "light", "detail", "leading_line")}
@@ -120,8 +140,50 @@ def build(story: dict) -> dict:
             if _clean(a.get("focal"), 10):
                 sc[FOCAL_KEYS[letter]] = _clean(a.get("focal"), 10)
     story["set_builder"] = f"{len(used)} sets"
-    log(f"Set builder: {len(sets)} sets ({', '.join(s['name'] for s in sets)}), {len(assigned)} shots assigned")
+    _cast(story, out, assigned)
+    log(f"Set builder: {len(sets)} sets ({', '.join(s['name'] for s in sets)}), {len(assigned)} shots assigned; "
+        f"cast: {story['cast_builder']} ({', '.join(c['name'] for c in story.get('characters') or [])})")
     return story
+
+
+def _cast(story: dict, out: dict, assigned: dict) -> None:
+    """Merge the designed cast into story["characters"] (a writer's locked look always wins) and record who is in
+    each shot. Sets story["cast_builder"] = "<n> cast" (characters actually placed in shots)."""
+    chars = story.setdefault("characters", [])
+    by_name = {str(c.get("name", "")).lower(): c for c in chars if c.get("name")}
+    canon = {n: c["name"] for n, c in by_name.items()}  # any name or alias (lower) -> the character's exact name
+    for m in out.get("cast") or []:
+        if not isinstance(m, dict):
+            continue
+        name = _clean(m.get("name"), 6)
+        if not name:
+            continue
+        aliases = [_clean(a, 5) for a in (m.get("aliases") or [])[:4] if isinstance(a, str)]
+        aliases = [a for a in aliases if a and a.lower() not in PRONOUNS and len(a) > 3 and a.lower() != name.lower()]
+        known = by_name.get(name.lower()) or next((by_name[a.lower()] for a in aliases if a.lower() in by_name), None)
+        if known:  # the locked look stays word for word; only the shots' words for them are added
+            known["aliases"] = list(dict.fromkeys((known.get("aliases") or []) + aliases))[:6]
+        else:
+            look = _clean(m.get("look"), 30)
+            if not look:
+                continue
+            known = {"name": name, "look": look, "aliases": aliases}
+            chars.append(known)
+            by_name[name.lower()] = known
+        for a in [name] + aliases:
+            canon.setdefault(a.lower(), known["name"])
+    cast_used = set()
+    for i, sc in enumerate(story["scenes"]):
+        for letter, key in SHOT_KEYS.items():
+            a = assigned.get(f"{i + 1}{letter}")
+            if not a or not str(sc.get(key) or "").strip():
+                continue
+            who = [canon[str(n).strip().lower()] for n in (a.get("cast") or [])
+                   if isinstance(n, str) and str(n).strip().lower() in canon]
+            if who:
+                sc[CAST_KEYS[letter]] = list(dict.fromkeys(who))
+                cast_used.update(who)
+    story["cast_builder"] = f"{len(cast_used)} cast"
 
 
 def composition(story: dict, scene_i: int, letter: str) -> str:

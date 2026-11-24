@@ -534,7 +534,8 @@ def main() -> int:
             "media_ids": [a["id"] for a in story.get("media_assets") or []],
             "visual_mode": story.get("visual_mode"),  # A/B test: classic / fast / analog
             "render_style": story.get("render_style", "classic"),  # classic / cutout (experimental)
-            "set_builder": story.get("set_builder"),  # owner request 2026-11-24: "<n> sets" or "off"
+            "set_builder": story.get("set_builder"),
+            "cast_builder": story.get("cast_builder"),  # step 2: "<n> cast" placed in shots with one locked look  # owner request 2026-11-24: "<n> sets" or "off"
             "story_shape": story.get("story_shape"),  # fiction shape rotation
             "research_sources": [x.get("domain") or x.get("url") for x in story.get("sources") or []],
             "visual_sources": story.get("_visual_sources"),  # reused / archive+stock / AI shots

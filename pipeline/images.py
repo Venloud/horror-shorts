@@ -452,10 +452,18 @@ def _shot_location(story: dict, scene_i: int, letter: str, shot: str) -> dict | 
     return loc
 
 
-def _shot_characters(story: dict, shot: str) -> list[dict]:
+def _shot_characters(story: dict, shot: str, scene: dict | None = None, letter: str = "a") -> list[dict]:
+    """Characters IN this shot: named in it, called by one of their aliases ("the captain"), or listed in the shot's
+    cast by the set builder (set_builder.CAST_KEYS), in the story's character order."""
+    import set_builder
     text = shot.lower()
-    return [c for c in story.get("characters") or [] if _key(c.get("name", "")) and c.get("look")
-            and _key(c["name"]) in text]
+    listed = {str(n).lower() for n in (scene or {}).get(set_builder.CAST_KEYS.get(letter or "a", "image_cast")) or []}
+
+    def shown(c: dict) -> bool:
+        if c["name"].lower() in listed or _key(c["name"]) in text:
+            return True
+        return any(re.search(rf"\b{re.escape(_key(a))}\b", text) for a in c.get("aliases") or [] if len(_key(a)) > 3)
+    return [c for c in story.get("characters") or [] if _key(c.get("name", "")) and c.get("look") and shown(c)]
 
 
 def _is_object_shot(shot: str, chars: list[dict]) -> bool:
@@ -483,7 +491,7 @@ def _shot_parts(story: dict, scene_i: int, shot: str, letter: str | None):
     scene = story["scenes"][scene_i]
     letter = letter or _letter(scene, shot)
     shot = _no_text(_PANEL_WORDS.sub("", _clean_shot(shot)))
-    chars = _shot_characters(story, shot)
+    chars = _shot_characters(story, shot, scene, letter)
     loc = _shot_location(story, scene_i, letter, shot)
     camera = scene.get("camera") or ", ".join(dict.fromkeys(m.group(0).lower() for m in _CAMERA.finditer(shot)))
     body = _CAMERA.sub("", shot)
