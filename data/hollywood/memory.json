@@ -1,17 +1,17 @@
 {
- "videos": 17,
+ "videos": 18,
  "entries": {
   "title": {
-   "fired": 17,
-   "last": "2026-11-23_0816"
+   "fired": 18,
+   "last": "2026-11-24_1028"
   },
   "year_reel": {
    "fired": 12,
    "last": "2026-11-23_0816"
   },
   "phrase": {
-   "fired": 12,
-   "last": "2026-11-23_0816"
+   "fired": 14,
+   "last": "2026-11-24_1028"
   },
   "place": {
    "fired": 13,
@@ -254,7 +254,17 @@
   "rural haitian folklore": 1,
   "dead person physically revived": 1,
   "africans formed the roots": 1,
-  "resting place": 1
+  "resting place": 1,
+  "early accounts": 1,
+  "accounts depicted": 1,
+  "dragging horses": 1,
+  "bowl holds": 1,
+  "mighty strength": 1,
+  "water spills": 1,
+  "frequently attacking swimmers": 1,
+  "deep water": 1,
+  "water means": 1,
+  "means risking": 1
  },
  "log": [
   {
@@ -458,6 +468,15 @@
     "info_card",
     "zoom_punch"
    ]
+  },
+  {
+   "stamp": "2026-11-24_1028",
+   "story_id": "840555ac326e",
+   "effects": [
+    "title",
+    "phrase",
+    "phrase"
+   ]
   }
  ],
  "editing": {
@@ -649,11 +668,10 @@
     "title": "The Kappa Of Japanese Rivers",
     "used": {
      "fx:title": 1,
-     "fx:info_card": 1,
-     "fx:phrase": 1,
-     "move:push": 5,
-     "cut:cut": 19,
-     "move:still": 5,
+     "fx:phrase": 2,
+     "move:push": 3,
+     "cut:cut": 16,
+     "move:still": 4,
      "move:closeup": 1
     },
     "verdict": null,

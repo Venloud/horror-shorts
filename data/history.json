@@ -5728,5 +5728,84 @@
     "youtube": {
       "pending": "buffer_queue_pending"
     }
+  },
+  {
+    "date": "2026-11-24_1028",
+    "story_id": "840555ac326e",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Kappa Of Japanese Rivers",
+    "premise": "A river monster in Japanese folklore drags travelers into the water and removes their vital organs.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Kappa (folklore)",
+    "source": null,
+    "prompt_file": null,
+    "setting": "Rivers and ponds of rural Japan",
+    "threat": "A river monster that drowns travelers",
+    "twist": "The creature's immense strength depends entirely on the liquid retained in the dish upon its head.",
+    "score": null,
+    "seconds": 40.4,
+    "length_variant": "40s",
+    "video_seconds": 43.8,
+    "voice_speed": 1.2,
+    "narrator_voice": "am_adam",
+    "writer": "gemini (gemini-3.5-flash-lite)",
+    "media_ids": [
+      "pexels:37595512",
+      "pexels:33604777"
+    ],
+    "visual_mode": "fast",
+    "render_style": "explainer",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 66,
+    "visuals": {
+      "distinct": 16,
+      "longest_s": 3.7,
+      "longest_share": 0.085,
+      "longest_name": "image:scene_03a.png:full"
+    },
+    "yt_title": "River Child's Deadly Warning... Kappa of Japan #shorts",
+    "hashtags": [
+      "kappa",
+      "japan",
+      "folklore",
+      "monsters"
+    ],
+    "yt_tags": [
+      "kappa",
+      "japanese kappa",
+      "kappa legend",
+      "kappa folklore",
+      "japan folklore",
+      "river monster japan",
+      "kappa organ theft",
+      "edo river warnings",
+      "kappa cucumber",
+      "kappa bowl",
+      "kappa myth",
+      "japanese river monster",
+      "scary legend",
+      "folklore",
+      "creepy legend"
+    ],
+    "opening": "In Edo period Japan, villagers walking along the riverbank whispered fearful warnings to travelers, using local names like kawatarō.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-11-24_1028",
+    "tiktok": {
+      "status": "STAGED_FOR_BUFFER",
+      "mode": "buffer"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    }
   }
 ]
