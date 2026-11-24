@@ -129,6 +129,19 @@ def fill() -> int:
         log(f"Story bank: '{story.get('title')}' came from {story.get('model')}: not banked")
         return 0
     length = apply_length(story)
+    lo, hi = CONFIG.get("story_words", [80, 92])
+    words = sum(len(sc.get("narration", "").split()) for sc in story.get("scenes", []))
+    if story.get("mode") != "inbox-script" and not lo * 0.9 <= words <= hi * 1.1:
+        # Fit the script to the video length now, while a strong writer answers (the render-time resize is what
+        # failed on Nov 24). A failed resize keeps the story: the daily run's fit_duration still tries.
+        from common import env
+        from story import resize_story
+        try:
+            story = resize_story(story, env("GEMINI_API_KEY", required=False) or "", round((lo + hi) / 2))
+            log(f"Story bank: resized {words} -> "
+                f"{sum(len(sc.get('narration', '').split()) for sc in story.get('scenes', []))} words ({length})")
+        except Exception as e:  # noqa: BLE001
+            log(f"Story bank: resize failed ({type(e).__name__}: {str(e)[:150]}); the daily run will fit it")
     import explainer
     if explainer.style_for(story) == "explainer" and not story.get("explainer_adapted"):
         story = explainer.adapt(story)  # the second LLM pass also happens now, while a strong writer answers

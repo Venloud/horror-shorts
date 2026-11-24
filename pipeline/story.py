@@ -509,6 +509,12 @@ def _with_models(call, what: str = "story", light: bool = False):
                     _OVERLOADED.add(model)
                     log(f"{model}: request too large or model retired, skipping it for the rest of this run")
                     break
+                if not model.startswith("gemini") and ("HTTP 401" in msg or "HTTP 403" in msg):
+                    # a rejected backup key won't work on the next call either (ModelScope 401 x 9, bank run Nov 24)
+                    _OVERLOADED.add(model)
+                    busy_only = False
+                    log(f"{model}: key rejected ({msg[:60]}), skipping it for the rest of this run")
+                    break
                 busy_only = False
                 if "404" in msg or (model.startswith("groq:") and attempt >= 2):
                     break
