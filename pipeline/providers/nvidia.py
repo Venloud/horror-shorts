@@ -29,9 +29,9 @@ def generate_image(prompt: str, seed: int, steps: int = 4) -> bytes:
         "width": 1024,
         "cfg_scale": 1,  # the API rejects 0 (HTTP 422 "greater than or equal to 1")
         "samples": 1,
-        "seed": int(seed) % 2_147_483_647,
         "steps": max(1, min(4, int(steps))),
-    }
+    }  # no "seed": the endpoint rejects it (HTTP 422 extra_forbidden, daily run 45313028836), which knocked NVIDIA
+    # out of every run so failed Cloudflare shots fell straight to the weak ZeroGPU / SD-Turbo fallbacks
     r = requests.post(IMAGE_URL, headers={"Authorization": f"Bearer {token}",
                                            "Accept": "application/json",
                                            "Content-Type": "application/json"},

@@ -431,3 +431,66 @@ class LibraryReuse(unittest.TestCase):
         self.assertEqual(n, 1)
         self.assertEqual(calls, [(1, "a")])  # the hook and the cast shot are never library pictures
         self.assertIn("person 1", logs[-1])
+
+
+class ImageFailover(unittest.TestCase):
+    """Scene step 4: NVIDIA without the rejected seed; one Cloudflare redraw after its own QA rejection."""
+
+    def test_nvidia_request_has_no_seed(self):
+        from providers import nvidia
+        sent = {}
+
+        class R:
+            status_code = 200
+
+            @staticmethod
+            def json():
+                return {"image": "aGk="}
+        with mock.patch.dict(os.environ, {"NVIDIA_API_KEY": "test-only"}), \
+                mock.patch("requests.post", side_effect=lambda *a, **k: sent.update(k["json"]) or R()):
+            nvidia.generate_image("a river", 123)
+        self.assertNotIn("seed", sent)
+
+    def _run(self, verdicts, cf_error=False):
+        import tempfile
+        import io
+        import images
+        from PIL import Image
+        buf = io.BytesIO()
+        Image.new("RGB", (576, 1024), (40, 40, 60)).save(buf, format="PNG")
+        calls = []
+
+        def cf(prompt, seed, fixed_seed=False):
+            calls.append(("cloudflare", prompt))
+            if cf_error:
+                raise RuntimeError("HTTP 500")
+            return buf.getvalue()
+
+        def other(name):
+            def f(prompt, seed, **k):
+                calls.append((name, prompt))
+                return buf.getvalue()
+            f.__name__ = "_hf_space" if name == "hf_space" else "_local_sd"
+            return f
+        cf.__name__ = "_cloudflare"
+        hf, sd = other("hf_space"), other("local_sd")
+        v = iter(verdicts)
+        s = {"story_id": "t", "title": "T", "scenes": [{"narration": "n", "image_prompt": "hook shot of a pond"},
+                                                        {"narration": "n", "image_prompt": "a kappa drags a horse"}]}
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.object(images, "_cloudflare", cf), mock.patch.object(images, "_hf_space", hf), \
+                mock.patch.object(images, "_local_sd", sd), \
+                mock.patch.dict(os.environ, {"CLOUDFLARE_API_TOKEN": "test-only", "CLOUDFLARE_ACCOUNT_ID": "t"}),                 mock.patch.object(images, "test_mode", return_value=False),                 mock.patch.object(images, "dedupe_shots", lambda s: None),                 mock.patch.dict(images._STATE, {"cf_out": False, "spaces_out": False, "local_out": False}),                 mock.patch("library.rank_images", return_value=None), \
+                mock.patch.object(images, "check_image", side_effect=lambda *a, **k: next(v, (True, ""))), \
+                mock.patch.dict(images.CONFIG, {"shots_per_scene": 1, "image_check_cloudflare": True}):
+            images.generate_images(s, Path(d))
+        return [c for c in calls if "kappa" in c[1]]
+
+    def test_cloudflare_redraw_comes_before_the_weak_fallbacks(self):
+        calls = self._run([(True, ""), (False, "the horse is the green creature"), (True, "")])
+        self.assertEqual([c[0] for c in calls], ["cloudflare", "cloudflare"])
+        self.assertNotEqual(calls[0][1], calls[1][1])  # the redraw is the simpler subject-first prompt
+
+    def test_no_redraw_after_a_cloudflare_error(self):
+        calls = self._run([], cf_error=True)
+        self.assertEqual([c[0] for c in calls][:2], ["cloudflare", "hf_space"])

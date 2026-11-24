@@ -1176,7 +1176,8 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
 
     results: dict[tuple[int, str], Path | None] = {}
     rejected_files: dict[tuple[int, str], Path] = {}
-    count = {"cloudflare": 0, "hf_space": 0, "local_sd": 0, "rejected": 0, "virtual_cached": 0, "real_media": 0}
+    count = {"cloudflare": 0, "hf_space": 0, "local_sd": 0, "rejected": 0, "virtual_cached": 0, "real_media": 0,
+             "cf_redraws": 0}
     space_max = int(CONFIG.get("space_images_max", 6))  # ZeroGPU minutes: the hook animation comes first
     told_two = False
     done_shots: list[str] = []
@@ -1228,7 +1229,13 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
         prompts = {"full": build_prompt(story, i, raw_prompt, style, letter=shot),       # Cloudflare
                    "short": build_short_prompt(story, i, raw_prompt, letter=shot),       # Spaces / SD-Turbo
                    "simple": build_simple_prompt(story, i, raw_prompt, letter=shot)}     # after a QA rejection
-        chain = (([_cloudflare] if use_cf else [])
+        # Cloudflare redraw after ITS OWN QA rejection (owner request 2026-11-24): the subject-first simple prompt
+        # with the channel style, before the weaker fallbacks (they rejected 4 of 4 redraws in the Kappa run).
+        prompts["cf_redraw"] = _join([prompts["simple"].replace(", single full-frame dark painterly illustration", ""),
+                                      "the subject large, clear and centred in the frame, one simple readable action",
+                                      style or CONFIG.get("image_style_cf") or ""])
+        redraw = use_cf and count["cf_redraws"] < int(CONFIG.get("cloudflare_qa_redraws", 6))
+        chain = (([_cloudflare] + ([_cloudflare] if redraw else []) if use_cf else [])
                  + ([] if testing or _STATE["spaces_out"] else [_hf_space])
                  + ([] if _STATE["local_out"] else [_local_sd]))
         if not chain:
@@ -1237,7 +1244,7 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
                 _STATE["told_none"] = True
             results[(i, shot)] = None
             continue
-        ok, used, fallback_rejections, draws, last_kind = False, set(), 0, 0, ""
+        ok, used, fallback_rejections, draws, last_kind, cf_rejected = False, set(), 0, 0, "", False
         # The hook shot (scene 0, shot a) is the thumbnail: up to 3 draws (new seed, then a simplified prompt)
         # with the last source that drew, before it is dropped.
         # Local-only days: the extra draws only when scene 0 has nothing else to show (each costs 1 of the 6).
@@ -1252,6 +1259,8 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
                 if ok or last is None or draws >= 3:
                     break
                 provider, retry = last, k - len(chain) + 1
+            if provider is _cloudflare and k == 1 and k < len(chain) and not cf_rejected:
+                continue  # the Cloudflare redraw is only for a Cloudflare QA rejection, never after an error
             if (provider is _cloudflare and not cf_usable()) or (provider is _hf_space and _STATE["spaces_out"]) \
                     or (provider is _local_sd and _STATE["local_out"]):
                 continue
@@ -1268,6 +1277,9 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
                 kind = last_kind
             elif retry == 2:  # hook: simplified prompt
                 kind = "simple"
+            elif provider is _cloudflare and k == 1:
+                kind = "cf_redraw"
+                count["cf_redraws"] += 1
             else:
                 kind = "full" if provider is _cloudflare else ("short" if not fallback_rejections else "simple")
                 if prompts[kind] in used:  # never send the exact same prompt twice
@@ -1318,6 +1330,8 @@ def generate_images(story: dict, outdir: Path) -> list[list[Path]]:
                 rejected_files[(i, shot)] = bad
                 if provider is not _cloudflare:
                     fallback_rejections += 1
+                else:
+                    cf_rejected = True
                 continue
             ok = True
             break
