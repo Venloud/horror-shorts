@@ -344,6 +344,11 @@ def model_chain(light: bool = False) -> list[str]:
         for name in CONFIG.get("openrouter_models", []):
             if isinstance(name, str) and name.strip():
                 models.append("openrouter:" + name.strip())
+    if not light:
+        # Story writing: the lite Gemini goes AFTER every other backup. Nov 24 (runs 45313028836 and 45374632862):
+        # the strong Gemini models were overloaded and lite, listed right after them, wrote the story before
+        # NVIDIA, OpenRouter or ModelScope were ever tried.
+        models = [m for m in models if "lite" not in m] + [m for m in models if "lite" in m]
     # backups are skipped too once they stalled (run 42904751972: DeepSeek's 2 x 180 s timeouts on every topic)
     models = [m for m in dict.fromkeys(models) if m not in _OVERLOADED]
     return models or list(dict.fromkeys(CONFIG["llm_models"]))

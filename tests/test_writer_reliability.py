@@ -70,6 +70,24 @@ class StalledBackupsStaySkipped(unittest.TestCase):
             self.assertNotIn(backup, story.model_chain())
 
 
+class LiteWriterIsTheLastResort(unittest.TestCase):
+    def test_backups_are_tried_before_the_lite_gemini_for_stories(self):
+        # Nov 24: strong Gemini overloaded -> lite wrote the Kappa story before NVIDIA/OpenRouter/ModelScope were tried.
+        keys = {"NVIDIA_API_KEY": "t", "OPENROUTER_API_KEY": "t", "MODELSCOPE_API_KEY": "t", "GROQ_API_KEY": "t"}
+        with mock.patch.dict(os.environ, keys, clear=False), \
+             mock.patch.object(story, "_OVERLOADED", set()), \
+             mock.patch.object(story, "gemini_model_out", return_value=False):
+            chain = story.model_chain()
+            light = story.model_chain(light=True)
+        lite = [m for m in chain if "lite" in m]
+        self.assertTrue(lite)
+        self.assertEqual(chain[-len(lite):], lite)  # lite is last for story writing
+        self.assertEqual(chain[0], story.CONFIG["llm_models"][0])  # strongest Gemini still first
+        for backup in ("nvidia:", "openrouter:", "modelscope:"):
+            self.assertLess(next(i for i, m in enumerate(chain) if m.startswith(backup)), chain.index(lite[0]))
+        self.assertIn("lite", light[0])  # small JSON calls still save the strong model's quota
+
+
 class ShotGenderMatchesNarration(unittest.TestCase):
     def test_she_scene_gets_a_female_subject_in_prompt_and_stock_query(self):
         # Hanako-san 2026-11-19: "she was a victim of bullying" over stock footage of a boy ("student sitting alone")
