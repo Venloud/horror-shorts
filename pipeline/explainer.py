@@ -1442,7 +1442,10 @@ def story_images(story: dict, img_dir: Path) -> list[list[Path]]:
                 sc[key] = "ai"
     dropped = _stale_images(story, img_dir)
     history = load_history()
-    if not fresh:
+    if not fresh or CONFIG.get("library_reuse_on_fresh", True):
+        # Owner request 2026-11-24: reuse matching scenery from the library before drawing. Fresh mode used to skip
+        # the library entirely (444 assets, 0 reuses); the library never reuses a person / character shot, the hook
+        # or a creature shot, and every reuse must pass the same vision check as a new picture.
         library.fill_shots(story, img_dir, history)
     media.fill_shots(story, img_dir, history)
     per_scene = images.generate_images(story, img_dir)

@@ -333,6 +333,7 @@
   "yt_backfill_trust_publish_ids": false,
   "packaging": true,
   "asset_library": true,
+  "library_reuse_on_fresh": true,
   "asset_min_similarity": 0.27,
   "clip_matching_enabled": true,
   "clip_model": "openai/clip-vit-base-patch32",

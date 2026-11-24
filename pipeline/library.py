@@ -390,6 +390,7 @@ def fill_shots(story: dict, outdir: Path, history: list[dict] | None = None) -> 
 
 def _fill(story: dict, outdir: Path) -> int:
     import images
+    import set_builder
     idx = load_index()
     pool = [a for a in idx.get("assets", []) if not a.get("character_specific")]
     if not pool:
@@ -403,16 +404,20 @@ def _fill(story: dict, outdir: Path) -> int:
     n_scenes = len(story.get("scenes") or [])
     taken: set[str] = set()
     reused = 0
+    why = {"person": 0, "fresh_only": 0, "no_candidate": 0, "below_similarity": 0, "failed_qa": 0}
+    best = 0.0
     for i, sc in enumerate(story.get("scenes") or []):
         for l in images._letters():
             text = (sc.get(PROMPT_KEYS[l]) or "").strip()
             png = outdir / f"scene_{i:02d}{l}.png"
             if not text or (i, l) == (0, "a") or png.exists() or reused >= limit:
                 continue  # the hook stays a fresh picture; checkpoints / real media already placed stay
-            if _shot_has_person(story, text):
+            if _shot_has_person(story, text) or sc.get(set_builder.CAST_KEYS.get(l, "image_cast")):
+                why["person"] += 1
                 continue  # people / story characters: never a picture from another story
             import shot_rules
             if shot_rules.ai_only(story, i, l):
+                why["fresh_only"] += 1
                 continue  # creature / hook / twist shots: always a fresh AI picture
             inside, _words = _setting(story, i, l, text)
             pos = _position(i, n_scenes)
@@ -428,10 +433,15 @@ def _fill(story: dict, outdir: Path) -> int:
                     continue
                 cands.append(a)
             if not cands:
+                why["no_candidate"] += 1
                 continue
             q = embed_text(text)
             scored = sorted(((float(q @ _unpack(a["embedding"])), a) for a in cands if a.get("embedding")),
                             key=lambda x: -x[0])
+            best = max([best] + [s for s, _ in scored[:1]])
+            if not scored or scored[0][0] < thr:
+                why["below_similarity"] += 1  # a more specific shot than any stored picture: draw it new
+                continue
             for sim, a in scored[:3]:
                 if sim < thr:
                     break
@@ -439,9 +449,11 @@ def _fill(story: dict, outdir: Path) -> int:
                     taken.add(a["id"])
                     reused += 1
                     break
+            else:
+                why["failed_qa"] += 1
     _STATE["reused"] = reused
-    if reused:
-        log(f"Asset library: {reused} shot(s) reused ({len(pool)} reusable assets)")
+    log(f"Asset library: {reused} shot(s) reused ({len(pool)} reusable assets, best similarity {best:.2f} vs "
+        f"{thr:.2f}); not reused: {', '.join(f'{k} {v}' for k, v in why.items() if v) or 'none'}")
     return reused
 
 

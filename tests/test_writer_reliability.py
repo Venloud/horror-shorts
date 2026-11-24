@@ -399,3 +399,34 @@ class SetBuilder(unittest.TestCase):
         s["set_builder"] = "off"
         self.assertNotIn("rim-lit", images.build_prompt(s, 0, s["scenes"][0]["image_prompt"], style="S", letter="a"))
         self.assertIn('"set_builder": story.get("set_builder")', (ROOT / "pipeline" / "main.py").read_text(encoding="utf-8"))
+
+
+class LibraryReuse(unittest.TestCase):
+    """Owner request 2026-11-24 (scene step 3): reuse matching scenery, never people, never a forced mismatch."""
+
+    def test_fresh_mode_still_checks_the_library(self):
+        src = (ROOT / "pipeline" / "explainer.py").read_text(encoding="utf-8")
+        self.assertIn('if not fresh or CONFIG.get("library_reuse_on_fresh", True):', src)
+        self.assertTrue(json.loads((ROOT / "config.json").read_text(encoding="utf-8"))["library_reuse_on_fresh"])
+
+    def test_cast_shots_are_never_reused_and_reasons_are_logged(self):
+        import library
+        import numpy as np
+        vec = np.ones(4, dtype="float32") / 2
+        asset = {"id": "x", "style": "painted", "setting": "exterior", "era": "any", "times_used": 0,
+                 "embedding": "e", "uses": []}
+        s = {"mode": "lore", "scenes": [
+            {"narration": "n", "image_prompt": "hook shot of the river"},
+            {"narration": "n", "image_prompt": "a dark river at night", "image_prompt_2": "a lone figure on the bank",
+             "image_cast_2": ["Ghost"]}]}
+        calls, logs = [], []
+        with mock.patch.object(library, "load_index", return_value={"assets": [asset], "seq": 50}), \
+                mock.patch.object(library, "_setting", return_value=("exterior", "")), \
+                mock.patch.object(library, "embed_text", return_value=vec), \
+                mock.patch.object(library, "_unpack", return_value=vec * 0.6), \
+                mock.patch.object(library, "_try_reuse", side_effect=lambda *a: calls.append(a[1:3]) or True), \
+                mock.patch.object(library, "log", side_effect=logs.append):
+            n = library._fill(s, ROOT / "cache" / "test_library_out")
+        self.assertEqual(n, 1)
+        self.assertEqual(calls, [(1, "a")])  # the hook and the cast shot are never library pictures
+        self.assertIn("person 1", logs[-1])
