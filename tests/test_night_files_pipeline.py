@@ -862,6 +862,26 @@ class ShortCutExperiment(unittest.TestCase):
         self.assertLess(resized.call_args.args[2], 110)  # asked for a ~40 s script, not a trim of the video
         self.assertEqual(len(out["scenes"]), 6)  # same scenes: the pictures are reused
 
+    def test_writer_outage_during_resize_stops_before_the_render(self):
+        # Nov 24 run: resize hit ApiBusy, the 148-word script was rendered anyway (60.4 s) and the gate rejected it.
+        import main
+        import story as story_mod
+        common.apply_length({"mode": "lore"})
+        story = {"mode": "lore", "scenes": [{"narration": " ".join(["word"] * 24)} for _ in range(6)]}
+
+        def narrate(st, workdir, speed=None):
+            speed = speed or 1.1
+            words = sum(len(s["narration"].split()) for s in st["scenes"])
+            return {"duration": words / 2.4 * 1.1 / speed, "speed": speed, "words": []}
+
+        busy = story_mod.ApiBusy("Every writer is rate-limited or overloaded right now (not a topic problem)")
+        with mock.patch("story.resize_story", side_effect=busy), \
+                mock.patch.object(main, "env", lambda *a, **k: "key"):
+            with self.assertRaises(story_mod.ApiBusy):
+                main.fit_duration(story, Path(tempfile.gettempdir()), narrate, allow_rewrite=True)
+        src = (Path(main.__file__)).read_text(encoding="utf-8")
+        self.assertIn("isinstance(e, (images.ImageQuotaWait, ApiBusy))", src)  # not a failed attempt: resumes
+
     def test_production_gate_follows_the_cut_window(self):
         import production_gate
         common.apply_length({"mode": "lore"})
