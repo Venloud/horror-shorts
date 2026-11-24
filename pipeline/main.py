@@ -461,6 +461,7 @@ def main() -> int:
             **({"yt_title": story["packaging"]["yt_title"], "yt_tags": story["packaging"]["yt_tags"],
                 "yt_description": packaging.youtube_description(story)} if story.get("packaging") else {}),
             "true_story": bool(story.get("true_story")), "seconds": round(narration["duration"], 1),
+            "hook_style": story.get("hook_style"),  # owner experiment 2026-11-24: which opener this video tested
             "length_variant": length,  # publish.py re-checks the video against this length window
             "narrator_voice": story.get("narrator_voice") or narration.get("voice"),
             "visual_credits": visual_credits, "visual_mode": story.get("visual_mode"),
@@ -519,6 +520,7 @@ def main() -> int:
             "twist": story.get("twist"),
             "score": story.get("score"),
             "seconds": round(narration["duration"], 1),
+            "hook_style": story.get("hook_style"),  # owner experiment 2026-11-24: which opener this video tested
             "length_variant": length,  # owner experiment 2026-11-23: "40s" cut on YouTube + TikTok, or "full"
             "video_seconds": round(_video_seconds(video), 1),
             "voice_speed": narration.get("speed"),

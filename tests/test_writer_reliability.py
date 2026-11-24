@@ -262,3 +262,58 @@ class StoryBank(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class HookStyles(unittest.TestCase):
+    """Owner experiment 2026-11-24: rotate the opener style, tag every video, never invent a fact."""
+
+    def _story(self, mode="mystery"):
+        return {"title": "Joyita", "mode": mode, "scenes": [
+            {"narration": "Twenty-five people vanished from a ship that could not sink. Nobody saw them leave."},
+            {"narration": "The Joyita sailed on October 3, 1955 and was found five weeks later."}]}
+
+    def test_rotation_picks_least_used_and_skips_true_only_styles_on_fiction(self):
+        import hook_style
+        hist = [{"hook_style": "control"}, {"hook_style": "true_story"}]
+        self.assertEqual(hook_style.pick(self._story(), hist), "did_you_know")
+        fiction = hook_style.eligible(self._story("fiction"))
+        self.assertNotIn("true_story", fiction)
+        self.assertNotIn("date", fiction)
+        self.assertIn("ending_first", fiction)
+
+    def test_rewrite_is_applied_tagged_and_survives_a_resize(self):
+        import hook_style
+        s = self._story()
+        out = {"scene1": "Did you know twenty-five people once vanished from a ship that could not sink? "
+                         "Nobody saw them leave.", "hook_overlay": "25 people. Gone."}
+        with mock.patch.object(story, "_json_call", return_value=out):
+            s = hook_style.apply(s, [{"hook_style": "control"}, {"hook_style": "true_story"}])
+        self.assertEqual(s["hook_style"], "did_you_know")
+        self.assertTrue(s["scenes"][0]["narration"].startswith("Did you know"))
+        s["scenes"][0]["narration"] = "Twenty-five people vanished. Nobody saw them leave."  # a resize rewrote it
+        hook_style.keep(s)
+        self.assertTrue(s["scenes"][0]["narration"].startswith("Did you know twenty-five"))
+        self.assertTrue(s["scenes"][0]["narration"].endswith("Nobody saw them leave."))
+
+    def test_invented_number_or_failure_keeps_the_original_as_control(self):
+        import hook_style
+        s = self._story()
+        orig = s["scenes"][0]["narration"]
+        bad = {"scene1": "On May 9, 1961 twenty-five people vanished from a ship. Nobody saw them leave."}
+        with mock.patch.object(hook_style, "pick", return_value="date"), \
+             mock.patch.object(story, "_json_call", return_value=bad):
+            s = hook_style.apply(s, [])
+        self.assertEqual((s["hook_style"], s["scenes"][0]["narration"]), ("control", orig))
+        s2 = self._story()
+        with mock.patch.object(hook_style, "pick", return_value="description"), \
+             mock.patch.object(story, "_json_call", side_effect=story.ApiBusy("all busy")):
+            s2 = hook_style.apply(s2, [])
+        self.assertEqual(s2["hook_style"], "control")
+
+    def test_owner_scripts_are_never_restyled_and_history_records_the_style(self):
+        import hook_style
+        s = {"mode": "inbox-script", "scenes": [{"narration": "Owner words."}]}
+        self.assertEqual(hook_style.apply(s, [])["hook_style"], "owner")
+        self.assertEqual(s["scenes"][0]["narration"], "Owner words.")
+        main_src = (ROOT / "pipeline" / "main.py").read_text(encoding="utf-8")
+        self.assertIn('"hook_style": story.get("hook_style")', main_src)
