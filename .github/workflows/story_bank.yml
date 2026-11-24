@@ -1,0 +1,63 @@
+name: Story bank (write stories ahead)
+
+# Owner-approved 2026-11-24. Every 3 h, while the strong writers answer, write ONE story ahead into data/story_bank/
+# (strong Gemini, NVIDIA, OpenRouter, ModelScope, Groq; never the lite model). daily.yml takes the best banked story
+# before writing one on the spot. This job only writes data/story_bank/; it never renders, posts or touches Buffer.
+on:
+  schedule:
+    - cron: "20 */3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Its own group: joining "night-files" could cancel a pending daily build (GitHub keeps one pending run per group).
+concurrency:
+  group: night-files-story-bank
+  cancel-in-progress: false
+
+jobs:
+  bank:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Python packages
+        run: |
+          pip install -q torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -q -r requirements.txt
+
+      - name: Write one story ahead if the bank is low
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          MODELSCOPE_API_KEY: ${{ secrets.MODELSCOPE_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          NF_STRONG_WRITERS_ONLY: "1"
+        run: cd pipeline && python story_bank.py
+
+      - name: Save the bank
+        run: |
+          git config user.name "horror-bot"
+          git config user.email "horror-bot@users.noreply.github.com"
+          if [ -z "$(git status --porcelain -- data/story_bank)" ]; then echo "Bank unchanged"; exit 0; fi
+          tmp="${RUNNER_TEMP}/bank"; rm -rf "$tmp"; mkdir -p "$tmp"
+          [ -d data/story_bank ] && cp -r data/story_bank/. "$tmp/"
+          for i in 1 2 3; do
+            git fetch -q origin main
+            git reset -q --hard origin/main
+            rm -rf data/story_bank; mkdir -p data/story_bank; cp -r "$tmp/." data/story_bank/
+            git add -A data/story_bank
+            git diff --cached --quiet && { echo "Bank unchanged"; exit 0; }
+            git commit -q -m "state: story bank"
+            git push -q origin HEAD:main && exit 0
+            sleep $((i * 5))
+          done
+          echo "Could not push the story bank"; exit 1

@@ -204,6 +204,9 @@ def main() -> int:
             manifest.stage("story", "started")
             from series_rotation import select_approved_story
             story = select_approved_story(history, CONFIG)
+            if story is None and not testing:  # written ahead by strong writers only (story_bank.yml)
+                import story_bank
+                story = story_bank.take(history, buffer.story_ids())
             if story is None:
                 story = write_story(history)
             else:

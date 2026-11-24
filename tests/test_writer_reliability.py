@@ -142,5 +142,92 @@ class SpokenNumberFactCheck(unittest.TestCase):
         self.assertFalse([f for f in found if f["code"] == "unsupported_fact"], found)
 
 
+class StoryBank(unittest.TestCase):
+    """Owner-approved 2026-11-24: stories written ahead by strong writers only (story_bank.yml)."""
+
+    def setUp(self):
+        import tempfile
+        import checkpoint
+        import story_bank
+        self.sb, self.ck = story_bank, checkpoint
+        self.tmp = Path(tempfile.mkdtemp())
+        self.p = [mock.patch.object(story_bank, "BANK", self.tmp / "bank"),
+                  mock.patch.object(checkpoint, "FAILED", self.tmp / "failed")]
+        for p in self.p:
+            p.start()
+
+    def tearDown(self):
+        for p in self.p:
+            p.stop()
+
+    def bank(self, title, score, model="gemini-3.8-flash", age_days=0):
+        from datetime import datetime, timedelta, timezone
+        s = {"title": title, "mode": "lore", "critic_score": score, "model": model, "scenes": [],
+             "banked_at": (datetime.now(timezone.utc) - timedelta(days=age_days)).isoformat(timespec="seconds")}
+        s["story_id"] = self.ck.story_id(s)
+        self.sb.BANK.mkdir(parents=True, exist_ok=True)
+        (self.sb.BANK / f"{s['story_id']}.json").write_text(json.dumps(s), encoding="utf-8")
+        return s
+
+    def test_strong_only_chain_never_has_lite_and_may_be_empty(self):
+        with mock.patch.dict(os.environ, {"NF_STRONG_WRITERS_ONLY": "1"}),              mock.patch.object(story, "_OVERLOADED", set()),              mock.patch.object(story, "gemini_model_out", return_value=False):
+            self.assertFalse([m for m in story.model_chain() if "lite" in m])
+            self.assertTrue(any("lite" in m for m in story.model_chain(light=True)))  # small calls unchanged
+            with mock.patch.object(story, "_OVERLOADED", {m for m in story.CONFIG["llm_models"] if "lite" not in m}),                  mock.patch.dict(os.environ, {"NVIDIA_API_KEY": "", "OPENROUTER_API_KEY": "", "GROQ_API_KEY": "",
+                                              "MODELSCOPE_API_KEY": "", "MODELSCOPE_TOKEN": "",
+                                              "NVIDIA_NIM_API_KEY": ""}):
+                self.assertEqual(story.model_chain(), [])  # no lite fallback: nothing is banked
+
+    def test_take_picks_the_best_usable_story(self):
+        used = self.bank("Used One", 99)
+        self.bank("Lite One", 98, model="gemini-3.5-flash-lite")
+        self.bank("Old One", 97, age_days=40)
+        parked = self.bank("Parked One", 96)
+        (self.ck.FAILED / parked["story_id"]).mkdir(parents=True)
+        self.bank("Good But Lower", 70)
+        best = self.bank("Best Usable", 90)
+        history = [{"story_id": used["story_id"], "title": "Used One", "mode": "lore"}]
+        with mock.patch("story._final_problem", return_value=""):
+            got = self.sb.take(history, set())
+        self.assertEqual(got["story_id"], best["story_id"])
+        self.assertTrue(got["from_story_bank"])
+        with mock.patch("story._final_problem", return_value=""):
+            self.assertEqual(self.sb.take(history, {best["story_id"]})["title"], "Good But Lower")  # buffered: skip
+
+    def test_fill_banks_one_strong_story_and_prunes_used_ones(self):
+        used = self.bank("Used One", 80)
+        written = {"title": "New Legend", "mode": "lore", "model": "nvidia:z-ai/glm-5.3-flash", "scenes": []}
+        hist = [{"story_id": used["story_id"], "title": "Used One", "mode": "lore"}]
+        with mock.patch("common.load_history", return_value=hist),              mock.patch("story.write_story", return_value=dict(written)) as ws,              mock.patch("explainer.style_for", return_value="classic"):
+            self.assertEqual(self.sb.fill(), 0)
+        files = [json.loads(f.read_text(encoding="utf-8")) for f in self.sb.BANK.glob("*.json")]
+        self.assertEqual([f["title"] for f in files], ["New Legend"])  # used one pruned, new one banked
+        self.assertTrue(files[0]["banked_at"])
+        self.assertEqual(os.environ.get("NF_STRONG_WRITERS_ONLY"), "1")
+        os.environ.pop("NF_STRONG_WRITERS_ONLY", None)
+        self.assertEqual(ws.call_count, 1)
+
+    def test_fill_does_not_bank_lite_or_write_when_full(self):
+        with mock.patch("common.load_history", return_value=[]),              mock.patch("story.write_story", return_value={"title": "L", "mode": "lore",
+                                                         "model": "gemini-3.5-flash-lite", "scenes": []}):
+            self.sb.fill()
+        os.environ.pop("NF_STRONG_WRITERS_ONLY", None)
+        self.assertEqual(list(self.sb.BANK.glob("*.json")) if self.sb.BANK.exists() else [], [])
+        for i in range(3):
+            self.bank(f"Stock {i}", 80)
+        with mock.patch("common.load_history", return_value=[]), mock.patch("story.write_story") as ws:
+            self.sb.fill()
+        os.environ.pop("NF_STRONG_WRITERS_ONLY", None)
+        ws.assert_not_called()
+
+    def test_daily_run_takes_from_the_bank_before_writing(self):
+        src = (ROOT / "pipeline" / "main.py").read_text(encoding="utf-8")
+        self.assertLess(src.index("select_approved_story(history, CONFIG)"), src.index("story_bank.take("))
+        self.assertLess(src.index("story_bank.take("), src.index("story = write_story(history)"))
+        wf = (ROOT / ".github" / "workflows" / "daily.yml").read_text(encoding="utf-8")
+        self.assertIn("secrets.MODELSCOPE_API_KEY", wf)
+        self.assertIn("OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}", wf)
+
+
 if __name__ == "__main__":
     unittest.main()
