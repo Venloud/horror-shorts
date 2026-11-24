@@ -643,6 +643,21 @@
     },
     "verdict": null,
     "metric": null
+   },
+   "840555ac326e": {
+    "stamp": "",
+    "title": "The Kappa Of Japanese Rivers",
+    "used": {
+     "fx:title": 1,
+     "fx:info_card": 1,
+     "fx:phrase": 1,
+     "move:push": 5,
+     "cut:cut": 19,
+     "move:still": 5,
+     "move:closeup": 1
+    },
+    "verdict": null,
+    "metric": null
    }
   },
   "history": []
