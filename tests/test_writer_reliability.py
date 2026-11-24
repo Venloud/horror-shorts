@@ -317,3 +317,54 @@ class HookStyles(unittest.TestCase):
         self.assertEqual(s["scenes"][0]["narration"], "Owner words.")
         main_src = (ROOT / "pipeline" / "main.py").read_text(encoding="utf-8")
         self.assertIn('"hook_style": story.get("hook_style")', main_src)
+
+
+class SetBuilder(unittest.TestCase):
+    """Owner request 2026-11-24: layered sets (no fixed count) + a focal point per shot, used by the image prompt."""
+
+    def _story(self):
+        return {"title": "Kappa", "mode": "lore", "setting": "rural Japan, Edo period",
+                "characters": [{"name": "kappa", "look": "green river creature with a water dish on its head"}],
+                "locations": [{"name": "river", "look": "a river"}],
+                "scenes": [{"narration": "A horse was dragged into the river.", "image_prompt": "kappa pulls a horse into the river",
+                            "image_prompt_2": "close-up of a cucumber offering"},
+                           {"narration": "The village shrine kept the arm.", "image_prompt": "a mummified arm in a shrine box"}]}
+
+    def _answer(self):
+        return {"sets": [{"name": "Night river", "background": "pale misty mountains", "midground": "black river water",
+                          "foreground": "tall reeds", "light": "cold moonlight", "detail": "a broken torii in the water",
+                          "leading_line": "the curving riverbank"},
+                         {"name": "Village shrine", "background": "dim wooden walls", "midground": "an altar",
+                          "foreground": "paper lanterns", "light": "one candle", "detail": "rope with paper charms",
+                          "leading_line": "the stone path"}],
+                "shots": [{"id": "1a", "set": "Night river", "focal": "the horse's terrified eye"},
+                          {"id": "1b", "set": "none", "focal": "the cucumber"},
+                          {"id": "2a", "set": "Village shrine", "focal": "the mummified arm"}]}
+
+    def test_sets_are_assigned_and_reach_the_image_prompt(self):
+        import images
+        import set_builder
+        with mock.patch.object(story, "_json_call", return_value=self._answer()):
+            s = set_builder.build(self._story())
+        self.assertEqual(s["set_builder"], "2 sets")
+        self.assertEqual(s["scenes"][0]["image_location"], "Night river")
+        self.assertEqual(s["scenes"][0]["image_location_2"], "none")
+        self.assertEqual(s["scenes"][1]["image_location"], "Village shrine")
+        p = images.build_prompt(s, 0, s["scenes"][0]["image_prompt"], style="STYLE", letter="a")
+        for bit in ("pale misty mountains", "tall reeds in the dark foreground", "the curving riverbank leading the eye",
+                    "the eye drawn first to the horse's terrified eye", "rim-lit"):
+            self.assertIn(bit, p)
+        self.assertLess(p.index("kappa pulls"), p.index("rim-lit"))
+
+    def test_failure_or_disabled_leaves_the_story_unchanged(self):
+        import images
+        import set_builder
+        s = self._story()
+        before = json.dumps(s)
+        with mock.patch.object(story, "_json_call", side_effect=story.ApiBusy("busy")):
+            s = set_builder.build(s)
+        self.assertEqual(s.pop("set_builder"), "off")
+        self.assertEqual(json.dumps(s), before)
+        s["set_builder"] = "off"
+        self.assertNotIn("rim-lit", images.build_prompt(s, 0, s["scenes"][0]["image_prompt"], style="S", letter="a"))
+        self.assertIn('"set_builder": story.get("set_builder")', (ROOT / "pipeline" / "main.py").read_text(encoding="utf-8"))
