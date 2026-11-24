@@ -81,6 +81,13 @@ def fit_duration(story: dict, workdir, narrate, allow_rewrite: bool) -> tuple[di
         try:
             story = resize_story(story, env("GEMINI_API_KEY"), want_words)
         except Exception as e:  # noqa: BLE001
+            from story import ApiBusy
+            if isinstance(e, ApiBusy):
+                # Writer outage, not a story problem. Rendering the untightened script wastes ~25 min on a video the
+                # production gate rejects (Kappa, Nov 24: 148 words, 60.4 s for the 36-44 s cut). The story is
+                # checkpointed, ApiBusy is not counted as a failed attempt, so the next run resizes it again.
+                log(f"Resize failed: every writer busy; stopping before the render ({str(e)[:120]})")
+                raise
             log(f"Resize failed ({str(e)[:150]}): keeping the current script")
             break
         narr = narrate(story, workdir, speed=narr["speed"])
