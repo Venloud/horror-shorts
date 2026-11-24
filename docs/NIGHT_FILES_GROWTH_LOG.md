@@ -52,3 +52,12 @@ story in the same run; stalled backup writers stay skipped for the whole run.
   subscribers per 1,000 views with the baseline; TikTok views before/after as a side check.
 
 Next: hook test (first 2 s show the threat in motion, no title card) once the length test has a result.
+
+### Experiment: hook styles (started 2026-11-24, #60)
+- Owner idea: test openers instead of waiting. Every written story now opens in one of these styles:
+  control (strangest detail, as before), true_story ("This is a true story." first), did_you_know, date,
+  description (paint the key image) and ending_first (outcome first, then rewind).
+- The rotation picks the least-used style, so sample sizes stay even. true_story and date are only used on true stories.
+- Only the opening of scene 1 is rewritten, from facts already in the script. Any failure goes out as control.
+- Measure: average % viewed and subscribers gained per `hook_style` in history.json, once each style has 4 or more videos (~2 weeks).
+- Known gap: analytics match videos to history by title, and that missed most videos. Fix the join before the read-out.
