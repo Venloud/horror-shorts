@@ -310,6 +310,10 @@
     "max_age_days": 21,
     "note": "Owner-approved 2026-11-24: story_bank.yml writes stories ahead every 3 h with strong writers only (never lite); the daily run takes the best banked story first. enabled false = write at render time as before."
   },
+  "set_builder": {
+    "enabled": true,
+    "note": "Owner request 2026-11-24 (scene upgrade step 1): before pictures, one LLM pass designs as many sets as the story needs (layers: background / midground / dark foreground, light, signature detail, leading line) and gives every shot a focal point; images.build_prompt adds them. history.json set_builder = '<n> sets' or 'off'. Switch off: enabled false."
+  },
   "hook_styles": {
     "enabled": true,
     "styles": ["control", "true_story", "did_you_know", "date", "description", "ending_first"],

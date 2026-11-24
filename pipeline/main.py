@@ -298,6 +298,11 @@ def main() -> int:
         else:
             log("Owner's exact-word script: no AI story rewrites or editorial gate")
         log(f"Final narration: {narration['duration']:.1f}s at speed {narration.get('speed')}")
+        import set_builder  # owner request 2026-11-24: layered sets + a focal point per shot, before any picture
+        if not story.get("set_builder"):  # visuals only: the narration (even an owner's exact words) is untouched
+            story = set_builder.build(story)
+            if not testing:
+                checkpoint.save_story(story)
         img_dir = workdir / "images" if testing else checkpoint.IMAGES  # images are kept as soon as they exist
         video, imgs = None, None
         if use_explainer:  # story pictures + explanatory graphics + rare approved-host reactions (explainer.py)
@@ -529,6 +534,7 @@ def main() -> int:
             "media_ids": [a["id"] for a in story.get("media_assets") or []],
             "visual_mode": story.get("visual_mode"),  # A/B test: classic / fast / analog
             "render_style": story.get("render_style", "classic"),  # classic / cutout (experimental)
+            "set_builder": story.get("set_builder"),  # owner request 2026-11-24: "<n> sets" or "off"
             "story_shape": story.get("story_shape"),  # fiction shape rotation
             "research_sources": [x.get("domain") or x.get("url") for x in story.get("sources") or []],
             "visual_sources": story.get("_visual_sources"),  # reused / archive+stock / AI shots

@@ -509,7 +509,9 @@ def build_prompt(story: dict, scene_i: int, shot: str, style: str | None = None,
         look = loc["look"].strip().rstrip(".")
         parts.append(" ".join(_bits(look)[0].split()[:3]) if is_object else look)
     blank = "the surfaces blank, no legible text or lettering" if _TEXTY.search(body) else ""
-    return _join(parts + [blank, camera, style])
+    import set_builder  # layered sets + focal point (only when the set builder ran for this story)
+    framing = "" if is_object else set_builder.composition(story, scene_i, letter or _letter(story["scenes"][scene_i], shot))
+    return _join(parts + [blank, framing, camera, style])
 
 
 CLIP_LIMIT = 77  # SD-Turbo's text encoder (and the CLIP half of FLUX) reads 77 tokens; the rest is cut off
