@@ -310,6 +310,11 @@
     "max_age_days": 21,
     "note": "Owner-approved 2026-11-24: story_bank.yml writes stories ahead every 3 h with strong writers only (never lite); the daily run takes the best banked story first. enabled false = write at render time as before."
   },
+  "hook_styles": {
+    "enabled": true,
+    "styles": ["control", "true_story", "did_you_know", "date", "description", "ending_first"],
+    "note": "Owner experiment 2026-11-24: each written story opens in the least-used eligible style (true_story and date only on true stories); history.json hook_style tags each video. Switch off: enabled false."
+  },
   "short_cut": {
     "enabled": true,
     "label": "40s",

@@ -205,6 +205,8 @@ def resize_story(story: dict, api_key: str, want_words: int) -> dict:
         new.setdefault(k, v)
     if new.get("mode") != "inbox-script":
         speak_numbers(new)
+    import hook_style
+    hook_style.keep(new)  # the resize must not undo the tested hook
     got = sum(len(s["narration"].split()) for s in new["scenes"])
     log(f"Script resized: {now} -> {got} words (asked for {want_words})")
     return new
@@ -2033,6 +2035,8 @@ def write_story(history: list[dict]) -> dict:
     else:
         raise RuntimeError(f"Story '{story.get('title')}' repeats a recent video or is blocked: {why}: discarded "
                            f"(rejected this run: {', '.join(rejected)})")
+    import hook_style  # owner experiment 2026-11-24: rotate the hook style, tagged per video
+    story = hook_style.apply(story, history)
     mark_true_story(story)
     if story.get("mode") != "inbox-script":  # the owner's exact words are never changed
         speak_numbers(story)
