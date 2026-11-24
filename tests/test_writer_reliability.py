@@ -220,6 +220,37 @@ class StoryBank(unittest.TestCase):
         os.environ.pop("NF_STRONG_WRITERS_ONLY", None)
         ws.assert_not_called()
 
+    def test_fill_fits_a_long_script_to_the_cut_while_strong_writers_answer(self):
+        import common
+        common.apply_length({"mode": "lore"})
+        long = {"title": "Long", "mode": "lore", "model": "openrouter:openai/gpt-oss-120b",
+                "scenes": [{"narration": " ".join(["word"] * 34)} for _ in range(4)]}  # 136 words (MV Joyita)
+
+        def resize(st, key, want):
+            return {**st, "scenes": [{"narration": " ".join(["word"] * (want // 4))} for _ in st["scenes"]]}
+        with mock.patch("common.load_history", return_value=[]),              mock.patch("story.write_story", return_value=long),              mock.patch("story.resize_story", side_effect=resize) as rs,              mock.patch("explainer.style_for", return_value="classic"):
+            self.sb.fill()
+        os.environ.pop("NF_STRONG_WRITERS_ONLY", None)
+        banked = json.loads(next(self.sb.BANK.glob("*.json")).read_text(encoding="utf-8"))
+        lo, hi = common.CONFIG["story_words"]
+        self.assertTrue(lo <= sum(len(s["narration"].split()) for s in banked["scenes"]) <= hi)
+        self.assertEqual(rs.call_args.args[2], round((lo + hi) / 2))
+
+    def test_rejected_backup_key_is_skipped_for_the_run(self):
+        calls = []
+
+        def call(model):
+            calls.append(model)
+            if model.startswith("modelscope:"):
+                raise RuntimeError("ModelScope chat HTTP 401: Authentication failed")
+            return {"ok": model}
+        with mock.patch.object(story, "model_chain", side_effect=lambda light=False: [
+                m for m in ["modelscope:Qwen/Qwen3.5-27B", "openrouter:openai/gpt-oss-120b"]
+                if m not in story._OVERLOADED]),              mock.patch.object(story, "_OVERLOADED", set()), mock.patch.object(story.time, "sleep"):
+            self.assertEqual(story._with_models(call), {"ok": "openrouter:openai/gpt-oss-120b"})
+            self.assertEqual(calls.count("modelscope:Qwen/Qwen3.5-27B"), 1)
+            self.assertIn("modelscope:Qwen/Qwen3.5-27B", story._OVERLOADED)
+
     def test_daily_run_takes_from_the_bank_before_writing(self):
         src = (ROOT / "pipeline" / "main.py").read_text(encoding="utf-8")
         self.assertLess(src.index("select_approved_story(history, CONFIG)"), src.index("story_bank.take("))
