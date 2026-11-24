@@ -356,6 +356,37 @@ class SetBuilder(unittest.TestCase):
             self.assertIn(bit, p)
         self.assertLess(p.index("kappa pulls"), p.index("rim-lit"))
 
+    def test_cast_keeps_one_look_in_every_shot_that_shows_the_character(self):
+        import images
+        import set_builder
+        s = {"title": "Joyita", "characters": [{"name": "Captain Miller", "look": "man in his 50s, grizzled beard"}],
+             "scenes": [{"narration": "The captain vanished.", "image_prompt": "the captain stares at the dark sea",
+                         "image_prompt_2": "a lone figure on the tilted deck"},
+                        {"narration": "Investigators found the log.", "image_prompt": "men in suits read a logbook"}]}
+        answer = {"sets": [{"name": "Deck", "background": "grey sea", "midground": "tilted deck"}],
+                  "cast": [{"name": "Captain Miller", "look": "SHOULD NOT REPLACE", "aliases": ["the captain", "he"]},
+                           {"name": "Investigators", "look": "two men in 1950s grey suits and fedoras",
+                            "aliases": ["men in suits"]}],
+                  "shots": [{"id": "1a", "set": "Deck", "cast": ["Captain Miller"]},
+                            {"id": "1b", "set": "Deck", "cast": ["the captain"]},
+                            {"id": "2a", "set": "none", "cast": ["Investigators", "nobody"]}]}
+        with mock.patch.object(story, "_json_call", return_value=answer):
+            s = set_builder.build(s)
+        self.assertEqual(s["cast_builder"], "2 cast")
+        miller = s["characters"][0]
+        self.assertEqual(miller["look"], "man in his 50s, grizzled beard")  # the writer's locked look wins
+        self.assertEqual(miller["aliases"], ["the captain"])                 # pronouns are never aliases
+        self.assertEqual(s["scenes"][0]["image_cast_2"], ["Captain Miller"])
+        for i, letter, shot in ((0, "a", "the captain stares"), (0, "b", "a lone figure")):
+            p = images.build_prompt(s, i, s["scenes"][i][images.PROMPT_KEYS[letter]], style="S", letter=letter)
+            self.assertIn("Captain Miller, man in his 50s, grizzled beard", p)
+            self.assertLess(p.index(shot), p.index("grizzled"))
+        p = images.build_prompt(s, 1, s["scenes"][1]["image_prompt"], style="S", letter="a")
+        self.assertIn("two men in 1950s grey suits and fedoras", p)
+        self.assertNotIn("grizzled", p)
+        self.assertIn("grizzled", images.build_short_prompt(s, 0, s["scenes"][0]["image_prompt_2"], letter="b"))
+        self.assertIn('"cast_builder": story.get("cast_builder")', (ROOT / "pipeline" / "main.py").read_text(encoding="utf-8"))
+
     def test_failure_or_disabled_leaves_the_story_unchanged(self):
         import images
         import set_builder
