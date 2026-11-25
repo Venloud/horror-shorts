@@ -204,13 +204,13 @@ def main() -> int:
             manifest.stage("story", "started")
             from series_rotation import select_approved_story
             story = select_approved_story(history, CONFIG)
-            if story is None and not testing:  # written ahead by strong writers only (story_bank.yml)
-                import story_bank
+            if story is not None:
+                log(f"Owner-approved trilogy {story.get('series_id')} episode {story.get('series_episode')} selected")
+            elif not testing:  # written ahead by strong writers only (story_bank.yml); a banked story has no
+                import story_bank  # series_id (KeyError crashed both daily runs on 2026-11-25)
                 story = story_bank.take(history, buffer.story_ids())
             if story is None:
                 story = write_story(history)
-            else:
-                log(f"Owner-approved trilogy {story['series_id']} episode {story['series_episode']} selected")
             manifest.stage("story", "complete", writer=story.get("writer") or story.get("model"))
             if not testing:
                 checkpoint.start(story)
