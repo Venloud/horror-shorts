@@ -69,8 +69,14 @@ def painted() -> bool:
 
 # Painted poses are drawn WITH night lighting and ink outlines on a dark backdrop: studio-lit poses on light gray
 # looked pasted onto the dark painted plates (local test 2026-11-25, Desktop/cody/night-files-tests).
-POSE_BACKDROP_PAINTED = ("lit at night by a warm lamp from the upper left and cold moonlight, deep shadows on one "
-                         "side, bold ink outlines, plain flat dark slate-gray background, no floor, no scenery")
+# Name the LIGHT ON THE FIGURE, never a light source: "warm lamp ... and moonlight" made FLUX paint a lantern and a
+# moon into the backdrop, and the pose QA rejected all of them (local build 2026-11-25).
+POSE_BACKDROP_PAINTED = ("dramatic night lighting on the figure, warm light on the left side, cool deep shadows on "
+                         "the right side, bold ink outlines, plain flat empty dark slate-gray background, nothing "
+                         "else in the picture, no lamp, no moon, no sky, no floor, no scenery")
+# Not cut-out characters: a creature is never "one adult person" for the pose QA (all 3 tries rejected).
+_CREATURE = re.compile(r"(creature|monster|demon|ghost|spirit|wraith|beast|wing(?:s|ed)?|fangs?|claws?|tentacles?|"
+                       r"horns?|undead|corpse|skeletal|no lower half|floating)", re.IGNORECASE)
 POSE_BACKDROP_FLAT = "plain flat light-gray background, even lighting"
 
 
@@ -218,7 +224,7 @@ def _main_characters(story: dict) -> list[dict]:
                     ("image_prompt", "image_prompt_2", "image_prompt_3", "image_prompt_4"))
                     for sc in story.get("scenes") or []).lower()
     ok = [c for c in story.get("characters") or [] if c.get("name") and c.get("look")
-          and not _CHILD.search(c.get("look", ""))]
+          and not _CHILD.search(c.get("look", "")) and not _CREATURE.search(c.get("look", ""))]
     ok.sort(key=lambda c: -text.count(c["name"].lower().split()[0]))
     return ok[:2]
 
@@ -361,9 +367,11 @@ def make_poses(story: dict, chars: list[dict], needed: dict, outdir: Path, budge
     """{name: {pose: cutout PNG}}. Pose 1 (standing front) is the reference; every other pose is checked against
     it (same person / outfit / style), regenerated up to 2 times, else dropped."""
     import images
-    style = _style().replace("detailed background, ", "")  # a pose needs an empty backdrop to cut out
+    style = (_style().replace("detailed background, ", "")  # a pose needs an empty backdrop to cut out
+             .replace(" with warm lamp and moonlight highlights", ""))  # else FLUX paints a lamp and a moon in
     backdrop = POSE_BACKDROP_PAINTED if painted() else POSE_BACKDROP_FLAT
-    bg_words = "plain dark slate-gray background" if painted() else "plain light-gray background"
+    bg_words = ("plain empty dark background; cropped at the knees or waist is fine" if painted()
+                else "plain light-gray background")
     out: dict = {}
     for ci, c in enumerate(chars):
         want = ["standing_front"] + [p for p in POSES if p in needed.get(c["name"], set()) and p != "standing_front"]
@@ -382,7 +390,8 @@ def make_poses(story: dict, chars: list[dict], needed: dict, outdir: Path, budge
                           f"{backdrop}, single character, no text")
                 if not _draw(prompt, seed + attempt * 101, dest, budget, planned=attempt == 0):
                     break
-                v, why = _qa(dest, f"one adult person, {POSES[pose]}, {bg_words}")
+                asked = POSES[pose].replace(", full body", "") if painted() else POSES[pose]
+                v, why = _qa(dest, f"one adult person, {asked}, {bg_words}")
                 if v is False:
                     log(f"Cutout pose {c['name']}/{pose}: QA NO ({why}), try {attempt + 1}/3")
                     continue
@@ -483,7 +492,7 @@ def _key_gray(im: Image.Image) -> Image.Image:
 
 def make_plates(story: dict, needed: set, outdir: Path, budget: Budget) -> dict:
     """{(location, kind): PNG}. Empty places, same description word-for-word, reused across scenes."""
-    style = _style()
+    style = _style().replace("semi-realistic adult proportions and faces, ", "")  # it put villagers on the plate
     looks = {l["name"]: l.get("look", "") for l in story.get("locations") or []}
     out = {}
     order = sorted(needed, key=lambda lk: (list(PLATE_KINDS).index(lk[1]), lk[0]))  # every wide plate first
@@ -492,7 +501,7 @@ def make_plates(story: dict, needed: set, outdir: Path, budget: Budget) -> dict:
         if dest.exists():
             out[(loc, kind)] = dest
             continue
-        prompt = (f"{style}, {looks.get(loc, loc).strip().rstrip('.')}, {PLATE_KINDS[kind]}, empty, no people, "
+        prompt = (f"{style}, {looks.get(loc, loc).strip().rstrip('.')}, {PLATE_KINDS[kind]}, empty, deserted, nobody there, no people, no figures, "
                   f"vertical composition, blank unmarked surfaces, no text, no signs")
         for attempt in range(2):
             if not _draw(prompt, 5000 + li * 37 + attempt, dest, budget, planned=attempt == 0):

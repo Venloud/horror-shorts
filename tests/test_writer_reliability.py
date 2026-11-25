@@ -522,10 +522,29 @@ class PaintedCutout(unittest.TestCase):
                                     {"Captain Miller": {"standing_front"}}, Path(d), cutout.Budget(5, 6))
         self.assertIn("standing_front", got["Captain Miller"])
         self.assertIn("dark slate-gray background", prompts[0])
-        self.assertIn("warm lamp", prompts[0])
+        self.assertIn("warm light on the left side", prompts[0])
+        self.assertNotIn("moonlight", prompts[0])  # a named light source gets painted into the backdrop
+        self.assertNotIn("lamp and", prompts[0])
         self.assertIn("painterly", prompts[0])
         self.assertNotIn("detailed background", prompts[0])
         self.assertNotIn("flat 2D cartoon", prompts[0])
+
+    def test_creatures_and_children_are_not_cutout_characters(self):
+        import cutout
+        story = {"characters": [{"name": "aswang", "look": "winged torso, narrow tubular tongue, no lower half"},
+                                {"name": "midwife", "look": "woman in her 30s, long dark hair, plain dress"},
+                                {"name": "Ana", "look": "a 9-year-old girl"}], "scenes": []}
+        self.assertEqual([c["name"] for c in cutout._main_characters(story)], ["midwife"])
+
+    def test_painted_plates_ask_for_nobody(self):
+        import cutout
+        import tempfile
+        prompts = []
+        with tempfile.TemporaryDirectory() as d, mock.patch.dict(cutout.CONFIG, {"cutout_look": "painted"}),              mock.patch.object(cutout, "_draw", side_effect=lambda pr, *a, **k: prompts.append(pr) or None):
+            cutout.make_plates({"locations": [{"name": "village", "look": "stilt houses"}]}, {("village", "wide")},
+                               Path(d), cutout.Budget(5, 6))
+        self.assertIn("nobody there", prompts[0])
+        self.assertNotIn("faces", prompts[0])
 
     def test_flat_look_is_still_available(self):
         import cutout
