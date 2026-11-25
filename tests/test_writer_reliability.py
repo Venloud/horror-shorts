@@ -259,6 +259,26 @@ class StoryBank(unittest.TestCase):
         self.assertIn("secrets.MODELSCOPE_API_KEY", wf)
         self.assertIn("OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}", wf)
 
+    def test_a_banked_story_without_series_id_does_not_crash_the_run(self):
+        """Both daily runs on 2026-11-25 died with KeyError 'series_id' on the first banked story."""
+        import textwrap
+        import types
+        src = (ROOT / "pipeline" / "main.py").read_text(encoding="utf-8")
+        a = src.index("            story = select_approved_story(history, CONFIG)")
+        b = src.index("story = write_story(history)", a) + len("story = write_story(history)")
+        block = textwrap.dedent(src[a:b])
+        banked = {"title": "The Night Woman of the Village", "story_id": "42884941a51e"}
+        bank = types.ModuleType("story_bank")
+        bank.take = lambda history, ids: banked
+        logs = []
+        env = {"select_approved_story": lambda h, c: None, "history": [], "CONFIG": {}, "testing": False,
+               "buffer": types.SimpleNamespace(story_ids=lambda: []), "log": logs.append,
+               "write_story": lambda h: self.fail("wrote a new story although the bank had one")}
+        with mock.patch.dict(sys.modules, {"story_bank": bank}):
+            exec(block, env)  # noqa: S102
+        self.assertIs(env["story"], banked)
+        self.assertFalse(any("trilogy" in m for m in logs))
+
 
 if __name__ == "__main__":
     unittest.main()
