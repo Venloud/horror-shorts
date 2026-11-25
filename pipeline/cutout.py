@@ -109,6 +109,11 @@ very short scene). SHOT is one of:
    "location": "<name or none>"}}
 - {{"type": "screen", "kind": "phone|note|laptop", "contact": "<name said in the narration, or empty>",
    "time": "<e.g. 11:47 PM>", "lines": [{{"from": "them|me", "text": "<words QUOTED from the narration>"}}]}}
+PEOPLE FIRST: when the narration is about people (a captain, the crew, a witness, investigators, a family), SHOW
+them as stage shots with a CHARACTER: they are look-alikes of the period (never a real person's face or photo), so
+this holds for TRUE stories too - the people before, during and after the event, searching, waiting, leaving. Use
+the empty place or an insert only for what has no person in it, or for the moment of a real victim's death.
+Put a character in at least half of the stage shots when CHARACTERS is not "none".
 RULES: adults only. A screen only when the narration mentions a text, message, call, note or screen, and its
 lines use ONLY words the narration actually says (never invent messages). Never show a real victim's death, body
 or remains: use the place or an object instead (stage with character "none", or an insert). "lie" only for a
@@ -642,8 +647,9 @@ def build(story: dict, img_dir: Path, workdir: Path) -> list[list[Path]]:
     out = img_dir / "cutout"
     out.mkdir(parents=True, exist_ok=True)
     images.sanitize_victim_shots(story)
-    if not _main_characters(story):  # legends: no character sheet -> the recurring figures of the shots
-        derived = derive_characters(story)
+    if len(_main_characters(story)) < 2:  # few or no named characters (a legend, "the crew") -> the recurring
+        known = {c.get("name", "").lower() for c in story.get("characters") or []}  # figures of the shots:
+        derived = [c for c in derive_characters(story) if c["name"].lower() not in known]  # period look-alikes
         if derived:
             story["characters"] = list(story.get("characters") or []) + derived
     shots = plan(story)

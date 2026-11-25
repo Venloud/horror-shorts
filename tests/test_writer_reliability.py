@@ -566,6 +566,28 @@ class PaintedCutout(unittest.TestCase):
         self.assertIn("nobody there", prompts[0])
         self.assertNotIn("proportions and faces", prompts[0])
 
+    def test_true_story_plan_shows_look_alike_people(self):
+        """Owner 2026-11-25: the Joyita build planned 11 object close-ups and no person; look-alikes are fine."""
+        import cutout
+        import images
+        story = {"true_story": True, "title": "MV Joyita Vanishing",
+                 "characters": [{"name": "Captain Miller", "look": "man in his 50s, grey beard, pea coat"}],
+                 "locations": [{"name": "deck", "look": "wooden yacht deck at night"}],
+                 "scenes": [{"narration": "Captain Miller sailed with a crew of twenty-five."}]}
+        seen = []
+
+        def plan_llm(prompt):
+            seen.append(prompt)
+            return {"scenes": [{"shots": [{"type": "stage", "character": "Captain Miller", "pose": "standing_front",
+                                           "location": "deck", "plate": "wide", "position": "left",
+                                           "scale": "full", "action": "stand", "facing": "right"}]}]}
+
+        with mock.patch.object(images, "_gemini_json", side_effect=plan_llm):
+            shots = cutout.plan(story)
+        self.assertIn("TRUE stories too", seen[0])
+        self.assertIn("look-alikes", seen[0])
+        self.assertEqual(shots[0][0]["character"], "Captain Miller")
+
     def test_flat_look_is_still_available(self):
         import cutout
         with mock.patch.dict(cutout.CONFIG, {"cutout_look": "flat"}):
