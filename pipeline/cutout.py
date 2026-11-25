@@ -1,4 +1,4 @@
-"""EXPERIMENTAL render style "cutout": the same character in every shot.
+"""EXPERIMENTAL render style "cutout": the same character in every shot (config cutout_look: painted | flat).
 
 Characters are drawn ONCE as a pose set (Cloudflare FLUX, fixed seed, same description word-for-word, plain gray
 background), checked for consistency against pose 1, cut out (rembg, chroma-key fallback) and composited onto
@@ -61,7 +61,22 @@ def style_for(story: dict) -> str:
     return "cutout" if CONFIG.get("render_style") == "cutout" else "classic"
 
 
+def painted() -> bool:
+    """config cutout_look "painted" (default since 2026-11-25): the channel's painted horror look; "flat" = the
+    older flat-cartoon test style."""
+    return (CONFIG.get("cutout_look") or "painted").lower() != "flat"
+
+
+# Painted poses are drawn WITH night lighting and ink outlines on a dark backdrop: studio-lit poses on light gray
+# looked pasted onto the dark painted plates (local test 2026-11-25, Desktop/cody/night-files-tests).
+POSE_BACKDROP_PAINTED = ("lit at night by a warm lamp from the upper left and cold moonlight, deep shadows on one "
+                         "side, bold ink outlines, plain flat dark slate-gray background, no floor, no scenery")
+POSE_BACKDROP_FLAT = "plain flat light-gray background, even lighting"
+
+
 def _style() -> str:
+    if painted():
+        return CONFIG.get("image_style_cf") or "dark cinematic horror illustration, painterly digital art"
     return CONFIG.get("cutout_style") or ("flat 2D cartoon illustration, clean dark outlines, simple shading, "
                                           "muted night palette, no text")
 
@@ -346,7 +361,9 @@ def make_poses(story: dict, chars: list[dict], needed: dict, outdir: Path, budge
     """{name: {pose: cutout PNG}}. Pose 1 (standing front) is the reference; every other pose is checked against
     it (same person / outfit / style), regenerated up to 2 times, else dropped."""
     import images
-    style = _style()
+    style = _style().replace("detailed background, ", "")  # a pose needs an empty backdrop to cut out
+    backdrop = POSE_BACKDROP_PAINTED if painted() else POSE_BACKDROP_FLAT
+    bg_words = "plain dark slate-gray background" if painted() else "plain light-gray background"
     out: dict = {}
     for ci, c in enumerate(chars):
         want = ["standing_front"] + [p for p in POSES if p in needed.get(c["name"], set()) and p != "standing_front"]
@@ -362,10 +379,10 @@ def make_poses(story: dict, chars: list[dict], needed: dict, outdir: Path, budge
             for attempt in range(3):
                 frame = "head and shoulders, centered" if pose == "scared_closeup" else "full body, centered"
                 prompt = (f"{style}, {c['look'].strip().rstrip('.')}, adult, {POSES[pose]}, {frame}, "
-                          f"plain flat light-gray background, even lighting, single character, no text")
+                          f"{backdrop}, single character, no text")
                 if not _draw(prompt, seed + attempt * 101, dest, budget, planned=attempt == 0):
                     break
-                v, why = _qa(dest, f"one adult person, {POSES[pose]}, plain light-gray background")
+                v, why = _qa(dest, f"one adult person, {POSES[pose]}, {bg_words}")
                 if v is False:
                     log(f"Cutout pose {c['name']}/{pose}: QA NO ({why}), try {attempt + 1}/3")
                     continue
@@ -439,6 +456,14 @@ def _mask_ok(mask: Image.Image) -> bool:
     fg = (a > 128).mean()
     decisive = ((a > 200) | (a < 40)).mean()
     return decisive > 0.9 and 0.02 < fg < 0.9
+
+
+def cut_off(ch: Image.Image) -> bool:
+    """True when the drawing itself ends at the bottom edge (FLUX often draws a waist-up figure even when asked for
+    full body): such a cut-out must sit on the frame's bottom edge, never float above the floor."""
+    import numpy as np
+    a = np.asarray(ch.getchannel("A"))
+    return bool(a.size) and float((a[-1] > 128).mean()) > 0.15
 
 
 def _key_gray(im: Image.Image) -> Image.Image:
@@ -731,16 +756,27 @@ class _Stage:
             plate = ImageEnhance.Color(plate).enhance(0.8)
         self.bg = plate
         self.char = None
+        self.cropped = False
         if spec.get("pose"):
             ch = Image.open(spec["pose"]).convert("RGBA")
             if spec.get("pose_name") in SIDE_POSES and spec.get("facing") == "right":
                 ch = ImageOps.mirror(ch)
+            self.cropped = cut_off(ch)
             self.char = self._grade(ch, plate)
             self.char_flip = ImageOps.mirror(self.char)
 
     @staticmethod
     def _grade(ch: Image.Image, plate: Image.Image) -> Image.Image:
         rgb, a = ch.convert("RGB"), ch.getchannel("A")
+        if painted():  # the pose is already night-lit: only a touch of the room's colour and a faint lamp rim
+            from PIL import ImageChops
+            mean = plate.resize((1, 1), Image.BOX).getpixel((0, 0))
+            rgb = Image.blend(rgb, Image.new("RGB", rgb.size, mean), 0.06)
+            rim = ImageChops.subtract(a, a.filter(ImageFilter.MinFilter(11))).filter(ImageFilter.GaussianBlur(2))
+            rgb = Image.composite(Image.new("RGB", rgb.size, (255, 205, 130)), rgb, rim.point(lambda v: int(v * 0.2)))
+            out = rgb.convert("RGBA")
+            out.putalpha(a)
+            return out
         rgb = ImageEnhance.Brightness(rgb).enhance(1.07)
         rgb = ImageEnhance.Color(rgb).enhance(1.08)
         mean = plate.resize((1, 1), Image.BOX).getpixel((0, 0))
@@ -771,6 +807,8 @@ class _Stage:
             height, feet = 0.66 * H, H + 4
         if s.get("pose_name") == "lying_in_bed":
             height, feet = 0.30 * H, 0.86 * H
+        elif self.cropped and not close:  # waist-up drawing: on the bottom edge, never floating mid-frame
+            height, feet = {"full": 0.62, "medium": 0.75, "close": 0.9}[s.get("scale", "full")] * H, H + 4
         breath = 1 + 0.012 * math.sin(2 * math.pi * t / 3.2)
         ch = self.char
         if s.get("action") == "turn" and u > 0.5:
@@ -794,7 +832,7 @@ class _Stage:
             bob = 10 * abs(math.sin(2 * math.pi * t * 1.7))
         top = feet - ch2 - bob
         left = x - cw2 / 2
-        if not close and s.get("scale", "full") == "full":  # soft contact shadow under the feet
+        if not close and not self.cropped and s.get("scale", "full") == "full":  # soft contact shadow under the feet
             sh = Image.new("L", (int(cw2 * 1.2), 70), 0)
             ImageDraw.Draw(sh).ellipse([0, 10, sh.width, 60], fill=120)
             sh = sh.filter(ImageFilter.GaussianBlur(14))

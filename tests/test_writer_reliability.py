@@ -494,3 +494,59 @@ class ImageFailover(unittest.TestCase):
     def test_no_redraw_after_a_cloudflare_error(self):
         calls = self._run([], cf_error=True)
         self.assertEqual([c[0] for c in calls][:2], ["cloudflare", "hf_space"])
+
+
+class PaintedCutout(unittest.TestCase):
+    """Scene step 3b: painted cut-out characters on reusable painted background plates."""
+
+    def test_painted_poses_are_night_lit_on_a_dark_backdrop(self):
+        import cutout
+        from PIL import Image
+        prompts = []
+
+        def draw(prompt, seed, path, budget, planned=True):
+            prompts.append(prompt)
+            Image.new("RGB", (64, 64), (40, 44, 50)).save(path)
+            return path
+
+        def cut(src, dest):
+            Image.new("RGBA", (20, 40), (0, 0, 0, 255)).save(dest)
+            return dest
+
+        import tempfile
+        with tempfile.TemporaryDirectory() as d, mock.patch.dict(cutout.CONFIG, {"cutout_look": "painted"}), \
+             mock.patch.object(cutout, "_draw", side_effect=draw), \
+             mock.patch.object(cutout, "_qa", return_value=(True, "")), \
+             mock.patch.object(cutout, "cut_out", side_effect=cut):
+            got = cutout.make_poses({}, [{"name": "Captain Miller", "look": "man in his 50s, grey beard"}],
+                                    {"Captain Miller": {"standing_front"}}, Path(d), cutout.Budget(5, 6))
+        self.assertIn("standing_front", got["Captain Miller"])
+        self.assertIn("dark slate-gray background", prompts[0])
+        self.assertIn("warm lamp", prompts[0])
+        self.assertIn("painterly", prompts[0])
+        self.assertNotIn("detailed background", prompts[0])
+        self.assertNotIn("flat 2D cartoon", prompts[0])
+
+    def test_flat_look_is_still_available(self):
+        import cutout
+        with mock.patch.dict(cutout.CONFIG, {"cutout_look": "flat"}):
+            self.assertIn("flat 2D cartoon", cutout._style())
+
+    def test_waist_up_cutout_sits_on_the_bottom_edge(self):
+        import cutout
+        import tempfile
+        from PIL import Image
+        with tempfile.TemporaryDirectory() as d:
+            plate = Path(d) / "plate.png"
+            Image.new("RGB", (200, 356), (20, 25, 30)).save(plate)
+            waist = Image.new("RGBA", (100, 160), (0, 0, 0, 0))
+            waist.paste((200, 60, 60, 255), (20, 10, 80, 160))  # the figure runs off the bottom of the drawing
+            pose = Path(d) / "pose.png"
+            waist.save(pose)
+            self.assertTrue(cutout.cut_off(waist))
+            frame = cutout._Stage({"type": "stage", "plate": str(plate), "pose": str(pose), "scale": "full",
+                                   "position": "center", "action": "stand"}).frame(0.0, 1.0)
+        self.assertGreater(frame.getpixel((cutout.W // 2, cutout.H - 3))[0], 120)  # figure touches the bottom
+        full = Image.new("RGBA", (100, 160), (0, 0, 0, 0))
+        full.paste((200, 60, 60, 255), (20, 10, 80, 150))
+        self.assertFalse(cutout.cut_off(full))
