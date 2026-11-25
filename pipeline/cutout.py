@@ -75,8 +75,8 @@ POSE_BACKDROP_PAINTED = ("dramatic night lighting on the figure, warm light on t
                          "the right side, bold ink outlines, plain flat empty dark slate-gray background, nothing "
                          "else in the picture, no lamp, no moon, no sky, no floor, no scenery")
 # Not cut-out characters: a creature is never "one adult person" for the pose QA (all 3 tries rejected).
-_CREATURE = re.compile(r"(creature|monster|demon|ghost|spirit|wraith|beast|wing(?:s|ed)?|fangs?|claws?|tentacles?|"
-                       r"horns?|undead|corpse|skeletal|no lower half|floating)", re.IGNORECASE)
+_CREATURE = re.compile(r"\b(creature|monster|demon|ghost|spirit|wraith|beast|wing(?:s|ed)?|fangs?|claws?|tentacles?|"
+                       r"horns?|undead|corpse|skeletal|no lower half|floating)\b", re.IGNORECASE)
 POSE_BACKDROP_FLAT = "plain flat light-gray background, even lighting"
 
 

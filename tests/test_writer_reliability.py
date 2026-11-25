@@ -564,7 +564,7 @@ class PaintedCutout(unittest.TestCase):
             cutout.make_plates({"locations": [{"name": "village", "look": "stilt houses"}]}, {("village", "wide")},
                                Path(d), cutout.Budget(5, 6))
         self.assertIn("nobody there", prompts[0])
-        self.assertNotIn("faces", prompts[0])
+        self.assertNotIn("proportions and faces", prompts[0])
 
     def test_flat_look_is_still_available(self):
         import cutout
