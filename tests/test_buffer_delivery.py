@@ -1,5 +1,7 @@
 """Offline only: Buffer.com delivery, durable dedup, source authorization, API retirement."""
 import json
+import io
+from contextlib import ExitStack, redirect_stdout
 import sys
 import tempfile
 import unittest
@@ -13,6 +15,108 @@ import buffer_recovery as recovery  # noqa: E402
 
 
 class BufferDeliveryTests(unittest.TestCase):
+    def run_empty_worker(self, state, argv=(), stamp=None, **overrides):
+        """Exercise entrypoint with all external effects forbidden or mocked."""
+        with tempfile.TemporaryDirectory() as temp, ExitStack() as stack:
+            summary = Path(temp) / "summary"
+            outputs = Path(temp) / "outputs"
+            stack.enter_context(patch.dict("os.environ", {
+                "GITHUB_STEP_SUMMARY": str(summary), "GITHUB_OUTPUT": str(outputs)}))
+            mocks = {"read_stamp_file": lambda _: stamp,
+                     "read_state": lambda: (state, "sha"),
+                     "candidates": lambda *a, **k: [],
+                     "historical_candidates": lambda *a: [],
+                     "already_youtube": lambda *a: False,
+                     "needs_tiktok": lambda *a: True}
+            mocks.update(overrides)
+            for name, fn in mocks.items():
+                stack.enter_context(patch.object(queue, name, side_effect=fn))
+            stack.enter_context(patch.object(recovery, "recover_one", return_value=False))
+            for name in ("graph", "persist", "queue_one"):
+                stack.enter_context(patch.object(queue, name, side_effect=AssertionError("unexpected mutation")))
+            before = json.dumps(state, sort_keys=True)
+            with redirect_stdout(io.StringIO()) as logs:
+                code = queue.main(list(argv))
+            self.assertEqual(before, json.dumps(state, sort_keys=True))
+            return code, logs.getvalue(), summary.read_text(), outputs.read_text()
+
+    def test_exhaustion_is_explicit_noop_not_claim_queue_caught_up(self):
+        state = {"queued": {"old": {"status": "attempt_started"}}, "tiktok_queued": {}}
+        code, logs, summary, outputs = self.run_empty_worker(state)
+        self.assertEqual(code, 0)  # normal periodic exhaustion, not a delivery success
+        self.assertIn("outcome=no_eligible_video", outputs)
+        self.assertIn("tiktok_queued=0", outputs)
+        self.assertIn("::warning::", logs)
+        self.assertIn("1 uncertain attempt", summary)
+        self.assertIn("Channel health was not checked", summary)
+        self.assertNotIn("caught up", logs)
+
+    def test_missing_exact_daily_pair_fails_without_recovery_or_mutation(self):
+        code, _, summary, outputs = self.run_empty_worker(
+            {"queued": {}, "tiktok_queued": {}},
+            ("--stamp-file", ".posted", "--production-only"), stamp="2026-11-08_0700")
+        self.assertEqual(code, 1)
+        self.assertIn("outcome=missing_accepted_inventory", outputs)
+        self.assertIn("unmet delivery", summary)
+
+    def test_prior_draft_and_youtube_receipt_remain_safe_noop(self):
+        code, _, _, outputs = self.run_empty_worker(
+            {"queued": {"2026-11-07_1936": {"status": "queued"}}, "tiktok_queued": {}},
+            ("--stamp-file", ".posted", "--production-only"), stamp="2026-11-07_1936",
+            needs_tiktok=lambda _: False)
+        self.assertEqual(code, 0)
+        self.assertIn("outcome=no_new_production_video", outputs)
+
+    def test_missing_daily_receipt_reports_no_accepted_video(self):
+        code, _, _, outputs = self.run_empty_worker({}, ("--stamp-file", ".posted"), stamp="")
+        self.assertEqual(code, 0)
+        self.assertIn("outcome=no_accepted_video", outputs)
+
+    def test_rollout_video_with_draft_receipt_is_not_replayed(self):
+        assets = {"2026-11-07_1936.mp4": {}, "2026-11-07_1936.json": {}}
+        history = [{"buffered": "2026-11-07_1936", "draft_sent": "confirmed",
+                    "tiktok": {"mode": "draft", "status": "SEND_TO_USER_INBOX"}}]
+        with patch.object(queue, "release_assets", return_value=assets), \
+             patch.object(queue, "safe_history", return_value=history), \
+             patch.object(queue, "already_youtube", return_value=False), \
+             patch.object(queue, "TIKTOK_BUFFER_FROM", "2026-11-07"):
+            self.assertFalse(queue.needs_tiktok("2026-11-07_1936"))
+            self.assertEqual(queue.candidates({"2026-11-07_1936": {}}, {}), [])
+
+    def test_uncertain_tiktok_failure_preserves_write_ahead_and_youtube_receipt(self):
+        record = {"queued": {"new": {"status": "queued", "buffer_post_id": "yt-id"}},
+                  "tiktok_queued": {}}
+        metadata = unittest.mock.Mock()
+        metadata.json.return_value = {"title": "Night Files", "caption_text": "Approved caption"}
+        with patch.object(queue, "public_asset"), \
+             patch.object(queue.requests, "get", return_value=metadata), \
+             patch.object(queue, "persist", return_value="write-ahead") as save, \
+             patch.object(queue, "graph", side_effect=queue.requests.Timeout("uncertain")):
+            with self.assertRaises(queue.requests.Timeout):
+                queue.queue_one("new", {"browser_download_url": "https://github.com/video.mp4"},
+                                {"browser_download_url": "https://github.com/video.json"},
+                                record, "sha", [], "tiktok")
+            save.assert_called_once()
+        self.assertEqual(record["tiktok_queued"]["new"]["status"], "attempt_started")
+        self.assertEqual(record["queued"]["new"]["buffer_post_id"], "yt-id")
+
+    def test_success_summary_counts_only_new_channel_acknowledgments(self):
+        with tempfile.TemporaryDirectory() as temp, ExitStack() as stack:
+            summary = Path(temp) / "summary"
+            stack.enter_context(patch.dict("os.environ", {"GITHUB_STEP_SUMMARY": str(summary),
+                                                         "GITHUB_OUTPUT": ""}))
+            state = {"queued": {"new": {}}, "tiktok_queued": {}}
+            for name, value in {"read_state": (state, "sha"), "read_stamp_file": None,
+                                "candidates": [("new", {}, {})], "needs_tiktok": True,
+                                "existing_posts": [], "queue_one": (True, "next")}.items():
+                stack.enter_context(patch.object(queue, name, return_value=value))
+            with redirect_stdout(io.StringIO()):
+                self.assertEqual(queue.main([]), 0)
+            text = summary.read_text()
+            self.assertIn("Buffer delivery: queued", text)
+            self.assertIn("YouTube **0**, TikTok **1**", text)
+            self.assertIn("not queue depth or confirmed public posts", text)
+
     def test_selects_only_complete_unique_production_pair(self):
         assets = {
             "2026-10-23_0001.mp4": {"name": "mp4"},

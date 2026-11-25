@@ -320,9 +320,28 @@ def main(argv=None):
     ap.add_argument("--production-only", action="store_true",
                     help="Daily workflow does not do historical backfill")
     args = ap.parse_args(argv)
+    queued_now = {"youtube": 0, "tiktok": 0}
+
+    def finish(outcome, reason, code=0):
+        # Enqueue acknowledgments are not remote queue depth or public-post proof.
+        result = {"outcome": outcome, "queued_now": queued_now, "reason": reason}
+        print("Buffer delivery result: " + json.dumps(result, sort_keys=True))
+        if os.environ.get("GITHUB_OUTPUT"):
+            with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
+                out.write(f"outcome={outcome}\nyoutube_queued={queued_now['youtube']}"
+                          f"\ntiktok_queued={queued_now['tiktok']}\n")
+        if os.environ.get("GITHUB_STEP_SUMMARY"):
+            with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
+                out.write(f"## Buffer delivery: {outcome}\n\n"
+                          f"New enqueue receipts: YouTube **{queued_now['youtube']}**, "
+                          f"TikTok **{queued_now['tiktok']}**.\n\n{reason}\n\n"
+                          "These are not queue depth or confirmed public posts. "
+                          "Channel health was not checked.\n")
+        return code
+
     stamp = read_stamp_file(args.stamp_file)
     if stamp == "":
-        return 0
+        return finish("no_accepted_video", "Daily produced no accepted video; nothing was queued.")
     record, sha = read_state()
     queued = record["queued"]
     tiktok_queued = record["tiktok_queued"]
@@ -336,24 +355,35 @@ def main(argv=None):
             if key not in queued and not already_youtube(key):
                 if remote_youtube is None:
                     remote_youtube = existing_posts(CHANNELS["youtube"])
-                _, sha = queue_one(key, mp4, meta, record, sha, remote_youtube, "youtube")
+                done, sha = queue_one(key, mp4, meta, record, sha, remote_youtube, "youtube")
+                queued_now["youtube"] += int(done)
                 handled = True
             if key not in tiktok_queued and needs_tiktok(key):
                 if remote_tiktok is None:
                     remote_tiktok = existing_posts(CHANNELS["tiktok"])
-                _, sha = queue_one(key, mp4, meta, record, sha, remote_tiktok, "tiktok")
+                done, sha = queue_one(key, mp4, meta, record, sha, remote_tiktok, "tiktok")
+                queued_now["tiktok"] += int(done)
                 handled = True
             if handled:
                 return True
         return False
 
     if attempt(candidates(queued, tiktok_queued, only_stamp=stamp)):
-        return 0
+        return finish("queued" if any(queued_now.values()) else "already_recorded",
+                      "Eligible inventory processed; prior remote matches were not resent.")
     if stamp is not None or args.production_only:
-        print("No new production video to queue")
-        return 0
+        if stamp is not None and (
+                stamp not in queued and not already_youtube(stamp)
+                or stamp not in tiktok_queued and needs_tiktok(stamp)):
+            return finish("missing_accepted_inventory",
+                          "Accepted Daily video has an unmet delivery but no complete eligible "
+                          "MP4/metadata pair. Preserve receipts and inspect staging.", 1)
+        return finish("no_new_production_video",
+                      "No new eligible production delivery; existing receipts and prior "
+                      "TikTok direct/inbox deliveries were not replayed.")
     if attempt(historical_candidates(queued)):
-        return 0
+        return finish("queued" if any(queued_now.values()) else "already_recorded",
+                      "Historical inventory processed without replaying receipts.")
     # Only when eligible inventories are exhausted: restore an older verified Night Files
     # video from its build artifact or authenticated TikTok public post. Never fetch other accounts.
     from buffer_recovery import recover_one
@@ -363,8 +393,17 @@ def main(argv=None):
         stamp = str(recovered)
         if (stamp + ".mp4") in assets and (stamp + ".json") in assets:
             if attempt([(stamp, assets[stamp + ".mp4"], assets[stamp + ".json"])]):
-                return 0
-    print("Buffer queue caught up; no recoverable verified Night Files video")
+                return finish("queued" if any(queued_now.values()) else "already_recorded",
+                              "Verified recovered inventory processed.")
+    print("::warning::No eligible verified video; nothing queued. Remote queue health is unknown.")
+    blocked = sum(v.get("status") == "attempt_started"
+                  for field in (queued, tiktok_queued) for v in field.values())
+    return finish("no_eligible_video",
+                  f"No eligible complete inventory or verified recovery source. "
+                  f"TikTok rollout starts {TIKTOK_BUFFER_FROM}; prior direct/inbox deliveries "
+                  f"are excluded. {blocked} uncertain attempt receipt(s) remain blocked; "
+                  "reconcile manually before any retry. A successful no-op does not mean "
+                  "Buffer has upcoming posts.")
 
 
 if __name__ == "__main__":
