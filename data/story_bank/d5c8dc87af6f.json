@@ -1,0 +1,249 @@
+{
+  "title": "Whitey Bulger's $2 Million Manhunt",
+  "premise": "A 16‑year FBI chase ended with a $2 million bounty.",
+  "central_question": "How did a $2 million reward finally bring Whitey Bulger to justice?",
+  "understanding_shift": "Public tips can break even the longest fugitive hunts.",
+  "ending_payoff": "The $2 million bounty finally secured his capture, proving that a large public reward can end even the longest manhunt.",
+  "viewer_lesson": "After watching, the viewer can explain that a massive public bounty and tip led to Bulger’s capture after 16 years.",
+  "call_to_action": "Share a tip that helped solve a case.",
+  "recurring_visual_motif": "reward poster",
+  "hook_overlay": "Share if you’d fund a bounty",
+  "scenes": [
+    {
+      "narration": "Two million dollars hung on a poster. This is a true story. The FBI offered the biggest bounty for Bulger.",
+      "image_prompt": "wanted poster displaying two‑million‑dollar reward, bold red text, dim lighting",
+      "image_prompt_2": "close‑up of sealed envelope stamped two‑million‑dollar on a wooden desk",
+      "image_prompt_3": "",
+      "image_prompt_4": "",
+      "sfx": "none",
+      "location": "none",
+      "image_location": "none",
+      "image_location_2": "none",
+      "image_location_3": "none",
+      "image_location_4": "none",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_source_3": "",
+      "image_source_4": "",
+      "image_query": "wanted poster two million dollars",
+      "image_query_2": "sealed envelope two million dollars",
+      "image_query_3": "",
+      "image_query_4": ""
+    },
+    {
+      "narration": "He vanished on a rainy night. Nineteen ninety‑four disappearance sparked a sixteen‑year hunt.",
+      "image_prompt": "city street at night, 1990s, wet pavement, streetlamp glow",
+      "image_prompt_2": "silhouette of a lone figure walking away in rain",
+      "image_prompt_3": "",
+      "image_prompt_4": "",
+      "sfx": "none",
+      "location": "none",
+      "image_location": "none",
+      "image_location_2": "none",
+      "image_location_3": "none",
+      "image_location_4": "none",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_source_3": "",
+      "image_source_4": "",
+      "image_query": "night street 1990s rain",
+      "image_query_2": "rainy silhouette walking",
+      "image_query_3": "",
+      "image_query_4": ""
+    },
+    {
+      "narration": "Phones rang after the reward hit news. Tip lines surged.",
+      "image_prompt": "phone screen showing a tip hotline number, bright red alert badge",
+      "image_prompt_2": "newspaper headline about the two‑million‑dollar reward, bold font",
+      "image_prompt_3": "",
+      "image_prompt_4": "",
+      "sfx": "phone_notification",
+      "location": "none",
+      "image_location": "none",
+      "image_location_2": "none",
+      "image_location_3": "none",
+      "image_location_4": "none",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_source_3": "",
+      "image_source_4": "",
+      "image_query": "tip hotline phone screen",
+      "image_query_2": "newspaper two million dollars reward headline",
+      "image_query_3": "",
+      "image_query_4": ""
+    },
+    {
+      "narration": "June twenty‑eleven tip cracked the case. Agents traced Bulger to Santa Monica.",
+      "image_prompt": "exterior of a modest Santa Monica apartment building, midday sun",
+      "image_prompt_2": "two officers handcuffing a man on a balcony, city backdrop",
+      "image_prompt_3": "",
+      "image_prompt_4": "",
+      "sfx": "none",
+      "location": "Santa Monica",
+      "image_location": "Santa Monica",
+      "image_location_2": "Santa Monica",
+      "image_location_3": "none",
+      "image_location_4": "none",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_source_3": "",
+      "image_source_4": "",
+      "image_query": "Santa Monica apartment building",
+      "image_query_2": "officers handcuffing balcony",
+      "image_query_3": "",
+      "image_query_4": ""
+    },
+    {
+      "narration": "Cuffed in Santa Monica. The two‑million‑dollar bounty secured his twenty‑thirteen life sentence at age eighty‑four.",
+      "image_prompt": "handcuffs clicking on wrists with balcony railing behind",
+      "image_prompt_2": "courtroom interior with judge’s bench, solemn lighting",
+      "image_prompt_3": "",
+      "image_prompt_4": "",
+      "sfx": "none",
+      "location": "Santa Monica",
+      "image_location": "Santa Monica",
+      "image_location_2": "none",
+      "image_location_3": "none",
+      "image_location_4": "none",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_source_3": "",
+      "image_source_4": "",
+      "image_query": "handcuffs balcony arrest",
+      "image_query_2": "courtroom interior solemn",
+      "image_query_3": "",
+      "image_query_4": ""
+    },
+    {
+      "narration": "Share a tip that helped solve a case.",
+      "image_prompt": "torn wanted poster beside a stamped two‑million‑dollar reward badge",
+      "image_prompt_2": "magnifying glass over the bounty amount on a newspaper clipping",
+      "image_prompt_3": "",
+      "image_prompt_4": "",
+      "sfx": "none",
+      "location": "none",
+      "image_location": "none",
+      "image_location_2": "none",
+      "image_location_3": "none",
+      "image_location_4": "none",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_source_3": "",
+      "image_source_4": "",
+      "image_query": "torn wanted poster two million dollars",
+      "image_query_2": "magnifying glass bounty newspaper",
+      "image_query_3": "",
+      "image_query_4": ""
+    }
+  ],
+  "characters": [
+    {
+      "name": "Whitey Bulger",
+      "look": "older man, gray hair, suit, 1970s‑80s style"
+    },
+    {
+      "name": "Catherine Greig",
+      "look": "woman in 40s, dark hair, casual clothing"
+    }
+  ],
+  "locations": [
+    {
+      "name": "Santa Monica",
+      "look": "suburban apartment building, daylight, palm trees"
+    },
+    {
+      "name": "none",
+      "look": "generic background"
+    }
+  ],
+  "setting": "United States, 1994‑2013",
+  "threat": "Whitey Bulger, fugitive mob boss",
+  "twist": "The $2 million reward was the biggest ever for a domestic target.",
+  "twist_scene": 3,
+  "caption": "Whitey Bulger manhunt reward\nDid a tip ever crack a big case? Share below.",
+  "hashtags": [
+    "whiteybulger",
+    "bostoncrime",
+    "fbi",
+    "manhunt",
+    "truecrime"
+  ],
+  "pinned_comment": "What tip do you think finally led to Bulger’s arrest?",
+  "hook_candidates": [
+    "The FBI offered a $2 million bounty for one man, the largest ever for a domestic target.",
+    "$2 million was promised for the capture of a single fugitive, a record for a domestic case.",
+    "A $2 million reward made headlines as the biggest ever paid for a U.S. domestic criminal."
+  ],
+  "fact_ledger": [
+    "$2 million reward for Whitey Bulger",
+    "largest domestic bounty ever",
+    "Bulger vanished in 1994",
+    "16‑year hunt",
+    "tip led to Santa Monica arrest June 2011",
+    "Catherine Greig arrested with Bulger",
+    "Bulger sentenced to life in 2013 at age 84",
+    "Bulger murdered in prison in 2018"
+  ],
+  "hook_scores": [
+    "9 | The FBI offered a $2 million bounty for one man, the largest ever for a domestic target.",
+    "8 | $2 million was promised for the capture of a single fugitive, a record for a domestic case.",
+    "7 | A $2 million reward made headlines as the biggest ever paid for a U.S. domestic criminal."
+  ],
+  "model": "openrouter:openai/gpt-oss-120b",
+  "writer": "openrouter (openai/gpt-oss-120b)",
+  "writing": {
+    "llm_calls": 4,
+    "revisions": 1,
+    "kind": "true",
+    "primary": "openrouter:openai/gpt-oss-120b",
+    "checks_primary": [],
+    "challenger": "failed: nvidia:z-ai/glm-5.3-flash: ReadTimeout: HTTPSConnectionPool(host='integrate.api.nvidia.com', port=443): Read timed out. (read timeout=30.0); openrouter:qwen/qwen3-32b: ValueError: bad scene count 5",
+    "critic": {
+      "available": true,
+      "score": 84,
+      "score_kind": "editorial, not audience retention",
+      "bar": 75,
+      "notes": [
+        "no line answers the hook: end on the answer, the evidence, or the exact point where the record stops, before any call to action",
+        "weak line 'Police arrested Bulger and Catherine Greig on the balcony, ending the hunt.': Slight overlap with the following sentence about his sentencing. -> Combine the arrest action seamlessly into the timeline before the trial.",
+        "The hook opens strongly with the $2 million bounty detail, though the immediate repetition in scene 1 creates minor filler.",
+        "The subject name Whitey Bulger is introduced early in scene 2, satisfying the name-early constraint.",
+        "Pacing maintains steady historical progression through the 16-year timeline, though scene 1 has a repetitive sentence.",
+        "Integrity is well-maintained using known historical facts about the Bulger manhunt."
+      ],
+      "viewer_learns": "After watching, the viewer can explain that a massive public bounty and tip led to Bulger’s capture after 16 years.",
+      "payoff_line": "",
+      "cta_line": "Share a tip that helped solve a case.",
+      "weak_lines": [
+        {
+          "quote": "Police arrested Bulger and Catherine Greig on the balcony, ending the hunt.",
+          "problem": "Slight overlap with the following sentence about his sentencing.",
+          "fix": "Combine the arrest action seamlessly into the timeline before the trial."
+        }
+      ]
+    },
+    "checks_after_revision": []
+  },
+  "critic_score": 84,
+  "_fact_source": "From the Unabomber to Bonnie and Clyde, these 13 terrorists and outlaws triggered some of the most massive manhunts in criminal history.\nFrom infamous criminals like the Unabomber and Osama bin Laden to notorious outlaws such as Bonnie and Clyde , throughout U.S. history, dramatic manhunts, often involving extensive law enforcement resources and sometimes spanning years, have captured the public's imagination.\nIn 1950, the FBI launched its Ten Most Wanted Fugitives program , which has led to the location or capture of nearly 500 dangerous fugitives. These outlaws evolved from bank robbers, car thieves and burglars in the 1950s, to social revolutionaries involved in kidnapping, sabotage and the destruction of government property in the 1960s, to organized crime and terrorism in the 1970s, to drug traffickers, sexual predators and international terrorists in the 1980s and 1990s.\nAccording to the FBI, there are two main criteria for making the list: Being a dangerous menace to society and/or having a long record of serious crimes and the belief that national publicity will help find the fugitive. The following list ranks the top 13 manhunts in modern U.S. history.\nOn April 3, 1996, a CBS news report announces the arrest of Theodore Kaczynski, the Harvard graduate who was suspected and later proven to be the Unabomber. Kaczynski terrorized the country for nearly two decades with a series of mail bombings that killed three people and wounded 23.\nOne of the longest and most extensive manhunts in U.S. history was the search for the suspect known as the Unabomber , which lasted 17 years , from his first bombing in 1978 to his eventual capture in 1996. Police eventually identified former mathematics professor Ted Kaczynski in the series of bombings targeting universities, airlines and individuals that resulted in three deaths, with 23 injured.\nAccording to the FBI, more than 150 agents were part of a task force to identify the bomber, with a break coming in 1995 when his manifesto was published in The Washington Post , leading his brother to recognize his writing style and contact authorities. Kaczynski was captured in his Montana cabin in 1996, pleaded guilty and was sentenced to life without parole.\nJames Earl Ray, convicted killer of civil rights leader Dr. Martin Luther King Jr., shown on August 16, 1978, being sworn in prior to testifying before the House Select Committee on Assassinations in Washington.\nJames Earl Ray, convicted killer of civil rights leader Dr. Martin Luther King Jr., shown on August 16, 1978, being sworn in prior to testifying before the House Select Committee on Assassinations in Washington.\nAfter assassinating Martin Luther King Jr. on April 4, 1968, in Memphis, Tennessee, shooter James Earl Ray led more than 3,000 law enforcement agents on an intense, two-month-long international manhunt that is one of the FBI’s most expansive investigations to date.\nRay was on the run before the shooting: He escaped from prison April 23, 1967, while serving a 20-year robbery sentence at the Missouri State Penitentiary. After chasing thousands of tips and leads, Ray was captured at London’s Heathrow Airport June 8, 1968, after a customs agent, not knowing his true identity, detained him for possessing two passports. He pled guilty and was sentenced to 99 years in prison without parole.\nThe search for Osama bin Laden , the 9/11 mastermind and al-Qaeda founder, remains one of the most high-profile and extensive military manhunt operations in American history. For more than a decade, billions of military and intelligence dollars were spent on the mission, according to former CIA Director Leon Panetta and his chief of staff, Jeremy Bash.\nAccording to the U.S. Navy , the hunt for bin Laden began five years earlier, in 1996, following a number of global terrorists linked to him. The FBI, CIA, NSA and Department of Homeland Security searched for the terrorist, finally locating him in Pakistan after securing intelligence from an al-Qaida leader held at Guantanamo Bay. Following a covert operation to identify bin Laden’s location in a compound in Abbottabad, Pakistan , a team of nearly 80 Navy SEALS killed him during a raid on May 2, 2011.\nHow SEAL Team Six Took Out Osama bin Laden\nThe operation to kill the world's most wanted terrorist was the result of years of planning and training.\nThe operation to kill the world's most wanted terrorist was the result of years of planning and training.\nThe intense, high-profile five-day manhunt for the brothers responsible for the April 15, 2013, bombing near the finish line of the Boston Marathon , garnered front-page headlines nationwide involving local, state and federal agencies. With three dead and more than 260 injured at the marathon after they detonated a homemade bomb housed in a pressure cooker, brothers Tamerlan Tsarnaev, 26, and Dzhokhar Tsarnaev, 19, were soon identified via surveillance footage, and authorities released photos and videos of the suspects on April 18.\nThe brothers shot and killed an MIT police officer that night, and early in the morning, a shootout with police in Watertown, Massachusetts, on April 18, left Tamerlan dead. Dzhokhar fled, and the city was put on lockdown. Police found Dzhokhar the next day when an infrared image showed him hiding in a boat in the backyard of a home. He was sentenced to death, and the U.S. Supreme Court reinstated the sentence after a federal appeals court tossed it in 2022. His attorneys continue to challenge the decision .\nOne of the earliest high-profile manhunts in modern U.S. history was the search for John Wilkes Booth following his April 14, 1865, assassination of President Abraham Lincoln at the Ford Theater in Washington, D.C. With a well-planned getaway route , Booth, accompanied by friend David Herold, evaded capture for 12 days during a multi-state manhunt that involved nearly 1,000 Union soldiers and included a $100,000 reward. Eventually found cornered in a Virginia tobacco barn, Herold surrendered, but Booth refused and was shot and killed .\nOn February 3, 2013, Christopher Dorner , a disgraced former Los Angeles police officer, began a shooting spree in Southern California targeting law enforcement personnel and their families that led to an unprecedented nine-day manhunt. In a manifesto he posted online, Dorner cited grievances with the LAPD, vowing retribution for his firing and “unconventional and asymmetrical warfare to those in LAPD uniform whether on or off duty … You will now live the life of the prey.”\nAs police rushed to protect approximately 50 targets Dorner named in the manifesto, sightings of the suspect led to gunfights with officers during a series of police chases on February 7. After finding Dorner’s abandoned vehicle in Big Bear Lake, the manhunt focused on the area in the San Bernardino Mountains during blizzard conditions . Involving more than 100 police officers and a $1 million reward offered for info leading to Dorner’s arrest, it is the largest manhunt in Southern California history.\nOn February 12, after a series of carjackings, the manhunt culminated in a shootout standoff at a remote cabin. Refusing to surrender, and with fires blazing through the cabin, Dorner took his own life. In the end, four were killed, with three others wounded.\nEric Rudolph, under arrest, following the 1996 Atlanta bombing.\nEric Rudolph, under arrest, following the 1996 Atlanta bombing.\nEric Robert Rudolph was the culprit behind a series of bombings across the Southern U.S. between 1996 and 1998, including the infamous Centennial Olympic Park pipe bombing during the 1996 Summer Olympics in Atlanta. Also targeting abortion clinics and a gay nightclub, Rudolph was responsible for two deaths, and injuring more than 150 people.\nThe five-year manhunt for his capture was one of the country’s largest and most expensive , costing more than $20 million. Hiding in the Appalachian Mountains, the survivalist evaded capture until his 2003 arrest when a police officer arrested him while digging for food in a grocery store dumpster in western North Carolina. Rudolph pleaded guilty and is serving multiple life sentences with no possibility of parole.\nNotorious South Boston organized crime boss and FBI informant James “Whitey” Bulger escaped capture for 16 years after going into hiding in 1994 to avoid being indicted on 19 murder counts and racketeering, extortion and narcotics charges. On the FBI’s Most-Wanted List for 10 years, the $2 million reward for his arrest was the most ever for a domestic target, according to The New York Times .\nIn June 2011, Bulger and his girlfriend, Catherine Greig, were arrested in Santa Monica, California, after a tip following a renewed FBI public service campaign seeking new leads. The leader of the Winter Hill Gang was sentenced to life in prison in 2013 at 84 years old. He was beaten to death by inmates in 2018.\nLee Boyd Malvo and John Allen Muhammad terrorized the Washington, D.C., metro area for three",
+  "sources": [],
+  "mode": "case",
+  "case": "The Biggest Manhunts in US History",
+  "subgenre": "true crime case file",
+  "hook_style": "true_story",
+  "hook_line": "This is a true story.",
+  "true_story": true,
+  "_skipped": [],
+  "explainer_adapted": true,
+  "explainer_before": [
+    "This is a true story. The FBI posted a two‑million‑dollar bounty, the largest domestic bounty ever.",
+    "“Whitey” Bulger vanished in nineteen ninety-four, sparking a sixteen‑year manhunt.",
+    "The two‑million‑dollar reward flooded tip lines, forcing clues to call.",
+    "In June twenty‑eleven a tip led agents to Bulger’s Santa Monica apartment.",
+    "Police arrested Bulger and Catherine Greig on the balcony; two years later, in twenty‑thirteen, he received a life sentence at age eighty‑four, ending the sixteen‑year chase.",
+    "The two‑million‑dollar bounty finally secured his capture, proving a large public reward can end even the longest manhunt."
+  ],
+  "story_id": "d5c8dc87af6f",
+  "banked_at": "2026-11-25T08:52:50+00:00",
+  "banked_length": "40s"
+}
