@@ -16,7 +16,7 @@
   "ghost_presence":      {"bsb": "0108", "desc": "eerie ghostly manifestation / paranormal presence"},
   "humming":             {"fs": "creepy humming woman", "dur": [2, 15], "desc": "someone softly humming a tune in the dark"},
 
-  "footsteps_wood":      {"bsb": "0181", "desc": "footsteps on wooden stairs/floor INDOORS (house, attic)"},
+  "footsteps_wood":      {"owner_file": true, "bsb": "0181", "desc": "footsteps on wooden stairs/floor INDOORS (house, attic)"},
   "footsteps_hallway":   {"fs": "footsteps hallway echo", "dur": [3, 15], "desc": "footsteps echoing down a hallway / corridor / empty building"},
   "footsteps_running":   {"fs": "running footsteps", "dur": [2, 12], "desc": "someone running (chase, escape)"},
   "footsteps_mud":       {"bsb": "0495", "desc": "footsteps in mud OUTDOORS (jungle, swamp, rain)"},
@@ -27,7 +27,7 @@
   "twigs_snap":          {"bsb": "1301", "desc": "twigs snapping in the woods (something approaching)"},
   "floor_creak":         {"bsb": "0518", "desc": "old wooden floor creaking INDOORS (someone shifting weight)"},
 
-  "knocking":            {"bsb": "0095", "desc": "knocking on a wooden door"},
+  "knocking":            {"owner_file": true, "bsb": "0095", "desc": "knocking on a wooden door"},
   "banging_door":        {"fs": "banging on door", "dur": [1, 10], "desc": "violent banging / pounding on a door"},
   "scratching":          {"fs": "scratching on wood door", "dur": [2, 12], "desc": "nails/claws scratching on wood (door, wall, coffin)"},
   "door_creak":          {"bsb": "0306", "desc": "old door slowly creaking open"},
@@ -70,7 +70,7 @@
   "crickets":            {"fs": "crickets night", "dur": [4, 20], "desc": "crickets at night (quiet countryside)"},
 
   "riser":               {"fs": "horror riser", "dur": [2, 10], "desc": "rising suspense swell that builds right before a scare"},
-  "whoosh":              {"bsb": "1796", "desc": "a fast whoosh (something rushing past)"},
+  "whoosh":              {"owner_file": true, "bsb": "1796", "desc": "a fast whoosh (something rushing past)"},
   "whoosh_scifi":        {"fs": "sci fi whoosh", "dur": [0.5, 4], "desc": "a sci-fi whoosh / swoosh (strange, unnatural movement)"},
   "impact_boom":         {"fs": "cinematic boom impact", "dur": [1, 6], "desc": "a deep cinematic boom for the big reveal"},
 
@@ -79,5 +79,9 @@
   "reel_land":           {"fs": "metal clunk", "dur": [0.15, 1.5], "desc": "a solid clunk when the year reel locks on the target"},
   "typing_click":        {"fs": "typewriter key single", "dur": [0.03, 0.6], "desc": "one typewriter key strike (typed text reveal)"},
   "stamp_thud":          {"fs": "rubber stamp", "dur": [0.1, 1.5], "desc": "a rubber stamp hitting paper (CLASSIFIED / MISSING stamp)"},
-  "gunshot":             {"fs": "gunshot pistol single shot", "dur": [0.2, 2.5], "desc": "one pistol gunshot (shot twice / shots fired)"}
+  "gunshot":             {"fs": "gunshot pistol single shot", "dur": [0.2, 2.5], "desc": "one pistol gunshot (shot twice / shots fired)"},
+  "glitch":              {"owner_file": true, "desc": "a short digital glitch / flicker (lights flickering, a signal breaking up)"},
+  "impact_boom":         {"owner_file": true, "desc": "edit cue: a deep impact boom on the twist"},
+  "riser":               {"owner_file": true, "desc": "edit cue: a rising tension riser into the twist"},
+  "transition_swoosh":   {"owner_file": true, "desc": "edit cue: a cinematic swoosh on a swoosh transition"}
 }

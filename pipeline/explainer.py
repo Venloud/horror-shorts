@@ -1081,6 +1081,7 @@ SFX_EVENTS = [
     (r"\b(church\s+bells?|bell\s+(?:rang|tolled|toll\w*))\b", "church_bell", 0.3),
     (r"\b(camera\s+(?:click\w*|flash\w*)|snapped a (?:photo|picture))\b", "camera_shutter", 0.35),
     (r"\b(static|radio\s+crackl\w*)\b", "radio_static", 0.28),
+    (r"\b(flicker(?:s|ed|ing)?|glitch\w*|lights?\s+(?:went out|died|cut out))\b", "glitch", 0.28),
 ]
 # What each licensed SFX file should sound like (CLAP text side). sfx_index() checks the AUDIO against these
 # descriptions once (laion/clap-htsat-unfused, Apache-2.0, local, free) and stores assets/sfx/clap_index.json.
@@ -1097,6 +1098,9 @@ SFX_LABELS = {
     "ui_click": "a soft click", "doorbell": "a doorbell", "keys_jingle": "keys jingling",
     "twigs_snap": "twigs snapping", "floor_creak": "a wooden floor creaking", "breathing_calm": "calm breathing",
     "ghost_presence": "an eerie ghostly drone",
+    # edit sounds (owner-approved pack 2026-11-25): cues of the edit itself, not events the story describes
+    "glitch": "a digital glitch distortion", "impact_boom": "a deep cinematic impact boom",
+    "riser": "a rising tension riser", "transition_swoosh": "a cinematic swoosh transition",
 }
 SURFACE = {"gravel": "footsteps_gravel", "grass": "footsteps_grass", "field": "footsteps_grass",
            "leaves": "footsteps_leaves", "forest": "footsteps_leaves", "woods": "footsteps_leaves",
@@ -2051,6 +2055,11 @@ def _mix_audio(narration: dict, total: float, events: list, out: Path) -> Path:
             continue
         if opts.get("pitch"):
             sound = _pitch(sound, opts["pitch"])
+        if opts.get("peak") and len(sound):  # land the sound's loudest moment ON t (a riser ends, a swoosh passes)
+            k = max(1, int(0.05 * sr))
+            t = t - int(np.argmax(np.convolve(np.abs(sound), np.ones(k) / k, mode="same"))) / sr
+            if t < 0:
+                sound, t = sound[int(-t * sr):], 0.0
         at = max(0, int(t * sr))
         if opts.get("duck") and at < len(env_) and env_[at] > 0.6 * peak_v:
             vol *= 0.45
@@ -2435,6 +2444,19 @@ def effect_sfx(c: dict) -> list[tuple]:
     return out
 
 
+def twist_hit(story: dict, segs: list[dict], hook_guard: float = 3.0) -> float | None:
+    """Start of the twist scene's first shot (story twist_scene), or None: no twist, a twist inside the hook, or
+    config sfx_twist_hit false."""
+    if not CONFIG.get("sfx_twist_hit", True):
+        return None
+    try:
+        tw = int(story.get("twist_scene"))
+    except (TypeError, ValueError):
+        return None
+    at = next((float(s["start"]) for s in segs if s.get("scene") == tw), None)
+    return at if at is not None and at >= hook_guard else None
+
+
 def sound_plan(story: dict, narration: dict, segs: list[dict], effects: list[dict] | None = None) -> list[tuple]:
     """Every SFX event of the video: a whoosh ONLY on a planned swoosh transition, a soft click on a UI-like pop
     (dates / evidence / missing), the phone notification when a stated message appears, and event sounds the
@@ -2445,14 +2467,20 @@ def sound_plan(story: dict, narration: dict, segs: list[dict], effects: list[dic
     for k, seg in enumerate(segs):
         shot, at = seg["shot"], float(seg["start"])
         tr = seg.get("transition", "cut")
-        if k and tr in ("swoosh", "whip"):
-            events.append((max(0.0, at - 0.12), "whoosh", 0.18 if tr == "swoosh" else 0.14, 0.6, {"duck": True}))
+        if k and tr == "swoosh":  # the swoosh's loudest moment on the cut
+            events.append((at, "transition_swoosh", 0.18, None, {"duck": True, "peak": True}))
+        elif k and tr == "whip":
+            events.append((at, "whoosh", 0.14, None, {"duck": True, "peak": True}))
         if shot.get("template") == "phone":
             events.append((at + 0.55, "phone_notification", 0.34, 1.2))  # when the bubble lands
         elif tr == "pop" and shot.get("template") in ("evidence", "missing") \
                 and at - last_click >= 10.0 and clicks < 3:  # a click on every card is a loop, not a cue
             events.append((at + 0.2, "ui_click", 0.3, 0.4))
             last_click, clicks = at, clicks + 1
+    twist = twist_hit(story, segs)
+    if twist is not None:  # a quiet riser into the reveal, a low boom on its first frame, nothing else there
+        events = [e for e in events if abs(e[0] - twist) >= 1.0]
+        events += [(twist, "riser", 0.14, None, {"duck": True, "peak": True}), (twist, "impact_boom", 0.3, 2.5, {})]
     for ev in event_sfx(narration):
         if all(abs(ev[0] - e[0]) >= 1.0 for e in events):
             events.append(ev)

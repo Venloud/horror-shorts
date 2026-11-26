@@ -1158,7 +1158,8 @@ def targeted_revision(story: dict, api_key: str, kind: str, rules: str, notes: l
 def sfx_names() -> str:
     """Available sounds with a description of each, so the AI picks ones that really match the scene."""
     from common import ROOT
-    have = {p.stem for p in (ROOT / "assets" / "sfx").glob("*.mp3") if not p.stem.startswith("ui_")}
+    edit_only = {"impact_boom", "riser", "transition_swoosh"}  # cues the editor places itself, never per scene
+    have = {p.stem for p in (ROOT / "assets" / "sfx").glob("*.mp3") if not p.stem.startswith("ui_")} - edit_only
     try:
         info = json.loads((ROOT / "data" / "sfx_sources.json").read_text())
     except Exception:  # noqa: BLE001
