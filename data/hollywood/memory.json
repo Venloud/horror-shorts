@@ -1,9 +1,9 @@
 {
- "videos": 19,
+ "videos": 20,
  "entries": {
   "title": {
-   "fired": 19,
-   "last": "2026-11-25_2347"
+   "fired": 20,
+   "last": "2026-11-26_0856"
   },
   "year_reel": {
    "fired": 12,
@@ -30,8 +30,8 @@
    "last": "2026-11-08_0644"
   },
   "zoom_punch": {
-   "fired": 20,
-   "last": "2026-11-23_0816"
+   "fired": 21,
+   "last": "2026-11-26_0856"
   },
   "year_line": {
    "fired": 4,
@@ -66,8 +66,8 @@
    "last": "2026-11-21_2105"
   },
   "stamp_missing": {
-   "fired": 2,
-   "last": "2026-11-25_2347"
+   "fired": 3,
+   "last": "2026-11-26_0856"
   }
  },
  "places": {
@@ -271,7 +271,11 @@
   "floating torso": 1,
   "tongue dripping": 1,
   "dripping wings": 1,
-  "burned": 1
+  "burned": 1,
+  "tip lines surged": 1,
+  "bulger to santa monica": 1,
+  "helped solve": 1,
+  "solve case": 1
  },
  "log": [
   {
@@ -492,6 +496,15 @@
     "title",
     "stamp_missing"
    ]
+  },
+  {
+   "stamp": "2026-11-26_0856",
+   "story_id": "d5c8dc87af6f",
+   "effects": [
+    "title",
+    "stamp_missing",
+    "zoom_punch"
+   ]
   }
  ],
  "editing": {
@@ -700,6 +713,20 @@
      "fx:stamp": 1,
      "move:push": 4,
      "cut:cut": 15,
+     "move:still": 3
+    },
+    "verdict": null,
+    "metric": null
+   },
+   "d5c8dc87af6f": {
+    "stamp": "",
+    "title": "Whitey Bulger's $2 Million Manhunt",
+    "used": {
+     "fx:title": 1,
+     "fx:stamp": 1,
+     "fx:zoom_punch": 1,
+     "move:push": 4,
+     "cut:cut": 13,
      "move:still": 3
     },
     "verdict": null,

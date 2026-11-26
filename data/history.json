@@ -5886,5 +5886,83 @@
     "youtube": {
       "pending": "buffer_queue_pending"
     }
+  },
+  {
+    "date": "2026-11-26_0856",
+    "story_id": "d5c8dc87af6f",
+    "series_id": null,
+    "series_episode": null,
+    "title": "Whitey Bulger's $2 Million Manhunt",
+    "premise": "A 16‑year FBI chase ended with a $2 million bounty.",
+    "subgenre": "true crime case file",
+    "mode": "case",
+    "true_story": true,
+    "case": "The Biggest Manhunts in US History",
+    "source": null,
+    "prompt_file": null,
+    "setting": "United States, 1994‑2013",
+    "threat": "Whitey Bulger, fugitive mob boss",
+    "twist": "The $2 million reward was the biggest ever for a domestic target.",
+    "score": null,
+    "seconds": 33.6,
+    "hook_style": "true_story",
+    "length_variant": "40s",
+    "video_seconds": 37.0,
+    "voice_speed": 1.051,
+    "narrator_voice": "am_adam",
+    "writer": "openrouter (openai/gpt-oss-120b)",
+    "media_ids": [
+      "pexels:18138660"
+    ],
+    "visual_mode": "classic",
+    "render_style": "explainer",
+    "set_builder": "4 sets",
+    "cast_builder": "3 cast",
+    "story_shape": null,
+    "research_sources": [],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 84,
+    "visuals": {
+      "distinct": 13,
+      "longest_s": 3.7,
+      "longest_share": 0.101,
+      "longest_name": "image:scene_00a.png:full"
+    },
+    "yt_title": "Two Million Dollars Hung on a Poster... Whitey Bulger #shorts",
+    "hashtags": [
+      "whiteybulger",
+      "unitedstates",
+      "truecrime",
+      "coldcase"
+    ],
+    "yt_tags": [
+      "whitey bulger",
+      "whitey bulger manhunt",
+      "fbi bounty",
+      "true crime story",
+      "santa monica arrest",
+      "sixteen year hunt",
+      "two million dollar reward",
+      "criminal history",
+      "fbi case",
+      "infamous fugitive",
+      "united states crime",
+      "cold case solved",
+      "whitey bulger story",
+      "united states mystery"
+    ],
+    "opening": "Two million dollars hung on a poster.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-11-26_0856",
+    "tiktok": {
+      "status": "STAGED_FOR_BUFFER",
+      "mode": "buffer"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    }
   }
 ]
