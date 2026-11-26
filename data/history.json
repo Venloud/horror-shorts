@@ -5807,5 +5807,84 @@
     "youtube": {
       "pending": "buffer_queue_pending"
     }
+  },
+  {
+    "date": "2026-11-25_2347",
+    "story_id": "42884941a51e",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Night Woman of the Village",
+    "premise": "A floating torso reveals a dreaded aswang and the villagers' desperate defense.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Aswang",
+    "source": null,
+    "prompt_file": null,
+    "setting": "a remote Filipino village at night",
+    "threat": "a manananggal‑type aswang that sheds its lower half to hunt",
+    "twist": "the attacking aswang is the elder’s long‑lost wife, hiding her lower half under the roof",
+    "score": null,
+    "seconds": 40.3,
+    "hook_style": "control",
+    "length_variant": "40s",
+    "video_seconds": 43.7,
+    "voice_speed": 1.1,
+    "narrator_voice": "am_michael",
+    "writer": "openrouter (openai/gpt-oss-120b)",
+    "media_ids": [],
+    "visual_mode": "analog",
+    "render_style": "explainer",
+    "set_builder": "5 sets",
+    "cast_builder": "4 cast",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 87,
+    "visuals": {
+      "distinct": 15,
+      "longest_s": 4.7,
+      "longest_share": 0.107,
+      "longest_name": "image:scene_01a.png:full"
+    },
+    "yt_title": "A Winged Torso Hovered Over Roof... The Aswang #shorts",
+    "hashtags": [
+      "aswang",
+      "philippines",
+      "folklore",
+      "monsters"
+    ],
+    "yt_tags": [
+      "the aswang",
+      "manananggal legend",
+      "philippines folklore",
+      "aswang legend",
+      "filipino folklore",
+      "manananggal myth",
+      "aswang creature",
+      "philippines mythology",
+      "night woman legend",
+      "aswang stories",
+      "filipino urban legend",
+      "manananggal creature",
+      "aswang",
+      "scary legend",
+      "folklore"
+    ],
+    "opening": "Her lower half fell away, a winged torso hovered over roof.",
+    "music_file": "unsolved_mystery.mp3",
+    "buffered": "2026-11-25_2347",
+    "tiktok": {
+      "status": "STAGED_FOR_BUFFER",
+      "mode": "buffer"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    }
   }
 ]

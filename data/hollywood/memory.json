@@ -1,9 +1,9 @@
 {
- "videos": 18,
+ "videos": 19,
  "entries": {
   "title": {
-   "fired": 18,
-   "last": "2026-11-24_1028"
+   "fired": 19,
+   "last": "2026-11-25_2347"
   },
   "year_reel": {
    "fired": 12,
@@ -66,8 +66,8 @@
    "last": "2026-11-21_2105"
   },
   "stamp_missing": {
-   "fired": 1,
-   "last": "2026-11-22_0729"
+   "fired": 2,
+   "last": "2026-11-25_2347"
   }
  },
  "places": {
@@ -264,7 +264,14 @@
   "frequently attacking swimmers": 1,
   "deep water": 1,
   "water means": 1,
-  "means risking": 1
+  "means risking": 1,
+  "spreading it across luzon": 1,
+  "pregnant woman moaned": 1,
+  "hunt unborn children": 1,
+  "floating torso": 1,
+  "tongue dripping": 1,
+  "dripping wings": 1,
+  "burned": 1
  },
  "log": [
   {
@@ -477,6 +484,14 @@
     "phrase",
     "phrase"
    ]
+  },
+  {
+   "stamp": "2026-11-25_2347",
+   "story_id": "42884941a51e",
+   "effects": [
+    "title",
+    "stamp_missing"
+   ]
   }
  ],
  "editing": {
@@ -673,6 +688,19 @@
      "cut:cut": 16,
      "move:still": 4,
      "move:closeup": 1
+    },
+    "verdict": null,
+    "metric": null
+   },
+   "42884941a51e": {
+    "stamp": "",
+    "title": "The Night Woman of the Village",
+    "used": {
+     "fx:title": 1,
+     "fx:stamp": 1,
+     "move:push": 4,
+     "cut:cut": 15,
+     "move:still": 3
     },
     "verdict": null,
     "metric": null
