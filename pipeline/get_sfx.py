@@ -114,7 +114,7 @@ def main() -> int:
     if not FS_KEY:
         print("NOTE: FREESOUND_API_KEY not set, so Freesound sounds are skipped (BigSoundBank ones still download).")
     for name, info in SOURCES.items():
-        if name.startswith("_"):
+        if name.startswith("_") or info.get("owner_file"):  # an owner-approved file: never downloaded over it
             continue
         try:
             if "bsb" in info:
