@@ -1,0 +1,511 @@
+{
+  "title": "The Backward Footprints of the Ciguapa",
+  "premise": "A night hunter discovers the cursed tracks of the mountain forest spirit.",
+  "central_question": "Why do the forest tracks appear to run forward then backward?",
+  "understanding_shift": "The reversed tracks are caused by the ciguapa’s backward‑facing feet.",
+  "ending_payoff": "So the reversed footprints were her backward feet, the mark of a ciguapa.",
+  "viewer_lesson": "After watching, the viewer can explain that the earliest written account of the ciguapa is the 1866 story La Ciguapa by Francisco Javier Angulo Guridi, and that the legend’s backward feet create the puzzling tracks.",
+  "call_to_action": "If your town has a similar forest spirit, tell us where and how it goes.",
+  "recurring_visual_motif": "the reversed footprints",
+  "hook_overlay": "Footprints march forward, then reverse",
+  "scenes": [
+    {
+      "narration": "Moonlight catches fresh footprints marching forward—then they turn back.",
+      "image_prompt": "forest floor with forward footprints that abruptly turn backward, moonlit, mist",
+      "image_prompt_2": "close-up of muddy footprints showing backward orientation, night, subtle glow",
+      "image_prompt_3": "",
+      "image_prompt_4": "",
+      "sfx": "none",
+      "location": "El Cibao forest",
+      "image_location": "El Cibao forest",
+      "image_location_2": "none",
+      "image_location_3": "none",
+      "image_location_4": "none",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_source_3": "none",
+      "image_source_4": "none",
+      "image_query": "reversed forest footprints",
+      "image_query_2": "close-up muddy footprints",
+      "image_query_3": "",
+      "image_query_4": ""
+    },
+    {
+      "narration": "They whispered of the ciguapa, El Cibao’s forest spirit, first recorded in eighteen sixty-six.",
+      "image_prompt": "silhouette of a nude woman with knee‑length hair, golden skin, standing among trees, moonlight",
+      "image_prompt_2": "wide view of misty mountain forest, faint figure glimpsed, night",
+      "image_prompt_3": "",
+      "image_prompt_4": "",
+      "sfx": "none",
+      "location": "El Cibao forest",
+      "image_location": "El Cibao forest",
+      "image_location_2": "none",
+      "image_location_3": "none",
+      "image_location_4": "none",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_source_3": "none",
+      "image_source_4": "none",
+      "image_query": "ciguapa forest spirit silhouette",
+      "image_query_2": "misty mountain forest night",
+      "image_query_3": "",
+      "image_query_4": ""
+    },
+    {
+      "narration": "A hunter heard a howl, then saw a nude golden‑skinned woman with knee‑length hair.",
+      "image_prompt": "young hunter with lantern listening to a distant howl, forest trees, night",
+      "image_prompt_2": "close-up of hunter’s startled face illuminated by lantern light",
+      "image_prompt_3": "",
+      "image_prompt_4": "",
+      "sfx": "owl",
+      "location": "El Cibao forest",
+      "image_location": "El Cibao forest",
+      "image_location_2": "none",
+      "image_location_3": "none",
+      "image_location_4": "none",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_source_3": "none",
+      "image_source_4": "none",
+      "image_query": "hunter listening to howl night forest",
+      "image_query_2": "hunter startled lantern close-up",
+      "image_query_3": "",
+      "image_query_4": ""
+    },
+    {
+      "narration": "She sang, drew him close, then howled; his breath froze.",
+      "image_prompt": "ciguapa perched on a branch, nude, golden skin, back‑feet visible, moonlit",
+      "image_prompt_2": "close-up of her backward feet showing reversed soles",
+      "image_prompt_3": "",
+      "image_prompt_4": "",
+      "sfx": "none",
+      "location": "El Cibao forest",
+      "image_location": "El Cibao forest",
+      "image_location_2": "none",
+      "image_location_3": "none",
+      "image_location_4": "none",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_source_3": "none",
+      "image_source_4": "none",
+      "image_query": "ciguapa back feet on branch",
+      "image_query_2": "close-up backward feet",
+      "image_query_3": "",
+      "image_query_4": ""
+    },
+    {
+      "narration": "She crossed the hunter's path, let out a piercing howl, and vanished into the mist.",
+      "image_prompt": "hunter startled as a pale figure darts across his path, mist swirling around her",
+      "image_prompt_2": "silhouette of the ciguapa fading into fog, echoing howl visible as sound waves",
+      "image_prompt_3": "",
+      "image_prompt_4": "",
+      "sfx": "none",
+      "location": "El Cibao forest",
+      "image_location": "El Cibao forest",
+      "image_location_2": "none",
+      "image_location_3": "none",
+      "image_location_4": "none",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_source_3": "none",
+      "image_source_4": "none",
+      "image_query": "hunter startled ciguapa crossing path",
+      "image_query_2": "ciguapa vanishing into mist",
+      "image_query_3": "",
+      "image_query_4": ""
+    },
+    {
+      "narration": "Villagers followed the scent, found her feet turned backward, matching the tracks.",
+      "image_prompt": "villagers with torches examining strange backward footprints on forest floor, confused",
+      "image_prompt_2": "close-up of backward feet showing reversed soles, moonlight highlighting details",
+      "image_prompt_3": "",
+      "image_prompt_4": "",
+      "sfx": "none",
+      "location": "village clearing",
+      "image_location": "village clearing",
+      "image_location_2": "none",
+      "image_location_3": "none",
+      "image_location_4": "none",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_source_3": "none",
+      "image_source_4": "none",
+      "image_query": "villagers examining backward footprints",
+      "image_query_2": "close-up backward feet moonlight",
+      "image_query_3": "",
+      "image_query_4": ""
+    },
+    {
+      "narration": "A wild hound cornered her in the clearing, capturing the creature before dawn.",
+      "image_prompt": "dark‑haired wild dog lunging at the ciguapa in a moonlit clearing",
+      "image_prompt_2": "ciguapa stumbling as the dog blocks her escape, dawn light faintly rising",
+      "image_prompt_3": "",
+      "image_prompt_4": "",
+      "sfx": "none",
+      "location": "village clearing",
+      "image_location": "village clearing",
+      "image_location_2": "none",
+      "image_location_3": "none",
+      "image_location_4": "none",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_source_3": "none",
+      "image_source_4": "none",
+      "image_query": "wild dog chasing ciguapa",
+      "image_query_2": "ciguapa cornered at dawn",
+      "image_query_3": "",
+      "image_query_4": ""
+    },
+    {
+      "narration": "So the reversed footprints were her backward feet, the mark of a ciguapa.",
+      "image_prompt": "final shot of footprints ending in backward steps, moonlight highlighting the sign",
+      "image_prompt_2": "fading silhouette of ciguapa disappearing into forest, night quiet",
+      "image_prompt_3": "",
+      "image_prompt_4": "",
+      "sfx": "none",
+      "location": "El Cibao forest",
+      "image_location": "El Cibao forest",
+      "image_location_2": "none",
+      "image_location_3": "none",
+      "image_location_4": "none",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_source_3": "none",
+      "image_source_4": "none",
+      "image_query": "final reversed footprints moonlit",
+      "image_query_2": "ciguapa fading silhouette",
+      "image_query_3": "",
+      "image_query_4": ""
+    }
+  ],
+  "characters": [
+    {
+      "name": "ciguapa",
+      "look": "nude woman, golden skin, knee‑length hair, back‑footed, carries a walking stick"
+    }
+  ],
+  "locations": [
+    {
+      "name": "El Cibao forest",
+      "look": "mountain forest, misty night, moonlight filtering through trees"
+    },
+    {
+      "name": "village clearing",
+      "look": "small open space at forest edge, torches flickering, night"
+    }
+  ],
+  "setting": "mountain forest of El Cibao at night",
+  "threat": "the ciguapa, a seductive, back‑footed forest spirit",
+  "twist": "Villagers discover the creature’s back‑feet, confirming the impossible tracks.",
+  "twist_scene": 5,
+  "caption": "What is the ciguapa? illustrated horror story\nDo you know a similar forest spirit? 🌲",
+  "hashtags": [
+    "ciguapa",
+    "dominicanfolklore",
+    "mountainspirit",
+    "mythology",
+    "legend"
+  ],
+  "pinned_comment": "Share a local legend about mysterious forest beings from your region.",
+  "hook_candidates": [
+    "The tracks in the night forest pointed forward, then reversed.",
+    "Footprints vanished mid‑path, only backward prints remained.",
+    "A hunter followed forward steps that suddenly turned backward."
+  ],
+  "fact_ledger": [
+    "ciguapa is a Dominican Republic folklore creature",
+    "described as nude woman with knee‑length hair and back‑footed",
+    "has siren‑like powers of attraction and can seduce men at night",
+    "lives in forests and rivers of the mountains of El Cibao",
+    "malevolence varies: spirit, jealous, or cannibal",
+    "first written account 1866 by Francisco Javier Angulo Guridi in \"La Ciguapa\"",
+    "origin disputed: Taíno mythology or fakelore",
+    "used by Trujillo regime as mestizaje propaganda",
+    "later re‑contextualized as multicultural feminist icon",
+    "beautiful Ciguayo woman, golden skin, almond‑shaped black eyes, three feet tall, carries walking stick",
+    "cannot speak, only howl",
+    "jealous of human romance, howls causing same‑gender person to die of fright, then dies of sorrow",
+    "later legends add backward‑facing feet and seduction of opposite sex",
+    "skin tone varies: indigenous, mestizo, Afro‑Dominican, sometimes blue",
+    "activities: nocturnal, jump trees, steal crops, forage fruit/fish, ride horses at dawn",
+    "lair: trees, grottos, caves, rivers in El Cibao",
+    "back‑footed tracks confuse pursuers",
+    "hunting dogs required: wild (jíbaro), polydactyl, or black‑haired five‑legged",
+    "ciguapa dies quickly when confined",
+    "ciguapa term existed earlier for Cuban Stygian owl described 1839",
+    "town named La Ciguapa in Oriente Province, Cuba",
+    "Hispaniolan Stygian owl also called ciguapa described 1916"
+  ],
+  "hook_scores": [
+    "10 | The tracks in the night forest pointed forward, then reversed.",
+    "8 | Footprints vanished mid‑path, only backward prints remained.",
+    "9 | A hunter followed forward steps that suddenly turned backward."
+  ],
+  "model": "openrouter:qwen/qwen3-32b",
+  "writer": "openrouter (qwen/qwen3-32b)",
+  "writing": {
+    "llm_calls": 4,
+    "revisions": 1,
+    "kind": "lore",
+    "primary": "openrouter:openai/gpt-oss-120b",
+    "checks_primary": [],
+    "challenger": "failed: nvidia:z-ai/glm-5.3-flash: ReadTimeout: HTTPSConnectionPool(host='integrate.api.nvidia.com', port=443): Read timed out. (read timeout=30.0); openrouter:qwen/qwen3-32b: ValueError: narration length 76 words out of range",
+    "critic": {
+      "available": true,
+      "score": 81,
+      "score_kind": "editorial, not audience retention",
+      "bar": 75,
+      "notes": [
+        "weak line 'She saw a couple, howled, silencing the man, then wept.': Abrupt shift in focus from the hunter to an unrelated couple without establishing consequence. -> She crossed the hunter's path, let out a piercing howl, and vanished into the mist.",
+        "weak line 'A black‑haired, five‑legged dog cornered her; she died when caged.': Too many disparate legendary details crammed into a single line without narrative breathing room. -> A wild hound cornered her in the clearing, capturing the creature before dawn.",
+        "The opening hook immediately establishes the central mystery of the reversed footprints without a generic date or biographical intro.",
+        "Scene 2 introduces the ciguapa's name and its earliest written record cleanly, fulfilling early naming requirements.",
+        "The narrative follows a clear path from the initial tracks to the creature's reveal and final capture, maintaining narrative tension."
+      ],
+      "viewer_learns": "After watching, the viewer can explain that the earliest written account of the ciguapa is the 1866 story La Ciguapa by Francisco Javier Angulo Guridi, and that the legend’s backward feet create the puzzling tracks.",
+      "payoff_line": "So the reversed footprints were her backward feet, the mark of a ciguapa.",
+      "cta_line": "If your town has a similar forest spirit, tell us where and how it goes.",
+      "weak_lines": [
+        {
+          "quote": "She saw a couple, howled, silencing the man, then wept.",
+          "problem": "Abrupt shift in focus from the hunter to an unrelated couple without establishing consequence.",
+          "fix": "She crossed the hunter's path, let out a piercing howl, and vanished into the mist."
+        },
+        {
+          "quote": "A black‑haired, five‑legged dog cornered her; she died when caged.",
+          "problem": "Too many disparate legendary details crammed into a single line without narrative breathing room.",
+          "fix": "A wild hound cornered her in the clearing, capturing the creature before dawn."
+        }
+      ]
+    },
+    "checks_after_revision": []
+  },
+  "critic_score": 81,
+  "type": "OBJECT",
+  "properties": {
+    "title": {
+      "type": "STRING"
+    },
+    "premise": {
+      "type": "STRING"
+    },
+    "central_question": {
+      "type": "STRING"
+    },
+    "understanding_shift": {
+      "type": "STRING"
+    },
+    "ending_payoff": {
+      "type": "STRING"
+    },
+    "viewer_lesson": {
+      "type": "STRING"
+    },
+    "call_to_action": {
+      "type": "STRING"
+    },
+    "recurring_visual_motif": {
+      "type": "STRING"
+    },
+    "hook_overlay": {
+      "type": "STRING"
+    },
+    "scenes": {
+      "type": "ARRAY",
+      "items": {
+        "type": "OBJECT",
+        "properties": {
+          "narration": {
+            "type": "STRING"
+          },
+          "image_prompt": {
+            "type": "STRING"
+          },
+          "image_prompt_2": {
+            "type": "STRING"
+          },
+          "image_prompt_3": {
+            "type": "STRING"
+          },
+          "image_prompt_4": {
+            "type": "STRING"
+          },
+          "sfx": {
+            "type": "STRING"
+          },
+          "location": {
+            "type": "STRING"
+          },
+          "image_location": {
+            "type": "STRING"
+          },
+          "image_location_2": {
+            "type": "STRING"
+          },
+          "image_location_3": {
+            "type": "STRING"
+          },
+          "image_location_4": {
+            "type": "STRING"
+          },
+          "image_source": {
+            "type": "STRING"
+          },
+          "image_source_2": {
+            "type": "STRING"
+          },
+          "image_source_3": {
+            "type": "STRING"
+          },
+          "image_source_4": {
+            "type": "STRING"
+          },
+          "image_query": {
+            "type": "STRING"
+          },
+          "image_query_2": {
+            "type": "STRING"
+          },
+          "image_query_3": {
+            "type": "STRING"
+          },
+          "image_query_4": {
+            "type": "STRING"
+          }
+        },
+        "required": [
+          "narration",
+          "image_prompt",
+          "image_prompt_2",
+          "image_prompt_3",
+          "image_prompt_4",
+          "sfx",
+          "image_location",
+          "image_location_2",
+          "image_location_3",
+          "image_location_4",
+          "image_source",
+          "image_source_2",
+          "image_query",
+          "image_query_2"
+        ]
+      }
+    },
+    "characters": {
+      "type": "ARRAY",
+      "items": {
+        "type": "OBJECT",
+        "properties": {
+          "name": {
+            "type": "STRING"
+          },
+          "look": {
+            "type": "STRING"
+          }
+        },
+        "required": [
+          "name",
+          "look"
+        ]
+      }
+    },
+    "locations": {
+      "type": "ARRAY",
+      "items": {
+        "type": "OBJECT",
+        "properties": {
+          "name": {
+            "type": "STRING"
+          },
+          "look": {
+            "type": "STRING"
+          }
+        },
+        "required": [
+          "name",
+          "look"
+        ]
+      }
+    },
+    "setting": {
+      "type": "STRING"
+    },
+    "threat": {
+      "type": "STRING"
+    },
+    "twist": {
+      "type": "STRING"
+    },
+    "twist_scene": {
+      "type": "INTEGER"
+    },
+    "caption": {
+      "type": "STRING"
+    },
+    "hashtags": {
+      "type": "ARRAY",
+      "items": {
+        "type": "STRING"
+      }
+    },
+    "pinned_comment": {
+      "type": "STRING"
+    },
+    "hook_candidates": {
+      "type": "ARRAY",
+      "items": {
+        "type": "STRING"
+      }
+    },
+    "fact_ledger": {
+      "type": "ARRAY",
+      "items": {
+        "type": "STRING"
+      }
+    },
+    "hook_scores": {
+      "type": "ARRAY",
+      "items": {
+        "type": "STRING"
+      }
+    }
+  },
+  "required": [
+    "title",
+    "premise",
+    "hook_overlay",
+    "scenes",
+    "twist_scene",
+    "caption",
+    "hashtags",
+    "pinned_comment"
+  ],
+  "sources": [
+    {
+      "title": "Wikipedia: Ciguapa",
+      "url": "https://en.wikipedia.org/wiki/Ciguapa",
+      "domain": "en.wikipedia.org"
+    }
+  ],
+  "mode": "lore",
+  "case": "Ciguapa",
+  "subgenre": "legend / folklore",
+  "hook_style": "description",
+  "hook_line": "Moonlight catches fresh footprints marching forward—then they turn back.",
+  "true_story": false,
+  "_skipped": [],
+  "explainer_adapted": true,
+  "explainer_before": [
+    "Moonlight catches fresh footprints marching forward—then they turn back.",
+    "They whispered of the ciguapa, El Cibao’s forest spirit, first recorded in eighteen sixty-six.",
+    "A hunter heard a howl, then saw a nude golden‑skinned woman with knee‑length hair.",
+    "She sang, drew him close, then howled; his breath froze.",
+    "She crossed the hunter's path, let out a piercing howl, and vanished into the mist.",
+    "Villagers followed the scent, found her feet turned backward, matching the tracks.",
+    "A wild hound cornered her in the clearing, capturing the creature before dawn.",
+    "So the reversed footprints were her backward feet, the mark of a ciguapa."
+  ],
+  "story_id": "3006ca86ef82",
+  "banked_at": "2026-11-26T17:15:51+00:00",
+  "banked_length": "40s"
+}
