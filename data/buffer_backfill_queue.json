@@ -504,10 +504,10 @@
       "title": "River Child's Deadly Warning... Kappa of Japan #shorts"
     },
     "2026-11-25_2347": {
-      "status": "attempt_started",
-      "title": "A Winged Torso Hovered Over Roof... The Aswang #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-11-25_2347.mp4",
-      "channel_id": "6aefbb44e29c69a1719c4ae8"
+      "status": "queued",
+      "buffer_post_id": "6b077806b8e2338b857487f9",
+      "due_at": "2026-11-26T03:35:00.000Z",
+      "title": "A Winged Torso Hovered Over Roof... The Aswang #shorts"
     }
   }
 }
