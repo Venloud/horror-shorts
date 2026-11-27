@@ -6043,5 +6043,84 @@
     "youtube": {
       "pending": "buffer_queue_pending"
     }
+  },
+  {
+    "date": "2026-11-27_0906",
+    "story_id": "311815f9d9b1",
+    "series_id": null,
+    "series_episode": null,
+    "title": "Max Headroom Signal Hijacking",
+    "premise": "A masked figure hijacked two Chicago TV stations in 1987, leaving the perpetrators unidentified to this day.",
+    "subgenre": "real unsolved mystery",
+    "mode": "mystery",
+    "true_story": true,
+    "case": "Max Headroom signal hijacking",
+    "source": null,
+    "prompt_file": null,
+    "setting": "1980s Chicago, during the analog TV broadcast era",
+    "threat": "Unidentified hijackers exploiting analog broadcast vulnerabilities to disrupt live TV",
+    "twist": "The second hijacking included explicit content and a female accomplice, escalating the event beyond the first",
+    "score": null,
+    "seconds": 39.9,
+    "hook_style": "date",
+    "length_variant": "40s",
+    "video_seconds": 43.3,
+    "voice_speed": 1.2,
+    "narrator_voice": "am_adam",
+    "writer": "openrouter (openai/gpt-oss-120b)",
+    "media_ids": [],
+    "visual_mode": "analog",
+    "render_style": "explainer",
+    "set_builder": "5 sets",
+    "cast_builder": "1 cast",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 94,
+    "visuals": {
+      "distinct": 15,
+      "longest_s": 3.5,
+      "longest_share": 0.082,
+      "longest_name": "image:scene_05a.png:full"
+    },
+    "yt_title": "When Chicago TV Was Hijacked... Max Headroom Signal Hijacking #shorts",
+    "hashtags": [
+      "maxheadroom",
+      "chicago",
+      "unsolvedmysteries",
+      "strangehistory"
+    ],
+    "yt_tags": [
+      "max headroom signal hijacking",
+      "chicago tv broadcast hijacking",
+      "1987 tv hijack",
+      "wgn tv hijack",
+      "unidentified tv hacker",
+      "max headroom mask incident",
+      "chicago media disruption",
+      "unsolved chicago mystery",
+      "true crime mystery",
+      "chicago history",
+      "eighties tv hijacking",
+      "chicago mystery",
+      "true crime story",
+      "unsolved mystery",
+      "true story"
+    ],
+    "opening": "In 1987, a Max Headroom impersonator hijacked Chicago TV stations.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-11-27_0906",
+    "tiktok": {
+      "status": "STAGED_FOR_BUFFER",
+      "mode": "buffer"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    }
   }
 ]

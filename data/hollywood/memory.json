@@ -1,9 +1,9 @@
 {
- "videos": 21,
+ "videos": 22,
  "entries": {
   "title": {
-   "fired": 21,
-   "last": "2026-11-27_0000"
+   "fired": 22,
+   "last": "2026-11-27_0906"
   },
   "year_reel": {
    "fired": 13,
@@ -30,8 +30,8 @@
    "last": "2026-11-08_0644"
   },
   "zoom_punch": {
-   "fired": 21,
-   "last": "2026-11-26_0856"
+   "fired": 22,
+   "last": "2026-11-27_0906"
   },
   "year_line": {
    "fired": 4,
@@ -62,8 +62,8 @@
    "last": "2026-11-21_2105"
   },
   "stamp_unsolved": {
-   "fired": 1,
-   "last": "2026-11-21_2105"
+   "fired": 2,
+   "last": "2026-11-27_0906"
   },
   "stamp_missing": {
    "fired": 4,
@@ -288,7 +288,16 @@
   "hound cornered": 1,
   "clearing capturing": 1,
   "reversed footprints": 1,
-  "backward feet": 1
+  "backward feet": 1,
+  "night": 1,
+  "max headroom mask wearer": 1,
+  "nine": 1,
+  "cutting the bears game": 1,
+  "intruder swayed": 1,
+  "swayed before": 1,
+  "before metal": 1,
+  "two hours later": 1,
+  "doctor who episode": 1
  },
  "log": [
   {
@@ -526,6 +535,15 @@
     "title",
     "year_reel",
     "stamp_missing"
+   ]
+  },
+  {
+   "stamp": "2026-11-27_0906",
+   "story_id": "311815f9d9b1",
+   "effects": [
+    "title",
+    "zoom_punch",
+    "stamp_unsolved"
    ]
   }
  ],
@@ -765,6 +783,21 @@
      "cut:cut": 17,
      "move:still": 5,
      "move:push": 2
+    },
+    "verdict": null,
+    "metric": null
+   },
+   "311815f9d9b1": {
+    "stamp": "",
+    "title": "Max Headroom Signal Hijacking",
+    "used": {
+     "fx:title": 1,
+     "fx:zoom_punch": 1,
+     "fx:stamp": 1,
+     "move:push": 4,
+     "cut:cut": 14,
+     "move:still": 4,
+     "cut:dissolve": 1
     },
     "verdict": null,
     "metric": null
