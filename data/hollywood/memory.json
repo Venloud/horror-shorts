@@ -1,13 +1,13 @@
 {
- "videos": 20,
+ "videos": 21,
  "entries": {
   "title": {
-   "fired": 20,
-   "last": "2026-11-26_0856"
+   "fired": 21,
+   "last": "2026-11-27_0000"
   },
   "year_reel": {
-   "fired": 12,
-   "last": "2026-11-23_0816"
+   "fired": 13,
+   "last": "2026-11-27_0000"
   },
   "phrase": {
    "fired": 14,
@@ -66,8 +66,8 @@
    "last": "2026-11-21_2105"
   },
   "stamp_missing": {
-   "fired": 3,
-   "last": "2026-11-26_0856"
+   "fired": 4,
+   "last": "2026-11-27_0000"
   }
  },
  "places": {
@@ -275,7 +275,20 @@
   "tip lines surged": 1,
   "bulger to santa monica": 1,
   "helped solve": 1,
-  "solve case": 1
+  "solve case": 1,
+  "nude golden": 1,
+  "golden skinned": 1,
+  "skinned woman": 1,
+  "sang": 1,
+  "howled": 1,
+  "villagers followed": 1,
+  "scent found": 1,
+  "feet turned": 1,
+  "wild hound": 1,
+  "hound cornered": 1,
+  "clearing capturing": 1,
+  "reversed footprints": 1,
+  "backward feet": 1
  },
  "log": [
   {
@@ -505,6 +518,15 @@
     "stamp_missing",
     "zoom_punch"
    ]
+  },
+  {
+   "stamp": "2026-11-27_0000",
+   "story_id": "3006ca86ef82",
+   "effects": [
+    "title",
+    "year_reel",
+    "stamp_missing"
+   ]
   }
  ],
  "editing": {
@@ -728,6 +750,21 @@
      "move:push": 4,
      "cut:cut": 13,
      "move:still": 3
+    },
+    "verdict": null,
+    "metric": null
+   },
+   "3006ca86ef82": {
+    "stamp": "",
+    "title": "The Backward Footprints of the Ciguapa",
+    "used": {
+     "fx:title": 1,
+     "fx:year_reel": 1,
+     "fx:stamp": 1,
+     "move:closeup": 3,
+     "cut:cut": 17,
+     "move:still": 5,
+     "move:push": 2
     },
     "verdict": null,
     "metric": null

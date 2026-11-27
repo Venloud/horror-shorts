@@ -5964,5 +5964,84 @@
     "youtube": {
       "pending": "buffer_queue_pending"
     }
+  },
+  {
+    "date": "2026-11-27_0000",
+    "story_id": "3006ca86ef82",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Backward Footprints of the Ciguapa",
+    "premise": "A night hunter discovers the cursed tracks of the mountain forest spirit.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Ciguapa",
+    "source": null,
+    "prompt_file": null,
+    "setting": "mountain forest of El Cibao at night",
+    "threat": "the ciguapa, a seductive, back‑footed forest spirit",
+    "twist": "Villagers discover the creature’s back‑feet, confirming the impossible tracks.",
+    "score": null,
+    "seconds": 40.5,
+    "hook_style": "description",
+    "length_variant": "40s",
+    "video_seconds": 43.9,
+    "voice_speed": 1.2,
+    "narrator_voice": "am_michael",
+    "writer": "openrouter (qwen/qwen3-32b)",
+    "media_ids": [],
+    "visual_mode": "fast",
+    "render_style": "explainer",
+    "set_builder": "3 sets",
+    "cast_builder": "4 cast",
+    "story_shape": null,
+    "research_sources": [
+      "en.wikipedia.org"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 81,
+    "visuals": {
+      "distinct": 17,
+      "longest_s": 3.3,
+      "longest_share": 0.076,
+      "longest_name": "image:scene_01a.png:full"
+    },
+    "yt_title": "Fresh Footprints That Turn Backward... The Ciguapa of El Cibao #shorts",
+    "hashtags": [
+      "ciguapa",
+      "elcibao",
+      "folklore",
+      "cryptid"
+    ],
+    "yt_tags": [
+      "the ciguapa",
+      "ciguapa legend",
+      "el cibao folklore",
+      "backward footprints legend",
+      "dominican forest spirit",
+      "ciguapa creature",
+      "forest spirit folklore",
+      "el cibao legend",
+      "ciguapa footprints",
+      "mountain forest spirit",
+      "folklore monster stories",
+      "caribbean legends",
+      "ciguapa",
+      "scary legend",
+      "folklore"
+    ],
+    "opening": "Moonlight catches fresh footprints marching forward—then they turn back.",
+    "music_file": "unsolved_mystery.mp3",
+    "buffered": "2026-11-27_0000",
+    "tiktok": {
+      "status": "STAGED_FOR_BUFFER",
+      "mode": "buffer"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    }
   }
 ]
