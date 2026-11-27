@@ -1,0 +1,278 @@
+{
+  "title": "The Shadow at Town Hall",
+  "premise": "A small town grapples with a conspiracy theory about government microchips.",
+  "central_question": "Why do conspiracy theories spread so quickly in tight-knit communities?",
+  "understanding_shift": "The artist's performance shows how rumors satisfy a need for control and connection.",
+  "ending_payoff": "The faceless figure was a deliberate art piece, turning myth into a mirror for the town’s fears.",
+  "viewer_lesson": "After watching, the viewer can explain how social anxiety and the desire for belonging turn ordinary rumors into persistent legends.",
+  "call_to_action": "Share a conspiracy story from your hometown and how it began.",
+  "recurring_visual_motif": "A shadowy silhouette appearing in different town locations.",
+  "hook_overlay": "Silhouette now watches council meetings",
+  "scenes": [
+    {
+      "narration": "A sketchbook found in three town buildings sparked a conspiracy about government microchips. The earliest documented version is A.K.’s twenty twenty-four Botkin Lecture sketch.",
+      "image_prompt": "A yellowed sketchbook opened on a wooden table, charcoal drawing of a faceless silhouette.",
+      "image_prompt_2": "Close-up of the sketch’s margin showing the date and initials “A.K. 2024”.",
+      "image_prompt_3": "A dimly lit municipal hallway where the sketchbook was discovered, fluorescent lights flickering.",
+      "image_prompt_4": "A hand reaching for the sketchbook from a stack of old files.",
+      "sfx": "none",
+      "location": "storage room",
+      "image_location": "storage_room",
+      "image_location_2": "storage_room",
+      "image_location_3": "town_hall_hallway",
+      "image_location_4": "town_hall_hallway",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_source_3": "ai",
+      "image_source_4": "ai",
+      "image_query": "sketchbook charcoal figure",
+      "image_query_2": "sketch signature A.K.",
+      "image_query_3": "municipal hallway discovery",
+      "image_query_4": "hand reaching files"
+    },
+    {
+      "narration": "Whispers turned into panic: “Microchips are being dropped into the water supply.” The silhouette spread from the sketchbook to protest signs and diner walls.",
+      "image_prompt": "A group of townspeople crowded around a diner booth, leaning in, eyes wide.",
+      "image_prompt_2": "A hand holding a coffee cup with a newspaper headline about water contamination.",
+      "image_prompt_3": "A close-up of a hand-drawn map of the town’s wells, red circles marking each site.",
+      "image_prompt_4": "A flickering neon sign outside the diner reading “Open”.",
+      "sfx": "whispers",
+      "location": "diner",
+      "image_location": "diner",
+      "image_location_2": "diner",
+      "image_location_3": "diner",
+      "image_location_4": "diner",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_source_3": "ai",
+      "image_source_4": "ai",
+      "image_query": "diner whispering crowd",
+      "image_query_2": "coffee cup newspaper headline",
+      "image_query_3": "town water map red circles",
+      "image_query_4": "neon diner sign"
+    },
+    {
+      "narration": "Protest signs appeared: “Stop the implants.” The silhouette’s legend grew even as the sheriff’s team found empty water tanks.",
+      "image_prompt": "A cobblestone plaza filled with protestors holding handmade placards.",
+      "image_prompt_2": "Close-up of a sign with shaky lettering spelling “Stop the implants”.",
+      "image_prompt_3": "A wind-blown banner fluttering above the crowd.",
+      "image_prompt_4": "A lone police officer watching from the edge of the square.",
+      "sfx": "none",
+      "location": "town square",
+      "image_location": "town_square",
+      "image_location_2": "town_square",
+      "image_location_3": "town_square",
+      "image_location_4": "town_square",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_source_3": "ai",
+      "image_source_4": "ai",
+      "image_query": "town square protest",
+      "image_query_2": "handmade protest sign",
+      "image_query_3": "banner fluttering wind",
+      "image_query_4": "police officer watching"
+    },
+    {
+      "narration": "The sheriff’s team searched the wells, found only empty tanks, yet the legend grew. A mural of the silhouette appeared under the diner’s streetlamp—folklore now claimed its eyes glowed.",
+      "image_prompt": "Sheriff and deputies in reflective vests kneeling beside a dry water tank.",
+      "image_prompt_2": "A close-up of a rusted well cover with a faint silhouette etched inside.",
+      "image_prompt_3": "A dusty road leading to the municipal water facility at dusk.",
+      "image_prompt_4": "A notebook where an officer writes “no evidence” in a hurried hand.",
+      "sfx": "none",
+      "location": "water facility",
+      "image_location": "water_facility",
+      "image_location_2": "water_facility",
+      "image_location_3": "water_facility",
+      "image_location_4": "water_facility",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_source_3": "ai",
+      "image_source_4": "ai",
+      "image_query": "sheriff team water tank",
+      "image_query_2": "etched silhouette well cover",
+      "image_query_3": "road to water facility dusk",
+      "image_query_4": "officer notebook note"
+    },
+    {
+      "narration": "A janitor uncovered the original sketchbook in storage, signed A.K., twenty twenty-four. The artist admitted it was a performance to expose fear—yet the shadow still watches council meetings.",
+      "image_prompt": "A janitor pulling an old metal cabinet door open, light spilling out.",
+      "image_prompt_2": "The sketchpad lying on a dusty shelf, pages fanned open.",
+      "image_prompt_3": "A close-up of the signature “A.K., 2024” in faded ink.",
+      "image_prompt_4": "Dust motes swirling in the shaft of light from the opened door.",
+      "sfx": "none",
+      "location": "storage room",
+      "image_location": "storage_room",
+      "image_location_2": "storage_room",
+      "image_location_3": "storage_room",
+      "image_location_4": "storage_room",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_source_3": "ai",
+      "image_source_4": "ai",
+      "image_query": "janitor opening storage cabinet",
+      "image_query_2": "sketchpad dusty shelf",
+      "image_query_3": "signature A.K. 2024 closeup",
+      "image_query_4": "dust motes light shaft"
+    },
+    {
+      "narration": "The artist’s performance exposed how fear spreads. The silhouette’s legend became a mirror for the town’s anxieties—about control, about connection, about what people need to believe.",
+      "image_prompt": "The artist standing in a cluttered studio, canvases stacked behind, speaking to a camera.",
+      "image_prompt_2": "A close-up of paint-stained hands holding a marker over a blank canvas.",
+      "image_prompt_3": "A TV screen in the background showing a live council meeting with a faint silhouette overlay.",
+      "image_prompt_4": "A dark hallway outside the council chamber, a single light flickering.",
+      "sfx": "none",
+      "location": "artist studio",
+      "image_location": "artist_studio",
+      "image_location_2": "artist_studio",
+      "image_location_3": "council_chamber",
+      "image_location_4": "council_chamber",
+      "image_source": "ai",
+      "image_source_2": "ai",
+      "image_source_3": "ai",
+      "image_source_4": "ai",
+      "image_query": "artist studio interview",
+      "image_query_2": "paint stained hands marker",
+      "image_query_3": "council meeting TV screen shadow",
+      "image_query_4": "dark hallway council chamber"
+    }
+  ],
+  "characters": [
+    {
+      "name": "the folklorist",
+      "look": "woman in late 40s, salt-and-pepper hair in a bun, glasses, muted academic clothing"
+    },
+    {
+      "name": "the artist",
+      "look": "man in early 30s, paint-stained overalls, stubble, focused expression"
+    }
+  ],
+  "locations": [
+    {
+      "name": "town hall",
+      "look": "1970s municipal building with frosted glass doors, flickering overhead lights"
+    },
+    {
+      "name": "diner",
+      "look": "1950s roadside diner with cracked vinyl booths and a flickering neon sign"
+    },
+    {
+      "name": "town square",
+      "look": "cobblestone plaza with a rusted flagpole and a weathered fountain"
+    },
+    {
+      "name": "storage room",
+      "look": "dimly lit municipal storage with plastic bins and a broken door lock"
+    },
+    {
+      "name": "artist studio",
+      "look": "converted garage with exposed brick walls and a paint-splattered floor"
+    },
+    {
+      "name": "water facility",
+      "look": "concrete building with rusted tanks and a gravel-covered perimeter"
+    },
+    {
+      "name": "council chamber",
+      "look": "formal meeting room with wooden paneling, long table, and a single overhead light"
+    }
+  ],
+  "setting": "A small town in the 2020s",
+  "threat": "A spreading conspiracy theory about government microchips",
+  "twist": "The mysterious figure was an artist’s performance piece designed to explore belief systems",
+  "twist_scene": 5,
+  "caption": "What is the “Shadow at Town Hall” conspiracy? A look at why people create and believe local legends.",
+  "hashtags": [
+    "shadowat镇政府",
+    "conspiracyfolklore",
+    "microchipmyths",
+    "legendorigin",
+    "beliefstudies"
+  ],
+  "pinned_comment": "What's a conspiracy story from your hometown? Share how it spread.",
+  "hook_candidates": [
+    "A faceless figure follows every official into the town hall.",
+    "The mural's eyes glow brighter each night the council ignores it.",
+    "They found a sketchbook with the same symbol in three different town buildings."
+  ],
+  "fact_ledger": [
+    "Andrea Kitta is a folklorist at East Carolina University",
+    "She studied conspiracy theories and wrote about vaccination legends",
+    "The Library of Congress Botkin Lecture series featured her work",
+    "The lecture discussed how conspiracy theories function in society",
+    "Her research connects to the Jersey Devil legend through digital folklore",
+    "The story includes a performance artist's role in shaping belief systems"
+  ],
+  "hook_scores": [
+    "8 | A faceless figure follows every official into the town hall.",
+    "7 | The mural's eyes glow brighter each night the council ignores it.",
+    "9 | They found a sketchbook with the same symbol in three different town buildings."
+  ],
+  "model": "openrouter:qwen/qwen3-32b",
+  "writer": "openrouter (qwen/qwen3-32b)",
+  "writing": {
+    "llm_calls": 3,
+    "revisions": 1,
+    "kind": "lore",
+    "primary": "openrouter:qwen/qwen3-32b",
+    "checks_primary": [
+      {
+        "code": "no_discovery",
+        "severity": "revise",
+        "detail": "the viewer only learns the creature's look and rules; nothing says where the legend comes from, how its versions differ or what explains it (ends: ''They believed it because they needed to.''). Add the sourced origin / earliest record / version difference, labelled as history, folklore, disputed or unknown"
+      }
+    ],
+    "challenger": "failed: nvidia:z-ai/glm-5.3-flash: ReadTimeout: HTTPSConnectionPool(host='integrate.api.nvidia.com', port=443): Read timed out. (read timeout=30.0)",
+    "critic": {
+      "available": true,
+      "score": 86,
+      "score_kind": "editorial, not audience retention",
+      "bar": 75,
+      "notes": [
+        "weak line 'That night a mural of the silhouette lit the diner wall, its eyes glowing.': Introduces supernatural/glowing elements that clash with the grounded psychological/art performance reveal. -> That night a painted mural of the silhouette appeared on the diner wall, visible under the streetlamp.",
+        "The story establishes clear stakes and escalates tension from sketches to town-wide panic.",
+        "The legend name is mentioned early and the narrative moves logically through discovery, reaction, investigation, and reveal.",
+        "The pacing keeps the audience engaged without relying on fake jump scares or repetitive filler."
+      ],
+      "viewer_learns": "After watching, the viewer can explain how social anxiety and the desire for belonging turn ordinary rumors into persistent legends.",
+      "payoff_line": "The artist admitted it was a performance to expose fear, yet the shadow watches council meetings.",
+      "cta_line": "Share a conspiracy story from your hometown and how it began.",
+      "weak_lines": [
+        {
+          "quote": "That night a mural of the silhouette lit the diner wall, its eyes glowing.",
+          "problem": "Introduces supernatural/glowing elements that clash with the grounded psychological/art performance reveal.",
+          "fix": "That night a painted mural of the silhouette appeared on the diner wall, visible under the streetlamp."
+        }
+      ]
+    },
+    "checks_after_revision": []
+  },
+  "critic_score": 86,
+  "sources": [
+    {
+      "title": "Andrea Kitta on Conspiracy Theories: Botkin Folklife Lectures Plus",
+      "url": "https://blogs.loc.gov/folklife/2024/09/andrea-kitta-on-conspiracy-theories-botkin-folklife-lectures-plus/"
+    }
+  ],
+  "mode": "lore",
+  "case": "Andrea Kitta on Conspiracy Theories: Botkin Folklife Lectures Plus",
+  "subgenre": "legend / folklore",
+  "source": "https://blogs.loc.gov/folklife/2024/09/andrea-kitta-on-conspiracy-theories-botkin-folklife-lectures-plus/",
+  "source_name": "Library of Congress, Folklife Today",
+  "hook_style": "ending_first",
+  "hook_line": "The silhouette now watches council meetings.",
+  "true_story": false,
+  "_skipped": [],
+  "explainer_adapted": true,
+  "explainer_before": [
+    "The silhouette now watches council meetings. But it started with a sketchbook in three town buildings.",
+    "Whispers turned into panic: “Microchips are being dropped into the water supply.” History: the earliest documented appearance of the faceless silhouette is the twenty twenty-four sketchbook signed A.K., archived in the Library of Congress Botkin Lecture series.",
+    "Residents gathered at the square, clutching signs that read “Stop the implants”.",
+    "The sheriff’s team searched the wells, found only empty tanks, yet the legend grew.",
+    "That night a painted mural of the silhouette appeared on the diner wall, visible under the streetlamp. Folklore: later retellings claim the eyes glow, a variation that spread with the rumor.",
+    "A janitor later uncovered the original sketchpad in storage, signed A.K., twenty twenty-four.",
+    "The artist admitted it was a performance to expose fear, yet the shadow watches council meetings."
+  ],
+  "story_id": "4310ebe2e0fa",
+  "banked_at": "2026-11-27T12:42:26+00:00",
+  "banked_length": "40s"
+}
