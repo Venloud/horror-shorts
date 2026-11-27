@@ -540,10 +540,10 @@
       "title": "Fresh Footprints That Turn Backward... The Ciguapa of El Cibao #shorts"
     },
     "2026-11-27_0906": {
-      "status": "attempt_started",
-      "title": "When Chicago TV Was Hijacked... Max Headroom Signal Hijacking #shorts",
-      "source_url": "https://github.com/Venloud/horror-shorts/releases/download/youtube-pending/2026-11-27_0906.mp4",
-      "channel_id": "6aefbb44e29c69a1719c4ae8"
+      "status": "queued",
+      "buffer_post_id": "6b094e52658222306cfdebac",
+      "due_at": "2026-11-28T01:49:00.000Z",
+      "title": "When Chicago TV Was Hijacked... Max Headroom Signal Hijacking #shorts"
     }
   }
 }
