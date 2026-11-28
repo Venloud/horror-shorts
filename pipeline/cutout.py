@@ -1,4 +1,4 @@
-"""EXPERIMENTAL render style "cutout": the same character in every shot.
+"""EXPERIMENTAL render style "cutout": the same character in every shot (config cutout_look: painted | flat).
 
 Characters are drawn ONCE as a pose set (Cloudflare FLUX, fixed seed, same description word-for-word, plain gray
 background), checked for consistency against pose 1, cut out (rembg, chroma-key fallback) and composited onto
@@ -61,7 +61,28 @@ def style_for(story: dict) -> str:
     return "cutout" if CONFIG.get("render_style") == "cutout" else "classic"
 
 
+def painted() -> bool:
+    """config cutout_look "painted" (default since 2026-11-25): the channel's painted horror look; "flat" = the
+    older flat-cartoon test style."""
+    return (CONFIG.get("cutout_look") or "painted").lower() != "flat"
+
+
+# Painted poses are drawn WITH night lighting and ink outlines on a dark backdrop: studio-lit poses on light gray
+# looked pasted onto the dark painted plates (local test 2026-11-25, Desktop/cody/night-files-tests).
+# Name the LIGHT ON THE FIGURE, never a light source: "warm lamp ... and moonlight" made FLUX paint a lantern and a
+# moon into the backdrop, and the pose QA rejected all of them (local build 2026-11-25).
+POSE_BACKDROP_PAINTED = ("dramatic night lighting on the figure, warm light on the left side, cool deep shadows on "
+                         "the right side, bold ink outlines, plain flat empty dark slate-gray background, nothing "
+                         "else in the picture, no lamp, no moon, no sky, no floor, no scenery")
+# Not cut-out characters: a creature is never "one adult person" for the pose QA (all 3 tries rejected).
+_CREATURE = re.compile(r"\b(creature|monster|demon|ghost|spirit|wraith|beast|wing(?:s|ed)?|fangs?|claws?|tentacles?|"
+                       r"horns?|undead|corpse|skeletal|no lower half|floating)\b", re.IGNORECASE)
+POSE_BACKDROP_FLAT = "plain flat light-gray background, even lighting"
+
+
 def _style() -> str:
+    if painted():
+        return CONFIG.get("image_style_cf") or "dark cinematic horror illustration, painterly digital art"
     return CONFIG.get("cutout_style") or ("flat 2D cartoon illustration, clean dark outlines, simple shading, "
                                           "muted night palette, no text")
 
@@ -88,6 +109,11 @@ very short scene). SHOT is one of:
    "location": "<name or none>"}}
 - {{"type": "screen", "kind": "phone|note|laptop", "contact": "<name said in the narration, or empty>",
    "time": "<e.g. 11:47 PM>", "lines": [{{"from": "them|me", "text": "<words QUOTED from the narration>"}}]}}
+PEOPLE FIRST: when the narration is about people (a captain, the crew, a witness, investigators, a family), SHOW
+them as stage shots with a CHARACTER: they are look-alikes of the period (never a real person's face or photo), so
+this holds for TRUE stories too - the people before, during and after the event, searching, waiting, leaving. Use
+the empty place or an insert only for what has no person in it, or for the moment of a real victim's death.
+Put a character in at least half of the stage shots when CHARACTERS is not "none".
 RULES: adults only. A screen only when the narration mentions a text, message, call, note or screen, and its
 lines use ONLY words the narration actually says (never invent messages). Never show a real victim's death, body
 or remains: use the place or an object instead (stage with character "none", or an insert). "lie" only for a
@@ -203,7 +229,7 @@ def _main_characters(story: dict) -> list[dict]:
                     ("image_prompt", "image_prompt_2", "image_prompt_3", "image_prompt_4"))
                     for sc in story.get("scenes") or []).lower()
     ok = [c for c in story.get("characters") or [] if c.get("name") and c.get("look")
-          and not _CHILD.search(c.get("look", ""))]
+          and not _CHILD.search(c.get("look", "")) and not _CREATURE.search(c.get("look", ""))]
     ok.sort(key=lambda c: -text.count(c["name"].lower().split()[0]))
     return ok[:2]
 
@@ -346,7 +372,11 @@ def make_poses(story: dict, chars: list[dict], needed: dict, outdir: Path, budge
     """{name: {pose: cutout PNG}}. Pose 1 (standing front) is the reference; every other pose is checked against
     it (same person / outfit / style), regenerated up to 2 times, else dropped."""
     import images
-    style = _style()
+    style = (_style().replace("detailed background, ", "")  # a pose needs an empty backdrop to cut out
+             .replace(" with warm lamp and moonlight highlights", ""))  # else FLUX paints a lamp and a moon in
+    backdrop = POSE_BACKDROP_PAINTED if painted() else POSE_BACKDROP_FLAT
+    bg_words = ("plain empty dark background; cropped at the knees or waist is fine" if painted()
+                else "plain light-gray background")
     out: dict = {}
     for ci, c in enumerate(chars):
         want = ["standing_front"] + [p for p in POSES if p in needed.get(c["name"], set()) and p != "standing_front"]
@@ -362,10 +392,11 @@ def make_poses(story: dict, chars: list[dict], needed: dict, outdir: Path, budge
             for attempt in range(3):
                 frame = "head and shoulders, centered" if pose == "scared_closeup" else "full body, centered"
                 prompt = (f"{style}, {c['look'].strip().rstrip('.')}, adult, {POSES[pose]}, {frame}, "
-                          f"plain flat light-gray background, even lighting, single character, no text")
+                          f"{backdrop}, single character, no text")
                 if not _draw(prompt, seed + attempt * 101, dest, budget, planned=attempt == 0):
                     break
-                v, why = _qa(dest, f"one adult person, {POSES[pose]}, plain light-gray background")
+                asked = POSES[pose].replace(", full body", "") if painted() else POSES[pose]
+                v, why = _qa(dest, f"one adult person, {asked}, {bg_words}")
                 if v is False:
                     log(f"Cutout pose {c['name']}/{pose}: QA NO ({why}), try {attempt + 1}/3")
                     continue
@@ -441,6 +472,14 @@ def _mask_ok(mask: Image.Image) -> bool:
     return decisive > 0.9 and 0.02 < fg < 0.9
 
 
+def cut_off(ch: Image.Image) -> bool:
+    """True when the drawing itself ends at the bottom edge (FLUX often draws a waist-up figure even when asked for
+    full body): such a cut-out must sit on the frame's bottom edge, never float above the floor."""
+    import numpy as np
+    a = np.asarray(ch.getchannel("A"))
+    return bool(a.size) and float((a[-1] > 128).mean()) > 0.15
+
+
 def _key_gray(im: Image.Image) -> Image.Image:
     """No rembg: flood-fill the plain light-gray background from the borders."""
     marker = (255, 0, 255)
@@ -458,7 +497,7 @@ def _key_gray(im: Image.Image) -> Image.Image:
 
 def make_plates(story: dict, needed: set, outdir: Path, budget: Budget) -> dict:
     """{(location, kind): PNG}. Empty places, same description word-for-word, reused across scenes."""
-    style = _style()
+    style = _style().replace("semi-realistic adult proportions and faces, ", "")  # it put villagers on the plate
     looks = {l["name"]: l.get("look", "") for l in story.get("locations") or []}
     out = {}
     order = sorted(needed, key=lambda lk: (list(PLATE_KINDS).index(lk[1]), lk[0]))  # every wide plate first
@@ -467,7 +506,7 @@ def make_plates(story: dict, needed: set, outdir: Path, budget: Budget) -> dict:
         if dest.exists():
             out[(loc, kind)] = dest
             continue
-        prompt = (f"{style}, {looks.get(loc, loc).strip().rstrip('.')}, {PLATE_KINDS[kind]}, empty, no people, "
+        prompt = (f"{style}, {looks.get(loc, loc).strip().rstrip('.')}, {PLATE_KINDS[kind]}, empty, deserted, nobody there, no people, no figures, "
                   f"vertical composition, blank unmarked surfaces, no text, no signs")
         for attempt in range(2):
             if not _draw(prompt, 5000 + li * 37 + attempt, dest, budget, planned=attempt == 0):
@@ -608,8 +647,9 @@ def build(story: dict, img_dir: Path, workdir: Path) -> list[list[Path]]:
     out = img_dir / "cutout"
     out.mkdir(parents=True, exist_ok=True)
     images.sanitize_victim_shots(story)
-    if not _main_characters(story):  # legends: no character sheet -> the recurring figures of the shots
-        derived = derive_characters(story)
+    if len(_main_characters(story)) < 2:  # few or no named characters (a legend, "the crew") -> the recurring
+        known = {c.get("name", "").lower() for c in story.get("characters") or []}  # figures of the shots:
+        derived = [c for c in derive_characters(story) if c["name"].lower() not in known]  # period look-alikes
         if derived:
             story["characters"] = list(story.get("characters") or []) + derived
     shots = plan(story)
@@ -731,16 +771,27 @@ class _Stage:
             plate = ImageEnhance.Color(plate).enhance(0.8)
         self.bg = plate
         self.char = None
+        self.cropped = False
         if spec.get("pose"):
             ch = Image.open(spec["pose"]).convert("RGBA")
             if spec.get("pose_name") in SIDE_POSES and spec.get("facing") == "right":
                 ch = ImageOps.mirror(ch)
+            self.cropped = cut_off(ch)
             self.char = self._grade(ch, plate)
             self.char_flip = ImageOps.mirror(self.char)
 
     @staticmethod
     def _grade(ch: Image.Image, plate: Image.Image) -> Image.Image:
         rgb, a = ch.convert("RGB"), ch.getchannel("A")
+        if painted():  # the pose is already night-lit: only a touch of the room's colour and a faint lamp rim
+            from PIL import ImageChops
+            mean = plate.resize((1, 1), Image.BOX).getpixel((0, 0))
+            rgb = Image.blend(rgb, Image.new("RGB", rgb.size, mean), 0.06)
+            rim = ImageChops.subtract(a, a.filter(ImageFilter.MinFilter(11))).filter(ImageFilter.GaussianBlur(2))
+            rgb = Image.composite(Image.new("RGB", rgb.size, (255, 205, 130)), rgb, rim.point(lambda v: int(v * 0.2)))
+            out = rgb.convert("RGBA")
+            out.putalpha(a)
+            return out
         rgb = ImageEnhance.Brightness(rgb).enhance(1.07)
         rgb = ImageEnhance.Color(rgb).enhance(1.08)
         mean = plate.resize((1, 1), Image.BOX).getpixel((0, 0))
@@ -771,6 +822,8 @@ class _Stage:
             height, feet = 0.66 * H, H + 4
         if s.get("pose_name") == "lying_in_bed":
             height, feet = 0.30 * H, 0.86 * H
+        elif self.cropped and not close:  # waist-up drawing: on the bottom edge, never floating mid-frame
+            height, feet = {"full": 0.62, "medium": 0.75, "close": 0.9}[s.get("scale", "full")] * H, H + 4
         breath = 1 + 0.012 * math.sin(2 * math.pi * t / 3.2)
         ch = self.char
         if s.get("action") == "turn" and u > 0.5:
@@ -794,7 +847,7 @@ class _Stage:
             bob = 10 * abs(math.sin(2 * math.pi * t * 1.7))
         top = feet - ch2 - bob
         left = x - cw2 / 2
-        if not close and s.get("scale", "full") == "full":  # soft contact shadow under the feet
+        if not close and not self.cropped and s.get("scale", "full") == "full":  # soft contact shadow under the feet
             sh = Image.new("L", (int(cw2 * 1.2), 70), 0)
             ImageDraw.Draw(sh).ellipse([0, 10, sh.width, 60], fill=120)
             sh = sh.filter(ImageFilter.GaussianBlur(14))
