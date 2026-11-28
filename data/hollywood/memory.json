@@ -1,9 +1,9 @@
 {
- "videos": 22,
+ "videos": 23,
  "entries": {
   "title": {
-   "fired": 22,
-   "last": "2026-11-27_0906"
+   "fired": 23,
+   "last": "2026-11-27_2343"
   },
   "year_reel": {
    "fired": 13,
@@ -30,16 +30,16 @@
    "last": "2026-11-08_0644"
   },
   "zoom_punch": {
-   "fired": 22,
-   "last": "2026-11-27_0906"
+   "fired": 23,
+   "last": "2026-11-27_2343"
   },
   "year_line": {
    "fired": 4,
    "last": "2026-11-21_2105"
   },
   "kinetic": {
-   "fired": 3,
-   "last": "2026-11-21_2105"
+   "fired": 4,
+   "last": "2026-11-27_2343"
   },
   "flicker": {
    "fired": 1,
@@ -297,7 +297,14 @@
   "swayed before": 1,
   "before metal": 1,
   "two hours later": 1,
-  "doctor who episode": 1
+  "doctor who episode": 1,
+  "rumors": 1,
+  "signs read": 1,
+  "read stop": 1,
+  "implants legend": 1,
+  "k": 1,
+  "shadow watches council": 1,
+  "performance showed fear spreads": 1
  },
  "log": [
   {
@@ -544,6 +551,15 @@
     "title",
     "zoom_punch",
     "stamp_unsolved"
+   ]
+  },
+  {
+   "stamp": "2026-11-27_2343",
+   "story_id": "4310ebe2e0fa",
+   "effects": [
+    "title",
+    "zoom_punch",
+    "kinetic"
    ]
   }
  ],
@@ -798,6 +814,21 @@
      "cut:cut": 14,
      "move:still": 4,
      "cut:dissolve": 1
+    },
+    "verdict": null,
+    "metric": null
+   },
+   "4310ebe2e0fa": {
+    "stamp": "",
+    "title": "The Shadow at Town Hall",
+    "used": {
+     "fx:title": 1,
+     "fx:zoom_punch": 1,
+     "fx:kinetic": 1,
+     "move:push": 3,
+     "cut:cut": 14,
+     "move:still": 3,
+     "move:pull": 1
     },
     "verdict": null,
     "metric": null

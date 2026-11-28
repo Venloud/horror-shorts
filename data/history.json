@@ -6122,5 +6122,83 @@
     "youtube": {
       "pending": "buffer_queue_pending"
     }
+  },
+  {
+    "date": "2026-11-27_2343",
+    "story_id": "4310ebe2e0fa",
+    "series_id": null,
+    "series_episode": null,
+    "title": "The Shadow at Town Hall",
+    "premise": "A small town grapples with a conspiracy theory about government microchips.",
+    "subgenre": "legend / folklore",
+    "mode": "lore",
+    "true_story": false,
+    "case": "Andrea Kitta on Conspiracy Theories: Botkin Folklife Lectures Plus",
+    "source": "https://blogs.loc.gov/folklife/2024/09/andrea-kitta-on-conspiracy-theories-botkin-folklife-lectures-plus/",
+    "prompt_file": null,
+    "setting": "A small town in the 2020s",
+    "threat": "A spreading conspiracy theory about government microchips",
+    "twist": "The mysterious figure was an artist’s performance piece designed to explore belief systems",
+    "score": null,
+    "seconds": 39.3,
+    "hook_style": "ending_first",
+    "length_variant": "40s",
+    "video_seconds": 42.7,
+    "voice_speed": 1.2,
+    "narrator_voice": "am_michael",
+    "writer": "openrouter (openai/gpt-oss-120b)",
+    "media_ids": [],
+    "visual_mode": "classic",
+    "render_style": "explainer",
+    "set_builder": "6 sets",
+    "cast_builder": "3 cast",
+    "story_shape": null,
+    "research_sources": [
+      "https://blogs.loc.gov/folklife/2024/09/andrea-kitta-on-conspiracy-theories-botkin-folklife-lectures-plus/"
+    ],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": 86,
+    "visuals": {
+      "distinct": 14,
+      "longest_s": 3.9,
+      "longest_share": 0.092,
+      "longest_name": "image:scene_04a.png:full"
+    },
+    "yt_title": "The Silhouette Now Watches Council... The Shadow at Town Hall #shorts",
+    "hashtags": [
+      "shadowattownhall",
+      "urbanlegend",
+      "legends"
+    ],
+    "yt_tags": [
+      "the shadow at town hall",
+      "town hall silhouette legend",
+      "urban legend",
+      "2024 botkin lecture sketch",
+      "microchip conspiracy legend",
+      "town hall shadow folklore",
+      "scary legend",
+      "urban legend story",
+      "town hall mural legend",
+      "conspiracy theory folklore",
+      "the shadow legend",
+      "council meeting legend",
+      "shadow at town hall",
+      "shadow at town hall legend",
+      "folklore"
+    ],
+    "opening": "The silhouette now watches council meetings.",
+    "music_file": "unsolved_mystery.mp3",
+    "buffered": "2026-11-27_2343",
+    "tiktok": {
+      "status": "STAGED_FOR_BUFFER",
+      "mode": "buffer"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    }
   }
 ]
