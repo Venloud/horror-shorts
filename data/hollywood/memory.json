@@ -1,9 +1,9 @@
 {
- "videos": 23,
+ "videos": 24,
  "entries": {
   "title": {
-   "fired": 23,
-   "last": "2026-11-27_2343"
+   "fired": 24,
+   "last": "2026-11-28_0829"
   },
   "year_reel": {
    "fired": 13,
@@ -30,8 +30,8 @@
    "last": "2026-11-08_0644"
   },
   "zoom_punch": {
-   "fired": 23,
-   "last": "2026-11-27_2343"
+   "fired": 24,
+   "last": "2026-11-28_0829"
   },
   "year_line": {
    "fired": 4,
@@ -46,8 +46,8 @@
    "last": "2026-11-17_0832"
   },
   "info_card": {
-   "fired": 9,
-   "last": "2026-11-23_0816"
+   "fired": 10,
+   "last": "2026-11-28_0829"
   },
   "counter_bullets": {
    "fired": 1,
@@ -66,8 +66,8 @@
    "last": "2026-11-27_0906"
   },
   "stamp_missing": {
-   "fired": 4,
-   "last": "2026-11-27_0000"
+   "fired": 5,
+   "last": "2026-11-28_0829"
   }
  },
  "places": {
@@ -304,7 +304,12 @@
   "implants legend": 1,
   "k": 1,
   "shadow watches council": 1,
-  "performance showed fear spreads": 1
+  "performance showed fear spreads": 1,
+  "vest glowed red": 1,
+  "david lay beside": 1,
+  "explored hidden": 1,
+  "hidden municipal": 1,
+  "municipal tunnel": 1
  },
  "log": [
   {
@@ -560,6 +565,16 @@
     "title",
     "zoom_punch",
     "kinetic"
+   ]
+  },
+  {
+   "stamp": "2026-11-28_0829",
+   "story_id": "abce44a47b93",
+   "effects": [
+    "title",
+    "stamp_missing",
+    "info_card",
+    "zoom_punch"
    ]
   }
  ],
@@ -829,6 +844,23 @@
      "cut:cut": 14,
      "move:still": 3,
      "move:pull": 1
+    },
+    "verdict": null,
+    "metric": null
+   },
+   "abce44a47b93": {
+    "stamp": "",
+    "title": "Sealed Hatch Mystery",
+    "used": {
+     "fx:title": 1,
+     "fx:stamp": 1,
+     "fx:info_card": 1,
+     "fx:zoom_punch": 1,
+     "move:push": 4,
+     "cut:cut": 14,
+     "move:still": 3,
+     "move:closeup": 1,
+     "cut:dissolve": 1
     },
     "verdict": null,
     "metric": null

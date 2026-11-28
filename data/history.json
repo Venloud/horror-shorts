@@ -6200,5 +6200,84 @@
     "youtube": {
       "pending": "buffer_queue_pending"
     }
+  },
+  {
+    "date": "2026-11-28_0829",
+    "story_id": "abce44a47b93",
+    "series_id": null,
+    "series_episode": null,
+    "title": "Sealed Hatch Mystery",
+    "premise": "Surveyor David Marlow disappears in the Ashbrook tunnel, and investigators uncover his body locked inside a hidden cell behind a sealed hatch.",
+    "subgenre": "cold case file (fiction)",
+    "mode": "coldcase",
+    "true_story": false,
+    "case": null,
+    "source": null,
+    "prompt_file": "fiction_cold_case.txt",
+    "setting": "Ashbrook municipal tunnel, night",
+    "threat": "A concealed locked cell that traps anyone who enters the tunnel",
+    "twist": "The sealed hatch hides a cramped cell containing Marlow’s corpse",
+    "score": 48,
+    "seconds": 36.6,
+    "hook_style": "did_you_know",
+    "length_variant": "40s",
+    "video_seconds": 40.0,
+    "voice_speed": 1.1,
+    "narrator_voice": "am_adam",
+    "writer": "openrouter (openai/gpt-oss-120b)",
+    "media_ids": [
+      "pexels:38883117"
+    ],
+    "visual_mode": "fast",
+    "render_style": "explainer",
+    "set_builder": "3 sets",
+    "cast_builder": "4 cast",
+    "story_shape": "discovery",
+    "research_sources": [],
+    "visual_sources": null,
+    "low_quota": false,
+    "remake_of": null,
+    "remake_angle": null,
+    "critic_score": null,
+    "visuals": {
+      "distinct": 15,
+      "longest_s": 3.9,
+      "longest_share": 0.097,
+      "longest_name": "image:scene_04a.png:full"
+    },
+    "yt_title": "Boot Prints Stopped At Rusted Hatch | Scary Story #shorts",
+    "hashtags": [
+      "ashbrooktunnel",
+      "creepypasta",
+      "scarystories",
+      "davidmarlow"
+    ],
+    "yt_tags": [
+      "ashbrook tunnel mystery",
+      "surveyor david marlow",
+      "sealed hatch mystery",
+      "municipal tunnel disappearance",
+      "hidden cell in tunnel",
+      "ashbrook municipal tunnel",
+      "tunnel surveyor missing",
+      "locked hatch mystery",
+      "biohazard crate tunnel",
+      "underground tunnel mystery",
+      "scary story",
+      "creepy tunnel incident",
+      "ashbrook tunnel incident",
+      "ashbrook tunnel incident story",
+      "horror story"
+    ],
+    "opening": "Boot prints stopped dead at a rusted hatch.",
+    "music_file": "bk_grnde.mp3",
+    "buffered": "2026-11-28_0829",
+    "tiktok": {
+      "status": "STAGED_FOR_BUFFER",
+      "mode": "buffer"
+    },
+    "youtube": {
+      "pending": "buffer_queue_pending"
+    }
   }
 ]
